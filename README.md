@@ -1,58 +1,145 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🎓 LMS Platform — Hệ Thống Quản Lý Giáo Dục Trực Tuyến
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
+[![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-## About Laravel
+> Hệ thống quản lý học tập (LMS) tinh gọn, hiệu quả — được phát triển bởi **NgoTanLoi**.  
+> Dự án tập trung vào trải nghiệm người dùng (UX) mượt mà và khả năng quản lý nội dung linh hoạt cho giáo viên.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Điểm Nổi Bật
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Dự án không chỉ dừng lại ở CRUD cơ bản mà còn sở hữu những điểm chạm chuyên nghiệp:
 
-## Learning Laravel
+| # | Tính năng | Mô tả |
+|---|-----------|-------|
+| 🧠 | **Smart Sidebar** | Giao diện học tập lấy cảm hứng từ Udemy — điều hướng không tải lại trang, xử lý Video YouTube thông minh |
+| 🎨 | **Intuitive UX/UI** | Các công cụ quản lý (Sửa/Xóa) được thiết kế ẩn thông minh (Hover-to-Show), không gian học tập luôn sạch sẽ |
+| 🐳 | **Dockerized Workflow** | Toàn bộ môi trường phát triển được đóng gói trong Docker — triển khai chỉ với 1 câu lệnh |
+| 🏗️ | **Robust Architecture** | Chuẩn mực Resource Controller, Eloquent Relationships (1-N, N-N) và RBAC bảo mật hệ thống |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🚀 Tính Năng Hiện Tại
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- [x] **Auth System** — Đăng nhập, phân quyền Role-based (Admin, Teacher, Student)
+- [x] **Course Management** — Quản lý khóa học, phân cấp theo Module và Lesson
+- [x] **Learning Mode** — Trình phát bài học hỗ trợ Video và Nội dung văn bản (Blade & JS)
+- [x] **Real-time UX** — Cập nhật nội dung nhanh qua Modal và xử lý Logic phía Client
 
-## Agentic Development
+---
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## 🛠 Công Nghệ Cốt Lõi
 
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+Backend   : Laravel 11 (PHP 8.2+)
+Database  : MySQL 8.0 — tối ưu Index
+Frontend  : Bootstrap 5 (Customized) · FontAwesome Pro · JavaScript ES6
+DevOps    : Docker Compose (Nginx + PHP-FPM + MySQL)
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## 📦 Triển Khai Nhanh (Quick Start)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Yêu cầu hệ thống
 
-## Code of Conduct
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) >= 24.x
+- Git
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Các bước cài đặt
 
-## Security Vulnerabilities
+**1. Clone & cấu hình môi trường**
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+git clone https://github.com/ngotanloi/lms-system.git
+cd lms-system
+cp .env.example .env
+```
 
-## License
+**2. Khởi chạy toàn bộ hệ thống bằng Docker**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+docker compose up -d --build
+```
+
+**3. Khởi tạo ứng dụng Laravel**
+
+```bash
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed
+```
+
+**4. Truy cập ứng dụng**
+
+```
+http://localhost:8080
+```
+
+| Tài khoản | Email | Mật khẩu |
+|-----------|-------|----------|
+| Admin | admin@lms.dev | password |
+| Teacher | teacher@lms.dev | password |
+| Student | student@lms.dev | password |
+
+---
+
+## 📁 Cấu Trúc Dự Án
+
+```
+lms-system/
+├── app/
+│   ├── Http/Controllers/     # Resource Controllers (CRUD chuẩn mực)
+│   ├── Models/               # Eloquent Models + Relationships
+│   └── Policies/             # RBAC Authorization
+├── resources/
+│   ├── views/                # Blade Templates
+│   └── js/                   # JavaScript ES6 (Modal, Sidebar logic)
+├── database/
+│   ├── migrations/           # Schema definitions
+│   └── seeders/              # Dữ liệu mẫu
+├── docker/                   # Nginx, PHP-FPM config
+└── docker-compose.yml
+```
+
+---
+
+## 🔮 Roadmap — Tầm Nhìn Phát Triển
+
+- [ ] **Quiz System** — Hệ thống trắc nghiệm tính thời gian thực
+- [ ] **File Submission** — Nộp bài tập thực hành và chấm điểm trực tuyến
+- [ ] **Certificate** — Tự động xuất chứng chỉ PDF khi hoàn thành 100% bài học
+- [ ] **AI Assistant** — Tích hợp Gemini API để giải đáp thắc mắc cho học viên trong từng bài học *(2026)*
+
+---
+
+## 🤝 Đóng Góp
+
+Mọi đóng góp đều được chào đón! Vui lòng mở [Issue](https://github.com/ngotanloi/lms-system/issues) hoặc tạo [Pull Request](https://github.com/ngotanloi/lms-system/pulls).
+
+1. Fork dự án
+2. Tạo branch: `git checkout -b feature/ten-tinh-nang`
+3. Commit: `git commit -m 'feat: mô tả tính năng'`
+4. Push: `git push origin feature/ten-tinh-nang`
+5. Mở Pull Request
+
+---
+
+## 📄 License
+
+Dự án được phát hành theo giấy phép [MIT](LICENSE).
+
+---
+
+<div align="center">
+
+**Maintained with ❤️ by [NgoTanLoi](https://github.com/ngotanloi)**
+
+*Dự án được xây dựng với tư duy đặt người dùng làm trung tâm.*
+
+</div>
