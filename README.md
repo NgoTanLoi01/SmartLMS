@@ -4,33 +4,41 @@
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
 [![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com)
-[![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com)
+[![AI-Integration](https://img.shields.io/badge/AI-Gemini--Pro-blue?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-> Hệ thống quản lý học tập (LMS) tinh gọn, hiệu quả — được phát triển bởi **NgoTanLoi**.  
-> Dự án tập trung vào trải nghiệm người dùng (UX) mượt mà và khả năng quản lý nội dung linh hoạt cho giáo viên.
+> Hệ thống quản lý học tập (LMS) thế hệ mới — tích hợp Trí tuệ nhân tạo để cá nhân hóa giáo dục.  
+> Được phát triển bởi **NgoTanLoi** với mục tiêu tối ưu hóa quy trình dạy và học, định hướng nghiên cứu luận văn thạc sĩ.
 
 ---
 
 ## ✨ Điểm Nổi Bật
 
-Dự án không chỉ dừng lại ở CRUD cơ bản mà còn sở hữu những điểm chạm chuyên nghiệp:
-
 | # | Tính năng | Mô tả |
 |---|-----------|-------|
-| 🧠 | **Smart Sidebar** | Giao diện học tập lấy cảm hứng từ Udemy — điều hướng không tải lại trang, xử lý Video YouTube thông minh |
-| 🎨 | **Intuitive UX/UI** | Các công cụ quản lý (Sửa/Xóa) được thiết kế ẩn thông minh (Hover-to-Show), không gian học tập luôn sạch sẽ |
-| 🐳 | **Dockerized Workflow** | Toàn bộ môi trường phát triển được đóng gói trong Docker — triển khai chỉ với 1 câu lệnh |
-| 🏗️ | **Robust Architecture** | Chuẩn mực Resource Controller, Eloquent Relationships (1-N, N-N) và RBAC bảo mật hệ thống |
+| 🧠 | **Smart Sidebar** | Giao diện học tập lấy cảm hứng từ Udemy — điều hướng mượt mà, xử lý Video thông minh. |
+| 🎨 | **Intuitive UX/UI** | Thiết kế Hover-to-Show, tập trung tối đa vào nội dung bài học, sạch sẽ và hiện đại. |
+| 🐳 | **Dockerized Workflow** | Đóng gói toàn bộ môi trường (Nginx, PHP, MySQL) — sẵn sàng triển khai chỉ với 1 câu lệnh. |
+| 🏗️ | **Robust Architecture** | Sử dụng Resource Controller, Eloquent Relationships và hệ thống RBAC (Policy/Middleware) bảo mật. |
+| 🤖 | **AI-Native Core** | Sẵn sàng cho việc tích hợp các mô hình ngôn ngữ lớn (LLM) để chấm bài và hỗ trợ học viên. |
 
 ---
 
-## 🚀 Tính Năng Hiện Tại
+## 🚀 Tính Năng Hệ Thống
 
-- [x] **Auth System** — Đăng nhập, phân quyền Role-based (Admin, Teacher, Student)
-- [x] **Course Management** — Quản lý khóa học, phân cấp theo Module và Lesson
-- [x] **Learning Mode** — Trình phát bài học hỗ trợ Video và Nội dung văn bản (Blade & JS)
-- [x] **Real-time UX** — Cập nhật nội dung nhanh qua Modal và xử lý Logic phía Client
+### 1. Quản lý lõi (Core Management)
+
+- [x] **RBAC System** — Phân quyền chặt chẽ: Admin, Teacher, Student qua Middleware & Policies.
+- [x] **Course Architecture** — Quản lý khóa học đa cấp (Course → Module → Lesson).
+- [x] **Learning Mode** — Trình phát bài học hỗ trợ đa phương tiện (Video, Documents).
+- [x] **Smart Interaction** — Xử lý Logic phía Client với JavaScript ES6 & Modal tương tác nhanh.
+
+### 2. Hệ thống đánh giá & AI (AI & Assessment)
+
+- [ ] **AI Smart Grading** — Tự động chấm điểm bài tập tự luận và nhận xét chi tiết bằng Gemini API *(Tiêu điểm nghiên cứu)*.
+- [ ] **AI Quiz Generator** — Tự động tạo bộ câu hỏi trắc nghiệm từ nội dung file PDF bài giảng hoặc văn bản.
+- [ ] **Personalized Learning Path** — AI phân tích lịch sử học tập để gợi ý lộ trình ôn tập riêng biệt cho từng học sinh.
+- [ ] **AI Tutor Bot** — Trợ lý ảo hỗ trợ giải đáp thắc mắc về nội dung bài học 24/7 trực tiếp tại trang bài giảng.
 
 ---
 
@@ -38,9 +46,10 @@ Dự án không chỉ dừng lại ở CRUD cơ bản mà còn sở hữu nhữn
 
 ```
 Backend   : Laravel 11 (PHP 8.2+)
-Database  : MySQL 8.0 — tối ưu Index
+Database  : MySQL 8.0 — tối ưu hóa Index & Relationships
 Frontend  : Bootstrap 5 (Customized) · FontAwesome Pro · JavaScript ES6
 DevOps    : Docker Compose (Nginx + PHP-FPM + MySQL)
+AI Stack  : Google Gemini API / OpenAI API (Integration via Laravel HTTP Client)
 ```
 
 ---
@@ -75,18 +84,6 @@ docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --seed
 ```
 
-**4. Truy cập ứng dụng**
-
-```
-http://localhost:8080
-```
-
-| Tài khoản | Email | Mật khẩu |
-|-----------|-------|----------|
-| Admin | admin@lms.dev | password |
-| Teacher | teacher@lms.dev | password |
-| Student | student@lms.dev | password |
-
 ---
 
 ## 📁 Cấu Trúc Dự Án
@@ -94,39 +91,35 @@ http://localhost:8080
 ```
 lms-system/
 ├── app/
-│   ├── Http/Controllers/     # Resource Controllers (CRUD chuẩn mực)
-│   ├── Models/               # Eloquent Models + Relationships
-│   └── Policies/             # RBAC Authorization
+│   ├── Http/Controllers/     # Resource Controllers (Logic xử lý chuẩn mực)
+│   ├── Models/               # Eloquent Models & Database Relationships
+│   ├── Policies/             # RBAC Authorization (Phân quyền người dùng)
+│   └── Services/AI/          # Logic tích hợp Gemini/OpenAI API (Service Pattern)
 ├── resources/
-│   ├── views/                # Blade Templates
-│   └── js/                   # JavaScript ES6 (Modal, Sidebar logic)
+│   ├── views/                # Blade Templates (Giao diện người dùng)
+│   └── js/                   # JavaScript ES6 (Xử lý Sidebar, Modal logic)
 ├── database/
-│   ├── migrations/           # Schema definitions
-│   └── seeders/              # Dữ liệu mẫu
-├── docker/                   # Nginx, PHP-FPM config
-└── docker-compose.yml
+│   ├── migrations/           # Định nghĩa cấu trúc Database
+│   └── seeders/              # Dữ liệu mẫu (Users, Courses, Lessons)
+├── docker/                   # Cấu hình môi trường Nginx, PHP-FPM
+└── docker-compose.yml        # Orchestration toàn bộ hệ thống
 ```
 
 ---
 
-## 🔮 Roadmap — Tầm Nhìn Phát Triển
+## 🔮 Lộ Trình Phát Triển (Roadmap)
 
-- [ ] **Quiz System** — Hệ thống trắc nghiệm tính thời gian thực
-- [ ] **File Submission** — Nộp bài tập thực hành và chấm điểm trực tuyến
-- [ ] **Certificate** — Tự động xuất chứng chỉ PDF khi hoàn thành 100% bài học
-- [ ] **AI Assistant** — Tích hợp Gemini API để giải đáp thắc mắc cho học viên trong từng bài học *(2026)*
+- [] Hoàn thiện khung quản lý khóa học và giao diện học tập.
+- [ ] Xây dựng module Submission System (Nộp bài tập và quản lý file).
+- [ ] Tích hợp Gemini AI để hỗ trợ chấm bài tự luận *(Phục vụ luận văn thạc sĩ)*.
+- [ ] Tự động hóa việc cấp chứng chỉ (PDF Certificate) khi hoàn thành khóa học.
+- [ ] Thực hiện Load Testing để đảm bảo hệ thống chịu tải 100+ người dùng đồng thời.
 
 ---
 
 ## 🤝 Đóng Góp
 
-Mọi đóng góp đều được chào đón! Vui lòng mở [Issue](https://github.com/ngotanloi/lms-system/issues) hoặc tạo [Pull Request](https://github.com/ngotanloi/lms-system/pulls).
-
-1. Fork dự án
-2. Tạo branch: `git checkout -b feature/ten-tinh-nang`
-3. Commit: `git commit -m 'feat: mô tả tính năng'`
-4. Push: `git push origin feature/ten-tinh-nang`
-5. Mở Pull Request
+Mọi đóng góp đều được chào đón! Vui lòng mở **Issue** hoặc tạo **Pull Request**.
 
 ---
 
@@ -137,9 +130,6 @@ Dự án được phát hành theo giấy phép [MIT](LICENSE).
 ---
 
 <div align="center">
-
-**Maintained with ❤️ by [NgoTanLoi](https://github.com/ngotanloi)**
-
-*Dự án được xây dựng với tư duy đặt người dùng làm trung tâm.*
-
+  Maintained with ❤️ by <strong>NgoTanLoi</strong><br/>
+  Dự án hướng tới giải pháp giáo dục thông minh và cá nhân hóa.
 </div>
