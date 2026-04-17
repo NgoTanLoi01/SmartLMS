@@ -109,7 +109,7 @@ lms-system/
 
 ## 🔮 Lộ Trình Phát Triển (Roadmap)
 
-- [] Hoàn thiện khung quản lý khóa học và giao diện học tập.
+- [ ] Hoàn thiện khung quản lý khóa học và giao diện học tập.
 - [ ] Xây dựng module Submission System (Nộp bài tập và quản lý file).
 - [ ] Tích hợp Gemini AI để hỗ trợ chấm bài tự luận *(Phục vụ luận văn thạc sĩ)*.
 - [ ] Tự động hóa việc cấp chứng chỉ (PDF Certificate) khi hoàn thành khóa học.
