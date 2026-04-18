@@ -146,7 +146,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->is('assignments*') ? 'active' : '' }}" href="#">
+                        <a class="nav-link {{ request()->is('assignments*') ? 'active' : '' }}"
+                            href="{{ route('assignments.index') }}">
                             <i class="fas fa-clipboard-list"></i> Bài tập nộp
                         </a>
                     </li>

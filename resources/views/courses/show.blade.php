@@ -17,18 +17,21 @@
         }
 
         /* Tối ưu Sidebar & Hover */
-        .lesson-item-wrapper {
+        .lesson-item-wrapper,
+        .assignment-item-wrapper {
             transition: all 0.2s ease;
             border-left: 4px solid transparent;
             cursor: pointer;
         }
 
-        .lesson-item-wrapper:hover {
+        .lesson-item-wrapper:hover,
+        .assignment-item-wrapper:hover {
             background-color: #f8f9fa !important;
             border-left-color: #0d6efd;
         }
 
-        .lesson-item-wrapper.active {
+        .lesson-item-wrapper.active,
+        .assignment-item-wrapper.active {
             background-color: #e7f1ff !important;
             border-left-color: #0d6efd;
         }
@@ -38,17 +41,14 @@
             opacity: 0;
             transition: opacity 0.2s ease;
             flex-shrink: 0;
-            background: #fff;
+            background: transparent;
             padding-left: 8px;
         }
 
         .lesson-item-wrapper:hover .action-buttons,
-        .module-header-wrapper:hover .action-buttons {
+        .module-header-wrapper:hover .action-buttons,
+        .assignment-item-wrapper:hover .action-buttons {
             opacity: 1;
-        }
-
-        .lesson-item-wrapper.active .action-buttons {
-            background: #e7f1ff;
         }
 
         .btn-action {
@@ -79,7 +79,6 @@
             background: #ffe8e8;
         }
 
-        /* Giúp text cắt gọn gàng (dấu 3 chấm) */
         .text-truncate-custom {
             white-space: nowrap;
             overflow: hidden;
@@ -116,7 +115,6 @@
                         </div>
                     </div>
                 @endif
-
             </div>
 
             @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
@@ -128,6 +126,11 @@
                     <button class="btn btn-primary rounded-pill px-3 shadow-sm btn-sm" data-bs-toggle="modal"
                         data-bs-target="#addLessonModal" {{ $course->modules->isEmpty() ? 'disabled' : '' }}>
                         <i class="fas fa-plus me-1"></i> Bài học
+                    </button>
+                    <button class="btn btn-warning text-dark fw-bold rounded-pill px-3 shadow-sm btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#addCourseAssignmentModal"
+                        {{ $course->modules->isEmpty() ? 'disabled' : '' }}>
+                        <i class="fas fa-tasks me-1"></i> Bài tập
                     </button>
                 </div>
             @endif
@@ -179,13 +182,9 @@
                                         <div class="accordion-body p-0">
                                             <div class="list-group list-group-flush">
                                                 @forelse ($module->lessons as $lesson)
-                                                    {{-- ✅ SỬA: Kiểm tra trạng thái hoàn thành đúng vị trí trong vòng lặp --}}
-                                                    @php
-                                                        $isCompleted = in_array($lesson->id, $completedLessonIds);
-                                                    @endphp
+                                                    @php $isCompleted = in_array($lesson->id, $completedLessonIds ?? []); @endphp
                                                     <div
                                                         class="list-group-item border-0 px-3 py-2 lesson-item-wrapper d-flex align-items-center justify-content-between shadow-none">
-
                                                         <a href="javascript:void(0)"
                                                             class="lesson-item text-decoration-none text-dark flex-grow-1 d-flex align-items-center"
                                                             style="min-width: 0;" data-id="{{ $lesson->id }}"
@@ -193,7 +192,6 @@
                                                             data-title="{{ $lesson->title }}"
                                                             data-video="{{ $lesson->video_url }}"
                                                             data-module="{{ $module->id }}">
-                                                            {{-- ✅ SỬA: Icon thay đổi theo trạng thái hoàn thành --}}
                                                             <i class="{{ $isCompleted ? 'fas fa-check-circle text-success' : 'far fa-play-circle text-primary' }} me-2 flex-shrink-0 lesson-icon"
                                                                 id="icon-lesson-{{ $lesson->id }}"></i>
                                                             <span
@@ -224,6 +222,54 @@
                                                             </div>
                                                         @endif
                                                     </div>
+
+                                                    {{-- ✅ BÀI TẬP --}}
+                                                    @foreach ($lesson->assignments as $assignment)
+                                                        @php
+                                                            $submission =
+                                                                auth()->user()->role === 'student' &&
+                                                                isset($userSubmissions[$assignment->id])
+                                                                    ? $userSubmissions[$assignment->id]
+                                                                    : null;
+                                                        @endphp
+                                                        <div
+                                                            class="list-group-item border-0 py-2 assignment-item-wrapper d-flex align-items-center justify-content-between shadow-none bg-light border-bottom">
+                                                            <div class="ms-4 flex-grow-1 d-flex align-items-center"
+                                                                style="min-width: 0;">
+                                                                <a href="javascript:void(0)"
+                                                                    class="assignment-item text-decoration-none text-dark flex-grow-1 d-flex align-items-center"
+                                                                    data-id="{{ $assignment->id }}"
+                                                                    data-title="{{ $assignment->title }}"
+                                                                    data-instructions="{{ $assignment->instructions }}"
+                                                                    data-due="{{ $assignment->due_date->format('d/m/Y H:i') }}"
+                                                                    data-status="{{ $submission ? 'submitted' : 'pending' }}"
+                                                                    data-grade="{{ $submission->grade ?? '' }}"
+                                                                    data-feedback="{{ $submission->feedback ?? '' }}"
+                                                                    data-sub-id="{{ $submission ? $submission->id : '' }}"
+                                                                    data-sub-time="{{ $submission ? $submission->submitted_at->format('H:i - d/m/Y') : '' }}"
+                                                                    data-sub-file="{{ $submission ? asset('storage/' . $submission->file_path) : '' }}">
+
+                                                                    <i
+                                                                        class="{{ $submission ? 'fas fa-check-circle text-success' : 'fas fa-file-signature text-warning' }} me-2 flex-shrink-0"></i>
+                                                                    <span
+                                                                        class="small text-truncate-custom fw-medium">{{ $assignment->title }}</span>
+                                                                </a>
+
+                                                            </div>
+
+                                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                                                <div class="action-buttons d-flex ms-2">
+                                                                    <a href="javascript:void(0)"
+                                                                        class="btn-action text-primary view-submissions-btn border bg-white shadow-sm"
+                                                                        data-id="{{ $assignment->id }}"
+                                                                        title="Chấm điểm / Xem danh sách">
+                                                                        <i class="fas fa-users-cog"></i>
+                                                                    </a>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+
                                                 @empty
                                                     <div class="py-2 px-4 text-muted small fst-italic">Trống</div>
                                                 @endforelse
@@ -239,10 +285,11 @@
                 </div>
             </div>
 
-            <!-- Khu vực hiển thị Video & Nội dung -->
+            <!-- Khu vực hiển thị Phải -->
             <div class="col-md-8 col-lg-9">
                 <div class="card border-0 shadow-sm overflow-hidden h-100 d-flex flex-column">
 
+                    <!-- GIAO DIỆN BÀI HỌC -->
                     <div id="video-container" class="ratio ratio-16x9 bg-dark d-none">
                         <iframe id="lesson-video" src="" allowfullscreen></iframe>
                     </div>
@@ -254,9 +301,7 @@
                         <p class="text-muted small mb-3">Bài học này chứa một liên kết ngoài hệ thống. Vui lòng bấm nút bên
                             dưới để truy cập.</p>
                         <a href="#" id="external-link-btn" target="_blank"
-                            class="btn btn-primary rounded-pill px-4 shadow-sm">
-                            Truy cập liên kết ngay
-                        </a>
+                            class="btn btn-primary rounded-pill px-4 shadow-sm">Truy cập liên kết ngay</a>
                     </div>
 
                     <div class="card-body p-4 flex-grow-1" id="lesson-content-area">
@@ -271,17 +316,126 @@
                         </div>
                     </div>
 
-                    {{-- ✅ SỬA: Card footer đã được dọn sạch, xóa thẻ <a> nhầm lẫn bên trong #btn-complete --}}
-                    <div class="card-footer bg-light border-top p-3 d-flex justify-content-between align-items-center">
+                    <!-- GIAO DIỆN BÀI TẬP -->
+                    <div class="card-body p-4 flex-grow-1 d-none" id="assignment-content-area"
+                        style="background-color: #fcfdfd;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 id="assignment-title" class="fw-bold text-dark mb-0">Tiêu đề bài tập</h2>
+                            <span id="assignment-badge" class="badge rounded-pill px-3 py-2 fs-6">Trạng thái</span>
+                        </div>
+                        <div
+                            class="d-flex align-items-center text-danger fw-bold small mb-4 bg-danger bg-opacity-10 d-inline-block px-3 py-2 rounded">
+                            <i class="fas fa-clock me-2"></i> Hạn nộp: <span id="assignment-due-date"
+                                class="ms-1"></span>
+                        </div>
+                        <hr>
+
+                        <h5 class="fw-bold mt-4 mb-3"><i class="fas fa-tasks me-2 text-primary"></i>Yêu cầu bài tập:</h5>
+                        <div id="assignment-instructions"
+                            class="lh-lg text-secondary bg-white p-4 rounded border shadow-sm mb-4"></div>
+
+                        @if (auth()->user()->role === 'student')
+                            @if (auth()->user()->role === 'student')
+                                <div id="student-submission-area"
+                                    class="mt-4 p-4 border border-primary border-opacity-25 rounded bg-primary bg-opacity-10">
+
+                                    <!-- PHẦN 1: KHI ĐÃ NỘP BÀI -->
+                                    <div id="submitted-info-area" class="d-none">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold text-success mb-0"><i
+                                                    class="fas fa-check-circle me-2"></i>Bài làm của bạn</h5>
+                                        </div>
+
+                                        <div
+                                            class="bg-white p-3 rounded border shadow-sm mb-3 d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <p class="mb-1 fw-bold text-dark"><i
+                                                        class="fas fa-file-alt me-2 text-primary"></i>Tài liệu đã tải lên
+                                                </p>
+                                                <p class="mb-0 small text-muted"><i class="fas fa-clock me-1"></i> Đã nộp
+                                                    lúc: <span id="submitted-time-text" class="fw-medium"></span></p>
+                                            </div>
+                                            <a href="#" id="submitted-file-link" target="_blank"
+                                                class="btn btn-outline-primary btn-sm rounded-pill px-3">Xem file</a>
+                                        </div>
+
+                                        <div id="grading-result"
+                                            class="d-none mb-3 p-3 bg-success bg-opacity-10 border border-success rounded">
+                                            <h6 class="fw-bold text-success mb-1">Điểm số: <span id="grade-score"
+                                                    class="fs-5"></span>/10</h6>
+                                            <p class="mb-0 small text-dark"><strong>Nhận xét:</strong> <span
+                                                    id="grade-feedback"></span></p>
+                                        </div>
+
+                                        <div class="d-flex gap-2" id="submission-actions">
+                                            <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm"
+                                                id="btn-edit-submission">
+                                                <i class="fas fa-edit me-1"></i> Chỉnh sửa bài nộp
+                                            </button>
+                                            <form id="delete-submission-form" method="POST" class="m-0"
+                                                onsubmit="return confirm('Bạn có chắc chắn muốn hủy bài đã nộp?');">
+                                                @csrf @method('DELETE')
+                                                <button type="submit"
+                                                    class="btn btn-outline-danger rounded-pill px-4 shadow-sm">
+                                                    <i class="fas fa-trash-alt me-1"></i> Hủy bài nộp
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <p id="graded-warning" class="text-danger small mt-2 d-none fst-italic"><i
+                                                class="fas fa-lock me-1"></i>Giáo viên đã chấm điểm, bạn không thể sửa hoặc
+                                            xóa bài.</p>
+                                    </div>
+
+                                    <!-- PHẦN 2: FORM NỘP BÀI MỚI / CHỈNH SỬA -->
+                                    <div id="upload-form-area" class="d-none">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold text-primary mb-0"><i
+                                                    class="fas fa-cloud-upload-alt me-2"></i>Nộp bài tập</h5>
+                                            <button type="button" class="btn btn-sm btn-light d-none"
+                                                id="btn-cancel-edit">Hủy sửa</button>
+                                        </div>
+
+                                        <!-- Chú ý thuộc tính enctype="multipart/form-data" -->
+                                        <form id="course-submit-assignment-form" method="POST"
+                                            enctype="multipart/form-data" action="">
+                                            @csrf
+                                            <div class="input-group mb-3">
+                                                <input type="file" name="file" class="form-control bg-white"
+                                                    required>
+                                                <button class="btn btn-primary px-4 fw-bold shadow-sm" type="submit">Gửi
+                                                    bài</button>
+                                            </div>
+                                            <p class="small text-muted mb-0"><i class="fas fa-info-circle me-1"></i>Vui
+                                                lòng upload file theo đúng định dạng giáo viên yêu cầu.</p>
+                                        </form>
+
+                                    </div>
+
+                                </div>
+                            @else
+                                <div class="text-center mt-5">
+                                    <p class="text-muted"><i class="fas fa-info-circle me-1"></i>Bấm vào biểu tượng ⚙️ ở
+                                        danh sách bên trái để chấm điểm bài tập này.</p>
+                                </div>
+                            @endif
+                        @else
+                            <div class="text-center mt-5">
+                                <p class="text-muted"><i class="fas fa-info-circle me-1"></i>Bấm vào biểu tượng ⚙️ ở danh
+                                    sách bên trái để chấm điểm bài tập này.</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- FOOTER BÀI HỌC -->
+                    <div class="card-footer bg-light border-top p-3 d-flex justify-content-between align-items-center"
+                        id="nav-footer">
                         <button class="btn btn-outline-secondary rounded-pill px-4 btn-sm fw-medium" id="btn-prev"
                             disabled>
                             <i class="fas fa-arrow-left me-1"></i> Bài trước
                         </button>
-
                         <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold d-none" id="btn-complete">
                             <i class="fas fa-check-circle me-1"></i> Hoàn thành bài học
                         </button>
-
                         <button class="btn btn-outline-secondary rounded-pill px-4 btn-sm fw-medium" id="btn-next"
                             disabled>
                             Bài tiếp theo <i class="fas fa-arrow-right ms-1"></i>
@@ -292,24 +446,20 @@
         </div>
     </div>
 
-    <!-- CÁC MODALS -->
+    <!-- ================= MODALS ================= -->
     <!-- Modal Thêm Chương -->
     <div class="modal fade" id="addModuleModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form action="{{ route('modules.store') }}" method="POST" class="modal-content border-0">
-                @csrf
-                <input type="hidden" name="course_id" value="{{ $course->id }}">
+            <form action="{{ route('modules.store') }}" method="POST" class="modal-content border-0">@csrf<input
+                    type="hidden" name="course_id" value="{{ $course->id }}">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">Thêm chương mới</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title fw-bold">Thêm chương mới</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body py-4">
-                    <input type="text" name="title" class="form-control bg-light border-0"
-                        placeholder="Tên chương học..." required>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 w-100">Lưu lại</button>
-                </div>
+                <div class="modal-body py-4"><input type="text" name="title" class="form-control bg-light border-0"
+                        placeholder="Tên chương học..." required></div>
+                <div class="modal-footer border-0 pt-0"><button type="submit"
+                        class="btn btn-primary rounded-pill px-4 w-100">Lưu lại</button></div>
             </form>
         </div>
     </div>
@@ -317,20 +467,15 @@
     <!-- Modal Sửa Chương -->
     <div class="modal fade" id="editModuleModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="editModuleForm" method="POST" class="modal-content border-0">
-                @csrf @method('PUT')
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-warning">Sửa chương</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <form id="editModuleForm" method="POST" class="modal-content border-0">@csrf @method('PUT')<div
+                    class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-warning">Sửa chương</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body py-4">
-                    <input type="text" name="title" id="editModuleTitle" class="form-control bg-light border-0"
-                        required>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4 w-100">Cập
-                        nhật</button>
-                </div>
+                <div class="modal-body py-4"><input type="text" name="title" id="editModuleTitle"
+                        class="form-control bg-light border-0" required></div>
+                <div class="modal-footer border-0 pt-0"><button type="submit"
+                        class="btn btn-warning text-dark fw-bold rounded-pill px-4 w-100">Cập nhật</button></div>
             </form>
         </div>
     </div>
@@ -338,37 +483,29 @@
     <!-- Modal Thêm Bài Học -->
     <div class="modal fade" id="addLessonModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form action="{{ route('lessons.store') }}" method="POST" class="modal-content border-0">
-                @csrf
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">Thêm bài học mới</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <form action="{{ route('lessons.store') }}" method="POST" class="modal-content border-0">@csrf<div
+                    class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Thêm bài học mới</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="small fw-bold">Chọn chương</label>
-                        <select name="module_id" class="form-select bg-light border-0" required>
+                    <div class="mb-3"><label class="small fw-bold">Chọn chương</label><select name="module_id"
+                            class="form-select bg-light border-0" required>
                             @foreach ($course->modules as $module)
                                 <option value="{{ $module->id }}">{{ $module->title }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold">Tiêu đề bài học</label>
-                        <input type="text" name="title" class="form-control bg-light border-0"
-                            placeholder="Tiêu đề bài học..." required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label>
-                        <input type="url" name="video_url" class="form-control bg-light border-0"
-                            placeholder="https://...">
-                    </div>
-                    <label class="small fw-bold">Nội dung chi tiết</label>
-                    <textarea name="content" class="form-control bg-light border-0" rows="4" placeholder="Nhập nội dung..."></textarea>
+                    <div class="mb-3"><label class="small fw-bold">Tiêu đề bài học</label><input type="text"
+                            name="title" class="form-control bg-light border-0" placeholder="Tiêu đề bài học..."
+                            required></div>
+                    <div class="mb-3"><label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label><input
+                            type="url" name="video_url" class="form-control bg-light border-0"
+                            placeholder="https://..."></div><label class="small fw-bold">Nội dung chi tiết</label>
+                    <textarea name="content" class="form-control bg-light border-0" rows="4"></textarea>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 w-100">Lưu bài học</button>
-                </div>
+                <div class="modal-footer border-0"><button type="submit"
+                        class="btn btn-primary rounded-pill px-4 w-100">Lưu bài học</button></div>
             </form>
         </div>
     </div>
@@ -376,39 +513,106 @@
     <!-- Modal Sửa Bài Học -->
     <div class="modal fade" id="editLessonModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="editLessonForm" method="POST" class="modal-content border-0">
-                @csrf @method('PUT')
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-warning">Sửa bài học</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <form id="editLessonForm" method="POST" class="modal-content border-0">@csrf @method('PUT')<div
+                    class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-warning">Sửa bài học</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="small fw-bold">Chương</label>
-                        <select name="module_id" id="editLessonModule" class="form-select bg-light border-0" required>
+                    <div class="mb-3"><label class="small fw-bold">Chương</label><select name="module_id"
+                            id="editLessonModule" class="form-select bg-light border-0" required>
                             @foreach ($course->modules as $module)
                                 <option value="{{ $module->id }}">{{ $module->title }}</option>
                             @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold">Tiêu đề bài học</label>
-                        <input type="text" name="title" id="editLessonTitle" class="form-control bg-light border-0"
-                            required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label>
-                        <input type="url" name="video_url" id="editLessonVideo"
-                            class="form-control bg-light border-0">
-                    </div>
-                    <label class="small fw-bold">Nội dung chi tiết</label>
+                        </select></div>
+                    <div class="mb-3"><label class="small fw-bold">Tiêu đề bài học</label><input type="text"
+                            name="title" id="editLessonTitle" class="form-control bg-light border-0" required></div>
+                    <div class="mb-3"><label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label><input
+                            type="url" name="video_url" id="editLessonVideo" class="form-control bg-light border-0">
+                    </div><label class="small fw-bold">Nội dung chi tiết</label>
                     <textarea name="content" id="editLessonContent" class="form-control bg-light border-0" rows="4"></textarea>
                 </div>
+                <div class="modal-footer border-0"><button type="submit"
+                        class="btn btn-warning text-dark fw-bold rounded-pill px-4 w-100">Cập nhật</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Thêm Bài Tập -->
+    <div class="modal fade" id="addCourseAssignmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <form action="{{ route('assignments.store') }}" method="POST" class="modal-content border-0">
+                @csrf
+                <input type="hidden" name="course_id" value="{{ $course->id }}">
+                <input type="hidden" name="status" value="published">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Thêm bài tập thực hành</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-muted">Bài tập thuộc bài học nào?</label>
+                            <select name="lesson_id" class="form-select bg-light border-0" required>
+                                <option value="" disabled selected>-- Chọn bài học --</option>
+                                @foreach ($course->modules as $module)
+                                    <optgroup label="{{ $module->title }}">
+                                        @foreach ($module->lessons as $lesson)
+                                            <option value="{{ $lesson->id }}">{{ $lesson->title }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-muted">Hạn nộp (Deadline)</label>
+                            <input type="datetime-local" name="due_date" class="form-control bg-light border-0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold text-muted">Tiêu đề bài tập</label>
+                            <input type="text" name="title" class="form-control bg-light border-0"
+                                placeholder="VD: Bài tập thực hành HTML cơ bản" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold text-muted">Nội dung yêu cầu</label>
+                            <textarea name="instructions" class="form-control bg-light border-0" rows="4"
+                                placeholder="Nhập yêu cầu chi tiết..."></textarea>
+                        </div>
+                    </div>
+                </div>
                 <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4 w-100">Cập
-                        nhật</button>
+                    <button type="submit" class="btn btn-warning fw-bold text-dark rounded-pill px-4 w-100">Lưu bài
+                        tập</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Danh Sách Chấm Điểm -->
+    <div class="modal fade" id="viewSubmissionsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light border-0">
+                    <h5 class="modal-title fw-bold" id="modal-assignment-name">Danh sách nộp bài</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="px-4 py-3">Học sinh</th>
+                                    <th class="px-4 py-3">Trạng thái</th>
+                                    <th class="px-4 py-3">Thời gian nộp</th>
+                                    <th class="px-4 py-3">File bài làm</th>
+                                    <th class="px-4 py-3">Chấm điểm</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissions-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -441,34 +645,40 @@
                 }
             }
 
+            // GIAO DIỆN COMPONENTS
+            const lessonArea = document.getElementById('lesson-content-area');
+            const assignmentArea = document.getElementById('assignment-content-area');
+            const videoContainer = document.getElementById('video-container');
+            const externalContainer = document.getElementById('external-link-container');
+            const navFooter = document.getElementById('nav-footer');
+            const iframe = document.getElementById('lesson-video');
+            const externalBtn = document.getElementById('external-link-btn');
+
+            // 1. CLICK VÀO BÀI HỌC
             lessons.forEach((item, index) => {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
-
-                    document.querySelectorAll('.lesson-item-wrapper').forEach(li => li.classList.remove(
-                        'active'));
+                    document.querySelectorAll('.lesson-item-wrapper, .assignment-item-wrapper').forEach(li => li
+                        .classList.remove('active'));
                     this.closest('.lesson-item-wrapper').classList.add('active');
+
+                    // Hiện giao diện bài học, ẩn bài tập
+                    assignmentArea.classList.add('d-none');
+                    assignmentArea.classList.remove('d-flex');
+                    lessonArea.classList.remove('d-none');
+                    navFooter.classList.remove('d-none');
 
                     currentLessonId = this.getAttribute('data-id');
                     currentLessonIndex = index;
                     updateNavButtons();
 
-                    const title = this.getAttribute('data-title');
-                    const content = this.getAttribute('data-content');
-                    const videoUrl = this.getAttribute('data-video');
-
-                    document.getElementById('lesson-title').innerText = title;
-                    document.getElementById('lesson-body').innerHTML = content ||
+                    document.getElementById('lesson-title').innerText = this.getAttribute('data-title');
+                    document.getElementById('lesson-body').innerHTML = this.getAttribute('data-content') ||
                         '<p class="text-muted fst-italic">Không có nội dung văn bản.</p>';
-
                     const placeholder = document.getElementById('welcome-placeholder');
                     if (placeholder) placeholder.style.display = 'none';
 
-                    const videoContainer = document.getElementById('video-container');
-                    const externalContainer = document.getElementById('external-link-container');
-                    const iframe = document.getElementById('lesson-video');
-                    const externalBtn = document.getElementById('external-link-btn');
-
+                    const videoUrl = this.getAttribute('data-video');
                     const ytId = videoUrl ? getYoutubeId(videoUrl) : null;
 
                     if (ytId) {
@@ -485,13 +695,124 @@
                         videoContainer.classList.add('d-none');
                         externalContainer.classList.add('d-none');
                     }
-
-                    document.getElementById('lesson-content-area').scrollIntoView({
+                    lessonArea.scrollIntoView({
                         behavior: 'smooth'
                     });
                 });
             });
 
+            // 2. CLICK VÀO BÀI TẬP
+            const assignments = Array.from(document.querySelectorAll('.assignment-item'));
+            assignments.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.lesson-item-wrapper, .assignment-item-wrapper').forEach(li => li
+                        .classList.remove('active'));
+                    this.closest('.assignment-item-wrapper').classList.add('active');
+
+                    // Ẩn giao diện Bài học, Hiện Bài tập
+                    lessonArea.classList.add('d-none');
+                    videoContainer.classList.add('d-none');
+                    externalContainer.classList.add('d-none');
+                    iframe.src = '';
+                    navFooter.classList.add('d-none');
+
+                    assignmentArea.classList.remove('d-none');
+                    assignmentArea.classList.add('d-flex', 'flex-column');
+
+                    const id = this.getAttribute('data-id');
+                    document.getElementById('assignment-title').innerText = this.getAttribute('data-title');
+                    document.getElementById('assignment-instructions').innerText = this.getAttribute(
+                        'data-instructions');
+                    document.getElementById('assignment-due-date').innerText = this.getAttribute('data-due');
+
+                    // ... (phía trên giữ nguyên) ...
+
+                    const status = this.getAttribute('data-status');
+                    const badge = document.getElementById('assignment-badge');
+                    const grade = this.getAttribute('data-grade');
+                    const feedback = this.getAttribute('data-feedback');
+                    const subId = this.getAttribute('data-sub-id');
+                    const subTime = this.getAttribute('data-sub-time');
+                    const subFile = this.getAttribute('data-sub-file');
+
+                    const submittedArea = document.getElementById('submitted-info-area');
+                    const uploadArea = document.getElementById('upload-form-area');
+                    const gradingResult = document.getElementById('grading-result');
+                    const submissionActions = document.getElementById('submission-actions');
+                    const gradedWarning = document.getElementById('graded-warning');
+                    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
+                    if (status === 'submitted') {
+                        badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-success';
+                        badge.innerHTML = '<i class="fas fa-check me-1"></i> Đã nộp';
+
+                        // Nếu đã nộp: Hiện thông tin, ẩn Form
+                        if (submittedArea && uploadArea) {
+                            submittedArea.classList.remove('d-none');
+                            uploadArea.classList.add('d-none');
+
+                            document.getElementById('submitted-time-text').innerText = subTime;
+                            document.getElementById('submitted-file-link').href = subFile;
+                            document.getElementById('delete-submission-form').action =
+                                `/submissions/${subId}/delete`;
+                            btnCancelEdit.classList.remove('d-none'); // Nút Hủy sửa
+                        }
+                    } else {
+                        badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-warning text-dark';
+                        badge.innerHTML = '<i class="fas fa-clock me-1"></i> Chưa nộp';
+
+                        // Nếu chưa nộp: Hiện form, ẩn thông tin
+                        if (submittedArea && uploadArea) {
+                            submittedArea.classList.add('d-none');
+                            uploadArea.classList.remove('d-none');
+                            btnCancelEdit.classList.add('d-none');
+                        }
+                    }
+
+                    // Xử lý điểm số & khóa quyền sửa
+                    if (grade && grade !== '') {
+                        if (gradingResult) gradingResult.classList.remove('d-none');
+                        document.getElementById('grade-score').innerText = grade;
+                        document.getElementById('grade-feedback').innerText = feedback || 'Không có nhận xét';
+
+                        // Nếu đã có điểm thì khóa nút sửa/xóa
+                        if (submissionActions) submissionActions.classList.add('d-none');
+                        if (gradedWarning) gradedWarning.classList.remove('d-none');
+                    } else {
+                        if (gradingResult) gradingResult.classList.add('d-none');
+                        if (submissionActions) submissionActions.classList.remove('d-none');
+                        if (gradedWarning) gradedWarning.classList.add('d-none');
+                    }
+
+                    const submitForm = document.getElementById('course-submit-assignment-form');
+                    if (submitForm) submitForm.action = `/assignments/${id}/submit`;
+
+                    assignmentArea.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // SỰ KIỆN NÚT SỬA BÀI & HỦY SỬA
+            const btnEditSub = document.getElementById('btn-edit-submission');
+            const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
+            if (btnEditSub) {
+                btnEditSub.addEventListener('click', () => {
+                    document.getElementById('submitted-info-area').classList.add('d-none');
+                    document.getElementById('upload-form-area').classList.remove('d-none');
+                });
+            }
+            if (btnCancelEdit) {
+                btnCancelEdit.addEventListener('click', () => {
+                    document.getElementById('submitted-info-area').classList.remove('d-none');
+                    document.getElementById('upload-form-area').classList.add('d-none');
+                });
+            }
+
+
+            // 3. ĐIỀU HƯỚNG BÀI TRƯỚC / SAU
             document.getElementById('btn-prev').addEventListener('click', () => {
                 if (currentLessonIndex > 0) lessons[currentLessonIndex - 1].click();
             });
@@ -500,9 +821,9 @@
                 if (currentLessonIndex < lessons.length - 1) lessons[currentLessonIndex + 1].click();
             });
 
+            // 4. HOÀN THÀNH BÀI HỌC
             document.getElementById('btn-complete').addEventListener('click', function() {
                 if (!currentLessonId) return;
-
                 axios.post(`/lessons/${currentLessonId}/complete`)
                     .then(response => {
                         this.classList.replace('btn-success', 'btn-secondary');
@@ -512,24 +833,69 @@
                         const icon = document.getElementById('icon-lesson-' + currentLessonId);
                         if (icon && !icon.classList.contains('fa-check-circle')) {
                             icon.className = 'fas fa-check-circle text-success me-2 flex-shrink-0 lesson-icon';
-
                             currentCompletedCount++;
                             let newProgress = Math.round((currentCompletedCount / totalLessonsCount) * 100);
-
                             const progressText = document.getElementById('progress-text');
                             const progressBar = document.getElementById('progress-bar');
-
                             if (progressText) progressText.innerText =
                                 `${currentCompletedCount}/${totalLessonsCount} bài (${newProgress}%)`;
                             if (progressBar) progressBar.style.width = newProgress + '%';
                         }
-
-                        setTimeout(() => {
-                            document.getElementById('btn-next').click();
-                        }, 1000);
+                        setTimeout(() => document.getElementById('btn-next').click(), 1000);
                     });
             });
 
+            // 5. MODAL CHẤM ĐIỂM (AJAX)
+            document.querySelectorAll('.view-submissions-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Ngăn click lan ra ngoài thẻ a
+                    const id = this.getAttribute('data-id');
+                    const tableBody = document.getElementById('submissions-table-body');
+                    tableBody.innerHTML =
+                        '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+
+                    const myModal = new bootstrap.Modal(document.getElementById('viewSubmissionsModal'));
+                    myModal.show();
+
+                    axios.get(`/assignments/${id}/submissions-list`)
+                        .then(response => {
+                            document.getElementById('modal-assignment-name').innerText = 'Bài tập: ' +
+                                response.data.assignment_title;
+                            tableBody.innerHTML = '';
+                            response.data.submissions.forEach(sub => {
+                                let statusBadge = sub.submitted_at ?
+                                    '<span class="badge bg-success">Đã nộp</span>' :
+                                    '<span class="badge bg-light text-muted border">Chưa nộp</span>';
+                                let fileLink = sub.file_url ?
+                                    `<a href="${sub.file_url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-download me-1"></i>Tải file</a>` :
+                                    '<span class="text-muted small">---</span>';
+                                let gradeForm = sub.submission_id ?
+                                    `<form action="/submissions/${sub.submission_id}/grade" method="POST" class="d-flex gap-2">
+                                        @csrf
+                                        <input type="number" name="grade" step="0.1" class="form-control form-control-sm" style="width:70px" value="${sub.grade || ''}" placeholder="0-10">
+                                        <input type="text" name="feedback" class="form-control form-control-sm" value="${sub.feedback || ''}" placeholder="Nhận xét...">
+                                        <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-save"></i></button>
+                                       </form>` :
+                                    '<span class="text-muted small">N/A</span>';
+
+                                tableBody.innerHTML += `
+                                    <tr>
+                                        <td class="px-4">
+                                            <div class="fw-bold">${sub.student_name}</div>
+                                            <div class="small text-muted">${sub.student_email}</div>
+                                        </td>
+                                        <td class="px-4">${statusBadge}</td>
+                                        <td class="px-4 small text-muted">${sub.submitted_at || '---'}</td>
+                                        <td class="px-4">${fileLink}</td>
+                                        <td class="px-4">${gradeForm}</td>
+                                    </tr>
+                                `;
+                            });
+                        });
+                });
+            });
+
+            // 6. GÁN VALUE CHO MODAL SỬA
             document.querySelectorAll('.edit-module-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.getElementById('editModuleForm').action =
@@ -537,11 +903,10 @@
                     document.getElementById('editModuleTitle').value = this.getAttribute('data-title');
                 });
             });
-
             document.querySelectorAll('.edit-lesson-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    document.getElementById('editLessonForm').action = `/lessons/${id}`;
+                    document.getElementById('editLessonForm').action =
+                        `/lessons/${this.getAttribute('data-id')}`;
                     document.getElementById('editLessonTitle').value = this.getAttribute('data-title');
                     document.getElementById('editLessonContent').value = this.getAttribute('data-content');
                     document.getElementById('editLessonVideo').value = this.getAttribute('data-video');

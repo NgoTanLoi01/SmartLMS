@@ -6,6 +6,7 @@ use App\Http\Controllers\LessonController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -75,4 +76,13 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/lessons/{id}', [LessonController::class, 'update'])->name('lessons.update');
     Route::delete('/lessons/{id}', [LessonController::class, 'destroy'])->name('lessons.destroy');
     Route::post('/lessons/{id}/complete', [LessonController::class, 'toggleComplete'])->name('lessons.complete');
+    // ==========================================
+    // 7. QUẢN LÝ BÀI TẬP NỘP (ASSIGNMENTS)
+    // ==========================================
+    Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
+    Route::post('/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
+    Route::post('/assignments/{id}/submit', [AssignmentController::class, 'submit'])->name('assignments.submit');
+    Route::post('/submissions/{id}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
+    Route::get('/assignments/{id}/submissions-list', [AssignmentController::class, 'listSubmissions'])->name('assignments.submissions.list');
+    Route::delete('/submissions/{id}/delete', [AssignmentController::class, 'deleteSubmission'])->name('assignments.submissions.delete');
 });

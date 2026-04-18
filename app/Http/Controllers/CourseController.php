@@ -42,28 +42,46 @@ class CourseController extends Controller
 
     public function show($id)
     {
-        $course = Course::with(['teacher', 'modules.lessons'])->findOrFail($id);
+        // Load khóa học cùng giáo viên, bài học và bài tập của từng bài học
+        $course = Course::with(['teacher', 'modules.lessons.assignments'])->findOrFail($id);
 
         $completedLessonIds = [];
         $progress = 0;
         $totalLessons = 0;
         $completedCount = 0;
+        $userSubmissions = collect(); // Khởi tạo collection trống để tránh lỗi Undefined
 
-        // Nếu là học sinh, tính toán dữ liệu tiến độ để hiển thị ra View
         if (auth()->check() && auth()->user()->role === 'student') {
             $user = auth()->user();
-            // Lấy ID của tất cả bài học trong khóa này
+
+            // 1. Tính toán tiến độ học tập (Lessons)
             $courseLessonIds = $course->modules->flatMap->lessons->pluck('id')->toArray();
             $totalLessons = count($courseLessonIds);
 
-            // Lấy ra danh sách ID các bài học mà user này đã hoàn thành
             $completedLessonIds = $user->lessons()->whereIn('lesson_id', $courseLessonIds)->whereNotNull('lesson_user.completed_at')->pluck('lessons.id')->toArray();
 
             $completedCount = count($completedLessonIds);
             $progress = $totalLessons > 0 ? round(($completedCount / $totalLessons) * 100) : 0;
+
+            // 2. Lấy dữ liệu bài nộp (Assignments) - PHẦN QUAN TRỌNG BỊ THIẾU
+            // Lấy tất cả ID bài tập thuộc khóa học này
+            $assignmentIds = \App\Models\Assignments::where('course_id', $id)->pluck('id')->toArray();
+
+            // Lấy danh sách bài nộp của chính học sinh này cho các bài tập đó
+            $userSubmissions = \App\Models\AssignmentSubmission::where('user_id', $user->id)->whereIn('assignment_id', $assignmentIds)->get()->keyBy('assignment_id'); // Key hóa theo ID bài tập để View check cực nhanh
         }
 
-        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount'));
+        return view(
+            'courses.show',
+            compact(
+                'course',
+                'completedLessonIds',
+                'progress',
+                'totalLessons',
+                'completedCount',
+                'userSubmissions', // Đưa biến này ra View
+            ),
+        );
     }
 
     public function create()
