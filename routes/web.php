@@ -74,4 +74,5 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/lessons', [LessonController::class, 'store'])->name('lessons.store');
     Route::put('/lessons/{id}', [LessonController::class, 'update'])->name('lessons.update');
     Route::delete('/lessons/{id}', [LessonController::class, 'destroy'])->name('lessons.destroy');
+    Route::post('/lessons/{id}/complete', [LessonController::class, 'toggleComplete'])->name('lessons.complete');
 });

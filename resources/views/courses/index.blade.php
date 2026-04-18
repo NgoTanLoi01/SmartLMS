@@ -11,7 +11,7 @@
             </div>
             @if (auth()->user()->role === 'teacher' || auth()->user()->role === 'admin')
                 <a href="{{ route('courses.create') }}" class="btn btn-primary rounded-pill px-4">
-                    <i class="fas fa-plus me-2"></i>Tạo khóa học
+                    <i class="fas fa-plus me-2"></i>Tạo khóa học    
                 </a>
             @endif
         </div>
@@ -53,6 +53,20 @@
                                 <i class="fas fa-user-tie me-2 small"></i>
                                 <span class="small">GV: {{ $course->teacher->name }}</span>
                             </div>
+                            @if (auth()->user()->role === 'student')
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1 small">
+                                        <span class="text-muted">Hoàn thành</span>
+                                        <span
+                                            class="fw-bold {{ $course->progress == 100 ? 'text-success' : 'text-primary' }}">{{ $course->progress }}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px; border-radius: 10px;">
+                                        <div class="progress-bar {{ $course->progress == 100 ? 'bg-success' : 'bg-primary' }}"
+                                            role="progressbar" style="width: {{ $course->progress }}%;"></div>
+                                    </div>
+                                </div>
+                            @endif
+
                             <a href="{{ route('courses.show', $course->id) }}"
                                 class="btn btn-outline-primary w-100 rounded-pill fw-bold">
                                 Vào học ngay

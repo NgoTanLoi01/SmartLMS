@@ -40,4 +40,8 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Classroom::class, 'class_user', 'user_id', 'class_id');
     }
+    public function lessons()
+    {
+        return $this->belongsToMany(Lesson::class, 'lesson_user')->withPivot('completed_at')->withTimestamps();
+    }
 }

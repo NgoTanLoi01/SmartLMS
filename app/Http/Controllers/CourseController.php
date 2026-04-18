@@ -11,28 +11,59 @@ class CourseController extends Controller
     {
         $user = auth()->user();
 
-        // Xử lý logic hiển thị Khóa học dựa trên Vai trò (Role)
         if ($user->role === 'admin') {
-            // Admin: Thấy tất cả khóa học trên hệ thống
             $courses = Course::with('teacher')->latest()->get();
         } elseif ($user->role === 'teacher') {
-            // Teacher: Thấy khóa học do chính mình tạo ra
             $courses = Course::with('teacher')->where('teacher_id', $user->id)->latest()->get();
         } else {
-            // Student: Chỉ thấy khóa học của các Lớp mà mình đang tham gia
-            // 1. Lấy danh sách ID các lớp của học viên này
+            // STUDENT: Lấy khóa học kèm theo modules và lessons để tính tiến độ
             $classIds = $user->classes()->pluck('classes.id');
 
-            // 2. Lấy các khóa học có liên kết với các Lớp ở trên
-            $courses = Course::with('teacher')
+            $courses = Course::with(['teacher', 'modules.lessons'])
                 ->whereHas('classes', function ($query) use ($classIds) {
                     $query->whereIn('classes.id', $classIds);
                 })
                 ->latest()
                 ->get();
+
+            // Tính toán tiến độ cho từng khóa học
+            foreach ($courses as $course) {
+                $totalLessons = $course->modules->flatMap->lessons->count();
+                $courseLessonIds = $course->modules->flatMap->lessons->pluck('id')->toArray();
+
+                $completedLessons = $user->lessons()->whereIn('lesson_id', $courseLessonIds)->whereNotNull('lesson_user.completed_at')->count();
+
+                $course->progress = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
+            }
         }
 
         return view('courses.index', compact('courses'));
+    }
+
+    public function show($id)
+    {
+        $course = Course::with(['teacher', 'modules.lessons'])->findOrFail($id);
+
+        $completedLessonIds = [];
+        $progress = 0;
+        $totalLessons = 0;
+        $completedCount = 0;
+
+        // Nếu là học sinh, tính toán dữ liệu tiến độ để hiển thị ra View
+        if (auth()->check() && auth()->user()->role === 'student') {
+            $user = auth()->user();
+            // Lấy ID của tất cả bài học trong khóa này
+            $courseLessonIds = $course->modules->flatMap->lessons->pluck('id')->toArray();
+            $totalLessons = count($courseLessonIds);
+
+            // Lấy ra danh sách ID các bài học mà user này đã hoàn thành
+            $completedLessonIds = $user->lessons()->whereIn('lesson_id', $courseLessonIds)->whereNotNull('lesson_user.completed_at')->pluck('lessons.id')->toArray();
+
+            $completedCount = count($completedLessonIds);
+            $progress = $totalLessons > 0 ? round(($completedCount / $totalLessons) * 100) : 0;
+        }
+
+        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount'));
     }
 
     public function create()
@@ -54,12 +85,6 @@ class CourseController extends Controller
         ]);
 
         return redirect()->route('courses.index')->with('success', 'Tạo khóa học thành công!');
-    }
-
-    public function show($id)
-    {
-        $course = Course::with(['teacher', 'modules.lessons'])->findOrFail($id);
-        return view('courses.show', compact('course'));
     }
 
     public function edit($id)

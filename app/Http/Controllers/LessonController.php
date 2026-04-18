@@ -41,4 +41,15 @@ class LessonController extends Controller
         \App\Models\Lesson::findOrFail($id)->delete();
         return back()->with('success', 'Đã xóa bài học!');
     }
+    public function toggleComplete($id)
+    {
+        $user = auth()->user();
+
+        // Cập nhật cột completed_at bằng thời gian hiện tại
+        $user->lessons()->syncWithoutDetaching([
+            $id => ['completed_at' => now()],
+        ]);
+
+        return response()->json(['message' => 'Đã đánh dấu hoàn thành bài học!']);
+    }
 }
