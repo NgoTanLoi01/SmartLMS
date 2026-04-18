@@ -29,4 +29,15 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Lesson::class, 'lesson_user')->withPivot('completed_at');
     }
+    // Một User (Teacher) quản lý nhiều lớp
+    public function managedClasses()
+    {
+        return $this->hasMany(Classroom::class, 'teacher_id');
+    }
+
+    // Một User (Student) tham gia nhiều lớp
+    public function classes()
+    {
+        return $this->belongsToMany(Classroom::class, 'class_user', 'user_id', 'class_id');
+    }
 }

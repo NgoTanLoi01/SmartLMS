@@ -154,11 +154,24 @@
                     @if (Auth::user()->role === 'admin' || Auth::user()->role === 'teacher')
                         <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Hệ
                             thống</div>
+
+                        <!-- Cả Admin và Teacher đều quản lý được lớp học -->
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}" href="#">
-                                <i class="fas fa-user-shield"></i> Quản lý người dùng
+                            <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
+                                href="{{ Route::has('classes.index') ? route('classes.index') : '#' }}">
+                                <i class="fas fa-chalkboard-teacher"></i> Quản lý lớp học
                             </a>
                         </li>
+
+                        <!-- Chỉ Admin mới được quản lý toàn bộ hệ thống Người dùng -->
+                        @if (Auth::user()->role === 'admin')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
+                                    href="{{ Route::has('users.index') ? route('users.index') : '#' }}">
+                                    <i class="fas fa-users-cog"></i> Quản lý người dùng
+                                </a>
+                            </li>
+                        @endif
                     @endif
                 </ul>
             </nav>
