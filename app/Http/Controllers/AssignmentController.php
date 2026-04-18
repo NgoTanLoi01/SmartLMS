@@ -108,38 +108,42 @@ class AssignmentController extends Controller
         ]);
     }
 
-    // 2. Cập nhật hàm nộp bài (Hỗ trợ nhiều định dạng file)
     public function submit(Request $request, $id)
     {
         $assignment = Assignments::findOrFail($id);
+        $user = auth()->user();
 
-        // Lấy định dạng từ DB, nếu trống thì dùng danh sách mặc định (thêm png, jpg, jpeg)
+        // 1. Lấy thông tin bài nộp cũ nếu có
+        $oldSubmission = AssignmentSubmission::where('assignment_id', $id)->where('user_id', $user->id)->first();
+
+        // 2. Validate file mới
         $allowed = $assignment->allowed_extensions ?? 'pdf,docx,zip,png,jpg,jpeg';
         $maxSize = $assignment->max_file_size ?? 10240;
 
-        $request->validate(
-            [
-                // Xử lý chuỗi định dạng để validate chính xác
-                'file' => 'required|file|mimes:' . str_replace(' ', '', $allowed) . "|max:{$maxSize}",
-            ],
-            [
-                'file.mimes' => "Định dạng file không hợp lệ. Chỉ chấp nhận: {$allowed}",
-                'file.max' => 'Dung lượng file quá lớn (Tối đa ' . $maxSize / 1024 . 'MB)',
-            ],
-        );
+        $request->validate([
+            'file' => 'required|file|mimes:' . str_replace(' ', '', $allowed) . "|max:{$maxSize}",
+        ]);
 
-        // Lưu file vào public/assignments
+        // 3. Nếu đã có bài nộp cũ, thực hiện xóa file cũ trước khi lưu file mới
+        if ($oldSubmission && $oldSubmission->file_path) {
+            if (Storage::disk('public')->exists($oldSubmission->file_path)) {
+                Storage::disk('public')->delete($oldSubmission->file_path);
+            }
+        }
+
+        // 4. Lưu file mới vào folder assignments
         $filePath = $request->file('file')->store('assignments', 'public');
 
-        \App\Models\AssignmentSubmission::updateOrCreate(
-            ['assignment_id' => $id, 'user_id' => auth()->id()],
+        // 5. Cập nhật hoặc tạo mới record trong Database
+        AssignmentSubmission::updateOrCreate(
+            ['assignment_id' => $id, 'user_id' => $user->id],
             [
                 'file_path' => $filePath,
                 'submitted_at' => now(),
             ],
         );
 
-        return back()->with('success', 'Bạn đã nộp bài thành công!');
+        return back()->with('success', 'Bạn đã cập nhật bài nộp thành công!');
     }
 
     // Học sinh hủy bài đã nộp
