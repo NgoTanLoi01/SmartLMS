@@ -247,7 +247,8 @@
                                                                     data-id="{{ $assignment->id }}"
                                                                     data-title="{{ $assignment->title }}"
                                                                     data-instructions="{{ $assignment->instructions }}"
-                                                                    data-due="{{ $assignment->due_date->format('d/m/Y H:i') }}"
+                                                                    data-due="{{ $assignment->due_date ? $assignment->due_date->format('d/m/Y H:i') : '' }}"
+                                                                    data-raw-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
                                                                     data-status="{{ $submission ? 'submitted' : 'pending' }}"
                                                                     data-grade="{{ $submission->grade ?? '' }}"
                                                                     data-feedback="{{ $submission->feedback ?? '' }}"
@@ -260,11 +261,38 @@
                                                                     <span
                                                                         class="small text-truncate-custom fw-medium">{{ $assignment->title }}</span>
                                                                 </a>
-
                                                             </div>
 
                                                             @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                                                                <div class="action-buttons d-flex ms-2">
+                                                                <div class="action-buttons d-flex ms-2 gap-1">
+                                                                    <!-- Nút sửa bài tập -->
+                                                                    <a href="javascript:void(0)"
+                                                                        class="btn-action btn-edit edit-assignment-btn"
+                                                                        data-id="{{ $assignment->id }}"
+                                                                        data-title="{{ $assignment->title }}"
+                                                                        data-instructions="{{ $assignment->instructions }}"
+                                                                        data-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
+                                                                        data-lesson="{{ $lesson->id }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#editAssignmentModal"
+                                                                        title="Sửa bài tập">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
+
+                                                                    <!-- Nút xóa bài tập -->
+                                                                    <form
+                                                                        action="{{ route('assignments.destroy', $assignment->id) }}"
+                                                                        method="POST" class="d-inline mb-0">
+                                                                        @csrf @method('DELETE')
+                                                                        <button type="submit"
+                                                                            class="btn-action btn-delete border-0 bg-transparent"
+                                                                            onclick="return confirm('Xóa bài tập này?')"
+                                                                            title="Xóa bài tập">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </form>
+
+                                                                    <!-- Nút xem danh sách nộp bài -->
                                                                     <a href="javascript:void(0)"
                                                                         class="btn-action text-primary view-submissions-btn border bg-white shadow-sm"
                                                                         data-id="{{ $assignment->id }}"
@@ -593,6 +621,54 @@
             </form>
         </div>
     </div>
+    <!-- Modal Sửa Bài Tập -->
+    <div class="modal fade" id="editAssignmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <form id="editAssignmentForm" method="POST" class="modal-content border-0">
+                @csrf @method('PUT')
+                <input type="hidden" name="course_id" value="{{ $course->id }}">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-warning">Sửa bài tập</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-muted">Bài tập thuộc bài học nào?</label>
+                            <select name="lesson_id" id="editAssignmentLesson" class="form-select bg-light border-0"
+                                required>
+                                @foreach ($course->modules as $module)
+                                    <optgroup label="{{ $module->title }}">
+                                        @foreach ($module->lessons as $lesson)
+                                            <option value="{{ $lesson->id }}">{{ $lesson->title }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-muted">Hạn nộp (Deadline)</label>
+                            <input type="datetime-local" name="due_date" id="editAssignmentDue"
+                                class="form-control bg-light border-0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold text-muted">Tiêu đề bài tập</label>
+                            <input type="text" name="title" id="editAssignmentTitle"
+                                class="form-control bg-light border-0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold text-muted">Nội dung yêu cầu</label>
+                            <textarea name="instructions" id="editAssignmentInstructions" class="form-control bg-light border-0" rows="4"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-warning fw-bold text-dark rounded-pill px-4 w-100">Cập nhật bài
+                        tập</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal Danh Sách Chấm Điểm -->
     <div class="modal fade" id="viewSubmissionsModal" tabindex="-1" aria-hidden="true">
@@ -660,7 +736,9 @@
             const iframe = document.getElementById('lesson-video');
             const externalBtn = document.getElementById('external-link-btn');
 
+            // ==========================================
             // 1. CLICK VÀO BÀI HỌC
+            // ==========================================
             lessons.forEach((item, index) => {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -707,7 +785,9 @@
                 });
             });
 
-            // 2. CLICK VÀO BÀI TẬP
+            // ==========================================
+            // 2. CLICK VÀO BÀI TẬP (CÓ CHECK DEADLINE)
+            // ==========================================
             const assignments = Array.from(document.querySelectorAll('.assignment-item'));
             assignments.forEach(item => {
                 item.addEventListener('click', function(e) {
@@ -732,7 +812,9 @@
                         'data-instructions');
                     document.getElementById('assignment-due-date').innerText = this.getAttribute('data-due');
 
-                    // ... (phía trên giữ nguyên) ...
+                    // LẤY VÀ KIỂM TRA HẠN NỘP (Cần HTML có data-raw-due="YYYY-MM-DDTHH:mm")
+                    const rawDue = this.getAttribute('data-raw-due');
+                    const isOverdue = rawDue ? new Date(rawDue) < new Date() : false;
 
                     const status = this.getAttribute('data-status');
                     const badge = document.getElementById('assignment-badge');
@@ -746,52 +828,101 @@
                     const uploadArea = document.getElementById('upload-form-area');
                     const gradingResult = document.getElementById('grading-result');
                     const submissionActions = document.getElementById('submission-actions');
-                    const gradedWarning = document.getElementById('graded-warning');
-                    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+                    let gradedWarning = document.getElementById('graded-warning');
 
+                    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+                    const btnEditSub = document.getElementById('btn-edit-submission');
+                    const deleteForm = document.getElementById('delete-submission-form');
+                    const submitForm = document.getElementById('course-submit-assignment-form');
+
+                    // TẠO THÔNG BÁO KHÓA QUÁ HẠN (NẾU CHƯA TỒN TẠI)
+                    let lockedAlert = document.getElementById('overdue-locked-alert');
+                    if (!lockedAlert && uploadArea) {
+                        lockedAlert = document.createElement('div');
+                        lockedAlert.id = 'overdue-locked-alert';
+                        lockedAlert.className = 'alert alert-danger mb-0 border-0 shadow-sm text-center mt-3';
+                        lockedAlert.innerHTML =
+                            '<i class="fas fa-lock fa-2x mb-2 text-danger"></i><h6 class="fw-bold text-danger">Đã hết thời gian nộp bài</h6><p class="small mb-0 text-danger">Rất tiếc, bạn đã bỏ lỡ bài tập này hoặc không thể sửa đổi do đã quá hạn.</p>';
+                        uploadArea.appendChild(lockedAlert);
+                    }
+
+                    // XỬ LÝ TRẠNG THÁI ĐÃ NỘP BÀI
                     if (status === 'submitted') {
                         badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-success';
                         badge.innerHTML = '<i class="fas fa-check me-1"></i> Đã nộp';
 
-                        // Nếu đã nộp: Hiện thông tin, ẩn Form
                         if (submittedArea && uploadArea) {
                             submittedArea.classList.remove('d-none');
                             uploadArea.classList.add('d-none');
-
                             document.getElementById('submitted-time-text').innerText = subTime;
                             document.getElementById('submitted-file-link').href = subFile;
-                            document.getElementById('delete-submission-form').action =
-                                `/submissions/${subId}/delete`;
-                            btnCancelEdit.classList.remove('d-none'); // Nút Hủy sửa
+                            if (deleteForm) deleteForm.action = `/submissions/${subId}/delete`;
+                            if (btnCancelEdit) btnCancelEdit.classList.remove('d-none');
                         }
-                    } else {
-                        badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-warning text-dark';
-                        badge.innerHTML = '<i class="fas fa-clock me-1"></i> Chưa nộp';
 
-                        // Nếu chưa nộp: Hiện form, ẩn thông tin
+                        // Nếu quá hạn và chưa có điểm -> Khóa nút sửa/xóa bài nộp
+                        if (isOverdue && (!grade || grade === '')) {
+                            if (btnEditSub) btnEditSub.classList.add('d-none');
+                            if (deleteForm) deleteForm.classList.add('d-none');
+
+                            if (gradedWarning) {
+                                gradedWarning.innerHTML =
+                                    '<i class="fas fa-lock me-1"></i>Đã hết hạn nộp. Bạn không thể sửa hoặc hủy bài nộp nữa.';
+                                gradedWarning.classList.remove('d-none', 'text-success');
+                                gradedWarning.classList.add('text-danger');
+                            }
+                        } else if (!grade || grade === '') {
+                            // Chưa quá hạn, chưa có điểm -> Mở nút sửa
+                            if (btnEditSub) btnEditSub.classList.remove('d-none');
+                            if (deleteForm) deleteForm.classList.remove('d-none');
+                            if (gradedWarning) gradedWarning.classList.add('d-none');
+                        }
+
+                    } else {
+                        // XỬ LÝ TRẠNG THÁI CHƯA NỘP BÀI
                         if (submittedArea && uploadArea) {
                             submittedArea.classList.add('d-none');
                             uploadArea.classList.remove('d-none');
-                            btnCancelEdit.classList.add('d-none');
+                            if (btnCancelEdit) btnCancelEdit.classList.add('d-none');
+                        }
+
+                        if (isOverdue) {
+                            badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-danger';
+                            badge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Quá hạn';
+
+                            // Khóa form nộp bài mới
+                            if (submitForm) submitForm.classList.add('d-none');
+                            if (lockedAlert) lockedAlert.classList.remove('d-none');
+                        } else {
+                            badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-warning text-dark';
+                            badge.innerHTML = '<i class="fas fa-clock me-1"></i> Chưa nộp';
+
+                            // Mở lại form nộp bài
+                            if (submitForm) submitForm.classList.remove('d-none');
+                            if (lockedAlert) lockedAlert.classList.add('d-none');
                         }
                     }
 
-                    // Xử lý điểm số & khóa quyền sửa
+                    // XỬ LÝ KHI GIÁO VIÊN ĐÃ CHẤM ĐIỂM (Ưu tiên khóa cao nhất)
                     if (grade && grade !== '') {
                         if (gradingResult) gradingResult.classList.remove('d-none');
                         document.getElementById('grade-score').innerText = grade;
                         document.getElementById('grade-feedback').innerText = feedback || 'Không có nhận xét';
 
-                        // Nếu đã có điểm thì khóa nút sửa/xóa
                         if (submissionActions) submissionActions.classList.add('d-none');
-                        if (gradedWarning) gradedWarning.classList.remove('d-none');
+                        if (gradedWarning) {
+                            gradedWarning.innerHTML =
+                                '<i class="fas fa-lock me-1"></i>Giáo viên đã chấm điểm, bạn không thể sửa hoặc xóa bài.';
+                            gradedWarning.classList.remove('d-none', 'text-danger');
+                            gradedWarning.classList.add('text-success'); // Màu xanh cho thông báo đã chấm điểm
+                        }
                     } else {
                         if (gradingResult) gradingResult.classList.add('d-none');
-                        if (submissionActions) submissionActions.classList.remove('d-none');
-                        if (gradedWarning) gradedWarning.classList.add('d-none');
+                        if (!isOverdue && status === 'submitted' && submissionActions) {
+                            submissionActions.classList.remove('d-none');
+                        }
                     }
 
-                    const submitForm = document.getElementById('course-submit-assignment-form');
                     if (submitForm) submitForm.action = `/assignments/${id}/submit`;
 
                     assignmentArea.scrollIntoView({
@@ -800,7 +931,9 @@
                 });
             });
 
-            // SỰ KIỆN NÚT SỬA BÀI & HỦY SỬA
+            // ==========================================
+            // SỰ KIỆN NÚT SỬA BÀI & HỦY SỬA (STUDENT)
+            // ==========================================
             const btnEditSub = document.getElementById('btn-edit-submission');
             const btnCancelEdit = document.getElementById('btn-cancel-edit');
 
@@ -817,8 +950,9 @@
                 });
             }
 
-
+            // ==========================================
             // 3. ĐIỀU HƯỚNG BÀI TRƯỚC / SAU
+            // ==========================================
             document.getElementById('btn-prev').addEventListener('click', () => {
                 if (currentLessonIndex > 0) lessons[currentLessonIndex - 1].click();
             });
@@ -827,7 +961,9 @@
                 if (currentLessonIndex < lessons.length - 1) lessons[currentLessonIndex + 1].click();
             });
 
+            // ==========================================
             // 4. HOÀN THÀNH BÀI HỌC
+            // ==========================================
             document.getElementById('btn-complete').addEventListener('click', function() {
                 if (!currentLessonId) return;
                 axios.post(`/lessons/${currentLessonId}/complete`)
@@ -851,10 +987,12 @@
                     });
             });
 
+            // ==========================================
             // 5. MODAL CHẤM ĐIỂM (AJAX)
+            // ==========================================
             document.querySelectorAll('.view-submissions-btn').forEach(btn => {
                 btn.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Ngăn click lan ra ngoài thẻ a
+                    e.stopPropagation();
                     const id = this.getAttribute('data-id');
                     const tableBody = document.getElementById('submissions-table-body');
                     tableBody.innerHTML =
@@ -901,16 +1039,24 @@
                 });
             });
 
-            // 6. GÁN VALUE CHO MODAL SỬA
+            // ==========================================
+            // 6. GÁN VALUE CHO CÁC MODAL SỬA (GIÁO VIÊN)
+            // ==========================================
+
+            // Sửa Chương
             document.querySelectorAll('.edit-module-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     document.getElementById('editModuleForm').action =
                         `/modules/${this.getAttribute('data-id')}`;
                     document.getElementById('editModuleTitle').value = this.getAttribute('data-title');
                 });
             });
+
+            // Sửa Bài học
             document.querySelectorAll('.edit-lesson-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     document.getElementById('editLessonForm').action =
                         `/lessons/${this.getAttribute('data-id')}`;
                     document.getElementById('editLessonTitle').value = this.getAttribute('data-title');
@@ -919,6 +1065,21 @@
                     document.getElementById('editLessonModule').value = this.getAttribute('data-module');
                 });
             });
+
+            // Sửa Bài tập (MỚI)
+            document.querySelectorAll('.edit-assignment-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Tránh kích hoạt click mở giao diện làm bài tập
+                    document.getElementById('editAssignmentForm').action =
+                        `/assignments/${this.getAttribute('data-id')}`;
+                    document.getElementById('editAssignmentLesson').value = this.getAttribute('data-lesson');
+                    document.getElementById('editAssignmentDue').value = this.getAttribute('data-due');
+                    document.getElementById('editAssignmentTitle').value = this.getAttribute('data-title');
+                    document.getElementById('editAssignmentInstructions').value = this.getAttribute(
+                        'data-instructions');
+                });
+            });
         </script>
     @endpush
+
 @endsection

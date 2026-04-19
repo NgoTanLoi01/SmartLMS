@@ -168,4 +168,36 @@ class AssignmentController extends Controller
 
         return back()->with('success', 'Đã hủy bài nộp thành công!');
     }
+    // Hàm xử lý cập nhật bài tập (Sửa)
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'instructions' => 'required|string',
+            'due_date' => 'required|date',
+            'lesson_id' => 'required|exists:lessons,id',
+        ]);
+
+        $assignment = \App\Models\Assignments::findOrFail($id);
+
+        $assignment->update([
+            'title' => $request->title,
+            'instructions' => $request->instructions,
+            'due_date' => $request->due_date,
+            'lesson_id' => $request->lesson_id,
+        ]);
+
+        return back()->with('success', 'Đã cập nhật bài tập thành công!');
+    }
+
+    // Hàm xử lý xóa bài tập (Xóa)
+    public function destroy($id)
+    {
+        $assignment = \App\Models\Assignments::findOrFail($id);
+
+        // Xóa bài tập (nếu bạn thiết lập onDelete('cascade') ở Database thì các bài nộp của học sinh sẽ tự động xóa theo)
+        $assignment->delete();
+
+        return back()->with('success', 'Đã xóa bài tập thành công!');
+    }
 }
