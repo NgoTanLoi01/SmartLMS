@@ -25,17 +25,30 @@
     </style>
 
     <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- HEADER & TOOLBAR -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <div>
                 <h3 class="fw-bold mb-0 text-dark">Hệ thống Người dùng</h3>
                 <p class="text-muted mb-0 small">Quản lý tài khoản Admin, Giảng viên và Học viên</p>
             </div>
 
-            <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                <i class="fas fa-user-plus me-1"></i> Cấp tài khoản mới
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Ô TÌM KIẾM NHANH -->
+                <div class="input-group rounded-pill overflow-hidden shadow-sm"
+                    style="background: white; border: 1px solid #dee2e6;">
+                    <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchUser" class="form-control border-0 shadow-none px-2"
+                        placeholder="Tìm tên hoặc email..." style="width: 220px; font-size: 0.9rem;">
+                </div>
+
+                <button class="btn btn-primary rounded-pill px-4 shadow-sm text-nowrap" data-bs-toggle="modal"
+                    data-bs-target="#addUserModal">
+                    <i class="fas fa-user-plus me-1"></i> Cấp tài khoản mới
+                </button>
+            </div>
         </div>
 
+        <!-- BẢNG NGƯỜI DÙNG -->
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -49,18 +62,21 @@
                                 <th class="px-4 py-3 border-0 text-end">Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @foreach ($users as $user)
-                                <tr>
+                        <tbody id="userTableBody">
+                            @forelse ($users as $user)
+                                <!-- Thêm class user-row để JS nhận diện -->
+                                <tr class="user-row">
                                     <td class="px-4 py-3">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-circle bg-secondary bg-opacity-10 text-secondary me-3">
                                                 {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
                                             </div>
-                                            <div class="fw-bold text-dark">{{ $user->name }}</div>
+                                            <!-- Thêm class user-name -->
+                                            <div class="fw-bold text-dark user-name">{{ $user->name }}</div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted">{{ $user->email }}</td>
+                                    <!-- Thêm class user-email -->
+                                    <td class="px-4 py-3 text-muted user-email">{{ $user->email }}</td>
                                     <td class="px-4 py-3">
                                         @if ($user->role === 'admin')
                                             <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">Quản
@@ -81,17 +97,34 @@
                                                 class="d-inline">
                                                 @csrf @method('DELETE')
                                                 <button type="submit"
-                                                    class="btn btn-link text-danger p-0 text-decoration-none shadow-none"
+                                                    class="btn btn-link text-danger p-0 text-decoration-none shadow-none me-3"
                                                     onclick="return confirm('Bạn có chắc chắn muốn xóa tài khoản này?')">
                                                     <i class="fas fa-trash-alt"></i> Xóa
                                                 </button>
                                             </form>
                                         @else
-                                            <span class="text-muted small fst-italic">Bạn</span>
+                                            <span class="text-muted small fst-italic me-3">Bạn</span>
+                                        @endif
+
+                                        @if (auth()->user()->role === 'admin')
+                                            <form action="{{ route('users.resetPassword', $user->id) }}" method="POST"
+                                                class="d-inline"
+                                                onsubmit="return confirm('Bạn có chắc chắn cập nhật mật khẩu tài khoản này về mặc định không?');">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-warning shadow-sm"
+                                                    title="Cấp lại mật khẩu">
+                                                    <i class="fas fa-key"></i> Reset MK
+                                                </button>
+                                            </form>
                                         @endif
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr id="noDataRow">
+                                    <td colspan="5" class="text-center py-4 text-muted fst-italic">Không có dữ liệu người
+                                        dùng.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -138,4 +171,26 @@
             </form>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            // Lắng nghe sự kiện gõ phím vào ô tìm kiếm
+            document.getElementById('searchUser').addEventListener('keyup', function() {
+                let filter = this.value.toLowerCase().trim();
+                let rows = document.querySelectorAll('.user-row');
+
+                rows.forEach(row => {
+                    // Tìm theo cả Tên và Email
+                    let name = row.querySelector('.user-name').innerText.toLowerCase();
+                    let email = row.querySelector('.user-email').innerText.toLowerCase();
+
+                    if (name.includes(filter) || email.includes(filter)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        </script>
+    @endpush
 @endsection

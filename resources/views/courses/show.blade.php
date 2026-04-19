@@ -197,12 +197,15 @@
                                                             data-content="{{ $lesson->content }}"
                                                             data-title="{{ $lesson->title }}"
                                                             data-video="{{ $lesson->video_url }}"
-                                                            data-module="{{ $module->id }}">
+                                                            data-module="{{ $module->id }}"
+                                                            data-attachment="{{ $lesson->attachment ? asset('storage/' . $lesson->attachment) : '' }}"
+                                                            data-attachment-name="{{ $lesson->attachment ? basename($lesson->attachment) : '' }}">
                                                             <i class="{{ $isCompleted ? 'fas fa-check-circle text-success' : 'far fa-play-circle text-primary' }} me-2 flex-shrink-0 lesson-icon"
                                                                 id="icon-lesson-{{ $lesson->id }}"></i>
                                                             <span
                                                                 class="small text-truncate-custom">{{ $lesson->title }}</span>
                                                         </a>
+
 
                                                         @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
                                                             <div class="action-buttons d-flex ms-2">
@@ -349,6 +352,20 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Nút tải tài liệu (Mặc định ẩn) -->
+                    <div id="lesson-attachment-container"
+                        class="mt-4 p-3 bg-light rounded border d-none d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="fas fa-file-download fa-2x text-primary me-2 align-middle"></i>
+                            <span class="fw-bold text-dark">Tài liệu đính kèm:</span>
+                            <span id="lesson-attachment-name" class="text-muted ms-2 small">filename.pdf</span>
+                        </div>
+                        <a href="#" id="lesson-attachment-btn" download
+                            class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                            <i class="fas fa-download me-1"></i> Tải về
+                        </a>
+                    </div>
+
 
                     <!-- GIAO DIỆN BÀI TẬP -->
                     <div class="card-body p-4 flex-grow-1 d-none" id="assignment-content-area"
@@ -517,8 +534,8 @@
     <!-- Modal Thêm Bài Học -->
     <div class="modal fade" id="addLessonModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form action="{{ route('lessons.store') }}" method="POST" class="modal-content border-0">@csrf<div
-                    class="modal-header border-0 pb-0">
+            <form action="{{ route('lessons.store') }}" method="POST" enctype="multipart/form-data"
+                class="modal-content border-0">@csrf<div class="modal-header border-0 pb-0">
                     <h5 class="modal-title fw-bold">Thêm bài học mới</h5><button type="button" class="btn-close"
                         data-bs-dismiss="modal"></button>
                 </div>
@@ -535,7 +552,13 @@
                             required></div>
                     <div class="mb-3"><label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label><input
                             type="url" name="video_url" class="form-control bg-light border-0"
-                            placeholder="https://..."></div><label class="small fw-bold">Nội dung chi tiết</label>
+                            placeholder="https://..."></div>
+                    <div class="mb-3">
+                        <label class="small fw-bold">Tài liệu đính kèm (PDF, Word, ZIP...)</label>
+                        <input type="file" name="attachment" class="form-control bg-light border-0">
+                        <small class="text-muted fst-italic">Bỏ trống nếu không có tài liệu</small>
+                    </div>
+                    <label class="small fw-bold">Nội dung chi tiết</label>
                     <textarea name="content" class="form-control bg-light border-0" rows="4"></textarea>
                 </div>
                 <div class="modal-footer border-0"><button type="submit"
@@ -547,8 +570,9 @@
     <!-- Modal Sửa Bài Học -->
     <div class="modal fade" id="editLessonModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="editLessonForm" method="POST" class="modal-content border-0">@csrf @method('PUT')<div
-                    class="modal-header border-0 pb-0">
+            <form id="editLessonForm" method="POST" enctype="multipart/form-data" class="modal-content border-0">
+                @csrf @method('PUT')
+                <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title fw-bold text-warning">Sửa bài học</h5><button type="button" class="btn-close"
                         data-bs-dismiss="modal"></button>
                 </div>
@@ -561,8 +585,14 @@
                         </select></div>
                     <div class="mb-3"><label class="small fw-bold">Tiêu đề bài học</label><input type="text"
                             name="title" id="editLessonTitle" class="form-control bg-light border-0" required></div>
-                    <div class="mb-3"><label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label><input
-                            type="url" name="video_url" id="editLessonVideo" class="form-control bg-light border-0">
+                    <div class="mb-3">
+                        <div class="mb-3">
+                            <label class="small fw-bold">Tài liệu đính kèm (PDF, Word, ZIP...)</label>
+                            <input type="file" name="attachment" class="form-control bg-light border-0">
+                            <small class="text-muted fst-italic">Bỏ trống nếu không có tài liệu</small>
+                        </div>
+                        <label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label><input type="url"
+                            name="video_url" id="editLessonVideo" class="form-control bg-light border-0">
                     </div><label class="small fw-bold">Nội dung chi tiết</label>
                     <textarea name="content" id="editLessonContent" class="form-control bg-light border-0" rows="4"></textarea>
                 </div>
@@ -782,6 +812,21 @@
                     lessonArea.scrollIntoView({
                         behavior: 'smooth'
                     });
+                    // --- LOGIC MỚI: HIỂN THỊ TÀI LIỆU ĐÍNH KÈM ---
+                    const attachmentUrl = this.getAttribute('data-attachment');
+                    const attachmentName = this.getAttribute('data-attachment-name');
+                    const attachmentContainer = document.getElementById('lesson-attachment-container');
+                    const attachmentBtn = document.getElementById('lesson-attachment-btn');
+                    const attachmentNameSpan = document.getElementById('lesson-attachment-name');
+
+                    if (attachmentUrl && attachmentUrl.trim() !== '') {
+                        attachmentContainer.classList.remove('d-none');
+                        attachmentBtn.href = attachmentUrl;
+                        attachmentNameSpan.innerText = attachmentName;
+                    } else {
+                        attachmentContainer.classList.add('d-none');
+                        attachmentBtn.href = '#';
+                    }
                 });
             });
 

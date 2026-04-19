@@ -162,8 +162,20 @@
                             <i class="fas fa-user-circle me-1"></i> {{ Auth::user()->name }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                            <li><span class="dropdown-item-text small text-muted">Vai trò:
-                                    {{ ucfirst(Auth::user()->role) }}</span></li>
+                            <li>
+                                <span class="dropdown-item-text small text-muted">
+                                    Vai trò: {{ ucfirst(Auth::user()->role) }}
+                                </span>
+                            </li>
+
+                            <!-- NÚT ĐỔI MẬT KHẨU MỚI THÊM VÀO ĐÂY -->
+                            <li>
+                                <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                    data-bs-target="#changePasswordModal">
+                                    <i class="fas fa-key me-2 text-warning"></i> Đổi mật khẩu
+                                </a>
+                            </li>
+
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
@@ -176,6 +188,7 @@
                                 </form>
                             </li>
                         </ul>
+
                     </div>
                 @else
                     <a href="{{ route('login') }}" class="btn btn-primary btn-sm px-3">Đăng nhập</a>
@@ -232,6 +245,86 @@
                 </ul>
             </nav>
         @endauth
+        <!-- Modal Đổi Mật Khẩu / Xem Thông Tin -->
+        @auth
+            <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog" style="margin-top: 80px">
+                    <form action="{{ route('profile.password.update') }}" method="POST"
+                        class="modal-content border-0 shadow">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-header bg-light border-0">
+                            <h5 class="modal-title fw-bold"><i class="fas fa-user-shield me-2 text-primary"></i>Thông tin
+                                tài khoản</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body py-4">
+
+                            <!-- THÔNG TIN CỐ ĐỊNH (Không cho sửa) -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <label class="small fw-bold text-muted">Họ và tên</label>
+                                    <input type="text" class="form-control bg-light text-muted"
+                                        value="{{ Auth::user()->name }}" readonly>
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="small fw-bold text-muted">Email</label>
+                                    <input type="email" class="form-control bg-light text-muted"
+                                        value="{{ Auth::user()->email }}" readonly>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="small fw-bold text-muted">Vai trò</label>
+                                    <input type="text" class="form-control bg-light text-muted"
+                                        value="{{ strtoupper(Auth::user()->role) }}" readonly>
+                                </div>
+                            </div>
+
+                            <hr class="text-muted">
+
+                            <!-- FORM ĐỔI MẬT KHẨU -->
+                            <h6 class="fw-bold mb-3">Đổi mật khẩu mới</h6>
+                            <div class="mb-3">
+                                <label class="small fw-bold">Mật khẩu hiện tại <span class="text-danger">*</span></label>
+                                <input type="password" name="current_password" class="form-control"
+                                    placeholder="Nhập mật khẩu cũ..." required>
+                                @error('current_password')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                            <div class="mb-3">
+                                <label class="small fw-bold">Mật khẩu mới <span class="text-danger">*</span></label>
+                                <input type="password" name="new_password" class="form-control"
+                                    placeholder="Tối thiểu 6 ký tự..." required minlength="6">
+                                @error('new_password')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                            <div class="mb-3">
+                                <label class="small fw-bold">Xác nhận mật khẩu mới <span
+                                        class="text-danger">*</span></label>
+                                <!-- Lưu ý: name phải là new_password_confirmation để Laravel tự động kiểm tra khớp -->
+                                <input type="password" name="new_password_confirmation" class="form-control"
+                                    placeholder="Nhập lại mật khẩu mới..." required minlength="6">
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 w-100 fw-bold">CẬP NHẬT MẬT
+                                KHẨU</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endauth
+
+        <!-- Hiển thị lỗi Validation của Modal ngay khi load trang nếu có lỗi -->
+        @if ($errors->has('current_password') || $errors->has('new_password'))
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    var myModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+                    myModal.show();
+                });
+            </script>
+        @endif
 
         <main class="{{ Auth::check() ? 'main-content' : 'full-width p-4' }}"
             style="margin-top: var(--navbar-height);">

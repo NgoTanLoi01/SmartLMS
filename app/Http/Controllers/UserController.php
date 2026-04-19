@@ -60,4 +60,22 @@ class UserController extends Controller
         $user->delete();
         return back()->with('success', 'Đã xóa người dùng thành công.');
     }
+    public function resetPassword($id)
+    {
+        // Kiểm tra quyền: Chỉ Admin mới được phép
+        if (auth()->user()->role !== 'admin') {
+            return back()->with('error', 'Chỉ Quản trị viên mới có quyền cấp lại mật khẩu!');
+        }
+
+        $user = User::findOrFail($id);
+
+        $defaultPassword = '123456';
+
+        $user->update([
+            'password' => Hash::make($defaultPassword),
+        ]);
+
+        // Trả về thông báo thành công kèm theo mật khẩu mới để Admin gửi cho học sinh
+        return back()->with('success', "Đã cấp lại mật khẩu cho tài khoản {$user->email}. Mật khẩu mới là: {$defaultPassword}");
+    }
 }
