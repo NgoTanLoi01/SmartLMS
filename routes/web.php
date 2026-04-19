@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassManagementController;
+use App\Http\Controllers\AttendanceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -85,4 +86,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/submissions/{id}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
     Route::get('/assignments/{id}/submissions-list', [AssignmentController::class, 'listSubmissions'])->name('assignments.submissions.list');
     Route::delete('/submissions/{id}/delete', [AssignmentController::class, 'deleteSubmission'])->name('assignments.submissions.delete');
+
+    // ==========================================
+    // 8. ĐIỂM DANH HỌC SINH (ATTENDANCE)
+    // ==========================================
+    Route::get('/courses/{id}/attendance', [AttendanceController::class, 'show'])->name('attendance.show');
+    Route::post('/courses/{id}/attendance/save', [AttendanceController::class, 'save'])->name('attendance.save');
+    Route::post('/courses/{id}/attendance/add-column', [AttendanceController::class, 'addColumn'])->name('attendance.addColumn');
+    Route::delete('/attendance/column/{id}', [AttendanceController::class, 'deleteColumn'])->name('attendance.deleteColumn');
+    Route::post('/attendance/column/{id}/update', [AttendanceController::class, 'updateColumn'])->name('attendance.updateColumn');
+    Route::get('/courses/{id}/attendance/export', [AttendanceController::class, 'exportExcel'])->name('attendance.export');
 });

@@ -132,8 +132,14 @@
                         {{ $course->modules->isEmpty() ? 'disabled' : '' }}>
                         <i class="fas fa-tasks me-1"></i> Bài tập
                     </button>
+                    <a href="{{ route('attendance.show', $course->id) }}"
+                        class="btn btn-info text-white rounded-pill px-3 shadow-sm btn-sm">
+                        <i class="fas fa-user-check me-1"></i> Điểm danh
+                    </a>
+
                 </div>
             @endif
+
         </div>
 
         <div class="row g-4">
