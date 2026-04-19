@@ -88,6 +88,55 @@
                 margin-left: 0 !important;
             }
         }
+
+        /* Thay toàn bộ phần sidebar-hidden cũ bằng đoạn này */
+        .sidebar.sidebar-collapsed {
+            width: 60px !important;
+        }
+
+        .main-content.sidebar-collapsed {
+            margin-left: 60px !important;
+        }
+
+        /* Ẩn chữ và nhãn section khi thu gọn */
+        .sidebar.sidebar-collapsed .nav-link span,
+        .sidebar.sidebar-collapsed .section-label {
+            display: none;
+        }
+
+        /* Căn giữa icon khi thu gọn */
+        .sidebar.sidebar-collapsed .nav-link {
+            justify-content: center;
+            padding: 10px 0;
+            margin: 4px 6px;
+        }
+
+        /* Tooltip hiện tên tính năng khi hover */
+        .sidebar.sidebar-collapsed .nav-link {
+            position: relative;
+        }
+
+        .sidebar.sidebar-collapsed .nav-link::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: #333;
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s;
+            z-index: 9999;
+        }
+
+        .sidebar.sidebar-collapsed .nav-link:hover::after {
+            opacity: 1;
+        }
     </style>
 
     @stack('styles')
@@ -96,6 +145,12 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container-fluid">
+            @auth
+                <button id="sidebarToggleBtn" class="btn btn-dark border-0 me-2" type="button" title="Ẩn/Hiện menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            @endauth
+
             <a class="navbar-brand fw-bold" href="{{ Auth::check() ? route('dashboard') : url('/') }}">
                 <i class="fas fa-graduation-cap me-2 text-primary"></i>LMS System
             </a>
@@ -135,41 +190,41 @@
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}"
-                            href="{{ route('dashboard') }}">
-                            <i class="fas fa-th-large"></i> Dashboard
+                            href="{{ route('dashboard') }}" data-tooltip="Dashboard">
+                            <i class="fas fa-th-large"></i> <span>Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}"
-                            href="{{ route('courses.index') }}">
-                            <i class="fas fa-book"></i> Khóa học của tôi
+                            href="{{ route('courses.index') }}" data-tooltip="Khóa học của tôi">
+                            <i class="fas fa-book"></i> <span>Khóa học của tôi</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ request()->is('assignments*') ? 'active' : '' }}"
-                            href="{{ route('assignments.index') }}">
-                            <i class="fas fa-clipboard-list"></i> Bài tập nộp
+                            href="{{ route('assignments.index') }}" data-tooltip="Bài tập nộp">
+                            <i class="fas fa-clipboard-list"></i> <span>Bài tập nộp</span>
                         </a>
                     </li>
 
                     @if (Auth::user()->role === 'admin' || Auth::user()->role === 'teacher')
-                        <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Hệ
-                            thống</div>
-
-                        <!-- Cả Admin và Teacher đều quản lý được lớp học -->
+                        <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
+                            style="font-size: 0.7rem;">
+                            Hệ thống
+                        </div>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
-                                href="{{ Route::has('classes.index') ? route('classes.index') : '#' }}">
-                                <i class="fas fa-chalkboard-teacher"></i> Quản lý lớp học
+                                href="{{ Route::has('classes.index') ? route('classes.index') : '#' }}"
+                                data-tooltip="Quản lý lớp học">
+                                <i class="fas fa-chalkboard-teacher"></i> <span>Quản lý lớp học</span>
                             </a>
                         </li>
-
-                        <!-- Chỉ Admin mới được quản lý toàn bộ hệ thống Người dùng -->
                         @if (Auth::user()->role === 'admin')
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
-                                    href="{{ Route::has('users.index') ? route('users.index') : '#' }}">
-                                    <i class="fas fa-users-cog"></i> Quản lý người dùng
+                                    href="{{ Route::has('users.index') ? route('users.index') : '#' }}"
+                                    data-tooltip="Quản lý người dùng">
+                                    <i class="fas fa-users-cog"></i> <span>Quản lý người dùng</span>
                                 </a>
                             </li>
                         @endif
@@ -199,7 +254,35 @@
             </div>
         </main>
     </div>
+    <script>
+        const toggleBtn = document.getElementById('sidebarToggleBtn');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
 
+        let sidebarOpen = localStorage.getItem('sidebarOpen') !== 'false';
+
+        function applySidebarState() {
+            if (sidebarOpen) {
+                sidebar?.classList.remove('sidebar-collapsed');
+                mainContent?.classList.remove('sidebar-collapsed');
+                toggleBtn?.classList.remove('rotated');
+            } else {
+                sidebar?.classList.add('sidebar-collapsed');
+                mainContent?.classList.add('sidebar-collapsed');
+                toggleBtn?.classList.add('rotated');
+            }
+        }
+
+        applySidebarState();
+
+        toggleBtn?.addEventListener('click', function() {
+            sidebarOpen = !sidebarOpen;
+            localStorage.setItem('sidebarOpen', sidebarOpen);
+            applySidebarState();
+        });
+    </script>
+
+    @stack('scripts')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
