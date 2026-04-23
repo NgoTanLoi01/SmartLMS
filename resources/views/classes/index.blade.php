@@ -113,9 +113,9 @@
                                 placeholder="VD: LARAVEL-K1" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Phân công Giảng viên</label>
+                            <label class="form-label fw-bold small text-muted">Phân công Giáo viên</label>
                             <select name="teacher_id" class="form-select bg-light border-0 py-2" required>
-                                <option value="">-- Chọn giảng viên --</option>
+                                <option value="">-- Chọn Giáo viên --</option>
                                 @foreach ($teachers as $teacher)
                                     <option value="{{ $teacher->id }}">{{ $teacher->name }} ({{ $teacher->email }})
                                     </option>
@@ -174,7 +174,7 @@
 
                     @if (auth()->user()->role === 'admin')
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Phân công Giảng viên</label>
+                            <label class="form-label fw-bold small text-muted">Phân công Giáo viên</label>
                             <select name="teacher_id" id="edit_teacher" class="form-select bg-light border-0 py-2"
                                 required>
                                 @foreach ($teachers as $teacher)

@@ -9,6 +9,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassManagementController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\QuizController;
+use App\Http\Controllers\QuestionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -100,4 +102,16 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/attendance/column/{id}', [AttendanceController::class, 'deleteColumn'])->name('attendance.deleteColumn');
     Route::post('/attendance/column/{id}/update', [AttendanceController::class, 'updateColumn'])->name('attendance.updateColumn');
     Route::get('/courses/{id}/attendance/export', [AttendanceController::class, 'exportExcel'])->name('attendance.export');
+
+    // ==========================================
+    // ==========================================
+    Route::post('/quizzes', [App\Http\Controllers\QuizController::class, 'store'])->name('quizzes.store');
+    Route::get('/quizzes/{id}', [App\Http\Controllers\QuizController::class, 'show'])->name('quizzes.show');
+    Route::post('/quizzes/{id}/questions', [QuestionController::class, 'store'])->name('questions.store');
+    Route::delete('/quizzes/{id}', [App\Http\Controllers\QuizController::class, 'destroy'])->name('quizzes.destroy');
+    Route::delete('/questions/{id}', [App\Http\Controllers\QuestionController::class, 'destroy'])->name('questions.destroy');
+    Route::get('/quizzes/{id}/attempt', [App\Http\Controllers\QuizAttemptController::class, 'create'])->name('quizzes.attempt');
+    Route::post('/quizzes/{id}/attempt', [App\Http\Controllers\QuizAttemptController::class, 'store'])->name('quizzes.submit');
+    // Cập nhật câu hỏi và 4 đáp án
+    Route::put('/questions/{id}', [App\Http\Controllers\QuestionController::class, 'update'])->name('questions.update');
 });

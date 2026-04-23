@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
@@ -43,7 +44,7 @@ class CourseController extends Controller
     public function show($id)
     {
         // Load khóa học cùng giáo viên, bài học và bài tập của từng bài học
-        $course = Course::with(['teacher', 'modules.lessons.assignments'])->findOrFail($id);
+        $course = Course::with(['teacher', 'modules.lessons.assignments', 'quizzes'])->findOrFail($id);
 
         $completedLessonIds = [];
         $progress = 0;
@@ -70,6 +71,13 @@ class CourseController extends Controller
             // Lấy danh sách bài nộp của chính học sinh này cho các bài tập đó
             $userSubmissions = \App\Models\AssignmentSubmission::where('user_id', $user->id)->whereIn('assignment_id', $assignmentIds)->get()->keyBy('assignment_id'); // Key hóa theo ID bài tập để View check cực nhanh
         }
+        $userQuizAttempts = [];
+        if (auth()->check() && auth()->user()->role === 'student') {
+            $userQuizAttempts = \App\Models\QuizAttempt::where('user_id', auth()->id())
+                ->whereIn('quiz_id', $course->quizzes->pluck('id'))
+                ->get()
+                ->keyBy('quiz_id'); // Gom nhóm theo ID bài kiểm tra để blade dễ kiểm tra
+        }
 
         return view(
             'courses.show',
@@ -79,7 +87,8 @@ class CourseController extends Controller
                 'progress',
                 'totalLessons',
                 'completedCount',
-                'userSubmissions', // Đưa biến này ra View
+                'userSubmissions',
+                'userQuizAttempts',
             ),
         );
     }

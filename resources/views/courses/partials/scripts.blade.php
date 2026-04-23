@@ -1,0 +1,459 @@
+@push('scripts')
+    <script>
+        let totalLessonsCount = {{ $totalLessons ?? 0 }};
+        let currentCompletedCount = {{ $completedCount ?? 0 }};
+
+        function getYoutubeId(url) {
+            const regExp = /^.*(http:\/\/www\.youtube\.com\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        let currentLessonIndex = -1;
+        const lessons = Array.from(document.querySelectorAll('.lesson-item'));
+        let currentLessonId = null;
+
+        function updateNavButtons() {
+            document.getElementById('btn-prev').disabled = (currentLessonIndex <= 0);
+            document.getElementById('btn-next').disabled = (currentLessonIndex === -1 || currentLessonIndex >= lessons
+                .length - 1);
+
+            const btnComplete = document.getElementById('btn-complete');
+            if (currentLessonIndex !== -1) {
+                btnComplete.classList.remove('d-none');
+                btnComplete.classList.replace('btn-secondary', 'btn-success');
+                btnComplete.innerHTML = '<i class="fas fa-check-circle me-1"></i> Hoàn thành bài học';
+                btnComplete.disabled = false;
+            }
+        }
+
+        // GIAO DIỆN COMPONENTS
+        const lessonArea = document.getElementById('lesson-content-area');
+        const assignmentArea = document.getElementById('assignment-content-area');
+        const quizArea = document.getElementById('quiz-content-area');
+        const videoContainer = document.getElementById('video-container');
+        const externalContainer = document.getElementById('external-link-container');
+        const navFooter = document.getElementById('nav-footer');
+        const iframe = document.getElementById('lesson-video');
+        const externalBtn = document.getElementById('external-link-btn');
+
+        // Helper: ẩn tất cả các khu vực nội dung
+        function hideAllAreas() {
+            lessonArea.classList.add('d-none');
+            videoContainer.classList.add('d-none');
+            externalContainer.classList.add('d-none');
+            if (iframe) iframe.src = '';
+            if (assignmentArea) {
+                assignmentArea.classList.add('d-none');
+                assignmentArea.classList.remove('d-flex');
+            }
+            if (quizArea) {
+                quizArea.classList.add('d-none');
+                quizArea.classList.remove('d-flex');
+            }
+            navFooter.classList.add('d-none');
+        }
+
+        // ==========================================
+        // 1. CLICK VÀO BÀI HỌC
+        // ==========================================
+        lessons.forEach((item, index) => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll(
+                        '.lesson-item-wrapper, .assignment-item-wrapper, .quiz-item-wrapper')
+                    .forEach(li => li.classList.remove('active'));
+                this.closest('.lesson-item-wrapper').classList.add('active');
+
+                hideAllAreas();
+
+                lessonArea.classList.remove('d-none');
+                navFooter.classList.remove('d-none');
+
+                currentLessonId = this.getAttribute('data-id');
+                currentLessonIndex = index;
+                updateNavButtons();
+
+                document.getElementById('lesson-title').innerText = this.getAttribute('data-title');
+                document.getElementById('lesson-body').innerHTML = this.getAttribute('data-content') ||
+                    '<p class="text-muted fst-italic">Không có nội dung văn bản.</p>';
+                const placeholder = document.getElementById('welcome-placeholder');
+                if (placeholder) placeholder.style.display = 'none';
+
+                const videoUrl = this.getAttribute('data-video');
+                const ytId = videoUrl ? getYoutubeId(videoUrl) : null;
+
+                if (ytId) {
+                    iframe.src = `http://www.youtube.com/embed/${ytId}?autoplay=1`;
+                    videoContainer.classList.remove('d-none');
+                } else if (videoUrl && videoUrl.trim() !== '') {
+                    externalBtn.href = videoUrl;
+                    externalContainer.classList.remove('d-none');
+                }
+
+                lessonArea.scrollIntoView({
+                    behavior: 'smooth'
+                });
+
+                const attachmentUrl = this.getAttribute('data-attachment');
+                const attachmentName = this.getAttribute('data-attachment-name');
+                const attachmentContainer = document.getElementById('lesson-attachment-container');
+                const attachmentBtn = document.getElementById('lesson-attachment-btn');
+                const attachmentNameSpan = document.getElementById('lesson-attachment-name');
+
+                if (attachmentUrl && attachmentUrl.trim() !== '') {
+                    attachmentContainer.classList.remove('d-none');
+                    attachmentBtn.href = attachmentUrl;
+                    attachmentNameSpan.innerText = attachmentName;
+                } else {
+                    attachmentContainer.classList.add('d-none');
+                    attachmentBtn.href = '#';
+                }
+            });
+        });
+
+        // ==========================================
+        // 2. CLICK VÀO BÀI TẬP
+        // ==========================================
+        const assignments = Array.from(document.querySelectorAll('.assignment-item'));
+        assignments.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll(
+                        '.lesson-item-wrapper, .assignment-item-wrapper, .quiz-item-wrapper')
+                    .forEach(li => li.classList.remove('active'));
+                this.closest('.assignment-item-wrapper').classList.add('active');
+
+                hideAllAreas();
+
+                assignmentArea.classList.remove('d-none');
+                assignmentArea.classList.add('d-flex', 'flex-column');
+
+                const id = this.getAttribute('data-id');
+                document.getElementById('assignment-title').innerText = this.getAttribute('data-title');
+                document.getElementById('assignment-instructions').innerText = this.getAttribute(
+                    'data-instructions');
+                document.getElementById('assignment-due-date').innerText = this.getAttribute('data-due');
+
+                const rawDue = this.getAttribute('data-raw-due');
+                const isOverdue = rawDue ? new Date(rawDue) < new Date() : false;
+
+                const status = this.getAttribute('data-status');
+                const badge = document.getElementById('assignment-badge');
+                const grade = this.getAttribute('data-grade');
+                const feedback = this.getAttribute('data-feedback');
+                const subId = this.getAttribute('data-sub-id');
+                const subTime = this.getAttribute('data-sub-time');
+                const subFile = this.getAttribute('data-sub-file');
+
+                const submittedArea = document.getElementById('submitted-info-area');
+                const uploadArea = document.getElementById('upload-form-area');
+                const gradingResult = document.getElementById('grading-result');
+                const submissionActions = document.getElementById('submission-actions');
+                let gradedWarning = document.getElementById('graded-warning');
+                const btnCancelEdit = document.getElementById('btn-cancel-edit');
+                const btnEditSub = document.getElementById('btn-edit-submission');
+                const deleteForm = document.getElementById('delete-submission-form');
+                const submitForm = document.getElementById('course-submit-assignment-form');
+
+                let lockedAlert = document.getElementById('overdue-locked-alert');
+                if (!lockedAlert && uploadArea) {
+                    lockedAlert = document.createElement('div');
+                    lockedAlert.id = 'overdue-locked-alert';
+                    lockedAlert.className = 'alert alert-danger mb-0 border-0 shadow-sm text-center mt-3';
+                    lockedAlert.innerHTML =
+                        '<i class="fas fa-lock fa-2x mb-2 text-danger"></i><h6 class="fw-bold text-danger">Đã hết thời gian nộp bài</h6><p class="small mb-0 text-danger">Rất tiếc, bạn đã bỏ lỡ bài tập này hoặc không thể sửa đổi do đã quá hạn.</p>';
+                    uploadArea.appendChild(lockedAlert);
+                }
+
+                if (status === 'submitted') {
+                    badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-success';
+                    badge.innerHTML = '<i class="fas fa-check me-1"></i> Đã nộp';
+
+                    if (submittedArea && uploadArea) {
+                        submittedArea.classList.remove('d-none');
+                        uploadArea.classList.add('d-none');
+                        document.getElementById('submitted-time-text').innerText = subTime;
+                        document.getElementById('submitted-file-link').href = subFile;
+                        if (deleteForm) deleteForm.action = `/submissions/${subId}/delete`;
+                        if (btnCancelEdit) btnCancelEdit.classList.remove('d-none');
+                    }
+
+                    if (isOverdue && (!grade || grade === '')) {
+                        if (btnEditSub) btnEditSub.classList.add('d-none');
+                        if (deleteForm) deleteForm.classList.add('d-none');
+                        if (gradedWarning) {
+                            gradedWarning.innerHTML =
+                                '<i class="fas fa-lock me-1"></i>Đã hết hạn nộp. Bạn không thể sửa hoặc hủy bài nộp nữa.';
+                            gradedWarning.classList.remove('d-none', 'text-success');
+                            gradedWarning.classList.add('text-danger');
+                        }
+                    } else if (!grade || grade === '') {
+                        if (btnEditSub) btnEditSub.classList.remove('d-none');
+                        if (deleteForm) deleteForm.classList.remove('d-none');
+                        if (gradedWarning) gradedWarning.classList.add('d-none');
+                    }
+                } else {
+                    if (submittedArea && uploadArea) {
+                        submittedArea.classList.add('d-none');
+                        uploadArea.classList.remove('d-none');
+                        if (btnCancelEdit) btnCancelEdit.classList.add('d-none');
+                    }
+
+                    if (isOverdue) {
+                        badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-danger';
+                        badge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Quá hạn';
+                        if (submitForm) submitForm.classList.add('d-none');
+                        if (lockedAlert) lockedAlert.classList.remove('d-none');
+                    } else {
+                        badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-warning text-dark';
+                        badge.innerHTML = '<i class="fas fa-clock me-1"></i> Chưa nộp';
+                        if (submitForm) submitForm.classList.remove('d-none');
+                        if (lockedAlert) lockedAlert.classList.add('d-none');
+                    }
+                }
+
+                if (grade && grade !== '') {
+                    if (gradingResult) gradingResult.classList.remove('d-none');
+                    document.getElementById('grade-score').innerText = grade;
+                    document.getElementById('grade-feedback').innerText = feedback || 'Không có nhận xét';
+                    if (submissionActions) submissionActions.classList.add('d-none');
+                    if (gradedWarning) {
+                        gradedWarning.innerHTML =
+                            '<i class="fas fa-lock me-1"></i>Giáo viên đã chấm điểm, bạn không thể sửa hoặc xóa bài.';
+                        gradedWarning.classList.remove('d-none', 'text-danger');
+                        gradedWarning.classList.add('text-success');
+                    }
+                } else {
+                    if (gradingResult) gradingResult.classList.add('d-none');
+                    if (!isOverdue && status === 'submitted' && submissionActions) {
+                        submissionActions.classList.remove('d-none');
+                    }
+                }
+
+                if (submitForm) submitForm.action = `/assignments/${id}/submit`;
+                assignmentArea.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // ==========================================
+        // SỰ KIỆN NÚT SỬA BÀI & HỦY SỬA (STUDENT)
+        // ==========================================
+        const btnEditSubEl = document.getElementById('btn-edit-submission');
+        const btnCancelEditEl = document.getElementById('btn-cancel-edit');
+
+        if (btnEditSubEl) {
+            btnEditSubEl.addEventListener('click', () => {
+                document.getElementById('submitted-info-area').classList.add('d-none');
+                document.getElementById('upload-form-area').classList.remove('d-none');
+            });
+        }
+        if (btnCancelEditEl) {
+            btnCancelEditEl.addEventListener('click', () => {
+                document.getElementById('submitted-info-area').classList.remove('d-none');
+                document.getElementById('upload-form-area').classList.add('d-none');
+            });
+        }
+
+        // ==========================================
+        // 3. ĐIỀU HƯỚNG BÀI TRƯỚC / SAU
+        // ==========================================
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentLessonIndex > 0) lessons[currentLessonIndex - 1].click();
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentLessonIndex < lessons.length - 1) lessons[currentLessonIndex + 1].click();
+        });
+
+        // ==========================================
+        // 4. HOÀN THÀNH BÀI HỌC
+        // ==========================================
+        document.getElementById('btn-complete').addEventListener('click', function() {
+            if (!currentLessonId) return;
+            axios.post(`/lessons/${currentLessonId}/complete`)
+                .then(response => {
+                    this.classList.replace('btn-success', 'btn-secondary');
+                    this.innerHTML = '<i class="fas fa-check me-1"></i> Đã hoàn thành';
+                    this.disabled = true;
+
+                    const icon = document.getElementById('icon-lesson-' + currentLessonId);
+                    if (icon && !icon.classList.contains('fa-check-circle')) {
+                        icon.className = 'fas fa-check-circle text-success me-2 flex-shrink-0 lesson-icon';
+                        currentCompletedCount++;
+                        let newProgress = Math.round((currentCompletedCount / totalLessonsCount) * 100);
+                        const progressText = document.getElementById('progress-text');
+                        const progressBar = document.getElementById('progress-bar');
+                        if (progressText) progressText.innerText =
+                            `${currentCompletedCount}/${totalLessonsCount} bài (${newProgress}%)`;
+                        if (progressBar) progressBar.style.width = newProgress + '%';
+                    }
+                    setTimeout(() => document.getElementById('btn-next').click(), 1000);
+                });
+        });
+
+        // ==========================================
+        // 5. MODAL CHẤM ĐIỂM (AJAX)
+        // ==========================================
+        document.querySelectorAll('.view-submissions-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const id = this.getAttribute('data-id');
+                const tableBody = document.getElementById('submissions-table-body');
+                tableBody.innerHTML =
+                    '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+
+                const myModal = new bootstrap.Modal(document.getElementById('viewSubmissionsModal'));
+                myModal.show();
+
+                axios.get(`/assignments/${id}/submissions-list`)
+                    .then(response => {
+                        document.getElementById('modal-assignment-name').innerText = 'Bài tập: ' +
+                            response.data.assignment_title;
+                        tableBody.innerHTML = '';
+                        response.data.submissions.forEach(sub => {
+                            let statusBadge = sub.submitted_at ?
+                                '<span class="badge bg-success">Đã nộp</span>' :
+                                '<span class="badge bg-light text-muted border">Chưa nộp</span>';
+                            let fileLink = sub.file_url ?
+                                `<a href="${sub.file_url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-download me-1"></i>Tải file</a>` :
+                                '<span class="text-muted small">---</span>';
+                            let gradeForm = sub.submission_id ?
+                                `<form action="/submissions/${sub.submission_id}/grade" method="POST" class="d-flex gap-2">@csrf<input type="number" name="grade" step="0.1" class="form-control form-control-sm" style="width:70px" value="${sub.grade || ''}" placeholder="0-10"><input type="text" name="feedback" class="form-control form-control-sm" value="${sub.feedback || ''}" placeholder="Nhận xét..."><button type="submit" class="btn btn-sm btn-success"><i class="fas fa-save"></i></button></form>` :
+                                '<span class="text-muted small">N/A</span>';
+
+                            tableBody.innerHTML += `
+                                    <tr>
+                                        <td class="px-4">
+                                            <div class="fw-bold">${sub.student_name}</div>
+                                            <div class="small text-muted">${sub.student_email}</div>
+                                        </td>
+                                        <td class="px-4">${statusBadge}</td>
+                                        <td class="px-4 small text-muted">${sub.submitted_at || '---'}</td>
+                                        <td class="px-4">${fileLink}</td>
+                                        <td class="px-4">${gradeForm}</td>
+                                    </tr>
+                                `;
+                        });
+                    });
+            });
+        });
+
+        // ==========================================
+        // 6. GÁN VALUE CHO CÁC MODAL SỬA (GIÁO VIÊN)
+        // ==========================================
+        document.querySelectorAll('.edit-module-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('editModuleForm').action =
+                    `/modules/${this.getAttribute('data-id')}`;
+                document.getElementById('editModuleTitle').value = this.getAttribute('data-title');
+            });
+        });
+
+        document.querySelectorAll('.edit-lesson-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('editLessonForm').action =
+                    `/lessons/${this.getAttribute('data-id')}`;
+                document.getElementById('editLessonTitle').value = this.getAttribute('data-title');
+                document.getElementById('editLessonContent').value = this.getAttribute('data-content');
+                document.getElementById('editLessonVideo').value = this.getAttribute('data-video');
+                document.getElementById('editLessonModule').value = this.getAttribute('data-module');
+            });
+        });
+
+        document.querySelectorAll('.edit-assignment-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('editAssignmentForm').action =
+                    `/assignments/${this.getAttribute('data-id')}`;
+                document.getElementById('editAssignmentLesson').value = this.getAttribute('data-lesson');
+                document.getElementById('editAssignmentDue').value = this.getAttribute('data-due');
+                document.getElementById('editAssignmentTitle').value = this.getAttribute('data-title');
+                document.getElementById('editAssignmentInstructions').value = this.getAttribute(
+                    'data-instructions');
+            });
+        });
+
+        // ==========================================
+        // 7. CLICK VÀO BÀI KIỂM TRA (QUIZZES)
+        // ==========================================
+        const quizzes = Array.from(document.querySelectorAll('.quiz-item'));
+
+        quizzes.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                document.querySelectorAll(
+                        '.lesson-item-wrapper, .assignment-item-wrapper, .quiz-item-wrapper')
+                    .forEach(li => li.classList.remove('active'));
+                this.closest('.quiz-item-wrapper').classList.add('active');
+
+                hideAllAreas();
+
+                // Hiện khu vực quiz
+                quizArea.classList.remove('d-none');
+                quizArea.classList.add('d-flex', 'flex-column');
+
+                const id = this.getAttribute('data-id');
+                document.getElementById('quiz-display-title').innerText = this.getAttribute('data-title');
+                document.getElementById('quiz-display-duration').innerText = this.getAttribute(
+                    'data-duration');
+
+                // --- LẤY TRẠNG THÁI VÀ ĐIỂM SỐ TỪ HTML ---
+                const status = this.getAttribute('data-status');
+                const score = this.getAttribute('data-score');
+
+                // Các thành phần UI của học sinh
+                const statusText = document.getElementById('quiz-status-text');
+                const scoreBox = document.getElementById('quiz-score-box');
+                const scoreText = document.getElementById('quiz-score-text');
+                const actionArea = document.getElementById('quiz-student-action-area');
+                const completedMsg = document.getElementById('quiz-completed-msg');
+                const mainIcon = document.getElementById('quiz-main-icon');
+
+                // Xử lý giao diện nếu là Học sinh
+                if (statusText) {
+                    if (status === 'completed') {
+                        // Đã làm bài: Hiện điểm, Ẩn nút bắt đầu, Đổi icon xanh
+                        statusText.innerText = 'Đã hoàn thành';
+                        statusText.className = 'mb-0 fw-bold text-success fs-5 mt-2';
+                        if (scoreBox) scoreBox.classList.remove('d-none');
+                        if (scoreText) scoreText.innerText = score;
+                        if (actionArea) actionArea.classList.add('d-none');
+                        if (completedMsg) completedMsg.classList.remove('d-none');
+                        if (mainIcon) {
+                            mainIcon.className = 'fas fa-check-circle fa-5x mb-4 text-success';
+                            mainIcon.style.color = '';
+                        }
+                    } else {
+                        // Chưa làm bài: Ẩn điểm, Hiện nút bắt đầu, Icon đồng hồ tím
+                        statusText.innerText = 'Chưa làm';
+                        statusText.className = 'mb-0 fw-bold text-warning fs-5 mt-2';
+                        if (scoreBox) scoreBox.classList.add('d-none');
+                        if (actionArea) actionArea.classList.remove('d-none');
+                        if (completedMsg) completedMsg.classList.add('d-none');
+                        if (mainIcon) {
+                            mainIcon.className = 'fas fa-stopwatch fa-5x mb-4';
+                            mainIcon.style.color = '#6f42c1';
+                        }
+                    }
+                }
+
+                // Gán link đúng theo role — chỉ 1 trong 2 nút tồn tại trong DOM (render bởi Blade)
+                const startBtn = document.getElementById('start-quiz-btn'); // Học sinh
+                const manageBtn = document.getElementById('manage-quiz-btn'); // Giáo viên / Admin
+
+                if (startBtn) startBtn.href = `/quizzes/${id}/attempt`;
+                if (manageBtn) manageBtn.href = `/quizzes/${id}`;
+
+                quizArea.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+@endpush

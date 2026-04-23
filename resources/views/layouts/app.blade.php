@@ -204,7 +204,7 @@
                     <li class="nav-item">
                         <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}"
                             href="{{ route('dashboard') }}" data-tooltip="Dashboard">
-                            <i class="fas fa-th-large"></i> <span>Dashboard</span>
+                            <i class="fas fa-th-large"></i> <span>Trang chủ</span>
                         </a>
                     </li>
                     <li class="nav-item">

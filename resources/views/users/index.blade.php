@@ -29,7 +29,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <div>
                 <h3 class="fw-bold mb-0 text-dark">Hệ thống Người dùng</h3>
-                <p class="text-muted mb-0 small">Quản lý tài khoản Admin, Giảng viên và Học viên</p>
+                <p class="text-muted mb-0 small">Quản lý tài khoản Admin, Giáo viên và Học viên</p>
             </div>
 
             <div class="d-flex align-items-center gap-2">
@@ -158,7 +158,7 @@
                     <div class="mb-0">
                         <label class="form-label fw-bold small text-muted">Vai trò (Role)</label>
                         <select name="role" class="form-select bg-light border-0 py-2" required>
-                            <option value="teacher">Giảng viên (Teacher)</option>
+                            <option value="teacher">Giáo viên (Teacher)</option>
                             <option value="student">Học viên (Student)</option>
                             <option value="admin">Quản trị viên (Admin)</option>
                         </select>

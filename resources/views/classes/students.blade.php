@@ -74,7 +74,7 @@
                 </nav>
                 <h3 class="fw-bold mb-0 text-dark">{{ $classroom->name }}</h3>
                 <p class="text-muted mb-0 mt-1 small">
-                    <i class="fas fa-chalkboard-teacher me-1"></i> Giảng viên: <span
+                    <i class="fas fa-chalkboard-teacher me-1"></i> Giáo viên: <span
                         class="fw-medium">{{ $classroom->teacher->name }}</span> |
                     <i class="fas fa-users ms-2 me-1"></i> Sĩ số: <span
                         class="fw-medium">{{ $classroom->students->count() }}</span>
