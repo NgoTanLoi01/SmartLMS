@@ -7,8 +7,8 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <a href="{{ route('courses.show', $quiz->course_id) }}"
-                    class="text-decoration-none text-muted small mb-2 d-inline-block">
-                    <i class="fas fa-arrow-left me-1"></i> Quay lại khóa học
+                    class="btn btn-outline-primary rounded-pill mb-2 px4 shadow-sm align-items-center back-to-course-btn"> <i
+                        class="fas fa-arrow-left me-1"></i> Quay lại khóa học
                 </a>
                 <h3 class="fw-bold mb-0" style="color: #6f42c1;">
                     <i class="fas fa-stopwatch me-2"></i>{{ $quiz->title }}

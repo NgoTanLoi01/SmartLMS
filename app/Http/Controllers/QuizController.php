@@ -43,4 +43,19 @@ class QuizController extends Controller
 
         return back()->with('success', 'Đã xóa bài kiểm tra thành công!');
     }
+    public function submissions($id)
+    {
+        // Lấy thông tin bài kiểm tra kèm danh sách người đã nộp bài (sắp xếp mới nhất lên đầu)
+        $quiz = \App\Models\Quiz::with(['course.teacher', 'attempts.user'])->findOrFail($id);
+
+        // Bảo mật: Chỉ giáo viên dạy khóa này hoặc admin mới được xem
+        if (auth()->id() !== $quiz->course->teacher_id && auth()->user()->role !== 'admin') {
+            abort(403, 'Bạn không có quyền truy cập trang này.');
+        }
+
+        // Lấy danh sách điểm
+        $attempts = $quiz->attempts()->orderBy('completed_at', 'desc')->get();
+
+        return view('quizzes.submissions', compact('quiz', 'attempts'));
+    }
 }

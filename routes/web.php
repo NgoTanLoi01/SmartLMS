@@ -114,4 +114,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/quizzes/{id}/attempt', [App\Http\Controllers\QuizAttemptController::class, 'store'])->name('quizzes.submit');
     // Cập nhật câu hỏi và 4 đáp án
     Route::put('/questions/{id}', [App\Http\Controllers\QuestionController::class, 'update'])->name('questions.update');
+    Route::get('/attempts/{id}/review', [App\Http\Controllers\QuizAttemptController::class, 'review'])->name('quizzes.review');
+    Route::get('/quizzes/{id}/submissions', [App\Http\Controllers\QuizController::class, 'submissions'])->name('quizzes.submissions');
 });

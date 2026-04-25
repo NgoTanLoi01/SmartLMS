@@ -403,9 +403,10 @@
                 document.getElementById('quiz-display-duration').innerText = this.getAttribute(
                     'data-duration');
 
-                // --- LẤY TRẠNG THÁI VÀ ĐIỂM SỐ TỪ HTML ---
+                // Lấy thông tin từ thẻ HTML
                 const status = this.getAttribute('data-status');
                 const score = this.getAttribute('data-score');
+                const attemptId = this.getAttribute('data-attempt-id');
 
                 // Các thành phần UI của học sinh
                 const statusText = document.getElementById('quiz-status-text');
@@ -414,28 +415,37 @@
                 const actionArea = document.getElementById('quiz-student-action-area');
                 const completedMsg = document.getElementById('quiz-completed-msg');
                 const mainIcon = document.getElementById('quiz-main-icon');
+                const reviewBtn = document.getElementById('review-quiz-btn');
 
-                // Xử lý giao diện nếu là Học sinh
                 if (statusText) {
                     if (status === 'completed') {
-                        // Đã làm bài: Hiện điểm, Ẩn nút bắt đầu, Đổi icon xanh
+                        // Đã làm bài: Hiện điểm, Ẩn form, Đổi icon xanh
                         statusText.innerText = 'Đã hoàn thành';
                         statusText.className = 'mb-0 fw-bold text-success fs-5 mt-2';
+
                         if (scoreBox) scoreBox.classList.remove('d-none');
                         if (scoreText) scoreText.innerText = score;
                         if (actionArea) actionArea.classList.add('d-none');
-                        if (completedMsg) completedMsg.classList.remove('d-none');
                         if (mainIcon) {
                             mainIcon.className = 'fas fa-check-circle fa-5x mb-4 text-success';
                             mainIcon.style.color = '';
                         }
+
+                        // HIỆN KHUNG THÔNG BÁO VÀ GÁN LINK VÀO NÚT
+                        if (completedMsg) completedMsg.classList.remove('d-none');
+                        if (reviewBtn && attemptId) {
+                            reviewBtn.href = `/attempts/${attemptId}/review`;
+                        }
+
                     } else {
-                        // Chưa làm bài: Ẩn điểm, Hiện nút bắt đầu, Icon đồng hồ tím
+                        // Chưa làm bài
                         statusText.innerText = 'Chưa làm';
                         statusText.className = 'mb-0 fw-bold text-warning fs-5 mt-2';
+
                         if (scoreBox) scoreBox.classList.add('d-none');
                         if (actionArea) actionArea.classList.remove('d-none');
                         if (completedMsg) completedMsg.classList.add('d-none');
+
                         if (mainIcon) {
                             mainIcon.className = 'fas fa-stopwatch fa-5x mb-4';
                             mainIcon.style.color = '#6f42c1';
@@ -443,9 +453,8 @@
                     }
                 }
 
-                // Gán link đúng theo role — chỉ 1 trong 2 nút tồn tại trong DOM (render bởi Blade)
-                const startBtn = document.getElementById('start-quiz-btn'); // Học sinh
-                const manageBtn = document.getElementById('manage-quiz-btn'); // Giáo viên / Admin
+                const startBtn = document.getElementById('start-quiz-btn');
+                const manageBtn = document.getElementById('manage-quiz-btn');
 
                 if (startBtn) startBtn.href = `/quizzes/${id}/attempt`;
                 if (manageBtn) manageBtn.href = `/quizzes/${id}`;

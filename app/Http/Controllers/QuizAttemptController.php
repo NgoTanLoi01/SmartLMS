@@ -58,12 +58,26 @@ class QuizAttemptController extends Controller
             'quiz_id' => $quiz->id,
             'user_id' => auth()->id(),
             'score' => $score,
-            'started_at' => now(), // Tạm thời dùng now(), nếu muốn chặt chẽ thì lưu started_at lúc vừa mở form
+            'student_answers' => $answers, // <--- BẠN BỔ SUNG DÒNG NÀY VÀO NHÉ!
+            'started_at' => now(),
             'completed_at' => now(),
         ]);
 
         return redirect()
             ->route('courses.show', $quiz->course_id)
             ->with('success', "Bạn đã nộp bài thành công! Số điểm của bạn là: {$score}/10");
+    }
+    public function review($attempt_id)
+    {
+        $attempt = \App\Models\QuizAttempt::with('quiz.questions.options')->findOrFail($attempt_id);
+
+        // Bảo mật: Chỉ học sinh làm bài hoặc giáo viên khóa học mới được xem
+        if (auth()->id() !== $attempt->user_id && auth()->id() !== $attempt->quiz->course->teacher_id && auth()->user()->role !== 'admin') {
+            abort(403, 'Bạn không có quyền xem bài làm này.');
+        }
+
+        $studentAnswers = $attempt->student_answers ?? [];
+
+        return view('quizzes.review', compact('attempt', 'studentAnswers'));
     }
 }

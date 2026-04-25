@@ -332,10 +332,19 @@
                                             style="background-color: #6f42c1;">BẮT ĐẦU LÀM BÀI <i
                                                 class="fas fa-arrow-right ms-2"></i></a></div>
                                 </div>
-                                <div id="quiz-completed-msg"
-                                    class="alert alert-success d-none border-0 shadow-sm text-center d-inline-block px-5">
-                                    <h5 class="fw-bold mb-1"><i class="fas fa-check-circle me-2"></i>Hoàn thành!</h5>
-                                    <p class="mb-0">Bạn đã nộp bài kiểm tra này thành công.</p>
+                                <div id="quiz-completed-msg" class="d-none w-100 mt-4">
+                                    <div class="alert alert-success border-0 shadow-sm px-5 py-3 w-100 text-center"
+                                        style="background-color: #d1e7dd; color: #0f5132;">
+                                        <h5 class="fw-bold mb-1"><i class="fas fa-check-circle me-2"></i>Hoàn thành!</h5>
+                                        <p class="mb-0">Bạn đã nộp bài kiểm tra này thành công.</p>
+                                    </div>
+
+                                    <div class="text-center mt-3">
+                                        <a href="#" id="review-quiz-btn"
+                                            class="btn btn-success rounded-pill px-5 py-2 shadow-sm fw-bold">
+                                            <i class="fas fa-search me-2"></i> Xem chi tiết bài làm
+                                        </a>
+                                    </div>
                                 </div>
                             @else
                                 <div class="alert alert-info border-0 shadow-sm bg-info bg-opacity-10 mb-4 text-start d-inline-block"

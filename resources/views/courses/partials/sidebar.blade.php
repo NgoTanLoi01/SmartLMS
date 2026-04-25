@@ -190,8 +190,9 @@
                                                     data-id="{{ $quiz->id }}" data-title="{{ $quiz->title }}"
                                                     data-duration="{{ $quiz->time_limit }}"
                                                     data-status="{{ $attempt ? 'completed' : 'pending' }}"
-                                                    data-score="{{ $attempt ? $attempt->score : '' }}">
-                                                    <i class="{{ $attempt ? 'fas fa-check-circle text-success' : 'fas fa-stopwatch' }} me-2 flex-shrink-0"
+                                                    data-score="{{ $attempt ? $attempt->score : '' }}"
+                                                    data-attempt-id="{{ $attempt ? $attempt->id : '' }}"> <i
+                                                        class="{{ $attempt ? 'fas fa-check-circle text-success' : 'fas fa-stopwatch' }} me-2 flex-shrink-0"
                                                         style="{{ $attempt ? '' : 'color: #6f42c1;' }}"></i>
                                                     <span class="small text-truncate-custom fw-bold"
                                                         style="{{ $attempt ? 'color: #198754;' : 'color: #6f42c1;' }}">
@@ -202,11 +203,23 @@
 
                                             @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
                                                 <div class="action-buttons d-flex ms-2 gap-1">
+                                                    {{-- NÚT XEM BẢNG ĐIỂM (HIỂN THỊ NỔI BẬT MÀU XANH LÁ) --}}
+                                                    <a href="{{ route('quizzes.submissions', $quiz->id) }}"
+                                                        class="btn-action text-white shadow-sm px-2 d-flex align-items-center"
+                                                        style="background-color: #198754; width: auto; text-decoration: none;"
+                                                        title="Xem điểm học sinh">
+                                                        <i class="fas fa-chart-bar me-1"></i> <span
+                                                            class="small fw-bold">Điểm</span>
+                                                    </a>
+
+                                                    {{-- NÚT QUẢN LÝ CÂU HỎI --}}
                                                     <a href="{{ route('quizzes.show', $quiz->id) }}"
                                                         class="btn-action text-white shadow-sm"
                                                         style="background-color: #6f42c1;" title="Quản lý câu hỏi">
                                                         <i class="fas fa-list-ul"></i>
                                                     </a>
+
+                                                    {{-- NÚT XÓA --}}
                                                     <form action="{{ route('quizzes.destroy', $quiz->id) }}"
                                                         method="POST" class="d-inline mb-0">
                                                         @csrf @method('DELETE')
