@@ -139,6 +139,8 @@
         }
     </style>
 
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
     @stack('styles')
 </head>
 
@@ -168,7 +170,6 @@
                                 </span>
                             </li>
 
-                            <!-- NÚT ĐỔI MẬT KHẨU MỚI THÊM VÀO ĐÂY -->
                             <li>
                                 <a class="dropdown-item" href="#" data-bs-toggle="modal"
                                     data-bs-target="#changePasswordModal">
@@ -213,18 +214,28 @@
                             <i class="fas fa-book"></i> <span>Khóa học của tôi</span>
                         </a>
                     </li>
-                    <li class="nav-item">
+                    {{-- <li class="nav-item">
                         <a class="nav-link {{ request()->is('assignments*') ? 'active' : '' }}"
                             href="{{ route('assignments.index') }}" data-tooltip="Bài tập nộp">
                             <i class="fas fa-clipboard-list"></i> <span>Bài tập nộp</span>
                         </a>
-                    </li>
+                    </li> --}}
 
+                    {{-- CHỈ HIỂN THỊ NÚT NÀY CHO ADMIN VÀ GIÁO VIÊN --}}
                     @if (Auth::user()->role === 'admin' || Auth::user()->role === 'teacher')
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->is('schedules*') ? 'active' : '' }}"
+                                href="{{ Route::has('schedules.index') ? route('schedules.index') : '#' }}"
+                                data-tooltip="Quản lý lịch học">
+                                <i class="fas fa-calendar-alt"></i> <span>Quản lý lịch học</span>
+                            </a>
+                        </li>
+
                         <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
                             style="font-size: 0.7rem;">
                             Hệ thống
                         </div>
+
                         <li class="nav-item">
                             <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
                                 href="{{ Route::has('classes.index') ? route('classes.index') : '#' }}"
@@ -232,6 +243,7 @@
                                 <i class="fas fa-chalkboard-teacher"></i> <span>Quản lý lớp học</span>
                             </a>
                         </li>
+
                         @if (Auth::user()->role === 'admin')
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
@@ -245,7 +257,7 @@
                 </ul>
             </nav>
         @endauth
-        <!-- Modal Đổi Mật Khẩu / Xem Thông Tin -->
+
         @auth
             <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog" style="margin-top: 80px">
@@ -260,7 +272,6 @@
                         </div>
                         <div class="modal-body py-4">
 
-                            <!-- THÔNG TIN CỐ ĐỊNH (Không cho sửa) -->
                             <div class="row g-3 mb-4">
                                 <div class="col-12">
                                     <label class="small fw-bold text-muted">Họ và tên</label>
@@ -281,7 +292,6 @@
 
                             <hr class="text-muted">
 
-                            <!-- FORM ĐỔI MẬT KHẨU -->
                             <h6 class="fw-bold mb-3">Đổi mật khẩu mới</h6>
                             <div class="mb-3">
                                 <label class="small fw-bold">Mật khẩu hiện tại <span class="text-danger">*</span></label>
@@ -302,7 +312,6 @@
                             <div class="mb-3">
                                 <label class="small fw-bold">Xác nhận mật khẩu mới <span
                                         class="text-danger">*</span></label>
-                                <!-- Lưu ý: name phải là new_password_confirmation để Laravel tự động kiểm tra khớp -->
                                 <input type="password" name="new_password_confirmation" class="form-control"
                                     placeholder="Nhập lại mật khẩu mới..." required minlength="6">
                             </div>
@@ -316,7 +325,6 @@
             </div>
         @endauth
 
-        <!-- Hiển thị lỗi Validation của Modal ngay khi load trang nếu có lỗi -->
         @if ($errors->has('current_password') || $errors->has('new_password'))
             <script>
                 document.addEventListener("DOMContentLoaded", function() {
@@ -375,7 +383,6 @@
         });
     </script>
 
-    @stack('scripts')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>

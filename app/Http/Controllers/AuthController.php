@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Đảm bảo có dòng này
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -14,7 +14,6 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // Sử dụng Auth facade đã được khai báo ở trên
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             return redirect()->intended('dashboard');

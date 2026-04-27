@@ -113,7 +113,7 @@
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-outline-warning shadow-sm"
                                                     title="Cấp lại mật khẩu">
-                                                    <i class="fas fa-key"></i> Reset MK
+                                                    <i class="fas fa-key"></i> Reset
                                                 </button>
                                             </form>
                                         @endif

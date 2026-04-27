@@ -10,12 +10,10 @@ class UserController extends Controller
 {
     public function index()
     {
-        // Phân quyền: Tuyệt đối chỉ Admin mới được vào đây
         if (auth()->user()->role !== 'admin') {
             abort(403, 'Bạn không có quyền truy cập trang này.');
         }
 
-        // Lấy danh sách user, sắp xếp mới nhất lên đầu
         $users = User::latest()->get();
 
         return view('users.index', compact('users'));
@@ -62,7 +60,6 @@ class UserController extends Controller
     }
     public function resetPassword($id)
     {
-        // Kiểm tra quyền: Chỉ Admin mới được phép
         if (auth()->user()->role !== 'admin') {
             return back()->with('error', 'Chỉ Quản trị viên mới có quyền cấp lại mật khẩu!');
         }
@@ -75,7 +72,6 @@ class UserController extends Controller
             'password' => Hash::make($defaultPassword),
         ]);
 
-        // Trả về thông báo thành công kèm theo mật khẩu mới để Admin gửi cho học sinh
         return back()->with('success', "Đã cấp lại mật khẩu cho tài khoản {$user->email}. Mật khẩu mới là: {$defaultPassword}");
     }
 }
