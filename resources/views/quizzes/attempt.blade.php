@@ -4,7 +4,6 @@
 
 @section('content')
     <style>
-        /* Biến vùng làm bài thành Toàn màn hình, đè lên mọi Layout cũ (Sidebar, Navbar) */
         .quiz-fullscreen-wrapper {
             position: fixed;
             top: 0;
@@ -41,7 +40,6 @@
             cursor: pointer;
         }
 
-        /* Khi hết giờ, làm mờ form và chặn click nhưng vẫn cho phép submit dữ liệu */
         .form-locked {
             pointer-events: none;
             opacity: 0.6;
@@ -52,7 +50,7 @@
         <div class="container" style="max-width: 800px;">
             <div class="text-center mb-5">
                 <h2 class="fw-bold" style="color: #6f42c1;">{{ $quiz->title }}</h2>
-                <p class="text-muted mb-0">Tổng số câu: <strong>{{ $quiz->questions->count() }} câu</strong> | Thời gian:
+                <p class="text-muted mb-0">Tổng số câu: <strong>{{ $examQuestions->count() }} câu</strong> | Thời gian:
                     <strong>{{ $quiz->time_limit }} phút</strong>
                 </p>
                 <div class="mt-2 text-danger small"><i class="fas fa-exclamation-triangle me-1"></i>Không tải lại trang (F5)
@@ -70,20 +68,38 @@
             <form id="quiz-form" action="{{ route('quizzes.submit', $quiz->id) }}" method="POST">
                 @csrf
 
-                @forelse ($quiz->questions as $index => $question)
+                {{-- BỔ SUNG ĐOẠN NÀY ĐỂ MÁY CHỦ NHỚ ĐƯỢC DANH SÁCH CÂU HỎI ĐÃ PHÁT --}}
+                @foreach ($examQuestions as $q)
+                    <input type="hidden" name="question_ids[]" value="{{ $q->id }}">
+                @endforeach
+
+                @php $labels = ['A', 'B', 'C', 'D']; @endphp
+
+
+                @forelse ($examQuestions as $index => $question)
                     <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
-                        <div class="card-header bg-white py-3 border-bottom">
-                            <h5 class="mb-0 fw-bold lh-base" style="color: #2c3e50;">
+                        <div class="card-header bg-white py-3 border-bottom position-relative">
+                            <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
+                                @if ($question->difficulty == 'easy')
+                                    Dễ
+                                @elseif($question->difficulty == 'medium')
+                                    TB
+                                @else
+                                    Khó
+                                @endif
+                            </span>
+                            <h5 class="mb-0 fw-bold lh-base pe-4" style="color: #2c3e50;">
                                 <span style="color: #6f42c1;">Câu {{ $index + 1 }}:</span> {{ $question->question_text }}
                             </h5>
                         </div>
                         <div class="card-body p-0">
                             <div class="list-group list-group-flush">
-                                @foreach ($question->options as $option)
+                                @foreach ($question->options as $optIndex => $option)
                                     <label
                                         class="list-group-item border-0 border-bottom p-3 option-wrapper d-flex align-items-center">
                                         <input type="radio" name="answers[{{ $question->id }}]"
                                             value="{{ $option->id }}" class="me-3">
+                                        <span class="fw-bold me-2 text-muted">{{ $labels[$optIndex] }}.</span>
                                         <span class="fs-6">{{ $option->option_text }}</span>
                                     </label>
                                 @endforeach
@@ -91,10 +107,11 @@
                         </div>
                     </div>
                 @empty
-                    <div class="alert alert-info text-center shadow-sm border-0">Đề thi này chưa có câu hỏi nào.</div>
+                    <div class="alert alert-danger text-center shadow-sm border-0">Lỗi: Ngân hàng câu hỏi không có đủ dữ
+                        liệu để tạo đề. Hãy báo cho giáo viên!</div>
                 @endforelse
 
-                @if ($quiz->questions->count() > 0)
+                @if ($examQuestions->count() > 0)
                     <div class="text-center mt-5 mb-5 pb-5">
                         <button type="button" id="btn-submit-quiz"
                             class="btn btn-lg text-white rounded-pill px-5 shadow-lg fw-bold transition-hover"
@@ -137,14 +154,11 @@
                     clearInterval(countdownInterval);
                     timerDisplay.innerText = "00:00";
 
-                    // Chặn người dùng click thêm nhưng KHÔNG dùng thuộc tính disabled để form vẫn gửi được dữ liệu
                     quizForm.classList.add('form-locked');
                     if (btnSubmit) btnSubmit.disabled = true;
 
-                    // Sử dụng alert mặc định của trình duyệt để đảm bảo luôn chạy được
                     alert('⏳ Đã hết thời gian làm bài! Hệ thống đang tự động thu bài của bạn...');
 
-                    // Tự động submit
                     window.removeEventListener('beforeunload', preventReload);
                     quizForm.submit();
                 }
@@ -152,7 +166,7 @@
 
             if (btnSubmit) {
                 btnSubmit.addEventListener('click', function() {
-                    let totalQuestions = {{ $quiz->questions->count() }};
+                    let totalQuestions = {{ $examQuestions->count() }};
                     let answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
 
                     let message = (answeredQuestions < totalQuestions) ?

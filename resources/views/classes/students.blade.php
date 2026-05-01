@@ -83,10 +83,11 @@
 
             @if (auth()->user()->role === 'admin' || auth()->id() === $classroom->teacher_id)
                 <div class="d-flex gap-2">
-                    <button class="btn btn-success rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
+                    <button class="btn btn-outline-success fw-bold shadow-sm me-2" data-bs-toggle="modal"
                         data-bs-target="#importExcelModal">
-                        <i class="fas fa-file-excel me-1"></i> Nhập từ Excel
+                        <i class="fas fa-file-excel me-2"></i> Nhập từ Excel
                     </button>
+
                     <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
                         data-bs-target="#addStudentModal">
                         <i class="fas fa-user-plus me-1"></i> Thêm thủ công

@@ -139,4 +139,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/schedules', [App\Http\Controllers\ScheduleController::class, 'index'])->name('schedules.index');
     Route::get('/schedules/get-courses/{class_id}', [App\Http\Controllers\ScheduleController::class, 'getCoursesByClass']);
     Route::post('/schedules', [App\Http\Controllers\ScheduleController::class, 'store'])->name('schedules.store');
+    // ==========================================
+    // 11. NGÂN HÀNG CÂU HỎI (QUESTION BANK)
+    // ==========================================
+    Route::get('/question-bank', [QuestionController::class, 'index'])->name('questions.index');
+    Route::post('/question-bank', [QuestionController::class, 'storeBank'])->name('questions.storeBank');
+    Route::post('/question-bank/import', [QuestionController::class, 'importBank'])->name('questions.importBank');
+    Route::put('/question-bank/{id}', [QuestionController::class, 'updateBank'])->name('questions.updateBank');
+    Route::delete('/question-bank/{id}', [QuestionController::class, 'destroyBank'])->name('questions.destroyBank');
 });

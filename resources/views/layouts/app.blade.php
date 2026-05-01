@@ -235,6 +235,14 @@
                             style="font-size: 0.7rem;">
                             Hệ thống
                         </div>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->is('question-bank*') ? 'active' : '' }}"
+                                href="{{ Route::has('questions.index') ? route('questions.index') : '#' }}"
+                                data-tooltip="Ngân hàng câu hỏi">
+                                <i class="fas fa-database"></i> <span>Ngân hàng câu hỏi</span>
+                            </a>
+                        </li>
+
 
                         <li class="nav-item">
                             <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"

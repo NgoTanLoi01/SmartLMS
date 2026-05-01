@@ -6,17 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Quiz extends Model
 {
-    // Đã đổi thành course_id và time_limit theo đúng DB của bạn
-    protected $fillable = ['course_id', 'title', 'time_limit'];
+    // Cập nhật thêm các cột cấu hình số lượng câu hỏi
+    protected $fillable = ['course_id', 'title', 'time_limit', 'is_random', 'easy_count', 'medium_count', 'hard_count'];
 
     public function course()
     {
         return $this->belongsTo(Course::class);
-    }
-
-    public function questions()
-    {
-        return $this->hasMany(Question::class);
     }
 
     public function attempts()

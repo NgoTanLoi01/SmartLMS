@@ -195,58 +195,54 @@
         </form>
     </div>
 </div>
-
-<div class="modal fade" id="viewSubmissionsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-light border-0">
-                <h5 class="modal-title fw-bold" id="modal-assignment-name">Danh sách nộp bài</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light text-muted small text-uppercase">
-                            <tr>
-                                <th class="px-4 py-3">Học sinh</th>
-                                <th class="px-4 py-3">Trạng thái</th>
-                                <th class="px-4 py-3">Thời gian nộp</th>
-                                <th class="px-4 py-3">File bài làm</th>
-                                <th class="px-4 py-3">Chấm điểm</th>
-                            </tr>
-                        </thead>
-                        <tbody id="submissions-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="addQuizModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form action="{{ route('quizzes.store') }}" method="POST" class="modal-content border-0">
             @csrf
             <input type="hidden" name="course_id" value="{{ $course->id }}">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" style="color: #6f42c1;">Thêm bài trắc nghiệm khóa học</h5>
+                <h5 class="modal-title fw-bold" style="color: #6f42c1;">Tạo đề thi ngẫu nhiên</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body pt-3">
                 <div class="mb-3">
-                    <label class="small fw-bold">Tiêu đề bài kiểm tra</label>
-                    <input type="text" name="title" class="form-control bg-light border-0"
-                        placeholder="VD: Bài kiểm tra cuối khóa..." required>
+                    <label class="small fw-bold text-muted text-uppercase">Tên bài thi</label>
+                    <input type="text" name="title" class="form-control fw-bold border-1"
+                        placeholder="VD: Kiểm tra giữa kỳ..." required>
                 </div>
-                <div class="mb-3">
-                    <label class="small fw-bold">Thời gian làm bài (Phút)</label>
-                    <input type="number" name="time_limit" class="form-control bg-light border-0" value="30"
+                <div class="mb-4">
+                    <label class="small fw-bold text-muted text-uppercase">Thời gian làm bài (Phút)</label>
+                    <input type="number" name="time_limit" class="form-control border-1" value="30"
                         min="1" required>
                 </div>
+
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">Cấu trúc đề thi (Số lượng câu)</h6>
+                <div class="alert alert-info small border-0 py-2 mb-3">
+                    <i class="fas fa-magic me-1"></i> Hệ thống sẽ bốc ngẫu nhiên câu hỏi từ Ngân hàng để trộn đề cho
+                    mỗi học sinh.
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-4">
+                        <label class="small fw-bold text-success">Câu Dễ</label>
+                        <input type="number" name="easy_count" class="form-control text-center" value="10"
+                            min="0" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="small fw-bold text-warning text-dark">Trung bình</label>
+                        <input type="number" name="medium_count" class="form-control text-center" value="5"
+                            min="0" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="small fw-bold text-danger">Câu Khó</label>
+                        <input type="number" name="hard_count" class="form-control text-center" value="5"
+                            min="0" required>
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="submit" class="btn text-white rounded-pill px-4 w-100 fw-bold"
-                    style="background-color: #6f42c1;">Tạo bài kiểm tra</button>
+            <div class="modal-footer border-0 pb-4">
+                <button type="submit" class="btn text-white rounded-pill px-4 w-100 fw-bold shadow-sm"
+                    style="background-color: #6f42c1;"><i class="fas fa-random me-2"></i>Tạo đề thi</button>
             </div>
         </form>
     </div>

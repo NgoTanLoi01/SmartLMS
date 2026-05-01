@@ -41,7 +41,7 @@
                 {{ \Carbon\Carbon::parse($attempt->completed_at)->format('H:i - d/m/Y') }}</p>
         </div>
 
-        @foreach ($attempt->quiz->questions as $index => $question)
+        @foreach ($questions as $index => $question)
             @php
                 $selectedOptionId = $studentAnswers[$question->id] ?? null;
                 $isCorrectAnswer = false;
