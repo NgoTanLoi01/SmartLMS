@@ -1,100 +1,125 @@
 <div class="modal fade" id="addModuleModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="{{ route('modules.store') }}" method="POST" class="modal-content border-0">@csrf<input type="hidden"
-                name="course_id" value="{{ $course->id }}">
+        <form action="{{ route('modules.store') }}" method="POST" class="modal-content border-0">
+            @csrf
+            <input type="hidden" name="course_id" value="{{ $course->id }}">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Thêm chương mới</h5><button type="button" class="btn-close"
-                    data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold">Thêm chương mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body py-4"><input type="text" name="title" class="form-control bg-light border-0"
-                    placeholder="Tên chương học..." required></div>
-            <div class="modal-footer border-0 pt-0"><button type="submit"
-                    class="btn btn-primary rounded-pill px-4 w-100">Lưu lại</button></div>
+            <div class="modal-body py-4">
+                <input type="text" name="title" class="form-control bg-light border-0"
+                    placeholder="Tên chương học..." required>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="submit" class="btn btn-primary rounded-pill px-4 w-100">Lưu lại</button>
+            </div>
         </form>
     </div>
 </div>
 
 <div class="modal fade" id="editModuleModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form id="editModuleForm" method="POST" class="modal-content border-0">@csrf @method('PUT')
+        <form id="editModuleForm" method="POST" class="modal-content border-0">
+            @csrf @method('PUT')
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold text-warning">Sửa chương</h5><button type="button" class="btn-close"
-                    data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold text-warning">Sửa chương</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body py-4"><input type="text" name="title" id="editModuleTitle"
-                    class="form-control bg-light border-0" required></div>
-            <div class="modal-footer border-0 pt-0"><button type="submit"
-                    class="btn btn-warning text-dark fw-bold rounded-pill px-4 w-100">Cập nhật</button></div>
+            <div class="modal-body py-4">
+                <input type="text" name="title" id="editModuleTitle" class="form-control bg-light border-0"
+                    required>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4 w-100">Cập
+                    nhật</button>
+            </div>
         </form>
     </div>
 </div>
 
 <div class="modal fade" id="addLessonModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <form action="{{ route('lessons.store') }}" method="POST" enctype="multipart/form-data"
-            class="modal-content border-0">@csrf
+            class="modal-content border-0">
+            @csrf
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Thêm bài học mới</h5><button type="button" class="btn-close"
-                    data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold">Thêm bài học mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3"><label class="small fw-bold">Chọn chương</label>
+                <div class="mb-3">
+                    <label class="small fw-bold">Chọn chương</label>
                     <select name="module_id" class="form-select bg-light border-0" required>
                         @foreach ($course->modules as $module)
                             <option value="{{ $module->id }}">{{ $module->title }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="mb-3"><label class="small fw-bold">Tiêu đề bài học</label><input type="text"
-                        name="title" class="form-control bg-light border-0" placeholder="Tiêu đề bài học..." required>
+                <div class="mb-3">
+                    <label class="small fw-bold">Tiêu đề bài học</label>
+                    <input type="text" name="title" class="form-control bg-light border-0"
+                        placeholder="Tiêu đề bài học..." required>
                 </div>
-                <div class="mb-3"><label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label><input
-                        type="url" name="video_url" class="form-control bg-light border-0"
-                        placeholder="https://..."></div>
+                <div class="mb-3">
+                    <label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label>
+                    <input type="url" name="video_url" class="form-control bg-light border-0"
+                        placeholder="https://...">
+                </div>
                 <div class="mb-3">
                     <label class="small fw-bold">Tài liệu đính kèm (PDF, Word, ZIP...)</label>
                     <input type="file" name="attachment" class="form-control bg-light border-0">
                     <small class="text-muted fst-italic">Bỏ trống nếu không có tài liệu</small>
                 </div>
                 <label class="small fw-bold">Nội dung chi tiết</label>
-                <textarea name="content" class="form-control bg-light border-0" rows="4"></textarea>
+                <textarea name="content" id="addLessonContent" class="form-control bg-light border-0" rows="4"></textarea>
             </div>
-            <div class="modal-footer border-0"><button type="submit"
-                    class="btn btn-primary rounded-pill px-4 w-100">Lưu bài học</button></div>
+            <div class="modal-footer border-0">
+                <button type="submit" class="btn btn-primary rounded-pill px-4 w-100">Lưu bài học</button>
+            </div>
         </form>
     </div>
 </div>
 
 <div class="modal fade" id="editLessonModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <form id="editLessonForm" method="POST" enctype="multipart/form-data" class="modal-content border-0">
             @csrf @method('PUT')
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold text-warning">Sửa bài học</h5><button type="button" class="btn-close"
-                    data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold text-warning">Sửa bài học</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3"><label class="small fw-bold">Chương</label><select name="module_id"
-                        id="editLessonModule" class="form-select bg-light border-0" required>
+                <div class="mb-3">
+                    <label class="small fw-bold">Chương</label>
+                    <select name="module_id" id="editLessonModule" class="form-select bg-light border-0" required>
                         @foreach ($course->modules as $module)
                             <option value="{{ $module->id }}">{{ $module->title }}</option>
                         @endforeach
-                    </select></div>
-                <div class="mb-3"><label class="small fw-bold">Tiêu đề bài học</label><input type="text"
-                        name="title" id="editLessonTitle" class="form-control bg-light border-0" required></div>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold">Tiêu đề bài học</label>
+                    <input type="text" name="title" id="editLessonTitle" class="form-control bg-light border-0"
+                        required>
+                </div>
                 <div class="mb-3">
                     <label class="small fw-bold">Tài liệu đính kèm (PDF, Word, ZIP...)</label>
                     <input type="file" name="attachment" class="form-control bg-light border-0">
                     <small class="text-muted fst-italic">Bỏ trống nếu không có tài liệu</small>
                 </div>
                 <div class="mb-3">
-                    <label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label><input type="url"
-                        name="video_url" id="editLessonVideo" class="form-control bg-light border-0">
-                </div><label class="small fw-bold">Nội dung chi tiết</label>
+                    <label class="small fw-bold">Link (Youtube, Google Drive, Zoom...)</label>
+                    <input type="url" name="video_url" id="editLessonVideo"
+                        class="form-control bg-light border-0">
+                </div>
+                <label class="small fw-bold">Nội dung chi tiết</label>
                 <textarea name="content" id="editLessonContent" class="form-control bg-light border-0" rows="4"></textarea>
             </div>
-            <div class="modal-footer border-0"><button type="submit"
-                    class="btn btn-warning text-dark fw-bold rounded-pill px-4 w-100">Cập nhật</button></div>
+            <div class="modal-footer border-0">
+                <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4 w-100">Cập
+                    nhật</button>
+            </div>
         </form>
     </div>
 </div>
@@ -195,6 +220,34 @@
         </form>
     </div>
 </div>
+
+<div class="modal fade" id="viewSubmissionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold" id="modal-assignment-name">Danh sách nộp bài</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="px-4 py-3">Học sinh</th>
+                                <th class="px-4 py-3">Trạng thái</th>
+                                <th class="px-4 py-3">Thời gian nộp</th>
+                                <th class="px-4 py-3">File bài làm</th>
+                                <th class="px-4 py-3">Chấm điểm</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submissions-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="addQuizModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form action="{{ route('quizzes.store') }}" method="POST" class="modal-content border-0">
@@ -215,13 +268,11 @@
                     <input type="number" name="time_limit" class="form-control border-1" value="30"
                         min="1" required>
                 </div>
-
                 <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary">Cấu trúc đề thi (Số lượng câu)</h6>
                 <div class="alert alert-info small border-0 py-2 mb-3">
                     <i class="fas fa-magic me-1"></i> Hệ thống sẽ bốc ngẫu nhiên câu hỏi từ Ngân hàng để trộn đề cho
                     mỗi học sinh.
                 </div>
-
                 <div class="row g-2">
                     <div class="col-4">
                         <label class="small fw-bold text-success">Câu Dễ</label>

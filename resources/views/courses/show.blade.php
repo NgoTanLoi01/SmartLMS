@@ -273,7 +273,8 @@
                             </div>
                         @else
                             <div class="text-center mt-5">
-                                <p class="text-muted"><i class="fas fa-info-circle me-1"></i>Bấm vào biểu tượng ⚙️ ở danh
+                                <p class="text-muted"><i class="fas fa-info-circle me-1"></i>Bấm vào biểu tượng <i
+                                        class="fas fa-users-cog text-primary"></i> ở danh
                                     sách bên trái để chấm điểm bài tập này.</p>
                             </div>
                         @endif

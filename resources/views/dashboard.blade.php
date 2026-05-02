@@ -120,7 +120,7 @@
                         <div class="card-body">
                             <p class="text-muted fw-bold text-uppercase small mb-1">Cần xử lý ngay</p>
                             <h3 class="text-danger fw-bold mb-0">{{ $data['pending_grades'] }} <small
-                                    class="fs-6 text-muted">bài chờ chấm</small></h3>
+                                    class="fs-6 text-muted">bài tập chờ chấm</small></h3>
                         </div>
                     </div>
                 </div>
@@ -156,11 +156,18 @@
                                         class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
                                         <div>
                                             <div class="fw-bold text-dark">{{ $sub->student_name }}</div>
-                                            <div class="small text-muted">Bài: {{ $sub->assignment_title }}</div>
+                                            <div class="small text-muted mb-1">Bài: <span
+                                                    class="fw-bold">{{ $sub->assignment_title ?? 'N/A' }}</span></div>
+                                            <div class="small"><span
+                                                    class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i
+                                                        class="fas fa-book me-1"></i> Khóa:
+                                                    {{ $sub->course_title ?? 'N/A' }}</span></div>
                                         </div>
-                                        <div>
+                                        <div class="text-end">
                                             <span
-                                                class="text-muted small d-block mb-1">{{ \Carbon\Carbon::parse($sub->created_at)->diffForHumans() }}</span>
+                                                class="text-muted small d-block mb-2">{{ \Carbon\Carbon::parse($sub->created_at)->diffForHumans() }}</span>
+                                            <a href="{{ route('courses.show', $sub->course_id ?? 0) }}"
+                                                class="btn btn-sm btn-outline-danger rounded-pill px-3">Chấm ngay</a>
                                         </div>
                                     </div>
                                 @empty
@@ -261,36 +268,80 @@
                     <div class="card border-0 shadow-sm rounded-4 bg-primary text-white h-100"
                         style="background: linear-gradient(45deg, #0d6efd, #6f42c1);">
                         <div class="card-body p-4 text-center">
-                            <h5 class="fw-bold text-white-50">Điểm Quiz trung bình</h5>
-                            <h1 class="display-3 fw-bold mb-0">{{ $data['average_score'] }}</h1>
+                            <h3 class="fw-bold text-white-50">Điểm Quiz trung bình</h3>
+                            <h1 class="display-3 fw-bold mb-0" style="font-size: 8rem;">
+                                {{ $data['average_score'] }}
+                            </h1>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-8">
                     <div class="card border-0 shadow-sm rounded-4 h-100">
                         <div class="card-header bg-white py-3 border-bottom">
-                            <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-clock text-warning me-2"></i>Sắp đến hạn
-                                (Deadline)</h6>
+                            <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-clock text-warning me-2"></i>Việc cần làm
+                                (Deadline & Bài kiểm tra)</h6>
                         </div>
                         <div class="card-body p-0">
-                            <div class="list-group list-group-flush">
-                                @forelse($data['upcoming_deadlines'] as $deadline)
-                                    <div
-                                        class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="badge bg-warning text-dark me-2">{{ $deadline->type }}</span>
-                                            <span class="fw-bold">{{ $deadline->title }}</span>
+                            <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+
+                                {{-- BÀI TẬP SẮP HẾT HẠN --}}
+                                @if (isset($data['upcoming_deadlines']))
+                                    @foreach ($data['upcoming_deadlines'] as $deadline)
+                                        <div
+                                            class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-warning text-dark me-2 mb-1">Bài tập</span>
+                                                <span class="fw-bold d-block">{{ $deadline->title }}</span>
+                                                <div class="small mt-1"><span
+                                                        class="badge bg-light text-secondary border"><i
+                                                            class="fas fa-book me-1"></i> Khóa:
+                                                        {{ $deadline->course_title ?? 'N/A' }}</span></div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="text-danger small fw-bold mb-1">
+                                                    <i class="fas fa-hourglass-half me-1"></i> Hạn:
+                                                    {{ \Carbon\Carbon::parse($deadline->due_date)->format('H:i - d/m/Y') }}
+                                                </div>
+                                                <a href="{{ route('courses.show', $deadline->course_id ?? 0) }}"
+                                                    class="btn btn-sm btn-outline-warning rounded-pill px-3 text-dark fw-bold">Nộp
+                                                    bài</a>
+                                            </div>
                                         </div>
-                                        <div class="text-danger small fw-bold">
-                                            <i class="fas fa-hourglass-half me-1"></i>
-                                            {{ \Carbon\Carbon::parse($deadline->due_date)->format('H:i - d/m/Y') }}
+                                    @endforeach
+                                @endif
+
+                                {{-- BÀI KIỂM TRA CHƯA LÀM --}}
+                                @if (isset($data['pending_quizzes']))
+                                    @foreach ($data['pending_quizzes'] as $quiz)
+                                        <div
+                                            class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center bg-primary bg-opacity-10 border-bottom border-white">
+                                            <div>
+                                                <span class="badge bg-primary me-2 mb-1">Kiểm tra</span>
+                                                <span class="fw-bold d-block text-primary">{{ $quiz->title }}</span>
+                                                <div class="small mt-1"><span
+                                                        class="badge bg-white text-secondary border"><i
+                                                            class="fas fa-book me-1"></i> Khóa:
+                                                        {{ $quiz->course_title ?? 'N/A' }}</span></div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="text-primary small fw-bold mb-1">
+                                                    <i class="fas fa-stopwatch me-1"></i> Thời gian:
+                                                    {{ $quiz->time_limit }} phút
+                                                </div>
+                                                <a href="{{ route('courses.show', $quiz->course_id ?? 0) }}"
+                                                    class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm fw-bold">Làm
+                                                    bài ngay</a>
+                                            </div>
                                         </div>
-                                    </div>
-                                @empty
+                                    @endforeach
+                                @endif
+
+                                @if (empty($data['upcoming_deadlines']) && empty($data['pending_quizzes']))
                                     <div class="text-center py-4 text-muted">
-                                        <p class="mb-0">Tuyệt vời! Bạn không có deadline nào sắp tới.</p>
+                                        <i class="fas fa-glass-cheers fa-2x mb-2 text-success opacity-50 d-block"></i>
+                                        <p class="mb-0">Tuyệt vời! Bạn đã hoàn thành hết các nhiệm vụ.</p>
                                     </div>
-                                @endforelse
+                                @endif
                             </div>
                         </div>
                     </div>

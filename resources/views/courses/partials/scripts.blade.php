@@ -1,4 +1,28 @@
 @push('scripts')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"></script>
+    <script>
+        // Fix lỗi Bootstrap 5 chặn focus (không cho gõ chữ) vào các popup bên trong TinyMCE (như popup chèn link)
+        document.addEventListener('focusin', (e) => {
+            if (e.target.closest(".tox-tinymce-aux, .moxman-window, .tam-assetmanager-root") !== null) {
+                e.stopImmediatePropagation();
+            }
+        });
+
+        // Khởi tạo trình soạn thảo
+        tinymce.init({
+            selector: '#addLessonContent, #editLessonContent', // Gắn vào 2 thẻ textarea
+            height: 250,
+            menubar: false,
+            plugins: 'lists link image preview searchreplace visualblocks code fullscreen table code wordcount',
+            toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code',
+            setup: function(editor) {
+                // Đồng bộ dữ liệu từ TinyMCE về textarea gốc để Form có thể gửi đi
+                editor.on('change', function() {
+                    editor.save();
+                });
+            }
+        });
+    </script>
     <script>
         let totalLessonsCount = {{ $totalLessons ?? 0 }};
         let currentCompletedCount = {{ $completedCount ?? 0 }};
@@ -295,48 +319,69 @@
         });
 
         // ==========================================
-        // 5. MODAL CHẤM ĐIỂM (AJAX)
+        // 5. MODAL CHẤM ĐIỂM (FETCH API)
         // ==========================================
         document.querySelectorAll('.view-submissions-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
-                e.stopPropagation();
+                // Đã xóa e.stopPropagation() để không chặn Bootstrap mở Modal nữa
+
                 const id = this.getAttribute('data-id');
                 const tableBody = document.getElementById('submissions-table-body');
+
+                // Hiển thị trạng thái đang tải
+                document.getElementById('modal-assignment-name').innerText = 'Đang tải dữ liệu...';
                 tableBody.innerHTML =
                     '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
 
-                const myModal = new bootstrap.Modal(document.getElementById('viewSubmissionsModal'));
-                myModal.show();
-
-                axios.get(`/assignments/${id}/submissions-list`)
+                // Dùng fetch gọi API
+                fetch(`/assignments/${id}/submissions-list`)
                     .then(response => {
-                        document.getElementById('modal-assignment-name').innerText = 'Bài tập: ' +
-                            response.data.assignment_title;
+                        if (!response.ok) {
+                            throw new Error('Không thể kết nối đến máy chủ.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        document.getElementById('modal-assignment-name').innerText = 'Bài tập: ' + data
+                            .assignment_title;
                         tableBody.innerHTML = '';
-                        response.data.submissions.forEach(sub => {
+
+                        if (!data.submissions || data.submissions.length === 0) {
+                            tableBody.innerHTML =
+                                '<tr><td colspan="5" class="text-center text-muted py-4">Chưa có học sinh nào nộp bài</td></tr>';
+                            return;
+                        }
+
+                        data.submissions.forEach(sub => {
                             let statusBadge = sub.submitted_at ?
                                 '<span class="badge bg-success">Đã nộp</span>' :
                                 '<span class="badge bg-light text-muted border">Chưa nộp</span>';
+
                             let fileLink = sub.file_url ?
                                 `<a href="${sub.file_url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-download me-1"></i>Tải file</a>` :
                                 '<span class="text-muted small">---</span>';
+
                             let gradeForm = sub.submission_id ?
                                 `<form action="/submissions/${sub.submission_id}/grade" method="POST" class="d-flex gap-2">@csrf<input type="number" name="grade" step="0.1" class="form-control form-control-sm" style="width:70px" value="${sub.grade || ''}" placeholder="0-10"><input type="text" name="feedback" class="form-control form-control-sm" value="${sub.feedback || ''}" placeholder="Nhận xét..."><button type="submit" class="btn btn-sm btn-success"><i class="fas fa-save"></i></button></form>` :
                                 '<span class="text-muted small">N/A</span>';
 
                             tableBody.innerHTML += `
-                                    <tr>
-                                        <td class="px-4">
-                                            <div class="fw-bold">${sub.student_name}</div>
-                                            <div class="small text-muted">${sub.student_email}</div>
-                                        </td>
-                                        <td class="px-4">${statusBadge}</td>
-                                        <td class="px-4 small text-muted">${sub.submitted_at || '---'}</td>
-                                        <td class="px-4">${fileLink}</td>
-                                        <td class="px-4">${gradeForm}</td>
-                                    </tr>
-                                `;
+                                <tr>
+                                    <td class="px-4">
+                                        <div class="fw-bold">${sub.student_name}</div>
+                                        <div class="small text-muted">${sub.student_email}</div>
+                                    </td>
+                                    <td class="px-4">${statusBadge}</td>
+                                    <td class="px-4 small text-muted">${sub.submitted_at || '---'}</td>
+                                    <td class="px-4">${fileLink}</td>
+                                    <td class="px-4">${gradeForm}</td>
+                                </tr>
+                            `;
                         });
+                    })
+                    .catch(error => {
+                        tableBody.innerHTML =
+                            `<tr><td colspan="5" class="text-center text-danger py-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi: ${error.message}</td></tr>`;
                     });
             });
         });
@@ -344,15 +389,24 @@
         // ==========================================
         // 6. GÁN VALUE CHO CÁC MODAL SỬA (GIÁO VIÊN)
         // ==========================================
-        document.querySelectorAll('.edit-module-btn').forEach(btn => {
+        document.querySelectorAll('.edit-lesson-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                document.getElementById('editModuleForm').action =
-                    `/modules/${this.getAttribute('data-id')}`;
-                document.getElementById('editModuleTitle').value = this.getAttribute('data-title');
+                document.getElementById('editLessonForm').action =
+                    `/lessons/${this.getAttribute('data-id')}`;
+                document.getElementById('editLessonTitle').value = this.getAttribute('data-title');
+
+                // Nạp dữ liệu vào TinyMCE thay vì textarea thường
+                if (tinymce.get('editLessonContent')) {
+                    tinymce.get('editLessonContent').setContent(this.getAttribute('data-content') || '');
+                } else {
+                    document.getElementById('editLessonContent').value = this.getAttribute('data-content');
+                }
+
+                document.getElementById('editLessonVideo').value = this.getAttribute('data-video');
+                document.getElementById('editLessonModule').value = this.getAttribute('data-module');
             });
         });
-
         document.querySelectorAll('.edit-lesson-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();

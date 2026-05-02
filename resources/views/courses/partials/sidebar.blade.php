@@ -138,9 +138,11 @@
                                                         </form>
                                                         <a href="javascript:void(0)"
                                                             class="btn-action text-primary view-submissions-btn border bg-white shadow-sm"
-                                                            data-id="{{ $assignment->id }}"
+                                                            data-id="{{ $assignment->id }}" data-bs-toggle="modal"
+                                                            data-bs-target="#viewSubmissionsModal"
                                                             title="Chấm điểm / Xem danh sách"><i
-                                                                class="fas fa-users-cog"></i></a>
+                                                                class="fas fa-users-cog"></i>
+                                                        </a>
                                                     </div>
                                                 @endif
                                             </div>
