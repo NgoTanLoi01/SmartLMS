@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'LMS PRO') - Hệ thống học tập</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -243,6 +244,12 @@
                             </a>
                         </li>
 
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->is('documents*') ? 'active' : '' }}"
+                                href="{{ route('documents.upload') }}" data-tooltip="Huấn luyện AI">
+                                <i class="fas fa-brain"></i> <span>Huấn luyện AI</span>
+                            </a>
+                        </li>
 
                         <li class="nav-item">
                             <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
@@ -396,6 +403,12 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     @stack('scripts')
+    @auth
+        @include('partials.chatbot')
+    @endauth
+
+    @stack('scripts')
+</body>
 </body>
 
 </html>

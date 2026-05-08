@@ -14,6 +14,8 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizAttemptController;
+use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\DocumentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -147,4 +149,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/question-bank/import', [QuestionController::class, 'importBank'])->name('questions.importBank');
     Route::put('/question-bank/{id}', [QuestionController::class, 'updateBank'])->name('questions.updateBank');
     Route::delete('/question-bank/{id}', [QuestionController::class, 'destroyBank'])->name('questions.destroyBank');
+    // ==========================================
+    // 12. AI CHATBOT (DEEPSEEK)
+    // ==========================================
+    Route::post('/chatbot/send', [ChatbotController::class, 'sendMessage'])->name('chatbot.send');
+    // Trang hiển thị danh sách tài liệu và form upload
+    Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+
+    Route::get('/documents/upload', [DocumentController::class, 'index'])->name('documents.upload');
+
+    // 3. Giữ nguyên các route store và destroy
+    Route::post('/documents/upload', [DocumentController::class, 'store'])->name('documents.store');
+    Route::delete('/documents/{name}', [DocumentController::class, 'destroy'])->name('documents.destroy');
 });

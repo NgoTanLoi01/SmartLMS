@@ -1,34 +1,36 @@
-# Sử dụng phiên bản PHP 8.3 ổn định nhất cho Docker hiện tại
+# Sử dụng image PHP 8.4-fpm
 FROM php:8.4-fpm
 
-# Cài đặt các công cụ hỗ trợ và thư viện cần thiết cho PHP
+# Cài đặt các công cụ hỗ trợ và thư viện cần thiết
+# Bổ sung libpq-dev để hỗ trợ PostgreSQL
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
+    libpq-dev \
     zip \
     libzip-dev \
     unzip \
     git \
     curl
 
-# Cài đặt các phần mở rộng PHP (PDO MySQL để kết nối DB, GD để xử lý ảnh)
+# Cài đặt các phần mở rộng PHP
+# Bổ sung pdo_pgsql và pgsql
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql gd zip bcmath
+    && docker-php-ext-install pdo_mysql pdo_pgsql pgsql gd zip bcmath
 
-# Copy công cụ Composer từ image chính thức vào container này
+# Copy Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Thiết lập thư mục làm việc bên trong container
+# Thiết lập thư mục làm việc
 WORKDIR /var/www/html
 
-# Copy toàn bộ mã nguồn dự án vào trong container
+# Copy mã nguồn
 COPY . .
 
-# Phân quyền cho thư mục storage và cache để Laravel có thể ghi file
+# Phân quyền
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Mở cổng 9000 (cổng mặc định của PHP-FPM)
 EXPOSE 9000
 
 CMD ["php-fpm"]

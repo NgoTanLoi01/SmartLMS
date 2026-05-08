@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-    # Dịch vụ 1: Nginx
     nginx:
         image: nginx:stable-alpine
         container_name: lms-nginx
@@ -13,7 +12,6 @@ services:
         depends_on:
             - app
 
-    # Dịch vụ 2: PHP App
     app:
         build:
             context: .
@@ -28,14 +26,20 @@ services:
             - DB_DATABASE=lms_db
             - DB_USERNAME=lms_user
             - DB_PASSWORD=lms_password
+            # Cấu hình cho Vector DB (PostgreSQL)
+            - DB_VECTOR_CONNECTION=pgsql
+            - DB_VECTOR_HOST=postgres_vector
+            - DB_VECTOR_PORT=5432
+            - DB_VECTOR_DATABASE=lms_ai
+            - DB_VECTOR_USERNAME=ai_user
+            - DB_VECTOR_PASSWORD=ai_password
 
-    # Dịch vụ 3: MySQL (Đảm bảo db thụt lề vào trong giống app và nginx)
     db:
         image: mysql:8.0
         container_name: lms-db
         restart: always
         ports:
-            - "3306:3306" # Cổng để TablePlus truy cập
+            - "3306:3306"
         environment:
             MYSQL_DATABASE: lms_db
             MYSQL_USER: lms_user
@@ -44,6 +48,19 @@ services:
         volumes:
             - db_data:/var/lib/mysql
 
-# Volume nằm ngoài cùng, ngang hàng với services
+    postgres_vector:
+        image: ankane/pgvector:latest
+        container_name: lms-vector-db
+        restart: always
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_DB: lms_ai
+            POSTGRES_USER: ai_user
+            POSTGRES_PASSWORD: ai_password
+        volumes:
+            - pg_data:/var/lib/postgresql/data
+
 volumes:
     db_data:
+    pg_data:

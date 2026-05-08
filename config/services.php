@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -34,5 +33,8 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
+    'deepseek' => [
+        'key' => env('DEEPSEEK_API_KEY'),
+        'base_url' => 'https://api.deepseek.com',
+    ],
 ];
