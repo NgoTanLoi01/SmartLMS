@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\DocumentProcessingService;
 use App\Models\DocumentChunk;
+use App\Models\Course; // Thêm model Course
+use Illuminate\Support\Facades\DB;
 
 class DocumentController extends Controller
 {
@@ -13,22 +15,36 @@ class DocumentController extends Controller
     {
         $this->docService = $docService;
     }
-    // 
 
+    // ==========================================
+    // 1. HIỂN THỊ TRANG UPLOAD TÀI LIỆU
+    // ==========================================
     public function index()
     {
-        // Thêm ::on('pgsql') để báo cho Laravel biết bảng này nằm ở Postgres
-        $documents = \App\Models\DocumentChunk::on('pgsql')->select('document_name', \DB::raw('MAX(created_at) as created_at'), \DB::raw('COUNT(*) as total_chunks'))->groupBy('document_name')->orderBy('created_at', 'desc')->get();
+        $user = auth()->user();
 
-        return view('documents.upload', compact('documents'));
+        // 1. Lấy danh sách khóa học (Admin thấy hết, Giáo viên thấy khóa của mình)
+        if ($user->role === 'admin') {
+            $courses = Course::all();
+        } else {
+            $courses = Course::where('teacher_id', $user->id)->get();
+        }
+
+        // 2. Lấy danh sách tài liệu từ PostgreSQL
+        $documents = DocumentChunk::on('pgsql')->select('document_name', DB::raw('MAX(created_at) as created_at'), DB::raw('COUNT(*) as total_chunks'))->groupBy('document_name')->orderBy('created_at', 'desc')->get();
+
+        return view('documents.upload', compact('documents', 'courses'));
     }
 
+    // ==========================================
+    // 2. XỬ LÝ UPLOAD VÀ LƯU VECTOR
+    // ==========================================
     public function store(Request $request)
     {
         // Validate file và khóa học (nếu có)
         $request->validate([
             'file' => 'required|mimes:pdf|max:10240', // Giới hạn 10MB
-            'course_id' => 'nullable|integer',
+            'course_id' => 'required|integer', // Đổi nullable thành required để ép chọn khóa học
         ]);
 
         if ($request->hasFile('file')) {
@@ -48,19 +64,14 @@ class DocumentController extends Controller
 
         return back()->with('error', 'Không tìm thấy file để xử lý.');
     }
-    // app/Http/Controllers/DocumentController.php
 
-    public function uploadPage()
-    {
-        // Lấy danh sách tên tài liệu duy nhất và số lượng đoạn (chunks) của mỗi tài liệu
-        $documents = \App\Models\DocumentChunk::select('document_name', \DB::raw('count(*) as total_chunks'), 'created_at')->groupBy('document_name', 'created_at')->orderBy('created_at', 'desc')->get();
-
-        return view('documents.upload', compact('documents'));
-    }
+    // ==========================================
+    // 3. XÓA TÀI LIỆU KHỎI BỘ NÃO AI
+    // ==========================================
     public function destroy($name)
     {
-        // Xóa tất cả các đoạn vector thuộc về tài liệu này
-        \App\Models\DocumentChunk::where('document_name', $name)->delete();
+        // Thêm on('pgsql') để đảm bảo xóa đúng CSDL Vector, nếu không sẽ lỗi bảng không tồn tại bên MySQL
+        DocumentChunk::on('pgsql')->where('document_name', $name)->delete();
 
         return back()->with('success', 'Đã xóa kiến thức của tài liệu: ' . $name);
     }

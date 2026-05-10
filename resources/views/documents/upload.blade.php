@@ -69,19 +69,31 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-uppercase text-muted">Khóa học áp
                                         dụng</label>
-                                    <select name="course_id" class="form-select bg-light border-0 py-2">
-                                        <option value="">-- Dùng chung toàn hệ thống --</option>
-                                        {{-- Thầy có thể dùng vòng lặp @foreach ($courses as $course) nếu có dữ liệu --}}
-                                        <option value="1">Lập trình Laravel căn bản</option>
-                                        <option value="2">Thiết kế giao diện với Bootstrap 5</option>
+                                    <select name="course_id" class="form-select bg-light border-0 py-2" required>
+                                        <option value="">-- Chọn khóa học để huấn luyện --</option>
+
+                                        {{-- Lặp qua danh sách khóa học từ CSDL --}}
+                                        @foreach ($courses as $course)
+                                            <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                        @endforeach
+
+                                        <option value="0">-- Dùng chung toàn hệ thống --</option>
                                     </select>
+                                    @error('course_id')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
                                 </div>
+
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-uppercase text-muted">Tài liệu (Định dạng
                                         PDF)</label>
                                     <input class="form-control bg-light border-0 py-2" type="file" name="file"
                                         accept="application/pdf" required>
+                                    @error('file')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
                                 </div>
+
                                 <div class="col-12 mt-4">
                                     <button type="submit" class="btn btn-primary fw-bold py-3 w-100 shadow-sm"
                                         id="btnUpload">

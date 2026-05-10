@@ -66,25 +66,32 @@ class ClassManagementController extends Controller
 
     public function store(Request $request)
     {
-        if (auth()->user()->role !== 'admin') {
-            return back()->with('error', 'Chỉ Quản trị viên mới được tạo lớp học.');
+        if (!in_array(auth()->user()->role, ['admin', 'teacher'])) {
+            return back()->with('error', 'Bạn không có quyền tạo lớp học.');
         }
 
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:classes,code',
-            'teacher_id' => 'required|exists:users,id',
-            'course_ids' => 'nullable|array', // Validate mảng khóa học
+            'course_ids' => 'nullable|array',
             'course_ids.*' => 'exists:courses,id',
-        ]);
+        ];
 
+        // Nếu là admin thì mới bắt buộc chọn teacher_id từ request
+        if (auth()->user()->role === 'admin') {
+            $rules['teacher_id'] = 'required|exists:users,id';
+        }
+
+        $request->validate($rules);
+
+        // Trích đoạn cập nhật trong hàm store()
         $classroom = Classroom::create([
             'name' => $request->name,
             'code' => $request->code,
-            'teacher_id' => $request->teacher_id,
+            // Gán teacher_id từ form nếu là admin, gán ID hiện tại nếu là giáo viên
+            'teacher_id' => auth()->user()->role === 'admin' ? $request->teacher_id : auth()->id(),
         ]);
 
-        // Gán các khóa học vào lớp
         if ($request->has('course_ids')) {
             $classroom->courses()->attach($request->course_ids);
         }

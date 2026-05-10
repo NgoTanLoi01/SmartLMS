@@ -85,8 +85,11 @@
                                         <tr>
                                             <td class="px-4 fw-bold">{{ $user->name }}</td>
                                             <td class="px-4 text-muted">{{ $user->email }}</td>
-                                            <td class="px-4"><span
-                                                    class="badge {{ $user->role == 'teacher' ? 'bg-info' : 'bg-secondary' }}">{{ strtoupper($user->role) }}</span>
+                                            <td class="px-4">
+                                                <span
+                                                    class="badge {{ $user->role == 'teacher' ? 'bg-info' : ($user->role == 'admin' ? 'bg-secondary' : 'bg-primary') }}">
+                                                    {{ strtoupper($user->role) }}
+                                                </span>
                                             </td>
                                             <td class="px-4 text-muted small">
                                                 {{ \Carbon\Carbon::parse($user->created_at)->format('d/m/Y') }}</td>

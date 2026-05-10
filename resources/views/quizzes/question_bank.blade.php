@@ -21,6 +21,9 @@
                 <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
                     <i class="fas fa-plus me-2"></i>Thêm câu hỏi
                 </button>
+                <a href="{{ route('quizzes.ai_generate') }}" class="btn btn-outline-primary fw-bold shadow-sm">
+                    <i class="fas fa-magic me-2"></i> Tạo câu hỏi bằng AI
+                </a>
             </div>
         </div>
 

@@ -10,7 +10,8 @@
                 <p class="text-muted mb-0 small">Quản lý các lớp học và học viên</p>
             </div>
 
-            @if (auth()->user()->role === 'admin')
+            {{-- CẬP NHẬT: Cho phép cả Admin và Teacher nhìn thấy nút tạo lớp --}}
+            @if (in_array(auth()->user()->role, ['admin', 'teacher']))
                 <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
                     data-bs-target="#addClassModal">
                     <i class="fas fa-plus me-1"></i> Tạo lớp mới
@@ -24,7 +25,6 @@
                     <div class="card border-0 shadow-sm h-100 rounded-3 hover-shadow transition-all">
                         <div class="card-body p-4">
 
-                            <!-- BẮT ĐẦU: KHỐI HEADER THẺ CARD CÓ NÚT SỬA/XÓA -->
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold">
                                     {{ $class->code }}
@@ -35,7 +35,6 @@
                                         <i class="fas fa-users me-1"></i> {{ $class->students_count }} HS
                                     </div>
 
-                                    <!-- Nút dropdown Sửa/Xóa -->
                                     <div class="dropdown">
                                         <button class="btn btn-light btn-sm rounded-circle border-0 text-muted shadow-none"
                                             style="width: 30px; height: 30px;" type="button" data-bs-toggle="dropdown">
@@ -43,7 +42,6 @@
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-1">
                                             <li>
-                                                <!-- Lưu ý: Đã thêm data-courses -->
                                                 <a class="dropdown-item edit-class-btn" href="#"
                                                     data-id="{{ $class->id }}" data-name="{{ $class->name }}"
                                                     data-code="{{ $class->code }}" data-teacher="{{ $class->teacher_id }}"
@@ -68,8 +66,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- KẾT THÚC: KHỐI HEADER THẺ CARD -->
-
                             <h5 class="fw-bold text-dark mb-1">{{ $class->name }}</h5>
                             <p class="text-muted small mb-3">
                                 <i class="fas fa-chalkboard-teacher me-1"></i> GV: {{ $class->teacher->name ?? 'N/A' }}
@@ -91,8 +87,7 @@
         </div>
     </div>
 
-    <!-- MODAL TẠO LỚP CHO ADMIN -->
-    @if (auth()->user()->role === 'admin')
+    @if (in_array(auth()->user()->role, ['admin', 'teacher']))
         <div class="modal fade" id="addClassModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <form action="{{ route('classes.store') }}" method="POST" class="modal-content border-0 shadow">
@@ -112,18 +107,20 @@
                             <input type="text" name="code" class="form-control bg-light border-0 py-2"
                                 placeholder="VD: LARAVEL-K1" required>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Phân công Giáo viên</label>
-                            <select name="teacher_id" class="form-select bg-light border-0 py-2" required>
-                                <option value="">-- Chọn Giáo viên --</option>
-                                @foreach ($teachers as $teacher)
-                                    <option value="{{ $teacher->id }}">{{ $teacher->name }} ({{ $teacher->email }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
 
-                        <!-- Danh sách Khóa học cho Modal Tạo Mới -->
+                        @if (auth()->user()->role === 'admin')
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">Phân công Giáo viên</label>
+                                <select name="teacher_id" class="form-select bg-light border-0 py-2" required>
+                                    <option value="">-- Chọn Giáo viên --</option>
+                                    @foreach ($teachers as $teacher)
+                                        <option value="{{ $teacher->id }}">{{ $teacher->name }} ({{ $teacher->email }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
                         <div class="mb-0">
                             <label class="form-label fw-bold small text-muted">Phân bổ Khóa học cho lớp</label>
                             <div class="border rounded bg-light p-2" style="max-height: 150px; overflow-y: auto;">
@@ -151,7 +148,6 @@
         </div>
     @endif
 
-    <!-- MODAL SỬA LỚP HỌC -->
     <div class="modal fade" id="editClassModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form id="editClassForm" method="POST" class="modal-content border-0 shadow">
@@ -184,7 +180,6 @@
                         </div>
                     @endif
 
-                    <!-- Danh sách Khóa học cho Modal Sửa -->
                     <div class="mb-0">
                         <label class="form-label fw-bold small text-muted">Phân bổ Khóa học cho lớp</label>
                         <div class="border rounded bg-light p-2" style="max-height: 150px; overflow-y: auto;">

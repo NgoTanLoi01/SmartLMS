@@ -37,4 +37,8 @@ return [
         'key' => env('DEEPSEEK_API_KEY'),
         'base_url' => 'https://api.deepseek.com',
     ],
+
+    'gemini' => [
+        'key' => env('GOOGLE_API_KEY'),
+    ],
 ];
