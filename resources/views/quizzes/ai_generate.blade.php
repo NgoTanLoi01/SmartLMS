@@ -56,14 +56,16 @@
                     </div>
                 </div>
 
-                {{-- Card hướng dẫn --}}
-                <div class="card border-0 bg-light shadow-sm">
-                    <div class="card-body">
-                        <h6 class="fw-bold text-primary"><i class="fas fa-lightbulb me-2"></i>Mẹo nhỏ:</h6>
-                        <p class="small text-muted mb-0">
-                            Chủ đề càng chi tiết, AI sẽ tìm kiếm trong tài liệu càng chính xác. Thầy có thể chọn lọc lại câu
-                            hỏi trước khi lưu chính thức vào ngân hàng.
-                        </p>
+                <div class="alert bg-success-subtle border-0 border-start border-success border-4 rounded-0 mb-0 p-4">
+                    <div class="d-flex">
+                        <div>
+                            <h6 class="fw-bold text-success
+                            "><i class="fas fa-lightbulb me-2"></i>Mẹo nhỏ:</h6>
+                            <p class="small text-muted mb-0">
+                                Chủ đề càng chi tiết, AI sẽ tìm kiếm trong tài liệu càng chính xác. Thầy có thể chọn lọc lại
+                                câu hỏi trước khi lưu chính thức vào ngân hàng.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

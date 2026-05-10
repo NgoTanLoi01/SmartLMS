@@ -43,8 +43,10 @@
                             </div>
 
                             <h5 class="fw-bold text-dark mb-2">{{ $assignment->title }}</h5>
+
+                            {{-- Sử dụng strip_tags để loại bỏ thẻ HTML trước khi cắt chuỗi, tránh lỗi hiển thị trên Card --}}
                             <p class="text-muted small mb-3 flex-grow-1">
-                                {{ Str::limit($assignment->instructions, 100) }}
+                                {{ Str::limit(strip_tags($assignment->instructions), 100) }}
                             </p>
 
                             <div class="bg-light rounded p-3 mb-3">
@@ -61,10 +63,11 @@
 
                             <div class="d-grid gap-2">
                                 @if (auth()->user()->role === 'student')
+                                    {{-- Truyền instructions đã loại bỏ tag vào data-attribute để Modal JS xử lý an toàn --}}
                                     <button class="btn btn-outline-primary rounded-pill fw-bold" data-bs-toggle="modal"
                                         data-bs-target="#submitAssignmentModal" data-id="{{ $assignment->id }}"
                                         data-title="{{ $assignment->title }}"
-                                        data-instructions="{{ $assignment->instructions }}">
+                                        data-instructions="{{ strip_tags($assignment->instructions) }}">
                                         {{ $submission ? 'Nộp lại bài làm' : 'Bắt đầu làm bài' }}
                                     </button>
 

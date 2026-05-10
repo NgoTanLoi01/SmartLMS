@@ -207,7 +207,7 @@
 
                         <h5 class="fw-bold mt-4 mb-3"><i class="fas fa-tasks me-2 text-primary"></i>Yêu cầu bài tập:</h5>
                         <div id="assignment-instructions"
-                            class="lh-lg text-secondary bg-white p-4 rounded border shadow-sm mb-4"></div>
+                            class="lh-lg bg-white p-4 rounded border shadow-sm mb-4"></div>
 
                         @if (auth()->user()->role === 'student')
                             <div id="student-submission-area"

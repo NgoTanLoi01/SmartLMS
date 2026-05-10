@@ -31,8 +31,7 @@ class DocumentController extends Controller
         }
 
         // 2. Lấy danh sách tài liệu từ PostgreSQL
-        $documents = DocumentChunk::on('pgsql')->select('document_name', DB::raw('MAX(created_at) as created_at'), DB::raw('COUNT(*) as total_chunks'))->groupBy('document_name')->orderBy('created_at', 'desc')->get();
-
+        $documents = DocumentChunk::on('pgsql')->select('document_name', 'course_id', DB::raw('MAX(created_at) as created_at'), DB::raw('COUNT(*) as total_chunks'))->groupBy('document_name', 'course_id')->orderBy('created_at', 'desc')->get();
         return view('documents.upload', compact('documents', 'courses'));
     }
 

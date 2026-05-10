@@ -153,10 +153,14 @@
                 assignmentArea.classList.remove('d-none');
                 assignmentArea.classList.add('d-flex', 'flex-column');
 
+
                 const id = this.getAttribute('data-id');
+
                 document.getElementById('assignment-title').innerText = this.getAttribute('data-title');
-                document.getElementById('assignment-instructions').innerText = this.getAttribute(
-                    'data-instructions');
+
+                const instructions = this.getAttribute('data-instructions');
+                document.getElementById('assignment-instructions').innerHTML = instructions;
+
                 document.getElementById('assignment-due-date').innerText = this.getAttribute('data-due');
 
                 const rawDue = this.getAttribute('data-raw-due');

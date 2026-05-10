@@ -23,23 +23,25 @@
         background-color: #0b5ed7;
     }
 
-    /* Khung Chat */
+    /* Khung Chat Mặc định */
     .chatbot-window {
         position: fixed;
         bottom: 100px;
         right: 30px;
-        width: 350px;
-        height: 450px;
+        width: 380px;
+        /* Mở rộng xíu so với 350px cũ */
+        height: 550px;
+        /* Cao hơn chút để dễ đọc */
         background: white;
         border-radius: 12px;
-        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
         display: flex;
         flex-direction: column;
         z-index: 9998;
         opacity: 0;
         pointer-events: none;
         transform: translateY(20px);
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         border: 1px solid #dee2e6;
         overflow: hidden;
     }
@@ -50,32 +52,82 @@
         transform: translateY(0);
     }
 
+    /* CHẾ ĐỘ FULL MÀN HÌNH */
+    .chatbot-window.fullscreen {
+        width: 90vw;
+        height: 90vh;
+        bottom: 5vh;
+        right: 5vw;
+        border-radius: 16px;
+    }
+
     .chat-header {
         background: #0d6efd;
         color: white;
-        padding: 15px;
+        padding: 15px 20px;
         font-weight: bold;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
+    /* Nhóm nút điều khiển header */
+    .chat-controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .chat-controls i {
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+    .chat-controls i:hover {
+        opacity: 1;
+    }
+
     .chat-body {
         flex: 1;
-        padding: 15px;
+        padding: 20px;
         overflow-y: auto;
         background: #f8f9fa;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
+    }
+
+    /* Tối ưu Scrollbar cho đẹp */
+    .chat-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .chat-body::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 10px;
     }
 
     .chat-msg {
-        max-width: 80%;
-        padding: 10px 14px;
+        max-width: 85%;
+        padding: 12px 16px;
         border-radius: 12px;
-        font-size: 0.9rem;
-        line-height: 1.4;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        word-wrap: break-word;
+        /* Chống tràn chữ */
+        overflow-wrap: anywhere;
+    }
+
+    /* Khi fullscreen, tin nhắn có thể chiếm diện tích rộng hơn */
+    .chatbot-window.fullscreen .chat-msg {
+        max-width: 75%;
+        font-size: 1rem;
+        /* Chữ to hơn một chút khi full màn hình */
     }
 
     .chat-msg.user {
@@ -91,6 +143,7 @@
         border: 1px solid #dee2e6;
         align-self: flex-start;
         border-bottom-left-radius: 2px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
     }
 
     .chat-input-area {
@@ -99,15 +152,21 @@
         border-top: 1px solid #dee2e6;
         display: flex;
         gap: 10px;
+        align-items: center;
+    }
+
+    .chat-input-area input {
+        padding: 12px 20px;
     }
 
     .typing-indicator {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         color: #6c757d;
         font-style: italic;
         display: none;
         align-self: flex-start;
-        padding: 0 5px;
+        padding: 0 20px 10px 20px;
+        background: #f8f9fa;
     }
 </style>
 
@@ -118,17 +177,21 @@
 <div class="chatbot-window" id="chatbotWindow">
     <div class="chat-header">
         <span><i class="fas fa-robot me-2"></i> Trợ lý học tập AI</span>
-        <button type="button" class="btn-close btn-close-white" style="font-size: 0.8rem;" id="closeChat"></button>
+        <div class="chat-controls">
+            <i class="fas fa-expand" id="expandChat" title="Phóng to"></i>
+            <i class="fas fa-times" id="closeChat" title="Đóng" style="font-size: 1.2rem;"></i>
+        </div>
     </div>
 
     <div class="chat-body" id="chatBody">
         <div class="chat-msg ai">Chào bạn! Mình có thể giúp gì cho bài học của bạn hôm nay?</div>
     </div>
-    <div class="typing-indicator" id="typingIndicator">AI đang nhập...</div>
+    <div class="typing-indicator" id="typingIndicator">AI đang suy nghĩ...</div>
 
     <div class="chat-input-area">
-        <input type="text" id="chatInput" class="form-control rounded-pill" placeholder="Nhập câu hỏi...">
-        <button id="sendBtn" class="btn btn-primary rounded-circle" style="width: 40px; height: 40px; padding: 0;">
+        <input type="text" id="chatInput" class="form-control rounded-pill" placeholder="Hỏi AI bất cứ điều gì...">
+        <button id="sendBtn" class="btn btn-primary rounded-circle"
+            style="width: 45px; height: 45px; padding: 0; display: flex; align-items: center; justify-content: center;">
             <i class="fas fa-paper-plane"></i>
         </button>
     </div>
@@ -142,16 +205,34 @@
         const toggler = document.getElementById('chatbotToggler');
         const windowEl = document.getElementById('chatbotWindow');
         const closeBtn = document.getElementById('closeChat');
+        const expandBtn = document.getElementById('expandChat');
         const sendBtn = document.getElementById('sendBtn');
         const chatInput = document.getElementById('chatInput');
         const chatBody = document.getElementById('chatBody');
         const typingIndicator = document.getElementById('typingIndicator');
 
-        // BỘ NHỚ LƯU TRỮ LỊCH SỬ CHAT
         let chatHistory = [];
 
+        // Đóng / Mở Chat
         toggler.addEventListener('click', () => windowEl.classList.toggle('active'));
         closeBtn.addEventListener('click', () => windowEl.classList.remove('active'));
+
+        // Phóng to / Thu nhỏ
+        expandBtn.addEventListener('click', () => {
+            windowEl.classList.toggle('fullscreen');
+
+            // Đổi icon tương ứng
+            if (windowEl.classList.contains('fullscreen')) {
+                expandBtn.classList.remove('fa-expand');
+                expandBtn.classList.add('fa-compress');
+                expandBtn.title = "Thu nhỏ";
+            } else {
+                expandBtn.classList.remove('fa-compress');
+                expandBtn.classList.add('fa-expand');
+                expandBtn.title = "Phóng to";
+            }
+            scrollToBottom();
+        });
 
         const scrollToBottom = () => {
             chatBody.scrollTop = chatBody.scrollHeight;
@@ -180,7 +261,6 @@
 
             appendMessage(message, 'user');
 
-            // 1. Lưu câu hỏi của học sinh vào bộ nhớ
             chatHistory.push({
                 role: 'user',
                 content: message
@@ -190,7 +270,6 @@
             scrollToBottom();
 
             try {
-                // 2. Gửi TOÀN BỘ LỊCH SỬ lên server thay vì chỉ 1 tin nhắn
                 const response = await axios.post('{{ route('chatbot.send') }}', {
                     messages: chatHistory
                 });
@@ -200,7 +279,6 @@
 
                 appendMessage(aiReply, 'ai');
 
-                // 3. Lưu câu trả lời của AI vào bộ nhớ
                 chatHistory.push({
                     role: 'assistant',
                     content: aiReply
@@ -210,8 +288,6 @@
                 console.error(error);
                 typingIndicator.style.display = 'none';
                 appendMessage('Đã xảy ra lỗi khi gọi AI. Vui lòng thử lại.', 'ai');
-
-                // Nếu lỗi, xóa câu hỏi vừa rồi khỏi bộ nhớ để tránh kẹt
                 chatHistory.pop();
             } finally {
                 chatInput.disabled = false;

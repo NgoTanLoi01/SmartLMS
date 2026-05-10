@@ -36,13 +36,12 @@ class ChatbotController extends Controller
                 'reply' => $reply,
             ]);
         } catch (\Exception $e) {
-            // Ghi lỗi chi tiết vào log để bạn xem qua lệnh tail -f
             Log::error('CHATBOT_ERROR: ' . $e->getMessage());
 
             return response()->json(
                 [
                     'reply' => 'Dạ, hệ thống đang gặp chút sự cố kỹ thuật. Thầy Lợi đang kiểm tra lại ạ!',
-                    'error_detail' => $e->getMessage(), // Trả về lỗi để bạn nhìn thấy ngay trên web
+                    'error_detail' => $e->getMessage(), 
                 ],
                 500,
             );

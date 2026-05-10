@@ -3,7 +3,7 @@
 @section('content')
     <div class="container py-4">
         <div class="row justify-content-center">
-            <div class="col-lg-8 col-md-10">
+            <div class="col-lg-12 col-md-10">
 
                 {{-- 1. Tiêu đề trang với Icon AI --}}
                 <div class="d-flex align-items-center mb-4">
@@ -31,8 +31,9 @@
                                     hơn và tránh bị "nghẽn" API Google khi tạo Vector.
                                 </p>
                                 <ul class="small text-dark-emphasis mb-0 ps-3">
-                                    <li>Chỉ sử dụng file PDF <strong>dạng văn bản</strong> (không dùng ảnh quét/scan).</li>
+                                    <li>Chỉ sử dụng file PDF dạng văn bản <span style="color: rgb(190, 7, 7)">(không dùng ảnh quét/scan)</span>.</li>
                                     <li>Hệ thống sử dụng Gemini 3 Flash để tạo Vector 3072 chiều.</li>
+                                    <li><strong>Tài liệu được Train sẽ dùng cho phần chatbot và ngân hàng câu hỏi.</strong></li>
                                 </ul>
                             </div>
                         </div>
@@ -137,6 +138,7 @@
                                 <thead class="bg-light">
                                     <tr class="small text-uppercase text-muted">
                                         <th class="ps-4 py-3">Tên tài liệu</th>
+                                        <th>Khóa học áp dụng</th>
                                         <th>Độ chi tiết</th>
                                         <th>Ngày nạp</th>
                                         <th class="text-end pe-4">Quản lý</th>
@@ -151,6 +153,27 @@
                                                     <span class="fw-medium text-dark">{{ $doc->document_name }}</span>
                                                 </div>
                                             </td>
+
+                                            <td>
+                                                @if ($doc->course_id && $doc->course_id != 0)
+                                                    @php
+                                                        // Tìm khóa học trong danh sách $courses đã được truyền từ Controller
+                                                        $course = $courses->firstWhere('id', $doc->course_id);
+                                                    @endphp
+                                                    <span
+                                                        class="badge bg-info-subtle text-info px-2 py-1 border border-info-subtle"
+                                                        style="font-size: 0.8rem;">
+                                                        {{ $course ? $course->title : 'Khóa học đã xóa' }}
+                                                    </span>
+                                                @else
+                                                    <span
+                                                        class="badge bg-secondary-subtle text-secondary px-2 py-1 border border-secondary-subtle"
+                                                        style="font-size: 0.8rem;">
+                                                        Dùng chung toàn hệ thống
+                                                    </span>
+                                                @endif
+                                            </td>
+
                                             <td>
                                                 <span class="badge bg-primary-subtle text-primary px-3 rounded-pill">
                                                     {{ $doc->total_chunks }} Vectors
@@ -174,7 +197,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center py-5 text-muted small">
+                                            <td colspan="5" class="text-center py-5 text-muted small">
                                                 <i class="fas fa-folder-open fa-3x d-block mb-3 opacity-25"></i>
                                                 Chưa có dữ liệu tri thức nào được nạp.
                                             </td>
