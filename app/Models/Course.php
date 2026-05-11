@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Course extends Model
 {
+    protected $connection = 'mysql';
+
     protected $fillable = ['title', 'description', 'teacher_id'];
 
     public function modules()
@@ -30,5 +32,22 @@ class Course extends Model
     public function quizzes()
     {
         return $this->hasMany(Quiz::class);
+    }
+    // 1. Lấy tất cả bài học thông qua modules
+    public function lessons()
+    {
+        return $this->hasManyThrough(Lesson::class, Module::class);
+    }
+
+    public function students()
+    {
+        return $this->hasManyThrough(
+            User::class,
+            \App\Models\ClassUser::class,
+            'course_id',
+            'id',
+            'id',
+            'user_id',
+        );
     }
 }

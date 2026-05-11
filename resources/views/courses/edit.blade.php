@@ -5,7 +5,7 @@
 @section('content')
     <div class="container py-4">
         <div class="row justify-content-center">
-            <div class="col-lg-8">
+            <div class="col-lg-12">
                 <nav aria-label="breadcrumb" class="mb-4">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('courses.index') }}" class="text-decoration-none">Khóa
@@ -16,7 +16,7 @@
 
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white py-3 border-0">
-                        <h4 class="fw-bold mb-0 text-warning">
+                        <h4 class="fw-bold mb-0">
                             <i class="fas fa-edit me-2"></i>Chỉnh sửa khóa học
                         </h4>
                     </div>

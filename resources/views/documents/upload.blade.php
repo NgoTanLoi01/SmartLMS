@@ -26,14 +26,16 @@
                             <div>
                                 <h6 class="fw-bold text-warning-emphasis">Lưu ý quan trọng trước khi Train!</h6>
                                 <p class="mb-2 text-dark-emphasis">
-                                    Nếu file quá lớn (ví dụ sách trên 100 trang): Thầy <strong>nên chia nhỏ file
+                                    Nếu file quá lớn (ví dụ sách trên 50 trang): Thầy / Cô <strong>nên chia nhỏ file
                                         PDF</strong> thành từng chương trước khi upload. Việc này giúp AI tìm kiếm chính xác
                                     hơn và tránh bị "nghẽn" API Google khi tạo Vector.
                                 </p>
                                 <ul class="small text-dark-emphasis mb-0 ps-3">
-                                    <li>Chỉ sử dụng file PDF dạng văn bản <span style="color: rgb(190, 7, 7)">(không dùng ảnh quét/scan)</span>.</li>
+                                    <li>Chỉ sử dụng file PDF dạng văn bản <span style="color: rgb(190, 7, 7)">(không dùng
+                                            ảnh quét/scan)</span>.</li>
                                     <li>Hệ thống sử dụng Gemini 3 Flash để tạo Vector 3072 chiều.</li>
-                                    <li><strong>Tài liệu được Train sẽ dùng cho phần chatbot và ngân hàng câu hỏi.</strong></li>
+                                    <li><strong>Tài liệu được Train sẽ dùng cho phần chatbot và ngân hàng câu hỏi.</strong>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -155,21 +157,25 @@
                                             </td>
 
                                             <td>
-                                                @if ($doc->course_id && $doc->course_id != 0)
-                                                    @php
-                                                        // Tìm khóa học trong danh sách $courses đã được truyền từ Controller
-                                                        $course = $courses->firstWhere('id', $doc->course_id);
-                                                    @endphp
-                                                    <span
-                                                        class="badge bg-info-subtle text-info px-2 py-1 border border-info-subtle"
-                                                        style="font-size: 0.8rem;">
-                                                        {{ $course ? $course->title : 'Khóa học đã xóa' }}
-                                                    </span>
-                                                @else
+                                                {{-- Kiểm tra trực tiếp qua quan hệ đã định nghĩa trong Model --}}
+                                                @if ($doc->course_id == 0)
                                                     <span
                                                         class="badge bg-secondary-subtle text-secondary px-2 py-1 border border-secondary-subtle"
                                                         style="font-size: 0.8rem;">
                                                         Dùng chung toàn hệ thống
+                                                    </span>
+                                                @elseif ($doc->course)
+                                                    {{-- Laravel sẽ tự sang MySQL tìm khóa học theo ID --}}
+                                                    <span
+                                                        class="badge bg-info-subtle text-info px-2 py-1 border border-info-subtle"
+                                                        style="font-size: 0.8rem;">
+                                                        {{ $doc->course->title }}
+                                                    </span>
+                                                @else
+                                                    <span
+                                                        class="badge bg-danger-subtle text-danger px-2 py-1 border border-danger-subtle"
+                                                        style="font-size: 0.8rem;">
+                                                        Khóa học không khả dụng (ID: {{ $doc->course_id }})
                                                     </span>
                                                 @endif
                                             </td>

@@ -22,7 +22,7 @@
                                     @endforeach
 
                                 </select>
-                                <div class="form-text small">AI sẽ dựa vào tài liệu PDF thầy đã nạp cho khóa học này.</div>
+                                <div class="form-text small">AI sẽ dựa vào tài liệu PDF Thầy / Cô đã nạp cho khóa học này.</div>
                             </div>
 
                             <div class="mb-3">
@@ -62,7 +62,7 @@
                             <h6 class="fw-bold text-success
                             "><i class="fas fa-lightbulb me-2"></i>Mẹo nhỏ:</h6>
                             <p class="small text-muted mb-0">
-                                Chủ đề càng chi tiết, AI sẽ tìm kiếm trong tài liệu càng chính xác. Thầy có thể chọn lọc lại
+                                Chủ đề càng chi tiết, AI sẽ tìm kiếm trong tài liệu càng chính xác. Thầy / Cô có thể chọn lọc lại
                                 câu hỏi trước khi lưu chính thức vào ngân hàng.
                             </p>
                         </div>
@@ -186,7 +186,7 @@
                 generatedQuestions = data.questions ? data.questions : data;
 
                 if (!Array.isArray(generatedQuestions) || generatedQuestions.length === 0) {
-                    alert("AI không thể tạo được câu hỏi từ nội dung này. Thầy thử đổi chủ đề nhé!");
+                    alert("AI không thể tạo được câu hỏi từ nội dung này. Thầy / Cô thử đổi chủ đề nhé!");
                     resetUI();
                     return;
                 }
@@ -200,7 +200,7 @@
 
             } catch (error) {
                 console.error(error);
-                alert("Lỗi kết nối đến máy chủ AI. Thầy vui lòng thử lại!");
+                alert("Lỗi kết nối đến máy chủ AI. Thầy / Cô vui lòng thử lại!");
                 resetUI();
             } finally {
                 document.getElementById('btnGenerate').disabled = false;

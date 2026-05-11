@@ -68,7 +68,6 @@
             <form id="quiz-form" action="{{ route('quizzes.submit', $quiz->id) }}" method="POST">
                 @csrf
 
-                {{-- BỔ SUNG ĐOẠN NÀY ĐỂ MÁY CHỦ NHỚ ĐƯỢC DANH SÁCH CÂU HỎI ĐÃ PHÁT --}}
                 @foreach ($examQuestions as $q)
                     <input type="hidden" name="question_ids[]" value="{{ $q->id }}">
                 @endforeach
@@ -79,15 +78,7 @@
                 @forelse ($examQuestions as $index => $question)
                     <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
                         <div class="card-header bg-white py-3 border-bottom position-relative">
-                            <span class="badge bg-secondary position-absolute top-0 end-0 m-2">
-                                @if ($question->difficulty == 'easy')
-                                    Dễ
-                                @elseif($question->difficulty == 'medium')
-                                    TB
-                                @else
-                                    Khó
-                                @endif
-                            </span>
+
                             <h5 class="mb-0 fw-bold lh-base pe-4" style="color: #2c3e50;">
                                 <span style="color: #6f42c1;">Câu {{ $index + 1 }}:</span> {{ $question->question_text }}
                             </h5>

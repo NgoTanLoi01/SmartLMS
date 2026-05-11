@@ -8,34 +8,52 @@ use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
+
     public function index()
     {
         $user = auth()->user();
 
-        if ($user->role === 'admin') {
-            $courses = Course::with('teacher')->latest()->get();
-        } elseif ($user->role === 'teacher') {
-            $courses = Course::with('teacher')->where('teacher_id', $user->id)->latest()->get();
-        } else {
-            // STUDENT: Lấy khóa học kèm theo modules và lessons để tính tiến độ
-            $classIds = $user->classes()->pluck('classes.id');
+        // Khởi tạo query cơ bản kèm đếm số lượng bài học (lessons)
+        $query = Course::with(['teacher', 'classes'])
+            ->withCount('modules') // Đếm số module
+            // Đếm tổng bài học của tất cả các module trong khóa học
+            ->withCount([
+                'modules as lessons_count' => function ($query) {
+                    $query->leftJoin('lessons', 'modules.id', '=', 'lessons.module_id')->select(\DB::raw('count(lessons.id)'));
+                },
+            ]);
 
-            $courses = Course::with(['teacher', 'modules.lessons'])
-                ->whereHas('classes', function ($query) use ($classIds) {
-                    $query->whereIn('classes.id', $classIds);
+        if ($user->role === 'admin') {
+            $courses = $query->latest()->get();
+        } elseif ($user->role === 'teacher') {
+            $courses = $query->where('teacher_id', $user->id)->latest()->get();
+        } else {
+            // Học sinh
+            $classIds = $user->classes()->pluck('classes.id');
+            $courses = $query
+                ->whereHas('classes', function ($q) use ($classIds) {
+                    $q->whereIn('classes.id', $classIds);
                 })
+                ->with(['modules.lessons'])
                 ->latest()
                 ->get();
 
-            // Tính toán tiến độ cho từng khóa học
+            // Giữ nguyên logic tính progress của thầy
             foreach ($courses as $course) {
                 $totalLessons = $course->modules->flatMap->lessons->count();
                 $courseLessonIds = $course->modules->flatMap->lessons->pluck('id')->toArray();
-
                 $completedLessons = $user->lessons()->whereIn('lesson_id', $courseLessonIds)->whereNotNull('lesson_user.completed_at')->count();
-
                 $course->progress = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
             }
+        }
+
+        // Logic đếm Học sinh (Students) dựa trên quan hệ classes của thầy
+        foreach ($courses as $course) {
+            // Đếm số lượng user duy nhất tham gia các lớp của khóa học này
+            $course->students_count = \DB::table('class_user')
+                ->whereIn('class_id', $course->classes->pluck('id'))
+                ->distinct('user_id')
+                ->count();
         }
 
         return view('courses.index', compact('courses'));
@@ -50,7 +68,7 @@ class CourseController extends Controller
         $progress = 0;
         $totalLessons = 0;
         $completedCount = 0;
-        $userSubmissions = collect(); // Khởi tạo collection trống để tránh lỗi Undefined
+        $userSubmissions = collect();
 
         if (auth()->check() && auth()->user()->role === 'student') {
             $user = auth()->user();
@@ -64,7 +82,7 @@ class CourseController extends Controller
             $completedCount = count($completedLessonIds);
             $progress = $totalLessons > 0 ? round(($completedCount / $totalLessons) * 100) : 0;
 
-            // 2. Lấy dữ liệu bài nộp (Assignments) - PHẦN QUAN TRỌNG BỊ THIẾU
+            // 2. Lấy dữ liệu bài nộp (Assignments)
             // Lấy tất cả ID bài tập thuộc khóa học này
             $assignmentIds = \App\Models\Assignments::where('course_id', $id)->pluck('id')->toArray();
 
@@ -79,18 +97,7 @@ class CourseController extends Controller
                 ->keyBy('quiz_id'); // Gom nhóm theo ID bài kiểm tra để blade dễ kiểm tra
         }
 
-        return view(
-            'courses.show',
-            compact(
-                'course',
-                'completedLessonIds',
-                'progress',
-                'totalLessons',
-                'completedCount',
-                'userSubmissions',
-                'userQuizAttempts',
-            ),
-        );
+        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts'));
     }
 
     public function create()

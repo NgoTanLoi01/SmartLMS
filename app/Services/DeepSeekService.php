@@ -56,7 +56,7 @@ class DeepSeekService
         $apiKey = config('services.deepseek.key');
         $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
 
-        $systemContent = "Bạn là trợ lý AI học tập của thầy Ngô Tấn Lợi. Hãy trả lời thân thiện.\n\n";
+        $systemContent = "Bạn là trợ lý AI học tập của hệ thống SmartLMS. Hãy trả lời thân thiện.\n\n";
         if (!empty($context)) {
             $systemContent .= "Dựa vào tài liệu bài giảng sau để trả lời:\n" . $context;
         }

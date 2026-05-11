@@ -222,12 +222,23 @@
                 </div>
                 <div class="modal-body py-4">
                     <div class="alert alert-warning border-0 bg-warning bg-opacity-10 small mb-4">
-                        <i class="fas fa-exclamation-triangle me-1"></i> Hệ thống sẽ đọc dữ liệu từ <strong>dòng số
-                            5</strong>. Vui lòng đảm bảo cột <strong>D</strong> là Mã HS, cột <strong>E</strong> là Họ, cột
-                        <strong>F</strong> là Tên theo đúng biểu mẫu.
+                        <i class="fas fa-info-circle me-1"></i> <strong>Hướng dẫn & Quy chuẩn:</strong>
+                        <ul class="mt-2 mb-3">
+                            <li>Hệ thống đọc từ: <strong>Dòng số 5</strong></li>
+                            <li>Cấu trúc: <strong>D</strong> (Mã HS) | <strong>E</strong> (Họ) | <strong>F</strong> (Tên)
+                            </li>
+                            <li><strong>Tên đăng nhập:</strong> hovaten@gmail.com (Ví dụ: nguyenvana@gmail.com)</li>
+                            <li><strong>Mật khẩu mặc định:</strong> <code class="bg-white px-1">123456</code></li>
+                        </ul>
+                        <hr class="my-2 opacity-10">
+                        <a href="{{ asset('templates/mau_danh_sach_hoc_sinh.xlsx') }}"
+                            class="text-decoration-none fw-bold text-dark small">
+                            <i class="fas fa-file-excel text-success me-1"></i> Tải file biểu mẫu chuẩn (.xlsx)
+                        </a>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">Chọn file Excel (.xlsx, .xls, .csv)</label>
+                        <label class="form-label fw-bold small text-muted">Chọn file đã điền dữ liệu</label>
                         <input type="file" name="file" class="form-control bg-light border-0 py-2"
                             accept=".xlsx, .xls, .csv" required>
                     </div>

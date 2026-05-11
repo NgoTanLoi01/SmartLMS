@@ -213,7 +213,7 @@ class QuestionController extends Controller
             ->get();
 
         if ($contextChunks->isEmpty()) {
-            return response()->json(['error' => 'Không tìm thấy tài liệu huấn luyện cho khóa học này. Thầy hãy upload tài liệu trước nhé!'], 404);
+            return response()->json(['error' => 'Không tìm thấy tài liệu huấn luyện cho khóa học này. Thầy / Cô hãy upload tài liệu trước nhé!'], 404);
         }
 
         $contextText = $contextChunks->pluck('content')->implode("\n");
@@ -226,28 +226,50 @@ class QuestionController extends Controller
         Hãy tạo {$request->quantity} câu hỏi trắc nghiệm về chủ đề: '{$request->topic}', độ khó: {$request->difficulty}.
         
         YÊU CẦU BẮT BUỘC:
-        1. Chỉ trả về dữ liệu định dạng JSON Array, không thêm văn bản dẫn chuyện.
-        2. Mỗi đối tượng trong mảng phải có cấu trúc:
+        1. Ngôn ngữ: Tiếng Việt.
+        2. Trả về ĐÚNG cấu trúc JSON là một mảng các đối tượng.
+        3. Mỗi đối tượng phải có cấu trúc:
         {
-            'question': 'nội dung câu hỏi',
-            'options': ['đáp án A', 'đáp án B', 'đáp án C', 'đáp án D'],
-            'correct_index': 0, // số từ 0 đến 3 tương ứng với vị trí đáp án đúng
-            'explanation': 'giải thích ngắn gọn'
+            \"question\": \"nội dung câu hỏi\",
+            \"options\": [\"đáp án A\", \"đáp án B\", \"đáp án C\", \"đáp án D\"],
+            \"correct_index\": 0,
+            \"explanation\": \"giải thích ngắn gọn\"
         }";
 
-        $responseDeepSeek = Http::withHeaders([
-            'Authorization' => 'Bearer ' . config('services.deepseek.key'),
-            'Content-Type' => 'application/json',
-        ])->post('https://api.deepseek.com/v1/chat/completions', [
-            'model' => 'deepseek-chat',
-            'messages' => [['role' => 'system', 'content' => 'You are a professional teacher assistant that outputs only JSON.'], ['role' => 'user', 'content' => $prompt]],
-            'response_format' => ['type' => 'json_object'], // Ép DeepSeek trả về JSON
-        ]);
+        try {
+            $responseDeepSeek = Http::withHeaders([
+                'Authorization' => 'Bearer ' . config('services.deepseek.key'),
+                'Content-Type' => 'application/json',
+            ])
+                ->timeout(120) // Tăng thời gian chờ lên 2 phút cho AI soạn đề
+                ->post('https://api.deepseek.com/v1/chat/completions', [
+                    'model' => 'deepseek-chat',
+                    'messages' => [['role' => 'system', 'content' => 'You are a professional teacher assistant. Support language: Vietnamese. Always return a JSON array of questions.'], ['role' => 'user', 'content' => $prompt]],
+                    'response_format' => ['type' => 'json_object'],
+                ]);
 
-        $aiResult = $responseDeepSeek->json()['choices'][0]['message']['content'];
+            if ($responseDeepSeek->failed()) {
+                return response()->json(['error' => 'DeepSeek không phản hồi. Thầy / Cô vui lòng thử lại.'], 500);
+            }
 
-        // Trả kết quả về cho giao diện xử lý tiếp
-        return response()->json(json_decode($aiResult, true));
+            $aiResult = $responseDeepSeek->json()['choices'][0]['message']['content'];
+            $decodedData = json_decode($aiResult, true);
+
+            // Bẫy lỗi: Nếu AI bọc JSON trong một object như {"questions": [...]} hoặc {"data": [...]}
+            // Chúng ta sẽ lấy đúng cái mảng bên trong ra.
+            $finalQuestions = $decodedData;
+            if (isset($decodedData['questions'])) {
+                $finalQuestions = $decodedData['questions'];
+            }
+            if (isset($decodedData['data'])) {
+                $finalQuestions = $decodedData['data'];
+            }
+
+            return response()->json($finalQuestions);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi AI Quiz: ' . $e->getMessage());
+            return response()->json(['error' => 'Hệ thống AI đang quá tải. Thầy / Cô hãy thử lại sau ít phút.'], 500);
+        }
     }
 
     // ==========================================

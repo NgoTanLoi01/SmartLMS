@@ -5,79 +5,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'LMS PRO') - Hệ thống học tập</title>
+    <title>@yield('title') - SmartLMS</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('favicon-v2.png') }}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            --sidebar-width: 250px;
-            --navbar-height: 56px;
+            --sidebar-width: 260px;
+            --navbar-height: 70px;
+            --primary-navy: #3e80f9;
+            /* Màu xanh đồng bộ Logo */
+            --accent-blue: #0d6efd;
+            --bg-light: #f4f7f9;
         }
 
         body {
-            background-color: #f8f9fa;
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
             margin: 0;
+            color: #2d3436;
         }
 
-        /* Navbar luôn nằm trên cùng */
+        /* Navbar Tối Ưu */
         .navbar {
-            z-index: 1060;
             height: var(--navbar-height);
+            z-index: 1060;
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
         }
 
-        /* Sidebar cố định bên trái */
+        .btn-navy {
+            background-color: var(--primary-navy);
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .btn-navy:hover {
+            background-color: #3e80f9;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Sidebar Chuyên Nghiệp */
         .sidebar {
             width: var(--sidebar-width);
             height: calc(100vh - var(--navbar-height));
             background: white;
-            border-right: 1px solid #dee2e6;
+            border-right: 1px solid rgba(0, 0, 0, 0.05);
             position: fixed;
             top: var(--navbar-height);
             left: 0;
             z-index: 1000;
-            overflow-y: auto;
-            transition: all 0.3s;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Nội dung chính: Đẩy lùi sang phải bằng đúng độ rộng Sidebar */
         .main-content {
             margin-left: var(--sidebar-width);
             padding: 30px;
+            margin-top: var(--navbar-height);
             min-height: calc(100vh - var(--navbar-height));
-            transition: all 0.3s;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #ecf2fe;
         }
 
-        /* Khi không đăng nhập (Trang Login) */
+        /* Nav Links */
+        .nav-link {
+            color: #636e72;
+            font-weight: 500;
+            border-radius: 10px;
+            margin: 5px 15px;
+            padding: 12px 15px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            background-color: #f0f4f8;
+            color: var(--primary-navy);
+        }
+
+        .nav-link.active {
+            background-color: var(--primary-navy) !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(26, 58, 90, 0.2);
+        }
+
+        .nav-link i {
+            width: 28px;
+            font-size: 1.2rem;
+        }
+
+
+        /* Trình trạng Login */
         .full-width {
             margin-left: 0 !important;
             width: 100%;
         }
 
-        .nav-link {
-            color: #333;
-            border-radius: 8px;
-            margin: 4px 10px;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
+        /* Modal Đẹp hơn */
+        .modal-content {
+            border-radius: 20px;
         }
 
-        .nav-link:hover {
-            background-color: #f0f2f5;
-        }
-
-        .nav-link.active {
-            background-color: #0d6efd;
-            color: white !important;
-            box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2);
-        }
-
-        .nav-link i {
-            width: 25px;
-            font-size: 1.1rem;
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
         }
 
         @media (max-width: 768px) {
@@ -88,288 +123,180 @@
             .main-content {
                 margin-left: 0 !important;
             }
-        }
 
-        /* Thay toàn bộ phần sidebar-hidden cũ bằng đoạn này */
-        .sidebar.sidebar-collapsed {
-            width: 60px !important;
-        }
-
-        .main-content.sidebar-collapsed {
-            margin-left: 60px !important;
-        }
-
-        /* Ẩn chữ và nhãn section khi thu gọn */
-        .sidebar.sidebar-collapsed .nav-link span,
-        .sidebar.sidebar-collapsed .section-label {
-            display: none;
-        }
-
-        /* Căn giữa icon khi thu gọn */
-        .sidebar.sidebar-collapsed .nav-link {
-            justify-content: center;
-            padding: 10px 0;
-            margin: 4px 6px;
-        }
-
-        /* Tooltip hiện tên tính năng khi hover */
-        .sidebar.sidebar-collapsed .nav-link {
-            position: relative;
-        }
-
-        .sidebar.sidebar-collapsed .nav-link::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            left: calc(100% + 10px);
-            top: 50%;
-            transform: translateY(-50%);
-            background: #333;
-            color: #fff;
-            font-size: 0.8rem;
-            padding: 4px 10px;
-            border-radius: 6px;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.15s;
-            z-index: 9999;
-        }
-
-        .sidebar.sidebar-collapsed .nav-link:hover::after {
-            opacity: 1;
+            .sidebar.show {
+                transform: translateX(0);
+            }
         }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
     @stack('styles')
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            @auth
-                <button id="sidebarToggleBtn" class="btn btn-dark border-0 me-2" type="button" title="Ẩn/Hiện menu">
-                    <i class="fas fa-bars"></i>
-                </button>
-            @endauth
+    @auth
+        <nav class="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand d-flex align-items-center" href="{{ route('dashboard') }}">
+                    <img src="{{ asset('smartlms-logo-sharpened.png') }}" alt="Smart LMS"
+                        style="height: 55px; width: auto;">
+                </a>
 
-            <a class="navbar-brand fw-bold" href="{{ Auth::check() ? route('dashboard') : url('/') }}">
-                <i class="fas fa-graduation-cap me-2 text-primary"></i>LMS System
-            </a>
-
-            <div class="ms-auto d-flex align-items-center">
-                @auth
+                <div class="ms-auto d-flex align-items-center">
                     <div class="dropdown">
-                        <button class="btn btn-dark dropdown-toggle border-0" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i> {{ Auth::user()->name }}
+                        <button class="btn btn-navy dropdown-toggle rounded-pill px-3" type="button"
+                            data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-2"></i> {{ Auth::user()->name }}
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                            <li>
-                                <span class="dropdown-item-text small text-muted">
-                                    Vai trò: {{ ucfirst(Auth::user()->role) }}
-                                </span>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-3 p-2"
+                            style="border-radius: 15px;">
+                            <li><span
+                                    class="dropdown-item-text small text-muted text-center fw-bold">{{ strtoupper(Auth::user()->role) }}</span>
                             </li>
-
-                            <li>
-                                <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                    data-bs-target="#changePasswordModal">
-                                    <i class="fas fa-key me-2 text-warning"></i> Đổi mật khẩu
-                                </a>
-                            </li>
-
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
                             <li>
+                                <a class="dropdown-item py-2 rounded-3" href="#" data-bs-toggle="modal"
+                                    data-bs-target="#changePasswordModal">
+                                    <i class="fas fa-key me-2 text-warning"></i> Đổi mật khẩu
+                                </a>
+                            </li>
+                            <li>
                                 <form action="{{ route('logout') }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="dropdown-item text-danger">
+                                    <button type="submit" class="dropdown-item text-danger py-2 rounded-3">
                                         <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
                                     </button>
                                 </form>
                             </li>
                         </ul>
-
                     </div>
-                @else
-                    <a href="{{ route('login') }}" class="btn btn-primary btn-sm px-3">Đăng nhập</a>
-                @endauth
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    @endauth
 
     <div class="wrapper">
         @auth
-            <nav class="sidebar py-2 d-none d-md-block shadow-sm">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}"
-                            href="{{ route('dashboard') }}" data-tooltip="Dashboard">
-                            <i class="fas fa-th-large"></i> <span>Trang chủ</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}"
-                            href="{{ route('courses.index') }}" data-tooltip="Khóa học của tôi">
-                            <i class="fas fa-book"></i> <span>Khóa học của tôi</span>
-                        </a>
-                    </li>
-                    {{-- <li class="nav-item">
-                        <a class="nav-link {{ request()->is('assignments*') ? 'active' : '' }}"
-                            href="{{ route('assignments.index') }}" data-tooltip="Bài tập nộp">
-                            <i class="fas fa-clipboard-list"></i> <span>Bài tập nộp</span>
-                        </a>
-                    </li> --}}
-
-                    {{-- CHỈ HIỂN THỊ NÚT NÀY CHO ADMIN VÀ GIÁO VIÊN --}}
-                    @if (Auth::user()->role === 'admin' || Auth::user()->role === 'teacher')
+            <aside class="sidebar py-3 shadow-sm">
+                <div class="d-flex flex-column h-100">
+                    <ul class="nav flex-column mb-auto">
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->is('schedules*') ? 'active' : '' }}"
-                                href="{{ Route::has('schedules.index') ? route('schedules.index') : '#' }}"
-                                data-tooltip="Quản lý lịch học">
-                                <i class="fas fa-calendar-alt"></i> <span>Quản lý lịch học</span>
+                            <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}"
+                                href="{{ route('dashboard') }}">
+                                <i class="fas fa-home"></i> <span>Trang chủ</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}"
+                                href="{{ route('courses.index') }}">
+                                <i class="fas fa-graduation-cap"></i> <span>Khóa học của tôi</span>
                             </a>
                         </li>
 
-                        <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
-                            style="font-size: 0.7rem;">
-                            Hệ thống
-                        </div>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->is('question-bank*') ? 'active' : '' }}"
-                                href="{{ Route::has('questions.index') ? route('questions.index') : '#' }}"
-                                data-tooltip="Ngân hàng câu hỏi">
-                                <i class="fas fa-database"></i> <span>Ngân hàng câu hỏi</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->is('documents*') ? 'active' : '' }}"
-                                href="{{ route('documents.upload') }}" data-tooltip="Huấn luyện AI">
-                                <i class="fas fa-brain"></i> <span>Huấn luyện AI</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
-                                href="{{ Route::has('classes.index') ? route('classes.index') : '#' }}"
-                                data-tooltip="Quản lý lớp học">
-                                <i class="fas fa-chalkboard-teacher"></i> <span>Quản lý lớp học</span>
-                            </a>
-                        </li>
-
-                        @if (Auth::user()->role === 'admin')
+                        @if (in_array(Auth::user()->role, ['admin', 'teacher']))
+                            <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
+                                style="letter-spacing: 1px;">Hệ thống AI</div>
                             <li class="nav-item">
-                                <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
-                                    href="{{ Route::has('users.index') ? route('users.index') : '#' }}"
-                                    data-tooltip="Quản lý người dùng">
-                                    <i class="fas fa-users-cog"></i> <span>Quản lý người dùng</span>
+                                <a class="nav-link {{ request()->is('documents*') ? 'active' : '' }}"
+                                    href="{{ route('documents.upload') }}">
+                                    <i class="fas fa-robot"></i> <span>Huấn luyện AI</span>
                                 </a>
                             </li>
-                        @endif
-                    @endif
-                </ul>
-            </nav>
-        @endauth
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('question-bank*') ? 'active' : '' }}"
+                                    href="{{ Route::has('questions.index') ? route('questions.index') : '#' }}">
+                                    <i class="fas fa-layer-group"></i> <span>Ngân hàng câu hỏi</span>
+                                </a>
+                            </li>
 
-        @auth
+                            <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
+                                style="letter-spacing: 1px;">Quản lý</div>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
+                                    href="{{ Route::has('classes.index') ? route('classes.index') : '#' }}">
+                                    <i class="fas fa-chalkboard"></i> <span>Quản lý lớp học</span>
+                                </a>
+                            </li>
+
+                            @if (Auth::user()->role === 'admin')
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
+                                        href="{{ Route::has('users.index') ? route('users.index') : '#' }}">
+                                        <i class="fas fa-user-cog"></i> <span>Quản lý người dùng</span>
+                                    </a>
+                                </li>
+                            @endif
+                        @endif
+                    </ul>
+                </div>
+            </aside>
+
             <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog" style="margin-top: 80px">
+                <div class="modal-dialog modal-dialog-centered">
                     <form action="{{ route('profile.password.update') }}" method="POST"
-                        class="modal-content border-0 shadow">
-                        @csrf
-                        @method('PUT')
-                        <div class="modal-header bg-light border-0">
-                            <h5 class="modal-title fw-bold"><i class="fas fa-user-shield me-2 text-primary"></i>Thông tin
-                                tài khoản</h5>
+                        class="modal-content border-0 shadow-lg">
+                        @csrf @method('PUT')
+                        <div class="modal-header bg-white border-0 pt-4 px-4">
+                            <h5 class="modal-title fw-bold text-navy"><i
+                                    class="fas fa-user-shield me-2 text-primary"></i>Thông tin tài khoản</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body py-4">
-
+                        <div class="modal-body p-4">
                             <div class="row g-3 mb-4">
-                                <div class="col-12">
-                                    <label class="small fw-bold text-muted">Họ và tên</label>
-                                    <input type="text" class="form-control bg-light text-muted"
-                                        value="{{ Auth::user()->name }}" readonly>
-                                </div>
-                                <div class="col-md-7">
-                                    <label class="small fw-bold text-muted">Email</label>
-                                    <input type="email" class="form-control bg-light text-muted"
-                                        value="{{ Auth::user()->email }}" readonly>
-                                </div>
-                                <div class="col-md-5">
-                                    <label class="small fw-bold text-muted">Vai trò</label>
-                                    <input type="text" class="form-control bg-light text-muted"
-                                        value="{{ strtoupper(Auth::user()->role) }}" readonly>
-                                </div>
+                                <div class="col-12"><label class="small fw-bold text-muted mb-1">Họ và tên</label><input
+                                        type="text" class="form-control bg-light border-0"
+                                        value="{{ Auth::user()->name }}" readonly></div>
+                                <div class="col-md-7"><label class="small fw-bold text-muted mb-1">Email</label><input
+                                        type="email" class="form-control bg-light border-0"
+                                        value="{{ Auth::user()->email }}" readonly></div>
+                                <div class="col-md-5"><label class="small fw-bold text-muted mb-1">Vai trò</label><input
+                                        type="text" class="form-control bg-light border-0"
+                                        value="{{ strtoupper(Auth::user()->role) }}" readonly></div>
                             </div>
-
-                            <hr class="text-muted">
-
-                            <h6 class="fw-bold mb-3">Đổi mật khẩu mới</h6>
+                            <hr class="text-muted opacity-25 mb-4">
+                            <h6 class="fw-bold mb-3 text-navy">Đổi mật khẩu mới</h6>
                             <div class="mb-3">
-                                <label class="small fw-bold">Mật khẩu hiện tại <span class="text-danger">*</span></label>
-                                <input type="password" name="current_password" class="form-control"
-                                    placeholder="Nhập mật khẩu cũ..." required>
-                                @error('current_password')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            <div class="mb-3">
-                                <label class="small fw-bold">Mật khẩu mới <span class="text-danger">*</span></label>
-                                <input type="password" name="new_password" class="form-control"
-                                    placeholder="Tối thiểu 6 ký tự..." required minlength="6">
-                                @error('new_password')
-                                    <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
-                            <div class="mb-3">
-                                <label class="small fw-bold">Xác nhận mật khẩu mới <span
+                                <label class="small fw-bold mb-1">Mật khẩu hiện tại <span
                                         class="text-danger">*</span></label>
-                                <input type="password" name="new_password_confirmation" class="form-control"
-                                    placeholder="Nhập lại mật khẩu mới..." required minlength="6">
+                                <input type="password" name="current_password" class="form-control shadow-sm" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="small fw-bold mb-1">Mật khẩu mới <span class="text-danger">*</span></label>
+                                <input type="password" name="new_password" class="form-control shadow-sm" required
+                                    minlength="6">
+                            </div>
+                            <div class="mb-3">
+                                <label class="small fw-bold mb-1">Xác nhận mật khẩu mới <span
+                                        class="text-danger">*</span></label>
+                                <input type="password" name="new_password_confirmation" class="form-control shadow-sm"
+                                    required minlength="6">
                             </div>
                         </div>
-                        <div class="modal-footer border-0 pt-0">
-                            <button type="submit" class="btn btn-primary rounded-pill px-4 w-100 fw-bold">CẬP NHẬT MẬT
-                                KHẨU</button>
+                        <div class="modal-footer border-0 pb-4 px-4 pt-0">
+                            <button type="submit" class="btn btn-navy w-100 py-2 fw-bold rounded-pill shadow">CẬP NHẬT
+                                MẬT KHẨU</button>
                         </div>
                     </form>
                 </div>
             </div>
         @endauth
 
-        @if ($errors->has('current_password') || $errors->has('new_password'))
-            <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    var myModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
-                    myModal.show();
-                });
-            </script>
-        @endif
-
-        <main class="{{ Auth::check() ? 'main-content' : 'full-width p-4' }}"
-            style="margin-top: var(--navbar-height);">
-            <div class="container-fluid">
+        <main class="{{ Auth::check() ? 'main-content' : 'full-width' }}"
+            style="{{ Auth::check() ? '' : 'margin-top: 0 !important;' }}">
+            <div class="container-fluid p-0">
                 @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
+                    <div class="alert alert-success border-0 shadow-sm rounded-3 m-4">
                         <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
-
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
-                        <i class="fas fa-exclamation-triangle me-2"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                @endif
-
                 @yield('content')
             </div>
         </main>
     </div>
+
     <script>
         const toggleBtn = document.getElementById('sidebarToggleBtn');
         const sidebar = document.querySelector('.sidebar');
@@ -408,7 +335,6 @@
     @endauth
 
     @stack('scripts')
-</body>
 </body>
 
 </html>
