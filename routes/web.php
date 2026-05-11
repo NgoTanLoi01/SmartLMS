@@ -142,4 +142,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/documents/upload', [DocumentController::class, 'index'])->name('documents.upload');
     Route::post('/documents/upload', [DocumentController::class, 'store'])->name('documents.store');
     Route::delete('/documents/{name}', [DocumentController::class, 'destroy'])->name('documents.destroy');
+
+    // ==========================================
+    // 2.12. CÔNG CỤ BỔ TRỢ (TOOLS)
+    // ==========================================
+    Route::prefix('tools')
+        ->name('tools.')
+        ->group(function () {
+            // Route cho máy tính điểm
+            Route::get('/grade-calculator', function () {
+                return view('tools.grade-calculator');
+            })->name('grade-calculator');
+        });
 });

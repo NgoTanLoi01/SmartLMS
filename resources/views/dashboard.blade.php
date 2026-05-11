@@ -1,12 +1,75 @@
 @extends('layouts.app')
 
 @section('title', 'Bảng điều khiển')
+<style>
+    .grettings-box {
+        background-color: #3e80f9;
+        border-radius: 24px !important;
+        min-height: 220px;
+        box-shadow: 0 15px 35px rgba(62, 128, 249, 0.25);
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+    }
 
+    /* Pattern nền chìm */
+    .opacity-pattern {
+        opacity: 1 !important;
+        object-fit: cover;
+        pointer-events: none;
+    }
+
+    .grettings-box__content h3 {
+        color: #ffffff !important;
+        /* Chữ trắng */
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .grettings-box__content p {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .gretting-main-img {
+        max-height: 180px;
+        width: auto;
+        filter: drop-shadow(5px 5px 15px rgba(0, 0, 0, 0.2));
+    }
+
+    @media (max-width: 576px) {
+        .grettings-box {
+            padding: 2rem 1.5rem !important;
+            min-height: auto;
+        }
+
+        .grettings-box__content {
+            text-align: center;
+            width: 100%;
+        }
+
+        .gretting-main-img {
+            display: none;
+        }
+
+    }
+</style>
 @section('content')
     <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-dark mb-0">Xin chào, {{ auth()->user()->name }}! 👋</h3>
-            <p class="text-muted mb-0">{{ \Carbon\Carbon::now()->format('l, d/m/Y') }}</p>
+        <div class="grettings-box position-relative overflow-hidden z-1">
+            <img src="{{ asset('grettings-pattern.png') }}" alt=""
+                class="position-absolute inset-block-start-0 inset-inline-start-0 z-n1 w-100 h-100 opacity-pattern">
+
+            <div class="row gy-4 w-100 align-items-center">
+                <div class="col-sm-7">
+                    <div class="grettings-box__content ps-sm-5">
+                        <h3 class="fw-bold mb-1">Xin chào, {{ auth()->user()->name }}! 👋</h3>
+                        <p class="mb-0">{{ \Carbon\Carbon::now()->format('l, d/m/Y') }}</p>
+                    </div>
+                </div>
+
+                <div class="col-sm-5 d-sm-flex d-none justify-content-center">
+                    <img src="{{ asset('gretting-img.png') }}" class="gretting-main-img" alt="Greeting">
+                </div>
+            </div>
         </div>
 
         {{-- ========================================== --}}
@@ -53,7 +116,8 @@
                     <div class="card border-0 shadow-sm rounded-4 bg-warning text-dark h-100">
                         <div class="card-body d-flex align-items-center">
                             <div class="bg-dark bg-opacity-10 p-3 rounded-3 me-3"><i
-                                    class="fas fa-globe text-dark fa-2x"></i></div>
+                                    class="fas fa-globe text-dark fa-2x"></i>
+                            </div>
                             <div>
                                 <p class="mb-0 text-dark opacity-75 fw-bold">Đang Online</p>
                                 <h3 class="mb-0 fw-bold">{{ $data['online_users'] }}</h3>

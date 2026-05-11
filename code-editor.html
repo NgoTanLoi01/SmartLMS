@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Live Code Editor</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+        :root {
+            --bg-primary: #0d0f14;
+            --bg-secondary: #13161e;
+            --bg-panel: #181c26;
+            --bg-tab: #1e2333;
+            --bg-tab-active: #252b40;
+            --border: #2a3050;
+            --border-glow: #3d4f8a;
+            --text-primary: #e2e8f8;
+            --text-muted: #5a6a9a;
+            --text-dim: #3d4f7a;
+            --accent: #5b8def;
+            --accent-glow: rgba(91, 141, 239, 0.25);
+            --green: #43d97c;
+            --green-glow: rgba(67, 217, 124, 0.2);
+            --red: #f04f5e;
+            --red-glow: rgba(240, 79, 94, 0.2);
+            --yellow: #f5c842;
+            --orange: #f07832;
+            --purple: #9b72ef;
+            --cyan: #38d9f5;
+            --html-color: #f07832;
+            --css-color: #5b8def;
+            --js-color: #f5c842;
+            --editor-bg: #0b0d12;
+            --line-num: #2a3050;
+            --selection: rgba(91, 141, 239, 0.2);
+            --scrollbar: #1e2333;
+            --scrollbar-thumb: #2a3050;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* Đã xóa user-select: none; ở đây để cho phép gõ/chọn text bình thường */
+        }
+
+        /* TOP BAR */
+        #topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            height: 52px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            gap: 16px;
+            user-select: none;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+
+        .brand .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+
+        .topbar-center,
+        .topbar-right {
+            display: flex;
+            gap: 8px;
+        }
+
+        .device-btn,
+        .btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .device-btn.active,
+        .btn.active {
+            color: var(--text-primary);
+            border-color: var(--accent);
+            background: var(--bg-tab-active);
+        }
+
+        .btn-run {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .btn-run:hover {
+            background: #4a7de0;
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+
+        #main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #editor-panel {
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            min-width: 280px;
+            border-right: 1px solid var(--border);
+            background: var(--bg-panel);
+            flex-shrink: 0;
+        }
+
+        #tabs {
+            display: flex;
+            align-items: center;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 8px;
+            height: 42px;
+            gap: 2px;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 0 16px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+
+        .tab.active {
+            background: var(--bg-tab-active);
+            border-color: var(--border-glow);
+            color: var(--text-primary);
+        }
+
+        .tab[data-lang="html"] .tab-dot {
+            background: var(--html-color);
+        }
+
+        .tab[data-lang="css"] .tab-dot {
+            background: var(--css-color);
+        }
+
+        .tab[data-lang="js"] .tab-dot {
+            background: var(--js-color);
+        }
+
+        .tab-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        #tab-errors {
+            margin-left: auto;
+            color: var(--red);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        #error-count-badge {
+            background: var(--red);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 10px;
+        }
+
+        /* PANES CSS (Bổ sung phần bị thiếu) */
+        #code-panes {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .code-pane {
+            display: none;
+            flex: 1;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .code-pane.active {
+            display: flex;
+        }
+
+        /* CODE EDITOR */
+        .code-container {
+            position: relative;
+            flex: 1;
+            background: var(--editor-bg);
+            overflow: hidden;
+        }
+
+        .line-numbers {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 48px;
+            height: 100%;
+            background: var(--editor-bg);
+            color: var(--line-num);
+            text-align: right;
+            padding: 16px 10px 16px 0;
+            overflow: hidden;
+            pointer-events: none;
+            user-select: none;
+            z-index: 3;
+            border-right: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .code-overlay {
+            position: absolute;
+            inset: 0;
+            padding: 16px 16px 16px 60px;
+            /* Bổ sung padding bên trái để không đè lên cột số dòng */
+            overflow: auto;
+            pointer-events: none;
+            white-space: pre;
+            tab-size: 2;
+            z-index: 1;
+            background: transparent;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .code-overlay code {
+            background: transparent !important;
+            padding: 0 !important;
+            font-family: inherit;
+        }
+
+        .code-editor {
+            position: absolute;
+            inset: 0;
+            padding: 16px 16px 16px 60px;
+            /* Bổ sung padding bên trái */
+            background: transparent;
+            color: transparent;
+            caret-color: var(--accent);
+            border: none;
+            outline: none;
+            resize: none;
+            z-index: 2;
+            tab-size: 2;
+            line-height: 1.6;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            overflow: auto;
+            white-space: pre;
+        }
+
+        .code-editor::selection {
+            background: var(--selection);
+            color: transparent;
+        }
+
+        /* Error Panel CSS (Bổ sung phần bị thiếu) */
+        #error-panel {
+            padding: 16px;
+            background: var(--bg-panel);
+            color: var(--text-primary);
+            overflow-y: auto;
+        }
+
+        .error-panel-header {
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .no-errors-msg {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--green);
+        }
+
+        /* DIVIDER CSS (Bổ sung phần bị thiếu) */
+        #divider {
+            width: 4px;
+            background: var(--border);
+            cursor: col-resize;
+            flex-shrink: 0;
+            z-index: 10;
+            transition: background 0.2s;
+        }
+
+        #divider:hover,
+        #divider.dragging {
+            background: var(--accent);
+        }
+
+        /* PREVIEW */
+        #preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+        }
+
+        #preview-header {
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            height: 42px;
+            border-bottom: 1px solid var(--border);
+            gap: 10px;
+            user-select: none;
+        }
+
+        .preview-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .preview-url {
+            font-size: 11px;
+            color: var(--text-dim);
+            background: var(--bg-primary);
+            padding: 4px 10px;
+            border-radius: 4px;
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        #preview-frame-wrap {
+            flex: 1;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #preview-frame {
+            border: none;
+            width: 100%;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        #preview-frame.tablet {
+            width: 768px;
+            height: 1024px;
+            max-height: 90%;
+            border-radius: 4px;
+            box-shadow: 0 0 0 3px var(--border);
+        }
+
+        #preview-frame.mobile {
+            width: 375px;
+            height: 812px;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 0 0 3px var(--border);
+        }
+
+        /* STATUS BAR (Bổ sung phần hiển thị) */
+        #statusbar {
+            height: 26px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            user-select: none;
+        }
+
+        .status-item {
+            display: flex;
+            gap: 6px;
+        }
+
+        .status-item .hi {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        #run-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: auto;
+        }
+
+        .ri-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        #run-indicator.running .ri-dot {
+            background: var(--yellow);
+            animation: pulse 1s infinite;
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 40px;
+            right: 24px;
+            padding: 10px 18px;
+            background: var(--bg-tab-active);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .suggestion-item .type {
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 5px;
+            border: 2px solid var(--scrollbar);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="topbar">
+        <div class="brand">
+            <div class="dot"></div>
+            ⚡ Live Code Editor
+        </div>
+
+        <div class="topbar-center">
+            <button class="device-btn active" data-device="desktop" onclick="setDevice('desktop', this)">🖥
+                Desktop</button>
+            <button class="device-btn" data-device="tablet" onclick="setDevice('tablet', this)">📱 Tablet</button>
+            <button class="device-btn" data-device="mobile" onclick="setDevice('mobile', this)">📲 Mobile</button>
+        </div>
+
+        <div class="topbar-right">
+            <button class="btn btn-auto" id="btn-auto" onclick="toggleAuto()">⚙ Auto</button>
+            <button class="btn btn-reset" onclick="resetCode()">↺ Reset</button>
+            <button class="btn btn-export" onclick="exportCode()">↓ Export</button>
+            <button class="btn btn-run" onclick="runCode()">▶ Run</button>
+        </div>
+    </div>
+
+    <div id="main">
+        <div id="editor-panel">
+            <div id="tabs">
+                <div class="tab active" data-lang="html" onclick="switchTab('html')">
+                    <div class="tab-dot"></div> HTML
+                </div>
+                <div class="tab" data-lang="css" onclick="switchTab('css')">
+                    <div class="tab-dot"></div> CSS
+                </div>
+                <div class="tab" data-lang="js" onclick="switchTab('js')">
+                    <div class="tab-dot"></div> JS
+                </div>
+                <div id="tab-errors" onclick="switchTab('errors')"><span>⬡ Errors</span><span
+                        id="error-count-badge">0</span></div>
+            </div>
+
+            <div id="code-panes">
+                <div class="code-pane active" id="pane-html">
+                    <div class="code-container">
+                        <div class="line-numbers" id="ln-html"></div>
+                        <pre class="code-overlay" id="highlight-html"><code class="language-html"></code></pre>
+                        <textarea class="code-editor" id="editor-html" spellcheck="false" autocomplete="off"></textarea>
+                    </div>
+                </div>
+
+                <div class="code-pane" id="pane-css">
+                    <div class="code-container">
+                        <div class="line-numbers" id="ln-css"></div>
+                        <pre class="code-overlay" id="highlight-css"><code class="language-css"></code></pre>
+                        <textarea class="code-editor" id="editor-css" spellcheck="false" autocomplete="off"></textarea>
+                    </div>
+                </div>
+
+                <div class="code-pane" id="pane-js">
+                    <div class="code-container">
+                        <div class="line-numbers" id="ln-js"></div>
+                        <pre class="code-overlay" id="highlight-js"><code class="language-javascript"></code></pre>
+                        <textarea class="code-editor" id="editor-js" spellcheck="false" autocomplete="off"></textarea>
+                    </div>
+                </div>
+
+                <div id="error-panel" class="code-pane">
+                    <div class="error-panel-header">Diagnostics</div>
+                    <div class="error-list" id="error-list">
+                        <div class="no-errors-msg">
+                            <div class="checkmark">✓</div>
+                            <div>Không có lỗi nào!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="divider"></div>
+
+        <div id="preview-panel">
+            <div id="preview-header">
+                <span class="preview-label">Preview</span>
+                <div class="preview-url">📄 about:srcdoc</div>
+                <div class="status-dot" id="status-dot"></div>
+            </div>
+            <div id="preview-frame-wrap">
+                <iframe id="preview-frame" sandbox="allow-scripts allow-modals"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusbar">
+        <div class="status-item"><span>Ln</span><span class="hi" id="sb-line">1</span></div>
+        <div class="status-item"><span>Col</span><span class="hi" id="sb-col">1</span></div>
+        <div class="status-item"><span>Tab</span><span class="hi">2</span></div>
+        <div class="status-item"><span id="sb-lang" style="font-weight: bold;">HTML</span></div>
+        <div id="run-indicator">
+            <div class="ri-dot"></div>
+            <span id="ri-label">Sẵn sàng</span>
+        </div>
+    </div>
+
+    <div id="toast">Code exported successfully!</div>
+
+    <div id="suggestion-menu"
+        style="position: fixed; display: none; background: var(--bg-tab-active); border: 1px solid var(--border-glow); border-radius: 6px; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.5); min-width: 180px; max-height: 240px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+    </div>
+
+    <script>
+        // ==================== DEFAULT CODE ====================
+        const DEFAULT_HTML = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>My Page</title>
+</head>
+<body>
+  <div class="container">
+    <h1>Xin chào, thế giới! 👋</h1>
+    <p>Bắt đầu viết code của bạn tại đây.</p>
+    <button onclick="greet()">Click me!</button>
+  </div>
+</body>
+</html>`;
+
+        const DEFAULT_CSS = `body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  background: white;
+  padding: 40px 60px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}`;
+
+        const DEFAULT_JS = `function greet() {
+  const messages = ["🎉 Tuyệt vời!", "🚀 Code Editor đang hoạt động!", "⚡ Thật nhanh phải không?"];
+  alert(messages[Math.floor(Math.random() * messages.length)]);
+}`;
+
+        // ==================== STATE ====================
+        let currentTab = 'html';
+        let autoRun = true;
+        let autoTimer = null;
+        let isDragging = false;
+
+        // ==================== INIT ====================
+        document.getElementById('editor-html').value = DEFAULT_HTML;
+        document.getElementById('editor-css').value = DEFAULT_CSS;
+        document.getElementById('editor-js').value = DEFAULT_JS;
+
+        updateLineNumbers('html');
+        updateLineNumbers('css');
+        updateLineNumbers('js');
+        updateHighlight('html');
+        updateHighlight('css');
+        updateHighlight('js');
+        runCode();
+
+        document.getElementById('btn-auto').classList.add('active');
+
+        // ==================== TAB SWITCH ====================
+        function switchTab(lang) {
+            currentTab = lang;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.code-pane').forEach(p => p.classList.remove('active'));
+
+            if (lang === 'errors') {
+                document.getElementById('error-panel').classList.add('active');
+                return;
+            }
+
+            document.querySelector(`.tab[data-lang="${lang}"]`).classList.add('active');
+            document.getElementById(`pane-${lang}`).classList.add('active');
+            document.getElementById('sb-lang').textContent = lang.toUpperCase();
+        }
+
+        // ==================== LINE NUMBERS & HIGHLIGHT ====================
+        function updateLineNumbers(lang) {
+            const editor = document.getElementById(`editor-${lang}`);
+            const ln = document.getElementById(`ln-${lang}`);
+            if (!editor || !ln) return;
+
+            const lines = editor.value.split('\n').length;
+            ln.innerHTML = Array.from({
+                length: lines
+            }, (_, i) => `<span>${i + 1}</span>`).join('');
+
+            const overlay = document.getElementById(`highlight-${lang}`);
+            editor.onscroll = () => {
+                ln.scrollTop = editor.scrollTop;
+                if (overlay) {
+                    overlay.scrollTop = editor.scrollTop;
+                    overlay.scrollLeft = editor.scrollLeft; // Đã fix scrollLeft
+                }
+            };
+        }
+
+        function updateHighlight(lang) {
+            const editor = document.getElementById(`editor-${lang}`);
+            const codeBlock = document.getElementById(`highlight-${lang}`).querySelector('code');
+            let text = editor.value || ' ';
+
+            text = text.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            codeBlock.innerHTML = text;
+            Prism.highlightElement(codeBlock);
+        }
+
+        function debounce(fn, delay) {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn(...args), delay);
+            };
+        }
+
+        // ==================== RUN CODE ====================
+        function runCode() {
+            const html = document.getElementById('editor-html').value;
+            const css = document.getElementById('editor-css').value;
+            const js = document.getElementById('editor-js').value;
+
+            const ri = document.getElementById('run-indicator');
+            ri.classList.add('running');
+            document.getElementById('ri-label').textContent = 'Đang chạy...';
+
+            const combined = buildDocument(html, css, js);
+            const frame = document.getElementById('preview-frame');
+            frame.srcdoc = combined;
+
+            frame.onload = () => {
+                ri.classList.remove('running');
+                document.getElementById('ri-label').textContent = 'Sẵn sàng';
+            };
+        }
+
+        function buildDocument(html, css, js) {
+            if (html.trim().toLowerCase().startsWith('<!doctype') || html.trim().toLowerCase().startsWith('<html')) {
+                return html
+                    .replace('</head>', `<style>${css}</style></head>`)
+                    .replace('</body>', `<script>${js}<\/script></body>`);
+            }
+            return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${css}</style></head><body>${html}<script>${js}<\/script></body></html>`;
+        }
+
+        // ==================== AUTOCOMPLETE ====================
+        const DICTIONARY = {
+            html: ['div', 'span', 'section', 'article', 'header', 'footer', 'nav', 'main', 'button', 'input',
+                'textarea', 'img', 'a', 'ul', 'ol', 'li', 'form', 'label'
+            ],
+            css: ['background', 'color', 'display', 'flex', 'margin', 'padding', 'border', 'border-radius', 'font-size',
+                'font-weight', 'width', 'height', 'position', 'transition', 'box-shadow'
+            ],
+            js: ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'return', 'document.getElementById',
+                'querySelector', 'addEventListener', 'console.log', 'alert'
+            ]
+        };
+
+        let selectedSuggestIndex = 0;
+        let filteredWords = [];
+        const suggestMenu = document.getElementById('suggestion-menu');
+
+        function getCaretCoordinates(element, position) {
+            const div = document.createElement('div');
+            const style = window.getComputedStyle(element);
+            for (let prop of style) div.style[prop] = style[prop];
+            div.style.position = 'absolute';
+            div.style.visibility = 'hidden';
+            div.style.whiteSpace = 'pre-wrap';
+            div.textContent = element.value.substring(0, position);
+            const span = document.createElement('span');
+            span.textContent = element.value.substring(position) || '\u00A0';
+            div.appendChild(span);
+            document.body.appendChild(div);
+            const {
+                offsetLeft: left,
+                offsetTop: top
+            } = span;
+            document.body.removeChild(div);
+            return {
+                top: top + 25,
+                left: left
+            };
+        }
+
+        function showSuggestions(editor) {
+            const pos = editor.selectionStart;
+            const word = editor.value.substring(0, pos).split(/[\s\n<>/{};,:.()[\]]+/).pop() || '';
+
+            if (word.length < 1) {
+                suggestMenu.style.display = 'none';
+                return;
+            }
+
+            filteredWords = DICTIONARY[currentTab] ? DICTIONARY[currentTab].filter(w =>
+                w.toLowerCase().startsWith(word.toLowerCase())
+            ).slice(0, 10) : [];
+
+            if (filteredWords.length === 0) {
+                suggestMenu.style.display = 'none';
+                return;
+            }
+
+            suggestMenu.innerHTML = '';
+            filteredWords.forEach((w, i) => {
+                const item = document.createElement('div');
+                item.className = `suggestion-item ${i === selectedSuggestIndex ? 'active' : ''}`;
+                item.innerHTML = `<span>${w}</span><span class="type">${currentTab.toUpperCase()}</span>`;
+                item.onclick = () => completeWord(editor, w, word);
+                suggestMenu.appendChild(item);
+            });
+
+            const coords = getCaretCoordinates(editor, pos);
+            const rect = editor.getBoundingClientRect();
+            suggestMenu.style.top = (rect.top + coords.top - editor.scrollTop) + 'px';
+            suggestMenu.style.left = (rect.left + coords.left - editor.scrollLeft) + 'px';
+            suggestMenu.style.display = 'block';
+        }
+
+        function completeWord(editor, fullWord, currentWord) {
+            const start = editor.selectionStart;
+            const before = editor.value.substring(0, start - currentWord.length);
+            const after = editor.value.substring(start);
+            editor.value = before + fullWord + after;
+            editor.selectionStart = editor.selectionEnd = before.length + fullWord.length;
+            suggestMenu.style.display = 'none';
+            updateLineNumbers(currentTab);
+            updateHighlight(currentTab);
+            if (autoRun) runCode();
+        }
+
+        // ==================== EDITOR EVENTS ====================
+        ['html', 'css', 'js'].forEach(lang => {
+            const editor = document.getElementById(`editor-${lang}`);
+            const debouncedHighlight = debounce(() => updateHighlight(lang), 60);
+
+            // Cập nhật dòng, cột trên status bar khi click chuột
+            editor.addEventListener('click', () => {
+                updateStatusBar(editor);
+            });
+
+            editor.addEventListener('keyup', (e) => {
+                if (e.key.startsWith('Arrow')) {
+                    updateStatusBar(editor);
+                }
+            });
+
+            editor.addEventListener('input', () => {
+                updateLineNumbers(lang);
+                debouncedHighlight();
+                showSuggestions(editor);
+                updateStatusBar(editor);
+
+                if (autoRun) {
+                    clearTimeout(autoTimer);
+                    autoTimer = setTimeout(runCode, 800);
+                }
+            });
+
+            editor.addEventListener('keydown', e => {
+                // Hỗ trợ tab
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = editor.selectionStart;
+                    const end = editor.selectionEnd;
+                    editor.value = editor.value.substring(0, start) + "  " + editor.value.substring(end);
+                    editor.selectionStart = editor.selectionEnd = start + 2;
+                    updateLineNumbers(lang);
+                    debouncedHighlight();
+                    return;
+                }
+
+                if (suggestMenu.style.display === 'block') {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        selectedSuggestIndex = (selectedSuggestIndex + 1) % filteredWords.length;
+                        showSuggestions(editor);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        selectedSuggestIndex = (selectedSuggestIndex - 1 + filteredWords.length) %
+                            filteredWords.length;
+                        showSuggestions(editor);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const word = editor.value.substring(0, editor.selectionStart).split(
+                            /[\s\n<>/{};,:.()[\]]+/).pop() || '';
+                        completeWord(editor, filteredWords[selectedSuggestIndex], word);
+                    } else if (e.key === 'Escape') {
+                        suggestMenu.style.display = 'none';
+                    }
+                }
+            });
+        });
+
+        function updateStatusBar(editor) {
+            const textLines = editor.value.substr(0, editor.selectionStart).split("\n");
+            document.getElementById('sb-line').textContent = textLines.length;
+            document.getElementById('sb-col').textContent = textLines[textLines.length - 1].length + 1;
+        }
+
+        // ==================== OTHER FUNCTIONS ====================
+        function toggleAuto() {
+            autoRun = !autoRun;
+            document.getElementById('btn-auto').classList.toggle('active', autoRun);
+        }
+
+        function resetCode() {
+            if (!confirm('Đặt lại tất cả code về mặc định?')) return;
+            document.getElementById('editor-html').value = DEFAULT_HTML;
+            document.getElementById('editor-css').value = DEFAULT_CSS;
+            document.getElementById('editor-js').value = DEFAULT_JS;
+            ['html', 'css', 'js'].forEach(lang => {
+                updateLineNumbers(lang);
+                updateHighlight(lang);
+            });
+            runCode();
+        }
+
+        function exportCode() {
+            const html = document.getElementById('editor-html').value;
+            const css = document.getElementById('editor-css').value;
+            const js = document.getElementById('editor-js').value;
+            const combined = buildDocument(html, css, js);
+            const blob = new Blob([combined], {
+                type: 'text/html'
+            });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'project.html';
+            a.click();
+            showToast("Exported project.html successfully!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function setDevice(device, el) {
+            document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            const frame = document.getElementById('preview-frame');
+            frame.className = device === 'desktop' ? '' : device;
+        }
+
+        // Divider
+        const divider = document.getElementById('divider');
+        const editorPanel = document.getElementById('editor-panel');
+        divider.addEventListener('mousedown', () => {
+            isDragging = true;
+            divider.classList.add('dragging');
+            document.body.style.cursor = 'col-resize';
+            document.getElementById('preview-frame-wrap').style.pointerEvents =
+            'none'; // Ngăn chặn iframe bắt chuột khi kéo
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const newWidth = Math.max(280, Math.min(window.innerWidth * 0.7, e.clientX));
+            editorPanel.style.width = newWidth + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                divider.classList.remove('dragging');
+                document.body.style.cursor = 'default';
+                document.getElementById('preview-frame-wrap').style.pointerEvents = 'auto';
+            }
+        });
+
+        // Click outside to close suggestion
+        document.addEventListener('click', (e) => {
+            if (!suggestMenu.contains(e.target)) suggestMenu.style.display = 'none';
+        });
+    </script>
+</body>
+
+</html>
