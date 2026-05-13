@@ -31,7 +31,8 @@ class DeepSeekService
     private function getGeminiEmbedding(string $text): ?array
     {
         try {
-            $apiKey = env('GOOGLE_API_KEY');
+            // $apiKey = env('GOOGLE_API_KEY');
+            $apiKey = config('services.gemini.key');
             $response = Http::timeout(30)
                 ->withoutVerifying()
                 ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$apiKey}", [

@@ -58,8 +58,9 @@ class DocumentProcessingService
     private function getGeminiEmbedding($text)
     {
         try {
-            $apiKey = env('GOOGLE_API_KEY');
-
+            // $apiKey = env('GOOGLE_API_KEY');
+            $apiKey = config('services.gemini.key');
+            
             // SỬ DỤNG CHÍNH XÁC MODEL MÀ GOOGLE ĐÃ CẤP QUYỀN
             $response = Http::timeout(30)
                 ->withoutVerifying()
