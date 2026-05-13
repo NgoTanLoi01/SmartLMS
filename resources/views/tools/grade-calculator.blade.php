@@ -17,23 +17,26 @@
                             <table class="table table-borderless align-middle" id="subjectTable">
                                 <thead>
                                     <tr class="text-muted small">
-                                        <th style="width: 250px;">Tên môn học / Mô đun</th>
-                                        <th style="width: 100px;">Tín chỉ</th>
-                                        <th>Điểm HS1</th>
-                                        <th>Điểm HS2</th>
-                                        <th>Điểm Thi</th>
+                                        <th style="width: 500px;">Tên môn học / Mô đun</th>
+                                        <th style="width: 100px; text-align: center;">Tín chỉ</th>
+                                        <th style="width: 150px; text-align: center;">Điểm HS1</th>
+                                        <th style="width: 150px; text-align: center;">Điểm HS2</th>
+                                        <th style="width: 100px; text-align: center;">Điểm Thi</th>
                                         <th style="width: 50px;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="subject-row">
                                         <td><input type="text" class="form-control" placeholder="Tên môn học..."></td>
-                                        <td><input type="number" class="form-control credit" value="2" min="1">
+                                        <td><input type="text" class="form-control credit" value="2" min="1"
+                                                style="text-align: center;">
                                         </td>
-                                        <td><input type="text" class="form-control hs1" placeholder="9, 8"></td>
-                                        <td><input type="text" class="form-control hs2" placeholder="7, 8"></td>
-                                        <td><input type="number" class="form-control thi" step="0.1" min="0"
-                                                max="10"></td>
+                                        <td><input type="text" class="form-control hs1" placeholder="9, 8"
+                                                style="text-align: center;"></td>
+                                        <td><input type="text" class="form-control hs2" placeholder="7, 8"
+                                                style="text-align: center;"></td>
+                                        <td><input type="text" class="form-control thi" step="0.1" min="0"
+                                                max="10" style="text-align: center;"></td>
                                         <td><button class="btn btn-link text-danger p-0" onclick="removeRow(this)"><i
                                                     class="fas fa-times"></i></button></td>
                                     </tr>

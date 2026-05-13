@@ -55,7 +55,6 @@
             z-index: 1000;
             transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
-            /* Cho phép cuộn menu nếu quá dài */
         }
 
         .main-content {
@@ -73,7 +72,6 @@
             font-weight: 500;
             border-radius: 10px;
             margin: 4px 15px;
-            /* Cân đối lề trái phải */
             padding: 10px 15px;
             transition: all 0.2s;
             display: flex;
@@ -96,16 +94,16 @@
             font-size: 1.1rem;
         }
 
-        /* --- XỬ LÝ DROPDOWN CÔNG CỤ (FIX LỖI TRÀN) --- */
+        /* Dropdown Công cụ */
         #toolsMenu {
-            border-left: 2px solid #edf2f7;
+            /* border-left: 2px solid #edf2f7; */
             margin-bottom: 10px;
             padding-left: 5px;
+            margin-left: 30px;
         }
 
         #toolsMenu .nav-link {
             margin: 2px 10px 2px 0 !important;
-            /* Bỏ margin trái để bám vào đường kẻ border-left */
             padding: 8px 12px !important;
             font-size: 0.85rem !important;
             color: #718096;
@@ -118,7 +116,6 @@
             background: #f7fafc !important;
         }
 
-        /* Hiệu ứng xoay icon mũi tên */
         .transition-all {
             transition: transform 0.3s ease;
         }
@@ -127,7 +124,15 @@
             transform: rotate(180deg);
         }
 
-        /* Mobile Responsive */
+        .modal-content {
+            border-radius: 20px;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -207,24 +212,21 @@
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center justify-content-between {{ request()->is('tools*') ? 'active' : '' }}"
                                 data-bs-toggle="collapse" href="#toolsMenu" role="button">
-                                <div>
-                                    <i class="fas fa-toolbox"></i> <span>Công cụ hỗ trợ</span>
-                                </div>
+                                <div><i class="fas fa-toolbox"></i> <span>Công cụ hỗ trợ</span></div>
                                 <i
                                     class="fas fa-chevron-down small transition-all {{ request()->is('tools*') ? 'fa-rotate-180' : '' }}"></i>
                             </a>
                             <div class="collapse {{ request()->is('tools*') ? 'show' : '' }}" id="toolsMenu">
-                                <ul class="nav flex-column ms-3 ps-3 border-start">
+                                <ul class="nav flex-column border-start">
                                     <li class="nav-item">
-                                        <a class="nav-link py-2 small {{ request()->routeIs('tools.grade-calculator') ? 'text-primary fw-bold' : 'text-muted' }}"
+                                        <a class="nav-link py-2 small {{ request()->routeIs('tools.grade-calculator') ? 'text-primary fw-bold' : '' }}"
                                             href="{{ route('tools.grade-calculator') }}">
                                             <i class="fas fa-calculator me-2"></i> Tính điểm nghề
                                         </a>
                                     </li>
-
                                     <li class="nav-item">
-                                        <a class="nav-link py-2 small {{ request()->routeIs('tools.code-editor') ? 'text-primary fw-bold' : 'text-muted' }}"
-                                            href="https://ngotanloi.my.canva.site/code-editer" target="blank">
+                                        <a class="nav-link py-2 small" href="https://ngotanloi.my.canva.site/code-editer"
+                                            target="_blank">
                                             <i class="fas fa-code me-2"></i> Trình soạn thảo Code
                                         </a>
                                     </li>
@@ -247,7 +249,6 @@
                                     <i class="fas fa-layer-group"></i> <span>Ngân hàng câu hỏi</span>
                                 </a>
                             </li>
-
                             <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
                                 style="letter-spacing: 1px;">Quản lý</div>
                             <li class="nav-item">
@@ -256,7 +257,6 @@
                                     <i class="fas fa-chalkboard"></i> <span>Quản lý lớp học</span>
                                 </a>
                             </li>
-
                             @if (Auth::user()->role === 'admin')
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
@@ -269,6 +269,79 @@
                     </ul>
                 </div>
             </aside>
+
+            <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <form action="{{ route('profile.password.update') }}" method="POST"
+                        class="modal-content border-0 shadow-lg">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-header bg-white border-0 pt-4 px-4">
+                            <h5 class="modal-title fw-bold text-navy">
+                                <i class="fas fa-user-shield me-2 text-primary"></i>Thông tin tài khoản
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <label class="small fw-bold text-muted mb-1">Họ và tên</label>
+                                    <input type="text" class="form-control bg-light border-0 shadow-none"
+                                        value="{{ Auth::user()->name }}" readonly style="cursor: not-allowed;">
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="small fw-bold text-muted mb-1">Email</label>
+                                    <input type="email" class="form-control bg-light border-0 shadow-none"
+                                        value="{{ Auth::user()->email }}" readonly style="cursor: not-allowed;">
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="small fw-bold text-muted mb-1">Vai trò</label>
+                                    <input type="text" class="form-control bg-light border-0 shadow-none"
+                                        value="{{ strtoupper(Auth::user()->role) }}" readonly
+                                        style="cursor: not-allowed;">
+                                </div>
+                            </div>
+
+                            <hr class="text-muted opacity-25 mb-4">
+
+                            <h6 class="fw-bold mb-3 text-navy">Đổi mật khẩu mới</h6>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold mb-1">Mật khẩu hiện tại <span
+                                        class="text-danger">*</span></label>
+                                <input type="password" name="current_password"
+                                    class="form-control shadow-sm @error('current_password') is-invalid @enderror"
+                                    placeholder="Nhập mật khẩu cũ để xác nhận" required>
+                                @error('current_password')
+                                    <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold mb-1">Mật khẩu mới <span class="text-danger">*</span></label>
+                                <input type="password" name="new_password"
+                                    class="form-control shadow-sm @error('new_password') is-invalid @enderror"
+                                    placeholder="Tối thiểu 6 ký tự" required minlength="6">
+                                @error('new_password')
+                                    <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold mb-1">Xác nhận mật khẩu mới <span
+                                        class="text-danger">*</span></label>
+                                <input type="password" name="new_password_confirmation" class="form-control shadow-sm"
+                                    placeholder="Nhập lại mật khẩu mới" required minlength="6">
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pb-4 px-4 pt-0">
+                            <button type="submit" class="btn btn-navy w-100 py-2 fw-bold rounded-pill shadow">
+                                CẬP NHẬT MẬT KHẨU
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         @endauth
 
         <main class="{{ Auth::check() ? 'main-content' : 'full-width' }}">
@@ -287,12 +360,20 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-    @stack('scripts')
     @auth
         @include('partials.chatbot')
     @endauth
-</body>
 
-</html>
+    @stack('scripts')
+    <script>
+        $(document).ready(function() {
+            // Kiểm tra nếu biến $errors của Laravel có chứa bất kỳ lỗi nào
+            @if ($errors->any())
+                var passwordModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+                passwordModal.show();
+            @endif
+        });
+    </script>
+</body>
 
 </html>
