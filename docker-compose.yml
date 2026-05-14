@@ -5,7 +5,7 @@ services:
         image: nginx:stable-alpine
         container_name: lms-nginx
         ports:
-            - "8080:80"
+            - "8000:80" # Đây là cổng duy nhất học sinh truy cập vào
         volumes:
             - ./:/var/www/html
             - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
@@ -19,6 +19,9 @@ services:
         container_name: lms-app
         volumes:
             - ./:/var/www/html
+        # XÓA HOẶC COMMENT ĐOẠN PORTS DƯỚI ĐÂY
+        # ports:
+        #     - "8080:8080" 
         environment:
             - DB_CONNECTION=mysql
             - DB_HOST=db
@@ -33,6 +36,8 @@ services:
             - DB_VECTOR_DATABASE=lms_ai
             - DB_VECTOR_USERNAME=ai_user
             - DB_VECTOR_PASSWORD=ai_password
+        ports:
+            - "8080:8080"
 
     db:
         image: mysql:8.0

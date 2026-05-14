@@ -2,22 +2,21 @@
 FROM php:8.4-fpm
 
 # Cài đặt các công cụ hỗ trợ và thư viện cần thiết
-# Bổ sung libpq-dev để hỗ trợ PostgreSQL
 RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libpq-dev \
-    zip \
-    libzip-dev \
-    unzip \
-    git \
-    curl
+libpng-dev \
+libjpeg-dev \
+libfreetype6-dev \
+libpq-dev \
+zip \
+libzip-dev \
+unzip \
+git \
+curl
 
 # Cài đặt các phần mở rộng PHP
-# Bổ sung pdo_pgsql và pgsql
+# Bổ sung pcntl để chạy Reverb (WebSocket)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql pdo_pgsql pgsql gd zip bcmath
+&& docker-php-ext-install pdo_mysql pdo_pgsql pgsql gd zip bcmath pcntl
 
 # Copy Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

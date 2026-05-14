@@ -224,22 +224,32 @@
                             </a>
                             <div class="collapse {{ request()->is('tools*') ? 'show' : '' }}" id="toolsMenu">
                                 <ul class="nav flex-column border-start">
+                                    {{-- 1. Tính điểm nghề --}}
                                     <li class="nav-item">
                                         <a class="nav-link py-2 small {{ request()->routeIs('tools.grade-calculator') ? 'text-primary fw-bold' : '' }}"
                                             href="{{ route('tools.grade-calculator') }}">
                                             <i class="fas fa-calculator me-2"></i> Tính điểm nghề
                                         </a>
                                     </li>
+
+                                    {{-- 2. Cờ vua giải trí (MỚI THÊM) --}}
                                     <li class="nav-item">
-                                        <a class="nav-link py-2 small" href="https://ngotanloi.my.canva.site/code-editer"
-                                            target="_blank">
+                                        <a class="nav-link py-2 small {{ request()->is('tools/chess*') ? 'text-primary fw-bold' : '' }}"
+                                            href="{{ route('tools.chess.index') }}">
+                                            <i class="fas fa-chess me-2"></i> Cờ vua giải trí
+                                        </a>
+                                    </li>
+
+                                    {{-- 3. Trình soạn thảo Code --}}
+                                    <li class="nav-item">
+                                        <a class="nav-link py-2 small text-muted"
+                                            href="https://ngotanloi.my.canva.site/code-editer" target="_blank">
                                             <i class="fas fa-code me-2"></i> Trình soạn thảo Code
                                         </a>
                                     </li>
                                 </ul>
                             </div>
                         </li>
-
                         @if (in_array(Auth::user()->role, ['admin', 'teacher']))
                             <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
                                 style="letter-spacing: 1px;">Hệ thống AI</div>

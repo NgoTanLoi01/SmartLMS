@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController};
+use App\Http\Controllers\ChessController;
 
 /*
 |--------------------------------------------------------------------------
@@ -153,5 +154,20 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/grade-calculator', function () {
                 return view('tools.grade-calculator');
             })->name('grade-calculator');
+
+            // Route cho Cờ vua (Chess)
+            Route::prefix('chess')
+                ->name('chess.')
+                ->group(function () {
+                    // Sảnh tạo phòng: tools.chess.index
+                    Route::get('/', [App\Http\Controllers\ChessController::class, 'index'])->name('index');
+
+                    // Vào phòng chơi: tools.chess.play
+                    Route::get('/{roomId}', [App\Http\Controllers\ChessController::class, 'play'])->name('play');
+
+                    // Xử lý gửi nước đi (API)
+                    Route::post('/{roomId}/move', [App\Http\Controllers\ChessController::class, 'broadcastMove'])->name('move');
+                });
         });
-});
+    Broadcast::routes(['middleware' => ['web', 'auth']]);
+}); // Kết thúc group middleware auth
