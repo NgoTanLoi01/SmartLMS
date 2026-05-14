@@ -10,8 +10,6 @@ class DocumentChunk extends Model
     protected $table = 'document_chunks';
     protected $fillable = ['document_name', 'content', 'embedding', 'course_id'];
 
-    public function course()
-    {
-        return $this->belongsTo(Course::class, 'course_id');
-    }
+    // XÓA HOẶC COMMENT DÒNG NÀY ĐI
+    // protected $casts = ['embedding' => 'array'];
 }

@@ -54,8 +54,8 @@
 
     /* CHẾ ĐỘ FULL MÀN HÌNH */
     .chatbot-window.fullscreen {
-        width: 90vw;
-        height: 90vh;
+        width: 700px;
+        height: 900px;
         bottom: 5vh;
         right: 5vw;
         border-radius: 16px;

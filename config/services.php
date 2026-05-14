@@ -33,13 +33,12 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
     'deepseek' => [
         'key' => env('DEEPSEEK_API_KEY'),
         'base_url' => 'https://api.deepseek.com',
     ],
 
     'gemini' => [
-        'key' => env('GEMINI_API_KEY') ?? env('GOOGLE_API_KEY'),
+        'key' => env('GOOGLE_API_KEY'),
     ],
 ];

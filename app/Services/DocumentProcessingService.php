@@ -24,21 +24,29 @@ class DocumentProcessingService
             $chunks = $this->chunkText($text, 800);
 
             foreach ($chunks as $chunk) {
-                if (strlen(trim($chunk)) < 50) {
-                    continue;
-                }
-
                 $embedding = $this->getGeminiEmbedding($chunk);
 
                 if ($embedding) {
+                    // Định dạng chuỗi vector chuẩn cho Postgres: [0.1,0.2,...]
                     $vectorString = '[' . implode(',', $embedding) . ']';
 
-                    \App\Models\DocumentChunk::create([
-                        'course_id' => $courseId,
-                        'document_name' => $documentName,
-                        'content' => $chunk,
-                        'embedding' => $vectorString,
-                    ]);
+                    try {
+                        $pdo = \DB::connection('pgsql')->getPdo();
+                        $sql = "INSERT INTO document_chunks (course_id, document_name, content, embedding, created_at, updated_at)
+                    VALUES (?, ?, ?, ?::vector, NOW(), NOW())";
+
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute([
+                            $courseId,
+                            $documentName,
+                            $chunk,
+                            $vectorString, // Chuỗi này sẽ được ép kiểu trực tiếp tại câu SQL
+                        ]);
+
+                        \Log::info("Đã lưu thành công đoạn cho: $documentName");
+                    } catch (\Exception $e) {
+                        \Log::error('Lỗi khi lưu vào Postgres: ' . $e->getMessage());
+                    }
                 }
             }
             return true;
@@ -58,10 +66,9 @@ class DocumentProcessingService
     private function getGeminiEmbedding($text)
     {
         try {
-            // $apiKey = env('GOOGLE_API_KEY');
-            $apiKey = config('services.gemini.key');
-            
-            // SỬ DỤNG CHÍNH XÁC MODEL MÀ GOOGLE ĐÃ CẤP QUYỀN
+            $apiKey = env('GOOGLE_API_KEY');
+
+            // Quay lại dùng gemini-embedding-001 vì thầy đã test cURL thành công với nó
             $response = Http::timeout(30)
                 ->withoutVerifying()
                 ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$apiKey}", [
@@ -72,14 +79,13 @@ class DocumentProcessingService
                 ]);
 
             if ($response->successful()) {
-                return $response->json('embedding.values'); // Trả về mảng 768 chiều
+                return $response->json('embedding.values');
             } else {
                 \Log::error('Lỗi từ Gemini API: ' . $response->body());
             }
         } catch (Exception $e) {
             \Log::error('Lỗi kết nối mạng đến Gemini: ' . $e->getMessage());
         }
-
         return null;
     }
 }
