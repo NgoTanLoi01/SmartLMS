@@ -47,18 +47,22 @@ class ClassManagementController extends Controller
 
     public function index()
     {
+        $user = auth()->user();
         $teachers = User::where('role', 'teacher')->get();
-        $courses = Course::all(); // Lấy tất cả khóa học để Admin/Teacher chọn
 
-        if (auth()->user()->role === 'admin') {
+        if ($user->role === 'admin') {
+            // Admin: Thấy tất cả lớp và tất cả khóa học
             $classes = Classroom::withCount('students')
                 ->with(['teacher', 'courses'])
                 ->get();
+            $courses = Course::all();
         } else {
-            $classes = Classroom::where('teacher_id', auth()->id())
-                ->withCount('students')
-                ->with('courses')
-                ->get();
+            // Giáo viên: Chỉ thấy lớp mình dạy và khóa học mình tạo
+            $classes = Classroom::where('teacher_id', $user->id)->withCount('students')->with('courses')->get();
+
+            // GIẢ SỬ: Bảng courses của thầy có cột 'teacher_id'
+            // để xác định ai là người tạo khóa học đó
+            $courses = Course::where('teacher_id', $user->id)->get();
         }
 
         return view('classes.index', compact('classes', 'teachers', 'courses'));

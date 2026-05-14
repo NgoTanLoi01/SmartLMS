@@ -10,7 +10,6 @@
                 <p class="text-muted mb-0 small">Quản lý các lớp học và học viên</p>
             </div>
 
-            {{-- CẬP NHẬT: Cho phép cả Admin và Teacher nhìn thấy nút tạo lớp --}}
             @if (in_array(auth()->user()->role, ['admin', 'teacher']))
                 <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
                     data-bs-target="#addClassModal">
@@ -24,7 +23,6 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="card border-0 shadow-sm h-100 rounded-3 hover-shadow transition-all">
                         <div class="card-body p-4">
-
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold">
                                     {{ $class->code }}
@@ -87,6 +85,7 @@
         </div>
     </div>
 
+    {{-- MODAL TẠO LỚP --}}
     @if (in_array(auth()->user()->role, ['admin', 'teacher']))
         <div class="modal fade" id="addClassModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -99,13 +98,11 @@
                     <div class="modal-body py-4">
                         <div class="mb-3">
                             <label class="form-label fw-bold small text-muted">Tên lớp học</label>
-                            <input type="text" name="name" class="form-control bg-light border-0 py-2"
-                                placeholder="VD: Lập trình Laravel K1" required>
+                            <input type="text" name="name" class="form-control bg-light border-0 py-2" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">Mã lớp (Duy nhất)</label>
-                            <input type="text" name="code" class="form-control bg-light border-0 py-2"
-                                placeholder="VD: LARAVEL-K1" required>
+                            <label class="form-label fw-bold small text-muted">Mã lớp</label>
+                            <input type="text" name="code" class="form-control bg-light border-0 py-2" required>
                         </div>
 
                         @if (auth()->user()->role === 'admin')
@@ -114,15 +111,19 @@
                                 <select name="teacher_id" class="form-select bg-light border-0 py-2" required>
                                     <option value="">-- Chọn Giáo viên --</option>
                                     @foreach ($teachers as $teacher)
-                                        <option value="{{ $teacher->id }}">{{ $teacher->name }} ({{ $teacher->email }})
-                                        </option>
+                                        <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
                         @endif
 
                         <div class="mb-0">
-                            <label class="form-label fw-bold small text-muted">Phân bổ Khóa học cho lớp</label>
+                            <label class="form-label fw-bold small text-muted">
+                                Phân bổ Khóa học
+                                @if (auth()->user()->role === 'teacher')
+                                    <span class="badge bg-info-subtle text-info fw-normal">(Khóa học của bạn)</span>
+                                @endif
+                            </label>
                             <div class="border rounded bg-light p-2" style="max-height: 150px; overflow-y: auto;">
                                 @forelse($courses as $course)
                                     <div class="form-check">
@@ -133,11 +134,12 @@
                                         </label>
                                     </div>
                                 @empty
-                                    <span class="small text-muted fst-italic">Chưa có khóa học nào.</span>
+                                    <span class="small text-muted fst-italic">
+                                        {{ auth()->user()->role === 'admin' ? 'Chưa có khóa học nào.' : 'Bạn chưa có khóa học nào để phân bổ.' }}
+                                    </span>
                                 @endforelse
                             </div>
                         </div>
-
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
@@ -148,6 +150,7 @@
         </div>
     @endif
 
+    {{-- MODAL SỬA LỚP --}}
     <div class="modal fade" id="editClassModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form id="editClassForm" method="POST" class="modal-content border-0 shadow">
@@ -181,7 +184,12 @@
                     @endif
 
                     <div class="mb-0">
-                        <label class="form-label fw-bold small text-muted">Phân bổ Khóa học cho lớp</label>
+                        <label class="form-label fw-bold small text-muted">
+                            Phân bổ Khóa học
+                            @if (auth()->user()->role === 'teacher')
+                                <span class="badge bg-info-subtle text-info fw-normal">(Khóa học của bạn)</span>
+                            @endif
+                        </label>
                         <div class="border rounded bg-light p-2" style="max-height: 150px; overflow-y: auto;">
                             @forelse($courses as $course)
                                 <div class="form-check">
@@ -192,11 +200,10 @@
                                     </label>
                                 </div>
                             @empty
-                                <span class="small text-muted fst-italic">Chưa có khóa học nào.</span>
+                                <span class="small text-muted fst-italic">Không có khóa học khả dụng.</span>
                             @endforelse
                         </div>
                     </div>
-
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
@@ -224,28 +231,19 @@
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.edit-class-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    // Cập nhật action cho form
                     const classId = this.getAttribute('data-id');
                     document.getElementById('editClassForm').action = `/classes/${classId}`;
-
-                    // Đổ dữ liệu vào input
                     document.getElementById('edit_name').value = this.getAttribute('data-name');
                     document.getElementById('edit_code').value = this.getAttribute('data-code');
 
-                    // Đổ dữ liệu cho select giáo viên (chỉ Admin mới có select này)
                     const teacherSelect = document.getElementById('edit_teacher');
                     if (teacherSelect) {
                         teacherSelect.value = this.getAttribute('data-teacher');
                     }
 
-                    // Lấy danh sách khóa học của lớp (mảng ID)
                     const courseIds = JSON.parse(this.getAttribute('data-courses') || '[]');
-
-                    // Reset tất cả checkbox trong form Sửa
                     document.querySelectorAll('#editClassForm .course-checkbox').forEach(cb => cb
                         .checked = false);
-
-                    // Tick những khóa học thuộc lớp này
                     courseIds.forEach(id => {
                         const checkbox = document.querySelector(
                             `#editClassForm .course-checkbox[value="${id}"]`);
