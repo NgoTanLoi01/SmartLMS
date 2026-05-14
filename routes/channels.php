@@ -12,3 +12,6 @@ Broadcast::channel('chess.{roomId}', function ($user, $roomId) {
         'name' => $user->name,
     ];
 });
+Broadcast::channel('caro.{roomId}', function ($user, $roomId) {
+    return ['id' => $user->id, 'name' => $user->name];
+});

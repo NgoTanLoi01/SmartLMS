@@ -150,24 +150,29 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('tools')
         ->name('tools.')
         ->group(function () {
-            // Route cho máy tính điểm
+            // 1. Máy tính điểm
             Route::get('/grade-calculator', function () {
                 return view('tools.grade-calculator');
             })->name('grade-calculator');
 
-            // Route cho Cờ vua (Chess)
+            // 2. Cờ Vua (Chess)
             Route::prefix('chess')
                 ->name('chess.')
                 ->group(function () {
-                    // Sảnh tạo phòng: tools.chess.index
                     Route::get('/', [App\Http\Controllers\ChessController::class, 'index'])->name('index');
-
-                    // Vào phòng chơi: tools.chess.play
                     Route::get('/{roomId}', [App\Http\Controllers\ChessController::class, 'play'])->name('play');
-
-                    // Xử lý gửi nước đi (API)
                     Route::post('/{roomId}/move', [App\Http\Controllers\ChessController::class, 'broadcastMove'])->name('move');
                 });
+
+            // 3. Cờ Caro (Tách biệt hoàn toàn)
+            Route::prefix('caro')
+                ->name('caro.')
+                ->group(function () {
+                    Route::get('/', [App\Http\Controllers\CaroController::class, 'index'])->name('index');
+                    Route::get('/{roomId}', [App\Http\Controllers\CaroController::class, 'play'])->name('play');
+                    Route::post('/{roomId}/move', [App\Http\Controllers\CaroController::class, 'broadcastMove'])->name('move');
+                });
         });
+
     Broadcast::routes(['middleware' => ['web', 'auth']]);
 }); // Kết thúc group middleware auth

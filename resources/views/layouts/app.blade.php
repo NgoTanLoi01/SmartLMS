@@ -102,7 +102,6 @@
 
         /* Dropdown Công cụ */
         #toolsMenu {
-            /* border-left: 2px solid #edf2f7; */
             margin-bottom: 10px;
             padding-left: 5px;
             margin-left: 30px;
@@ -118,6 +117,26 @@
         }
 
         #toolsMenu .nav-link:hover {
+            color: var(--primary-navy) !important;
+            background: #f7fafc !important;
+        }
+
+        #entertainmentMenu {
+            margin-bottom: 10px;
+            padding-left: 5px;
+            margin-left: 30px;
+        }
+
+        #entertainmentMenu .nav-link {
+            margin: 2px 10px 2px 0 !important;
+            padding: 8px 12px !important;
+            font-size: 0.85rem !important;
+            color: #718096;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        #entertainmentMenu .nav-link:hover {
             color: var(--primary-navy) !important;
             background: #f7fafc !important;
         }
@@ -215,32 +234,23 @@
                             </a>
                         </li>
 
+                        {{-- CÔNG CỤ HỖ TRỢ (Đã lược bỏ game) --}}
                         <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center justify-content-between {{ request()->is('tools*') ? 'active' : '' }}"
+                            <a class="nav-link d-flex align-items-center justify-content-between {{ request()->routeIs('tools.grade-calculator') ? 'active' : '' }}"
                                 data-bs-toggle="collapse" href="#toolsMenu" role="button">
                                 <div><i class="fas fa-toolbox"></i> <span>Công cụ hỗ trợ</span></div>
                                 <i
-                                    class="fas fa-chevron-down small transition-all {{ request()->is('tools*') ? 'fa-rotate-180' : '' }}"></i>
+                                    class="fas fa-chevron-down small transition-all {{ request()->routeIs('tools.grade-calculator') ? 'fa-rotate-180' : '' }}"></i>
                             </a>
-                            <div class="collapse {{ request()->is('tools*') ? 'show' : '' }}" id="toolsMenu">
+                            <div class="collapse {{ request()->routeIs('tools.grade-calculator') ? 'show' : '' }}"
+                                id="toolsMenu">
                                 <ul class="nav flex-column border-start">
-                                    {{-- 1. Tính điểm nghề --}}
                                     <li class="nav-item">
                                         <a class="nav-link py-2 small {{ request()->routeIs('tools.grade-calculator') ? 'text-primary fw-bold' : '' }}"
                                             href="{{ route('tools.grade-calculator') }}">
                                             <i class="fas fa-calculator me-2"></i> Tính điểm nghề
                                         </a>
                                     </li>
-
-                                    {{-- 2. Cờ vua giải trí (MỚI THÊM) --}}
-                                    <li class="nav-item">
-                                        <a class="nav-link py-2 small {{ request()->is('tools/chess*') ? 'text-primary fw-bold' : '' }}"
-                                            href="{{ route('tools.chess.index') }}">
-                                            <i class="fas fa-chess me-2"></i> Cờ vua giải trí
-                                        </a>
-                                    </li>
-
-                                    {{-- 3. Trình soạn thảo Code --}}
                                     <li class="nav-item">
                                         <a class="nav-link py-2 small text-muted"
                                             href="https://ngotanloi.my.canva.site/code-editer" target="_blank">
@@ -250,6 +260,38 @@
                                 </ul>
                             </div>
                         </li>
+
+                        {{-- GÓC GIẢI TRÍ (DẠNG MENU XỔ XUỐNG) --}}
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center justify-content-between {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'active' : '' }}"
+                                data-bs-toggle="collapse" href="#entertainmentMenu" role="button"
+                                aria-expanded="{{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'true' : 'false' }}">
+                                <div><i class="fas fa-gamepad"></i> <span>Góc giải trí</span></div>
+                                <i
+                                    class="fas fa-chevron-down small transition-all {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'fa-rotate-180' : '' }}"></i>
+                            </a>
+                            <div class="collapse {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'show' : '' }}"
+                                id="entertainmentMenu">
+                                <ul class="nav flex-column border-start">
+                                    {{-- 1. Cờ vua giải trí --}}
+                                    <li class="nav-item">
+                                        <a class="nav-link py-2 small {{ request()->is('tools/chess*') ? 'text-primary fw-bold' : '' }}"
+                                            href="{{ route('tools.chess.index') }}">
+                                            <i class="fas fa-chess me-2"></i> Cờ vua
+                                        </a>
+                                    </li>
+
+                                    {{-- 2. Cờ Caro Online --}}
+                                    <li class="nav-item">
+                                        <a class="nav-link py-2 small {{ request()->is('tools/caro*') ? 'text-primary fw-bold' : '' }}"
+                                            href="{{ route('tools.caro.index') }}">
+                                            <i class="fas fa-times-circle me-2"></i> Cờ Caro
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
                         @if (in_array(Auth::user()->role, ['admin', 'teacher']))
                             <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
                                 style="letter-spacing: 1px;">Hệ thống AI</div>
