@@ -315,6 +315,13 @@
                                     <i class="fas fa-chalkboard"></i> <span>Quản lý lớp học</span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('schedules*') ? 'active' : '' }}"
+                                    href="{{ Route::has('schedules.index') ? route('schedules.index') : '#' }}"
+                                    data-tooltip="Quản lý lịch học">
+                                    <i class="fas fa-calendar-alt"></i> <span>Quản lý lịch học</span>
+                                </a>
+                            </li>
                             @if (Auth::user()->role === 'admin')
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"

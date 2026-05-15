@@ -8,13 +8,16 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Bạn không có quyền truy cập trang này.');
-        }
+        $search = $request->input('search');
 
-        $users = User::latest()->get();
+        $users = User::when($search, function ($query, $search) {
+            return $query->where('name', 'LIKE', "%{$search}%")->orWhere('email', 'LIKE', "%{$search}%");
+        })
+            ->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->withQueryString(); 
 
         return view('users.index', compact('users'));
     }

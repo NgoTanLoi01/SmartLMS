@@ -106,7 +106,7 @@
                                         @if ($question->difficulty == 'easy')
                                             <span class="badge bg-success">Dễ</span>
                                         @elseif($question->difficulty == 'medium')
-                                            <span class="badge bg-warning text-dark">Trung</span>
+                                            <span class="badge bg-warning text-dark">Trung bình</span>
                                         @else
                                             <span class="badge bg-danger">Khó</span>
                                         @endif

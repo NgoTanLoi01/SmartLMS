@@ -28,7 +28,7 @@ class DashboardController extends Controller
             $data['total_classes'] = DB::table('classes')->count();
             $data['total_courses'] = Course::count();
             $data['online_users'] = rand(5, 20);
-            $data['recent_users'] = User::orderBy('created_at', 'desc')->take(5)->get();
+            $data['recent_users'] = User::orderBy('created_at', 'desc')->take(7)->get();
             $data['chart_role_labels'] = ['Học sinh', 'Giáo viên', 'Admin'];
             $data['chart_role_data'] = [$data['total_students'], $data['total_teachers'], User::where('role', 'admin')->count()];
         }

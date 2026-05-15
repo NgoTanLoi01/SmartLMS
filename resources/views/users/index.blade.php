@@ -22,10 +22,60 @@
         .table-custom tbody tr:hover {
             background-color: #f8f9fa;
         }
+
+        /* Pagination Styling */
+        .pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .pagination-wrapper nav div:first-child {
+            display: none !important;
+        }
+
+        .pagination {
+            margin-bottom: 0;
+            gap: 5px;
+        }
+
+        .page-item .page-link {
+            border: none;
+            border-radius: 50% !important;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .page-item .page-link:hover {
+            background-color: #e9ecef;
+            color: #0d6efd;
+            transform: translateY(-2px);
+        }
+
+        .page-item.active .page-link {
+            background-color: #0d6efd;
+            color: white;
+            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+        }
+
+        .page-item:first-child .page-link,
+        .page-item:last-child .page-link {
+            border-radius: 10px !important;
+            width: auto;
+            padding: 0 15px;
+        }
     </style>
 
     <div class="container-fluid py-4">
-        <!-- HEADER & TOOLBAR -->
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <div>
                 <h3 class="fw-bold mb-0 text-dark">Hệ thống Người dùng</h3>
@@ -33,13 +83,18 @@
             </div>
 
             <div class="d-flex align-items-center gap-2">
-                <!-- Ô TÌM KIẾM NHANH -->
-                <div class="input-group rounded-pill overflow-hidden shadow-sm"
+                <form action="{{ route('users.index') }}" method="GET"
+                    class="input-group rounded-pill overflow-hidden shadow-sm"
                     style="background: white; border: 1px solid #dee2e6;">
                     <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fas fa-search"></i></span>
-                    <input type="text" id="searchUser" class="form-control border-0 shadow-none px-2"
-                        placeholder="Tìm tên hoặc email..." style="width: 220px; font-size: 0.9rem;">
-                </div>
+                    <input type="text" name="search" class="form-control border-0 shadow-none px-2"
+                        placeholder="Tìm tên hoặc email..." value="{{ request('search') }}"
+                        style="width: 220px; font-size: 0.9rem;">
+                    @if (request('search'))
+                        <a href="{{ route('users.index') }}" class="btn bg-white border-0 text-muted"><i
+                                class="fas fa-times"></i></a>
+                    @endif
+                </form>
 
                 <button class="btn btn-primary rounded-pill px-4 shadow-sm text-nowrap" data-bs-toggle="modal"
                     data-bs-target="#addUserModal">
@@ -48,7 +103,6 @@
             </div>
         </div>
 
-        <!-- BẢNG NGƯỜI DÙNG -->
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -64,18 +118,15 @@
                         </thead>
                         <tbody id="userTableBody">
                             @forelse ($users as $user)
-                                <!-- Thêm class user-row để JS nhận diện -->
                                 <tr class="user-row">
                                     <td class="px-4 py-3">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-circle bg-secondary bg-opacity-10 text-secondary me-3">
                                                 {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
                                             </div>
-                                            <!-- Thêm class user-name -->
                                             <div class="fw-bold text-dark user-name">{{ $user->name }}</div>
                                         </div>
                                     </td>
-                                    <!-- Thêm class user-email -->
                                     <td class="px-4 py-3 text-muted user-email">{{ $user->email }}</td>
                                     <td class="px-4 py-3">
                                         @if ($user->role === 'admin')
@@ -109,7 +160,7 @@
                                         @if (auth()->user()->role === 'admin')
                                             <form action="{{ route('users.resetPassword', $user->id) }}" method="POST"
                                                 class="d-inline"
-                                                onsubmit="return confirm('Bạn có chắc chắn cập nhật mật khẩu tài khoản này về mặc định không?');">
+                                                onsubmit="return confirm('Bạn có chắc chắn cập nhật mật khẩu về mặc định?');">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-outline-warning shadow-sm"
                                                     title="Cấp lại mật khẩu">
@@ -120,9 +171,11 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr id="noDataRow">
-                                    <td colspan="5" class="text-center py-4 text-muted fst-italic">Không có dữ liệu người
-                                        dùng.</td>
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fas fa-user-slash fa-3x mb-3 opacity-25"></i>
+                                        <p>Không tìm thấy người dùng nào phù hợp.</p>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -130,9 +183,12 @@
                 </div>
             </div>
         </div>
+
+        <div class="pagination-wrapper">
+            {{ $users->links('pagination::bootstrap-5') }}
+        </div>
     </div>
 
-    <!-- Modal Thêm User -->
     <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form action="{{ route('users.store') }}" method="POST" class="modal-content border-0 shadow">
@@ -171,26 +227,4 @@
             </form>
         </div>
     </div>
-
-    @push('scripts')
-        <script>
-            // Lắng nghe sự kiện gõ phím vào ô tìm kiếm
-            document.getElementById('searchUser').addEventListener('keyup', function() {
-                let filter = this.value.toLowerCase().trim();
-                let rows = document.querySelectorAll('.user-row');
-
-                rows.forEach(row => {
-                    // Tìm theo cả Tên và Email
-                    let name = row.querySelector('.user-name').innerText.toLowerCase();
-                    let email = row.querySelector('.user-email').innerText.toLowerCase();
-
-                    if (name.includes(filter) || email.includes(filter)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            });
-        </script>
-    @endpush
 @endsection
