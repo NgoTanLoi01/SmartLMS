@@ -12,7 +12,7 @@
 
                 <div class="input-group mb-3">
                     <input type="text" id="roomPin" class="form-control rounded-start-pill border-primary"
-                        placeholder="Ví dụ: 123456">
+                        placeholder="Mã 6 số">
                     <button onclick="joinRoom()" class="btn btn-outline-primary rounded-end-pill px-4">Vào chơi</button>
                 </div>
             </div>

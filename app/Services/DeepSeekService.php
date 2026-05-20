@@ -58,7 +58,7 @@ class DeepSeekService
 
         $systemContent = "Bạn là trợ lý AI học tập của hệ thống SmartLMS. Hãy trả lời thân thiện.\n\n";
         if (!empty($context)) {
-            $systemContent .= "Dựa vào tài liệu bài giảng sau để trả lời:\n" . $context;
+            $systemContent .= "Dựa vào dữ liệu của hệ thống SmartLMS để trả lời:\n" . $context;
         }
 
         // Tạo danh sách tin nhắn cho API DeepSeek

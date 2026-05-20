@@ -14,10 +14,10 @@
 
             <div class="mt-4">
                 <p id="turn-info" class="fw-bold fs-5 text-primary">Đang khởi tạo...</p>
-                <button class="btn btn-outline-secondary rounded-pill px-4" onclick="location.reload()">
+                {{-- <button class="btn btn-outline-secondary rounded-pill px-4" onclick="location.reload()">
                     <i class="fas fa-sync-alt me-1"></i> Làm mới
-                </button>
-                <a href="{{ route('tools.caro.index') }}" class="btn btn-light rounded-pill px-4">Thoát</a>
+                </button> --}}
+                <a href="{{ route('tools.caro.index') }}" class="btn btn-light rounded-pill px-4">Thoát phòng</a>
             </div>
         </div>
     </div>
@@ -169,8 +169,12 @@
                         title: 'Trận đấu kết thúc!',
                         text: winnerText,
                         icon: currentTurn === mySymbol ? 'success' : 'error',
-                        confirmButtonText: 'Chơi lại'
-                    }).then(() => location.reload());
+                        confirmButtonText: 'Thoát trận',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    }).then(() => {
+                        window.location.href = "/tools/caro";
+                    });
                     return;
                 }
 

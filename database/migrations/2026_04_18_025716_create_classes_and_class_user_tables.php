@@ -14,7 +14,7 @@ return new class extends Migration {
         Schema::create('classes', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('code')->unique(); // Mã lớp (ví dụ: IT01)
+            $table->string('code')->unique();
             $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });

@@ -157,7 +157,6 @@
                                             </td>
 
                                             <td>
-                                                {{-- Kiểm tra trực tiếp qua quan hệ đã định nghĩa trong Model --}}
                                                 @if ($doc->course_id == 0)
                                                     <span
                                                         class="badge bg-secondary-subtle text-secondary px-2 py-1 border border-secondary-subtle"
@@ -165,7 +164,6 @@
                                                         Dùng chung toàn hệ thống
                                                     </span>
                                                 @elseif ($doc->course)
-                                                    {{-- Laravel sẽ tự sang MySQL tìm khóa học theo ID --}}
                                                     <span
                                                         class="badge bg-info-subtle text-info px-2 py-1 border border-info-subtle"
                                                         style="font-size: 0.8rem;">

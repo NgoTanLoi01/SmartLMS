@@ -27,7 +27,6 @@ class MoveMade implements \Illuminate\Contracts\Broadcasting\ShouldBroadcastNow
         return [new PresenceChannel('chess.' . $this->roomId)];
     }
 
-    // THÊM HÀM NÀY ĐỂ ÉP TÊN SỰ KIỆN:
     public function broadcastAs()
     {
         return 'MoveMade';

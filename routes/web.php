@@ -150,12 +150,9 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('tools')
         ->name('tools.')
         ->group(function () {
-            // 1. Máy tính điểm
             Route::get('/grade-calculator', function () {
                 return view('tools.grade-calculator');
             })->name('grade-calculator');
-
-            // 2. Cờ Vua (Chess)
             Route::prefix('chess')
                 ->name('chess.')
                 ->group(function () {
@@ -163,8 +160,6 @@ Route::middleware(['auth'])->group(function () {
                     Route::get('/{roomId}', [App\Http\Controllers\ChessController::class, 'play'])->name('play');
                     Route::post('/{roomId}/move', [App\Http\Controllers\ChessController::class, 'broadcastMove'])->name('move');
                 });
-
-            // 3. Cờ Caro (Tách biệt hoàn toàn)
             Route::prefix('caro')
                 ->name('caro.')
                 ->group(function () {
@@ -175,4 +170,4 @@ Route::middleware(['auth'])->group(function () {
         });
 
     Broadcast::routes(['middleware' => ['web', 'auth']]);
-}); // Kết thúc group middleware auth
+});

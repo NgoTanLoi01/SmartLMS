@@ -1,5 +1,57 @@
 @extends('layouts.app')
+<style>
+    .highlight-square {
+        position: relative;
+    }
 
+    /* Ô nước đi thường */
+    .highlight-square::after {
+        content: '';
+
+        position: absolute;
+
+        width: 18px;
+        height: 18px;
+
+        background: rgba(40, 167, 69, 0.55);
+
+        border-radius: 50%;
+
+        top: 50%;
+        left: 50%;
+
+        transform: translate(-50%, -50%);
+
+        pointer-events: none;
+    }
+
+    /* Ô có thể ăn quân */
+    .highlight-capture::after {
+
+        content: '';
+
+        position: absolute;
+
+        width: calc(100% - 10px);
+        height: calc(100% - 10px);
+
+        border: 5px solid rgba(220, 53, 69, 0.8);
+
+        border-radius: 50%;
+
+        top: 50%;
+        left: 50%;
+
+        transform: translate(-50%, -50%);
+
+        pointer-events: none;
+    }
+
+    /* Ô đang chọn */
+    .selected-square {
+        box-shadow: inset 0 0 3px 3px rgba(255, 193, 7, 0.9);
+    }
+</style>
 @section('content')
     <div class="container py-4">
         <div class="row">
@@ -13,7 +65,19 @@
                     <div id="myBoard" class="mx-auto" style="width: 100%; max-width: 550px; min-height: 400px;"></div>
 
                     <div class="mt-4">
-                        <a href="{{ route('tools.chess.index') }}" class="btn btn-light rounded-pill px-4">Thoát phòng</a>
+
+                        <!-- Nút thoát khi đang chơi -->
+                        <a href="{{ route('tools.chess.index') }}" id="normal-exit-btn"
+                            class="btn btn-light rounded-pill px-4">
+                            Thoát phòng
+                        </a>
+
+                        <!-- Nút thoát sau khi kết thúc -->
+                        <button id="finish-exit-btn" class="btn btn-danger rounded-pill px-4 d-none">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Thoát trận
+                        </button>
+
                     </div>
                 </div>
             </div>
@@ -146,183 +210,633 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pusher/8.3.0/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.0/dist/echo.iife.js"></script>
-
     <script>
         window.onload = function() {
-            window.axios = axios;
-            window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-            const token = document.querySelector('meta[name="csrf-token"]');
-            if (token) window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.getAttribute('content');
 
+            // =========================
+            // AXIOS + CSRF
+            // =========================
+            window.axios = axios;
+
+            window.axios.defaults.headers.common['X-Requested-With'] =
+                'XMLHttpRequest';
+
+            const token = document.querySelector(
+                'meta[name="csrf-token"]'
+            );
+
+            if (token) {
+
+                window.axios.defaults.headers.common['X-CSRF-TOKEN'] =
+                    token.getAttribute('content');
+            }
+
+            // =========================
+            // GAME CONFIG
+            // =========================
             var game = new Chess();
+
             var roomId = "{{ $roomId }}";
-            var myColor = 'white'; // Khởi tạo mặc định
+
             var currentUserId = {{ auth()->id() ?? 'null' }};
 
+            var myColor = 'white';
+
+            let isGameFinished = false;
+
+            // =========================
+            // HIGHLIGHT LEGAL MOVES
+            // =========================
+            function removeHighlights() {
+
+                $('#myBoard .square-55d63').removeClass(
+                    'highlight-square highlight-capture selected-square'
+                );
+            }
+
+            function highlightLegalMoves(square) {
+
+                removeHighlights();
+
+                const moves = game.moves({
+                    square: square,
+                    verbose: true
+                });
+
+                if (moves.length === 0) return;
+
+                // Highlight quân đang chọn
+                $(`#myBoard .square-${square}`)
+                    .addClass('selected-square');
+
+                // Highlight nước đi hợp lệ
+                moves.forEach(move => {
+
+                    const targetSquare = move.to;
+
+                    const targetEl =
+                        $(`#myBoard .square-${targetSquare}`);
+
+                    // Ô ăn quân
+                    if (
+                        move.flags.includes('c') ||
+                        move.flags.includes('e')
+                    ) {
+
+                        targetEl.addClass(
+                            'highlight-capture'
+                        );
+
+                    } else {
+
+                        targetEl.addClass(
+                            'highlight-square'
+                        );
+                    }
+                });
+            }
+
+            // =========================
+            // REVERB + ECHO
+            // =========================
             window.Pusher = Pusher;
+
             window.Echo = new Echo({
+
                 broadcaster: 'reverb',
+
                 key: '{{ env('REVERB_APP_KEY') }}',
+
                 wsHost: '{{ env('REVERB_HOST') }}',
+
                 wsPort: 443,
+
                 wssPort: 443,
+
                 forceTLS: true,
+
                 enabledTransports: ['ws', 'wss'],
+
                 authEndpoint: '/broadcasting/auth',
             });
 
+            // =========================
+            // STATUS UI
+            // =========================
             function updateStatus(count) {
-                const badge = document.getElementById('status-badge');
-                if (badge) {
-                    badge.className = count >= 2 ? "badge bg-success rounded-pill px-3 py-2" :
+
+                const badge =
+                    document.getElementById('status-badge');
+
+                if (!badge) return;
+
+                if (count >= 2) {
+
+                    badge.className =
+                        "badge bg-success rounded-pill px-3 py-2";
+
+                    badge.innerHTML =
+                        "Trận đấu bắt đầu!";
+
+                } else {
+
+                    badge.className =
                         "badge bg-secondary rounded-pill px-3 py-2";
-                    badge.innerHTML = count >= 2 ? "Trận đấu bắt đầu!" : "Đang đợi đối thủ...";
+
+                    badge.innerHTML =
+                        "Đang đợi đối thủ...";
                 }
             }
 
+            // =========================
+            // MOVE HISTORY
+            // =========================
             function updateMoveHistory() {
+
                 const history = game.history();
-                const tbody = document.getElementById('move-history-body');
+
+                const tbody =
+                    document.getElementById(
+                        'move-history-body'
+                    );
+
                 if (!tbody) return;
 
                 tbody.innerHTML = '';
+
                 for (let i = 0; i < history.length; i += 2) {
+
                     const moveNumber = (i / 2) + 1;
-                    const whiteMove = history[i];
-                    const blackMove = history[i + 1] ? history[i + 1] : '';
+
+                    const whiteMove = history[i] || '';
+
+                    const blackMove = history[i + 1] || '';
+
                     tbody.innerHTML += `
                     <tr>
                         <td class="text-muted">${moveNumber}</td>
                         <td class="fw-bold text-primary">${whiteMove}</td>
                         <td class="fw-bold text-danger">${blackMove}</td>
-                    </tr>`;
+                    </tr>
+                `;
                 }
-                const tableContainer = tbody.parentElement.parentElement;
-                tableContainer.scrollTop = tableContainer.scrollHeight;
+
+                const tableContainer =
+                    tbody.parentElement.parentElement;
+
+                tableContainer.scrollTop =
+                    tableContainer.scrollHeight;
             }
 
-            // --- HÀM KIỂM TRA & HIỂN THỊ CHIẾN THẮNG ---
+            // =========================
+            // GAME OVER
+            // =========================
             function checkGameOver() {
-                if (game.game_over()) {
-                    let title = 'Trò chơi kết thúc!';
-                    let text = '';
-                    let icon = 'info';
 
-                    if (game.in_checkmate()) {
-                        // Nếu chiếu bí, người vừa đi nước cuối cùng (được lưu trong game.turn()) là NGƯỜI THUA
-                        // Vậy người thắng là người KHÔNG PHẢI lượt hiện tại
-                        let winner = game.turn() === 'w' ? 'Quân Đen' : 'Quân Trắng';
-                        title = 'Chiếu Bí!';
-                        text = `Chúc mừng ${winner} đã giành chiến thắng! 🏆`;
-                        icon = 'success';
-                    } else if (game.in_draw()) {
-                        title = 'Hòa Cờ!';
-                        text = 'Hai bên bất phân thắng bại. 🤝';
-                    } else if (game.in_stalemate()) {
-                        title = 'Hết Nước Đi!';
-                        text = 'Ván cờ kết thúc hòa. 🤝';
-                    } else if (game.in_threefold_repetition()) {
-                        title = 'Hòa Cờ!';
-                        text = 'Lặp lại nước đi 3 lần. 🔄';
-                    }
+                if (!game.game_over()) return;
 
-                    // Hiển thị thông báo đẹp mắt bằng SweetAlert2
-                    Swal.fire({
-                        title: title,
-                        text: text,
-                        icon: icon,
-                        confirmButtonText: 'Chơi lại',
-                        confirmButtonColor: '#0d6efd',
-                        allowOutsideClick: false
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            location.reload();
-                        }
-                    });
+                isGameFinished = true;
+
+                let title = 'Trò chơi kết thúc!';
+                let text = '';
+                let icon = 'info';
+
+                // CHECKMATE
+                if (game.in_checkmate()) {
+
+                    let winner =
+                        game.turn() === 'w' ?
+                        'Quân Đen' :
+                        'Quân Trắng';
+
+                    title = 'Chiếu Bí!';
+
+                    text =
+                        `${winner} đã giành chiến thắng! 🏆`;
+
+                    icon = 'success';
                 }
+
+                // DRAW
+                else if (game.in_draw()) {
+
+                    title = 'Hòa Cờ!';
+
+                    text =
+                        'Hai bên bất phân thắng bại 🤝';
+
+                    icon = 'info';
+                }
+
+                // STALEMATE
+                else if (game.in_stalemate()) {
+
+                    title = 'Hết Nước Đi!';
+
+                    text =
+                        'Ván cờ kết thúc hòa 🤝';
+
+                    icon = 'warning';
+                }
+
+                // THREEFOLD
+                else if (game.in_threefold_repetition()) {
+
+                    title = 'Hòa Cờ!';
+
+                    text =
+                        'Lặp lại nước đi 3 lần 🔄';
+
+                    icon = 'info';
+                }
+
+                // INSUFFICIENT MATERIAL
+                else if (game.insufficient_material()) {
+
+                    title = 'Không Đủ Quân!';
+
+                    text =
+                        'Không đủ quân để chiếu bí 🤝';
+
+                    icon = 'info';
+                }
+
+                // KHÓA BÀN CỜ
+                board.draggable = false;
+
+                removeHighlights();
+
+                // ẨN NÚT THOÁT THƯỜNG
+                const normalExitBtn =
+                    document.getElementById(
+                        'normal-exit-btn'
+                    );
+
+                if (normalExitBtn) {
+
+                    normalExitBtn.classList.add(
+                        'd-none'
+                    );
+                }
+
+                // HIỆN NÚT THOÁT TRẬN
+                const finishExitBtn =
+                    document.getElementById(
+                        'finish-exit-btn'
+                    );
+
+                if (finishExitBtn) {
+
+                    finishExitBtn.classList.remove(
+                        'd-none'
+                    );
+
+                    finishExitBtn.onclick =
+                        function() {
+
+                            Swal.fire({
+
+                                title: 'Thoát trận?',
+
+                                text: 'Bạn sẽ rời khỏi bàn cờ hiện tại.',
+
+                                icon: 'warning',
+
+                                showCancelButton: true,
+
+                                confirmButtonText: 'Thoát',
+
+                                cancelButtonText: 'Ở lại',
+
+                                confirmButtonColor: '#dc3545'
+
+                            }).then((result) => {
+
+                                if (result.isConfirmed) {
+
+                                    window.location.href =
+                                        "/tools/chess";
+                                }
+                            });
+                        };
+                }
+
+                // THÔNG BÁO
+                Swal.fire({
+
+                    title: title,
+
+                    text: text,
+
+                    icon: icon,
+
+                    confirmButtonText: 'Xem lại bàn cờ',
+
+                    confirmButtonColor: '#198754',
+
+                    allowOutsideClick: true,
+
+                    allowEscapeKey: true
+                });
             }
 
-            const boardEl = document.getElementById('myBoard');
+            // =========================
+            // CHESSBOARD
+            // =========================
+            const boardEl =
+                document.getElementById('myBoard');
+
             if (boardEl) {
+
                 var board = Chessboard('myBoard', {
+
                     draggable: true,
+
                     position: 'start',
+
                     pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
 
-                    onDragStart: function(source, piece, position, orientation) {
-                        if (game.game_over()) return false;
+                    // =========================
+                    // HOVER HIGHLIGHT
+                    // =========================
+                    onMouseoverSquare: function(square, piece) {
 
-                        // CHỈ CHO PHÉP ĐI QUÂN CỦA MÌNH
-                        // 'piece' có dạng 'wP', 'bN'... Ký tự đầu tiên là màu ('w' hoặc 'b')
-                        // 'myColor' là 'white' hoặc 'black'
-                        if ((myColor === 'white' && piece.charAt(0) !== 'w') ||
-                            (myColor === 'black' && piece.charAt(0) !== 'b')) {
+                        if (isGameFinished) return;
+
+                        if (!piece) return;
+
+                        // Chỉ highlight quân của mình
+                        if (
+
+                            (myColor === 'white' &&
+                                piece.startsWith('w')) ||
+
+                            (myColor === 'black' &&
+                                piece.startsWith('b'))
+                        ) {
+
+                            // Đúng lượt
+                            if (
+
+                                (game.turn() === 'w' &&
+                                    myColor === 'white') ||
+
+                                (game.turn() === 'b' &&
+                                    myColor === 'black')
+                            ) {
+
+                                highlightLegalMoves(square);
+                            }
+                        }
+                    },
+
+                    // =========================
+                    // REMOVE HIGHLIGHT
+                    // =========================
+                    onMouseoutSquare: function() {
+
+                        removeHighlights();
+                    },
+
+                    // =========================
+                    // DRAG START
+                    // =========================
+                    onDragStart: function(source, piece) {
+
+                        // GAME OVER
+                        if (
+                            isGameFinished ||
+                            game.game_over()
+                        ) {
                             return false;
                         }
 
-                        // CHỈ CHO PHÉP ĐI ĐÚNG LƯỢT
-                        if ((game.turn() === 'w' && myColor !== 'white') ||
-                            (game.turn() === 'b' && myColor !== 'black')) {
+                        // ĐÚNG QUÂN
+                        if (
+
+                            (myColor === 'white' &&
+                                piece.charAt(0) !== 'w') ||
+
+                            (myColor === 'black' &&
+                                piece.charAt(0) !== 'b')
+                        ) {
+                            return false;
+                        }
+
+                        // ĐÚNG LƯỢT
+                        if (
+
+                            (game.turn() === 'w' &&
+                                myColor !== 'white') ||
+
+                            (game.turn() === 'b' &&
+                                myColor !== 'black')
+                        ) {
                             return false;
                         }
                     },
 
+                    // =========================
+                    // DROP
+                    // =========================
                     onDrop: function(source, target) {
+
+                        removeHighlights();
+
+                        if (isGameFinished) {
+                            return 'snapback';
+                        }
+
                         var move = game.move({
+
                             from: source,
+
                             to: target,
+
                             promotion: 'q'
                         });
-                        if (move === null) return 'snapback';
 
+                        // NƯỚC ĐI KHÔNG HỢP LỆ
+                        if (move === null) {
+
+                            return 'snapback';
+                        }
+
+                        // UPDATE UI
                         updateMoveHistory();
-                        checkGameOver(); // Kiểm tra kết thúc sau khi mình đi
 
-                        window.axios.post(`/tools/chess/${roomId}/move`, {
-                                move: move
-                            })
-                            .catch(error => console.error("Lỗi gửi nước đi:", error));
+                        // CHECK GAME OVER
+                        checkGameOver();
+
+                        // SEND MOVE
+                        window.axios.post(
+                                `/tools/chess/${roomId}/move`, {
+                                    move: move
+                                }
+                            )
+                            .catch(error => {
+
+                                console.error(
+                                    "Lỗi gửi nước đi:",
+                                    error
+                                );
+
+                                Swal.fire({
+
+                                    icon: 'error',
+
+                                    title: 'Lỗi kết nối',
+
+                                    text: 'Không thể gửi nước đi.'
+                                });
+                            });
+                    },
+
+                    // =========================
+                    // SNAP END
+                    // =========================
+                    onSnapEnd: function() {
+
+                        board.position(game.fen());
                     }
                 });
 
+                // RESIZE FIX
                 setTimeout(() => {
+
                     board.resize();
+
                 }, 500);
             }
 
-            // KẾT NỐI & PHÂN PHE
+            // =========================
+            // REALTIME ROOM
+            // =========================
             window.Echo.join(`chess.${roomId}`)
-                .here((users) => {
-                    console.log("👥 Danh sách:", users);
 
-                    // Xác định phe: Nếu trong phòng CÓ người VÀ người đó KHÁC mình -> mình vào sau -> Quân Đen
-                    const otherUsers = users.filter(u => u.id !== currentUserId);
+                // =========================
+                // HERE
+                // =========================
+                .here((users) => {
+
+                    console.log(
+                        "👥 Người chơi:",
+                        users
+                    );
+
+                    const otherUsers =
+                        users.filter(
+                            u => u.id !== currentUserId
+                        );
+
+                    // NGƯỜI VÀO SAU = ĐEN
                     if (otherUsers.length > 0) {
+
                         myColor = 'black';
+
                         board.orientation('black');
-                        console.log("⚫ Cầm quân ĐEN");
+
+                        console.log(
+                            "⚫ Bạn là ĐEN"
+                        );
+
                     } else {
+
                         myColor = 'white';
+
                         board.orientation('white');
-                        console.log("⚪ Cầm quân TRẮNG");
+
+                        console.log(
+                            "⚪ Bạn là TRẮNG"
+                        );
                     }
 
                     updateStatus(users.length);
                 })
+
+                // =========================
+                // JOINING
+                // =========================
                 .joining((user) => {
-                    console.log(user.name + " tham gia.");
+
+                    console.log(
+                        user.name +
+                        " tham gia"
+                    );
+
                     updateStatus(2);
+
+                    Swal.fire({
+
+                        toast: true,
+
+                        position: 'top-end',
+
+                        icon: 'success',
+
+                        title: `${user.name} đã tham gia`,
+
+                        showConfirmButton: false,
+
+                        timer: 2000
+                    });
                 })
+
+                // =========================
+                // LEAVING
+                // =========================
                 .leaving((user) => {
+
+                    console.log(
+                        user.name +
+                        " rời phòng"
+                    );
+
                     updateStatus(1);
+
+                    if (!isGameFinished) {
+
+                        Swal.fire({
+
+                            icon: 'warning',
+
+                            title: 'Đối thủ đã thoát',
+
+                            text: 'Trận đấu đã kết thúc',
+
+                            confirmButtonText: 'Thoát trận',
+
+                            allowOutsideClick: false
+
+                        }).then(() => {
+
+                            window.location.href =
+                                "/tools/chess";
+                        });
+                    }
                 })
+
+                // =========================
+                // RECEIVE MOVE
+                // =========================
                 .listen('.MoveMade', (e) => {
-                    console.log("🔥 Nhận nước đi:", e);
+
+                    console.log(
+                        "🔥 Nhận nước đi:",
+                        e
+                    );
+
+                    removeHighlights();
+
+                    if (isGameFinished) return;
+
                     game.move(e.move);
+
                     board.position(game.fen());
 
                     updateMoveHistory();
-                    checkGameOver(); // Kiểm tra kết thúc sau khi đối thủ đi
+
+                    checkGameOver();
                 });
         };
     </script>
