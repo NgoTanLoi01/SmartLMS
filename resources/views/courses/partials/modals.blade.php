@@ -303,38 +303,154 @@
     <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const tinyConfig = {
-                selector: '#addAssignmentInstructions, #editAssignmentInstructions', // Kích hoạt cho cả modal thêm và sửa
-                height: 300,
+
+            // ==============================
+            // KHỞI TẠO TINYMCE
+            // ==============================
+
+            tinymce.init({
+                selector: '#addAssignmentInstructions, #editAssignmentInstructions',
+
+                height: 320,
+
                 menubar: false,
+
                 plugins: [
-                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                    'advlist', 'autolink', 'lists', 'link',
+                    'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace',
+                    'visualblocks', 'code',
+                    'fullscreen', 'insertdatetime',
+                    'media', 'table', 'help',
+                    'wordcount'
                 ],
+
                 toolbar: 'undo redo | blocks | ' +
-                    'bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter ' +
-                    'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | help',
+                    'bold italic underline strikethrough | ' +
+                    'forecolor backcolor | ' +
+                    'alignleft aligncenter alignright alignjustify | ' +
+                    'bullist numlist outdent indent | ' +
+                    'removeformat | image | code | help',
+
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                // Quan trọng: Fix lỗi TinyMCE không gõ được trong Bootstrap Modal
+
+                // =========================
+                // CHO PHÉP PASTE ẢNH
+                // =========================
+
+                paste_data_images: true,
+
+                // =========================
+                // UPLOAD ẢNH TỰ ĐỘNG
+                // =========================
+
+                automatic_uploads: true,
+
+                images_upload_url: '/tinymce/upload-image',
+
+                // =========================
+                // CHỈ GIỮ TAG CẦN THIẾT
+                // =========================
+
+                valid_elements: 'p,b,strong,i,em,ul,ol,li,br,h1,h2,h3,h4,h5,h6,a[href|target],img[src|alt|width|height]',
+
                 setup: function(editor) {
-                    editor.on('change', function() {
+
+                    editor.on('change keyup', function() {
+
                         editor.save();
+
                     });
-                }
-            };
 
-            tinymce.init(tinyConfig);
-
-            // Fix lỗi focus của Bootstrap Modal ngăn cản tương tác với TinyMCE
-            $(document).on('focusin', function(e) {
-                if ($(e.target).closest(
-                        ".tox-tinymce, .tox-tinymce-aux, .moxman-window, .tam-assetmanager-indicator")
-                    .length) {
-                    e.stopImmediatePropagation();
                 }
             });
+
+            // ==============================
+            // FIX BOOTSTRAP MODAL + TINYMCE
+            // ==============================
+
+            $(document).on('focusin', function(e) {
+
+                if ($(e.target).closest(
+                        ".tox-tinymce, .tox-tinymce-aux, .moxman-window"
+                    ).length) {
+
+                    e.stopImmediatePropagation();
+
+                }
+
+            });
+
+            // ==============================
+            // SUBMIT FORM EDIT
+            // ==============================
+
+            document.getElementById('editAssignmentForm')
+                ?.addEventListener('submit', function() {
+
+                    tinymce.triggerSave();
+
+                });
+
         });
+
+
+        // ==========================================
+        // HÀM MỞ MODAL SỬA BÀI TẬP
+        // ==========================================
+
+        function openEditAssignmentModal(button) {
+
+            // LẤY DATA TỪ BUTTON
+            const id = button.dataset.id;
+
+            const title = JSON.parse(button.dataset.title || '""');
+
+            const instructions = JSON.parse(button.dataset.instructions || '""');
+
+            const dueDate = button.dataset.due;
+
+            const lessonId = button.dataset.lesson;
+
+            // ACTION FORM
+            document.getElementById('editAssignmentForm').action =
+                `/assignments/${id}`;
+
+            // TITLE
+            document.getElementById('editAssignmentTitle').value =
+                title;
+
+            // LESSON
+            document.getElementById('editAssignmentLesson').value =
+                lessonId;
+
+            // DUE DATE
+            document.getElementById('editAssignmentDue').value =
+                dueDate;
+
+            // TEXTAREA GỐC
+            document.getElementById('editAssignmentInstructions').value =
+                instructions;
+
+            // TINYMCE
+            setTimeout(() => {
+
+                const editor = tinymce.get('editAssignmentInstructions');
+
+                if (editor) {
+
+                    editor.setContent(instructions);
+
+                }
+
+            }, 300);
+
+            // MỞ MODAL
+            const modal = new bootstrap.Modal(
+                document.getElementById('editAssignmentModal')
+            );
+
+            modal.show();
+        }
     </script>
 @endpush

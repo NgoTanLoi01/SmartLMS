@@ -9,7 +9,6 @@ class SubmissionController extends Controller
 {
     protected $submissionService;
 
-    // Dependency Injection: Laravel tự động nạp Service vào đây
     public function __construct(SubmissionService $submissionService)
     {
         $this->submissionService = $submissionService;

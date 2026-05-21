@@ -116,14 +116,14 @@
 
                                                 @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
                                                     <div class="action-buttons d-flex ms-2 gap-1">
-                                                        <a href="javascript:void(0)"
-                                                            class="btn-action btn-edit edit-assignment-btn"
+                                                        <a href="javascript:void(0)" class="btn-action btn-edit"
+                                                            onclick="openEditAssignmentModal(this)"
                                                             data-id="{{ $assignment->id }}"
-                                                            data-title="{{ $assignment->title }}"
-                                                            data-instructions="{{ $assignment->instructions }}"
+                                                            data-title='@json($assignment->title)'
+                                                            data-instructions='@json($assignment->instructions)'
                                                             data-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
-                                                            data-lesson="{{ $lesson->id }}" data-bs-toggle="modal"
-                                                            data-bs-target="#editAssignmentModal" title="Sửa bài tập">
+                                                            data-lesson="{{ $lesson->id }}" title="Sửa bài tập">
+
                                                             <i class="fas fa-edit"></i>
                                                         </a>
                                                         <form

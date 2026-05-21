@@ -281,43 +281,86 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @if (isset($data['week_schedule']))
-                                            @forelse($data['week_schedule'] as $slot)
-                                                <tr
-                                                    class="{{ \Carbon\Carbon::parse($slot->schedule_date)->isToday() ? 'bg-primary bg-opacity-10' : '' }}">
-                                                    <td class="px-4 py-3">
-                                                        <div class="fw-bold">
-                                                            {{ \Carbon\Carbon::parse($slot->schedule_date)->format('d/m') }}
-                                                        </div>
-                                                        <div class="small text-muted">Thứ
-                                                            {{ \Carbon\Carbon::parse($slot->schedule_date)->dayOfWeek + 1 == 1 ? 'CN' : \Carbon\Carbon::parse($slot->schedule_date)->dayOfWeek + 1 }}
-                                                        </div>
-                                                    </td>
-                                                    <td class="px-4">
-                                                        <div class="text-primary fw-bold small">
-                                                            {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} -
-                                                            {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
-                                                        </div>
-                                                    </td>
-                                                    <td class="px-4">
-                                                        <div class="fw-bold small text-dark">{{ $slot->course_title }}
-                                                        </div>
-                                                        <div class="small text-muted">Lớp: {{ $slot->class_name }}</div>
-                                                    </td>
-                                                    <td class="px-4">
-                                                        <span
-                                                            class="badge bg-light text-dark border">{{ $slot->room ?? 'Online' }}</span>
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="4" class="text-center py-5 text-muted">
-                                                        <i class="fas fa-calendar-day fa-2x mb-2 opacity-25 d-block"></i>
-                                                        <p class="mb-0 small">Không có lịch dạy trong tuần này.</p>
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        @endif
+                                        @forelse($data['week_schedule'] ?? [] as $slot)
+                                            @php
+                                                $scheduleDate = \Carbon\Carbon::parse($slot->schedule_date);
+                                                $isToday = $scheduleDate->isToday();
+                                                $isPast = $scheduleDate->isPast() && !$isToday;
+                                            @endphp
+
+                                            <tr
+                                                class="
+            {{ $isToday ? 'bg-primary bg-opacity-10' : '' }}
+            {{ $isPast ? 'opacity-50' : '' }}
+        ">
+
+                                                <td class="px-4 py-3">
+                                                    <div class="fw-bold">
+                                                        {{ $scheduleDate->format('d/m/Y') }}
+                                                    </div>
+
+                                                    <div class="small text-muted">
+                                                        {{ $scheduleDate->translatedFormat('l') }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-4">
+                                                    <div class="fw-bold text-primary small">
+                                                        {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }}
+                                                        -
+                                                        {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-4">
+                                                    <div class="fw-bold text-dark small">
+                                                        {{ $slot->course_title }}
+                                                    </div>
+
+                                                    <div class="small text-muted">
+                                                        Lớp: {{ $slot->class_name }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-4">
+
+                                                    @if ($isToday)
+                                                        <span class="badge bg-success">
+                                                            Hôm nay
+                                                        </span>
+                                                    @elseif($isPast)
+                                                        <span class="badge bg-secondary">
+                                                            Đã học
+                                                        </span>
+                                                    @endif
+
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-light text-dark border">
+                                                            {{ $slot->room ?? 'Online' }}
+                                                        </span>
+                                                    </div>
+
+                                                </td>
+
+                                            </tr>
+
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="text-center py-5 text-muted">
+
+                                                    <i class="fas fa-calendar-times fa-2x mb-3 opacity-25 d-block"></i>
+
+                                                    <div class="fw-bold">
+                                                        Chưa có lịch học
+                                                    </div>
+
+                                                    <small>
+                                                        Lịch học / giảng dạy sẽ hiển thị tại đây.
+                                                    </small>
+
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
@@ -436,43 +479,86 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @if (isset($data['week_schedule']))
-                                            @forelse($data['week_schedule'] as $slot)
-                                                <tr
-                                                    class="{{ \Carbon\Carbon::parse($slot->schedule_date)->isToday() ? 'bg-success bg-opacity-10' : '' }}">
-                                                    <td class="px-4 py-3">
-                                                        <div class="fw-bold">
-                                                            {{ \Carbon\Carbon::parse($slot->schedule_date)->format('d/m') }}
-                                                        </div>
-                                                        <div class="small text-muted">Thứ
-                                                            {{ \Carbon\Carbon::parse($slot->schedule_date)->dayOfWeek + 1 == 1 ? 'CN' : \Carbon\Carbon::parse($slot->schedule_date)->dayOfWeek + 1 }}
-                                                        </div>
-                                                    </td>
-                                                    <td class="px-4">
-                                                        <div class="text-success fw-bold small">
-                                                            {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} -
-                                                            {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
-                                                        </div>
-                                                    </td>
-                                                    <td class="px-4">
-                                                        <div class="fw-bold small text-dark">{{ $slot->course_title }}
-                                                        </div>
-                                                        <div class="small text-muted">Lớp: {{ $slot->class_name }}</div>
-                                                    </td>
-                                                    <td class="px-4">
-                                                        <span
-                                                            class="badge bg-light text-dark border">{{ $slot->room ?? 'Online' }}</span>
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="4" class="text-center py-5 text-muted">
-                                                        <i class="fas fa-bed fa-2x mb-2 opacity-25 d-block"></i>
-                                                        <p class="mb-0 small">Tuần này bạn không có lịch học.</p>
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        @endif
+                                        @forelse($data['week_schedule'] ?? [] as $slot)
+                                            @php
+                                                $scheduleDate = \Carbon\Carbon::parse($slot->schedule_date);
+                                                $isToday = $scheduleDate->isToday();
+                                                $isPast = $scheduleDate->isPast() && !$isToday;
+                                            @endphp
+
+                                            <tr
+                                                class="
+            {{ $isToday ? 'bg-primary bg-opacity-10' : '' }}
+            {{ $isPast ? 'opacity-50' : '' }}
+        ">
+
+                                                <td class="px-4 py-3">
+                                                    <div class="fw-bold">
+                                                        {{ $scheduleDate->format('d/m/Y') }}
+                                                    </div>
+
+                                                    <div class="small text-muted">
+                                                        {{ $scheduleDate->translatedFormat('l') }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-4">
+                                                    <div class="fw-bold text-primary small">
+                                                        {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }}
+                                                        -
+                                                        {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-4">
+                                                    <div class="fw-bold text-dark small">
+                                                        {{ $slot->course_title }}
+                                                    </div>
+
+                                                    <div class="small text-muted">
+                                                        Lớp: {{ $slot->class_name }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-4">
+
+                                                    @if ($isToday)
+                                                        <span class="badge bg-success">
+                                                            Hôm nay
+                                                        </span>
+                                                    @elseif($isPast)
+                                                        <span class="badge bg-secondary">
+                                                            Đã học
+                                                        </span>
+                                                    @endif
+
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-light text-dark border">
+                                                            {{ $slot->room ?? 'Online' }}
+                                                        </span>
+                                                    </div>
+
+                                                </td>
+
+                                            </tr>
+
+                                        @empty
+                                            <tr>
+                                                <td colspan="4" class="text-center py-5 text-muted">
+
+                                                    <i class="fas fa-calendar-times fa-2x mb-3 opacity-25 d-block"></i>
+
+                                                    <div class="fw-bold">
+                                                        Chưa có lịch học
+                                                    </div>
+
+                                                    <small>
+                                                        Lịch học / giảng dạy sẽ hiển thị tại đây.
+                                                    </small>
+
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>

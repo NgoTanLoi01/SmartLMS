@@ -83,10 +83,7 @@ class CourseController extends Controller
             $progress = $totalLessons > 0 ? round(($completedCount / $totalLessons) * 100) : 0;
 
             // 2. Lấy dữ liệu bài nộp (Assignments)
-            // Lấy tất cả ID bài tập thuộc khóa học này
             $assignmentIds = \App\Models\Assignments::where('course_id', $id)->pluck('id')->toArray();
-
-            // Lấy danh sách bài nộp của chính học sinh này cho các bài tập đó
             $userSubmissions = \App\Models\AssignmentSubmission::where('user_id', $user->id)->whereIn('assignment_id', $assignmentIds)->get()->keyBy('assignment_id'); // Key hóa theo ID bài tập để View check cực nhanh
         }
         $userQuizAttempts = [];
