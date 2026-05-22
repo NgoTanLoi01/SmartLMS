@@ -95,7 +95,7 @@
             window.Echo = new Echo({
                 broadcaster: 'reverb',
                 key: '{{ env('REVERB_APP_KEY') }}',
-                wsHost: '{{ env('REVERB_HOST') }}',
+                wsHost: 'ws.smartlms.io.vn',
                 wsPort: 443,
                 wssPort: 443,
                 forceTLS: true,
@@ -191,8 +191,10 @@
                     [1, -1]
                 ];
                 const symbol = boardState[r][c];
+
                 for (let [dr, dc] of directions) {
                     let count = 1;
+
                     for (let i = 1; i < 5; i++) {
                         let nr = r + dr * i,
                             nc = c + dc * i;
@@ -205,7 +207,8 @@
                         if (nr >= 0 && nr < 15 && nc >= 0 && nc < 15 && boardState[nr][nc] === symbol) count++;
                         else break;
                     }
-                    if (count >= 5) return true;
+
+                    if (count === 5) return true; // ✅ Đúng 5, không phải >= 5
                 }
                 return false;
             }
@@ -237,9 +240,17 @@
                 })
                 .leaving(user => {
                     isGameActive = false;
-                    badge.className = "badge bg-secondary rounded-pill px-3 py-2";
-                    badge.innerText = "Đối thủ đã thoát";
-                    turnInfo.innerText = "Trận đấu tạm dừng";
+                    if (!isGameActive) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Đối thủ đã thoát',
+                            text: 'Trận đấu đã kết thúc',
+                            confirmButtonText: 'Thoát trận',
+                            allowOutsideClick: false
+                        }).then(() => {
+                            window.location.href = "/tools/caro";
+                        });
+                    }
                 })
                 .listen('.CaroMoveMade', (e) => {
                     console.log("Nhận nước đi:", e);

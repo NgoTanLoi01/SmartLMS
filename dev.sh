@@ -1,22 +1,101 @@
 #!/bin/bash
+set -e  # Dừng nếu có lỗi
 
-# 1. Khởi động các container Docker (nếu chưa chạy)
-echo "🚀 Đang khởi động Docker containers..."
-docker-compose up -d
+# =============================
+# COLORS
+# =============================
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-# 2. Đợi 2 giây để đảm bảo container lms-app đã sẵn sàng
-sleep 2
+log()   { echo -e "${GREEN}✅ $1${NC}"; }
+warn()  { echo -e "${YELLOW}⚠️  $1${NC}"; }
+error() { echo -e "${RED}❌ $1${NC}"; exit 1; }
 
-# 3. Chạy Laravel Reverb ở chế độ chạy ngầm (-d)
-echo "📡 Đang khởi động Laravel Reverb (Background)..."
-docker exec -d lms-app php artisan reverb:start --host=0.0.0.0 --port=8080
+# =============================
+# BUILD & START
+# =============================
+log "Khởi động Docker containers..."
+docker-compose up -d --build
 
-# 4. Thông báo cho người dùng
-echo "✅ Hệ thống Local đã sẵn sàng tại http://localhost:8000"
+# =============================
+# ĐỢI MySQL HEALTHY
+# =============================
+log "Đợi MySQL sẵn sàng..."
+until docker exec lms-db mysqladmin ping -h localhost --silent 2>/dev/null; do
+    echo -n "."
+    sleep 2
+done
+echo ""
+log "MySQL đã sẵn sàng"
 
-echo "🌐 Đang mở hầm Cloudflare Tunnel (smartlms.io.vn)..."
+# =============================
+# LARAVEL SETUP
+# =============================
+log "Clear Laravel cache..."
+docker exec lms-app php artisan optimize:clear
+docker exec lms-app php artisan config:clear
+docker exec lms-app php artisan cache:clear
+docker exec lms-app php artisan route:clear
+docker exec lms-app php artisan view:clear
 
-echo "💡 (Bấm Ctrl + C để dừng Tunnel khi kết thúc làm việc)"
+log "Chạy migration..."
+docker exec lms-app php artisan migrate --force
 
-# 5. Chạy Cloudflare Tunnel (Lệnh này sẽ giữ Terminal để thầy theo dõi log)
-cloudflared tunnel run --url http://localhost:8000 lms-docker
+# =============================
+# ĐỢI REVERB
+# =============================
+log "Đợi Reverb khởi động..."
+MAX_WAIT=30
+COUNT=0
+until docker exec lms-app curl -s http://lms-reverb:8080/apps/123456 > /dev/null 2>&1; do
+    echo -n "."
+    sleep 2
+    COUNT=$((COUNT + 2))
+    if [ $COUNT -ge $MAX_WAIT ]; then
+        warn "Reverb chưa phản hồi sau ${MAX_WAIT}s, kiểm tra log:"
+        docker logs lms-reverb --tail=20
+        break
+    fi
+done
+echo ""
+
+# =============================
+# HEALTH CHECK
+# =============================
+log "Kiểm tra services..."
+
+# App
+docker exec lms-app curl -s http://localhost/up > /dev/null \
+    && log "Laravel OK" \
+    || warn "Laravel chưa phản hồi"
+
+# Reverb từ host
+curl -s http://localhost:8080/apps/123456 > /dev/null \
+    && log "Reverb (host) OK" \
+    || warn "Reverb (host) chưa phản hồi"
+
+# Reverb từ app container
+docker exec lms-app curl -s http://lms-reverb:8080/apps/123456 > /dev/null \
+    && log "Reverb (internal) OK" \
+    || warn "Reverb (internal) chưa phản hồi"
+
+# =============================
+# THÔNG TIN
+# =============================
+echo ""
+echo -e "${GREEN}==============================${NC}"
+echo -e "${GREEN}  SmartLMS đã sẵn sàng! 🚀  ${NC}"
+echo -e "${GREEN}==============================${NC}"
+echo -e "  🌐 App:    https://smartlms.io.vn"
+echo -e "  🔌 WS:     wss://ws.smartlms.io.vn"
+echo -e "  🗄️  MySQL:  localhost:3306"
+echo -e "  🐘 PgSQL:  localhost:5432"
+echo ""
+
+# =============================
+# CLOUDFLARE TUNNEL
+# =============================
+log "Khởi động Cloudflare Tunnel..."
+cloudflared tunnel run lms-docker

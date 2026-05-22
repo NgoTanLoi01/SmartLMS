@@ -97,6 +97,49 @@
         .accordion-button {
             padding-right: 3rem;
         }
+
+        .course-intro-card {
+            background: linear-gradient(135deg, #ffffff, #f8fbff);
+            border: 1px solid #eef2f7;
+        }
+
+        .course-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #0d6efd, #4dabf7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            box-shadow: 0 10px 25px rgba(13, 110, 253, 0.2);
+        }
+
+        .course-description {
+            font-size: 15px;
+            line-height: 1.9;
+            color: #495057;
+        }
+
+        .info-box {
+            background: white;
+            border-radius: 18px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #f1f3f5;
+            transition: all 0.25s ease;
+            height: 100%;
+        }
+
+        .info-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        }
+
+        .info-box i {
+            font-size: 24px;
+        }
     </style>
 
     <div class="container-fluid py-4">
@@ -172,11 +215,22 @@
                         <h2 id="lesson-title" class="fw-bold mb-3 text-dark">{{ $course->title }}</h2>
                         <hr>
                         <div id="lesson-body" class="lh-lg text-secondary">
-                            <p>{{ $course->description }}</p>
+
+                            {{-- COURSE INTRO --}}
+                            <div class="course-intro-card p-4 p-md-5 rounded-4 shadow-sm mb-4">
+
+                                <div class="course-description mb-4">
+                                    {!! nl2br(e($course->description)) !!}
+                                </div>
+
+                            </div>
+
+                            {{-- PLACEHOLDER --}}
                             <div class="text-center py-5" id="welcome-placeholder">
                                 <i class="fas fa-book-reader fa-3x text-light mb-3 d-block"></i>
                                 <h5 class="text-muted">Hãy chọn bài học để bắt đầu</h5>
                             </div>
+
                         </div>
                     </div>
 
@@ -201,13 +255,13 @@
                         </div>
                         <div
                             class="d-flex align-items-center text-danger fw-bold small mb-4 bg-danger bg-opacity-10 d-inline-block px-3 py-2 rounded">
-                            <i class="fas fa-clock me-2"></i> Hạn nộp: <span id="assignment-due-date" class="ms-1"></span>
+                            <i class="fas fa-clock me-2"></i> Hạn nộp: <span id="assignment-due-date"
+                                class="ms-1"></span>
                         </div>
                         <hr>
 
                         <h5 class="fw-bold mt-4 mb-3"><i class="fas fa-tasks me-2 text-primary"></i>Yêu cầu bài tập:</h5>
-                        <div id="assignment-instructions"
-                            class="lh-lg bg-white p-4 rounded border shadow-sm mb-4"></div>
+                        <div id="assignment-instructions" class="lh-lg bg-white p-4 rounded border shadow-sm mb-4"></div>
 
                         @if (auth()->user()->role === 'student')
                             <div id="student-submission-area"

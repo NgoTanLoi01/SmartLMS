@@ -302,21 +302,15 @@
             window.Pusher = Pusher;
 
             window.Echo = new Echo({
-
                 broadcaster: 'reverb',
-
                 key: '{{ env('REVERB_APP_KEY') }}',
 
-                wsHost: '{{ env('REVERB_HOST') }}',
-
+                // ✅ Dùng subdomain ws qua Cloudflare Tunnel
+                wsHost: 'ws.smartlms.io.vn',
                 wsPort: 443,
-
                 wssPort: 443,
-
                 forceTLS: true,
-
                 enabledTransports: ['ws', 'wss'],
-
                 authEndpoint: '/broadcasting/auth',
             });
 
