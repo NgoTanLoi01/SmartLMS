@@ -4,228 +4,450 @@
 
 @section('content')
     <style>
-        /* Nền phía sau màu xám rất nhạt giống mẫu */
-        .course-container {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 15px;
+        .page-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            gap: 16px;
+            flex-wrap: wrap;
         }
 
+        .page-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 4px;
+            line-height: 1.3;
+        }
+
+        .page-subtitle {
+            font-size: 13.5px;
+            color: var(--muted);
+            margin: 0;
+        }
+
+        .btn-create {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'DM Sans', sans-serif;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+
+        .btn-create:hover {
+            background: #1d4ed8;
+            color: #fff;
+        }
+
+        .btn-create i {
+            font-size: 12px;
+        }
+
+        /* ── Grid ── */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+            gap: 20px;
+        }
+
+        /* ── Card ── */
         .course-card {
-            background: #ffffff;
-            border: 1px solid #eef0f2;
-            /* Viền mỏng nhẹ như ảnh mẫu */
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            position: relative;
+            background: #fff;
+            border: 1px solid #e8edf3;
+            border-radius: 14px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
         .course-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08) !important;
-            border-color: var(--primary-navy);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.09);
+            border-color: #bfdbfe;
         }
 
-        /* Biểu tượng khóa học - placeholder thay cho ảnh */
-        .course-icon-box {
-            height: 120px;
-            background: linear-gradient(135deg, #f1f4f8 0%, #e2e8f0 100%);
+        /* ── Card thumb ── */
+        .card-thumb {
+            height: 130px;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
-            color: var(--primary-navy);
+            position: relative;
+            border-bottom: 1px solid #e8edf3;
         }
 
-        .card-title-custom {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1a202c;
-            line-height: 1.4;
-            margin-bottom: 8px;
-            height: 44px;
-            /* Fix 2 dòng */
+        .card-thumb .thumb-icon {
+            font-size: 2.4rem;
+            color: #93c5fd;
+        }
+
+        /* ── Action menu (3 chấm) ── */
+        .card-menu-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            color: #64748b;
+            transition: background 0.15s;
+            padding: 0;
+        }
+
+        .card-menu-btn:hover {
+            background: #fff;
+            color: #2563eb;
+        }
+
+        .card-dropdown {
+            border: 1px solid #e8edf3;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+            padding: 6px;
+            min-width: 180px;
+        }
+
+        .card-dropdown .dropdown-item {
+            border-radius: 8px;
+            font-size: 13.5px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #0f172a;
+        }
+
+        .card-dropdown .dropdown-item:hover {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .card-dropdown .dropdown-item.text-danger:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .card-dropdown .dropdown-divider {
+            border-color: #f1f5f9;
+            margin: 4px 0;
+        }
+
+        /* ── Card body ── */
+        .card-body-inner {
+            padding: 18px 18px 20px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 11.5px;
+            font-weight: 500;
+            padding: 3px 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0f172a;
+            line-height: 1.45;
+            margin-bottom: 6px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            min-height: 44px;
         }
 
-        .teacher-info {
-            font-size: 0.85rem;
-            color: #718096;
-            margin-bottom: 15px;
-        }
-
-        /* Thanh tiến trình siêu mỏng giống mẫu */
-        .progress-thin {
-            height: 4px;
-            background-color: #edf2f7;
-            border-radius: 10px;
-        }
-
-        .btn-enter {
-            background-color: var(--primary-navy);
-            color: white;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            padding: 10px;
-            transition: 0.2s;
-        }
-
-        .btn-enter:hover {
-            background-color: var(--primary-navy);
-            color: white;
-        }
-
-        /* Tinh chỉnh viền cho card khóa học */
-        .course-card {
-            background: #ffffff;
-            /* Viền màu xám cực nhẹ (#eef0f2), độ dày 1px */
-            border: 1px solid #eef0f2 !important;
-            border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            position: relative;
+        .card-desc {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.55;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
+            margin-bottom: 14px;
         }
 
-        /* Hiệu ứng khi hover: Viền đậm hơn một chút và đổi màu nhẹ */
-        .course-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(26, 58, 90, 0.2) !important;
-            /* Màu Navy nhạt khi hover */
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06) !important;
+        /* Teacher row */
+        .teacher-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
-        /* Thêm border mỏng cho phần ảnh placeholder phía trên để tạo khối */
-        .course-icon-box {
-            height: 140px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        .teacher-row img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .teacher-row span {
+            font-size: 13px;
+            font-weight: 500;
+            color: #334155;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: flex;
+            gap: 14px;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 14px;
+        }
+
+        .stats-row span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stats-row i {
+            font-size: 11px;
+        }
+
+        /* Divider */
+        .card-divider {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 0 0 14px;
+        }
+
+        /* Progress */
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11.5px;
+            margin-bottom: 5px;
+            color: #94a3b8;
+        }
+
+        .progress-label span:last-child {
+            font-weight: 600;
+            color: #2563eb;
+        }
+
+        .progress-bar-wrap {
+            height: 4px;
+            background: #e8edf3;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #2563eb;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* Updated at */
+        .updated-at {
+            font-size: 11.5px;
+            color: #94a3b8;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Enter button */
+        .btn-enter {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
-            color: var(--primary-navy);
-            border-bottom: 1px solid #f1f3f5;
-            /* Đường kẻ phân cách nhẹ giữa ảnh và nội dung */
+            gap: 6px;
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 9px 14px;
+            font-size: 13.5px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.15s, border-color 0.15s;
+            margin-top: auto;
+        }
+
+        .btn-enter:hover {
+            background: #2563eb;
+            color: #fff;
+            border-color: #2563eb;
+        }
+
+        .btn-enter i {
+            font-size: 11px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+            opacity: .4;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 10px;
+            right: 10px;
         }
     </style>
 
-    <div class="container-fluid course-container">
-        <div class="d-flex justify-content-between align-items-center mb-5 px-2">
-            <div>
-                <h3 class="fw-bold mb-1 text-navy">Khóa học của tôi</h3>
-                <p class="text-muted small mb-0">Học tập và phát triển kỹ năng mỗi ngày cùng SmartLMS</p>
-            </div>
-            @if (auth()->user()->role === 'teacher' || auth()->user()->role === 'admin')
-                <a href="{{ route('courses.create') }}" class="btn btn-navy rounded-pill px-4 shadow-sm">
-                    <i class="fas fa-plus me-2 small"></i>Tạo khóa học mới
-                </a>
-            @endif
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Khóa học của tôi</h1>
+            <p class="page-subtitle">Học tập và phát triển kỹ năng mỗi ngày cùng SmartLMS</p>
         </div>
+        @if (auth()->user()->role === 'teacher' || auth()->user()->role === 'admin')
+            <a href="{{ route('courses.create') }}" class="btn-create">
+                <i class="fas fa-plus"></i> Tạo khóa học mới
+            </a>
+        @endif
+    </div>
 
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+    @if ($courses->isEmpty())
+        <div class="empty-state">
+            <i class="fas fa-graduation-cap"></i>
+            <p>Chưa có khóa học nào. Hãy tạo hoặc tham gia khóa học đầu tiên!</p>
+        </div>
+    @else
+        <div class="courses-grid">
             @foreach ($courses as $course)
-                <div class="col">
-                    <div class="card h-100 course-card border-0 shadow-sm">
+                <div class="course-card">
 
-                        <div class="course-icon-box position-relative">
-                            <i class="fas fa-laptop-code opacity-25"></i>
+                    {{-- Thumb --}}
+                    <div class="card-thumb">
+                        <i class="fas fa-laptop-code thumb-icon"></i>
 
-                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                                <div class="position-absolute top-0 end-0 m-2">
-                                    <div class="dropdown">
-                                        <button class="btn btn-white btn-sm shadow-sm rounded-circle" type="button"
-                                            data-bs-toggle="dropdown" aria-expanded="false"
-                                            style="width: 32px; height: 32px; padding: 0; background: white;">
-                                            <i class="fas fa-ellipsis-v text-muted"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2"
-                                            style="border-radius: 12px;">
-                                            <li>
-                                                <a class="dropdown-item small rounded-2 py-2"
-                                                    href="{{ route('courses.edit', $course->id) }}">
-                                                    <i class="fas fa-edit me-2 text-warning"></i> Sửa khóa học
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <hr class="dropdown-divider opacity-50">
-                                            </li>
-                                            <li>
-                                                <form action="{{ route('courses.destroy', $course->id) }}" method="POST"
-                                                    onsubmit="return confirm('Thầy có chắc chắn muốn xóa khóa học này không?')">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit"
-                                                        class="dropdown-item text-danger small rounded-2 py-2">
-                                                        <i class="fas fa-trash-alt me-2"></i> Xóa khóa học
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            @endif
+                        @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                            <div class="dropdown">
+                                <button class="card-menu-btn" type="button" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end card-dropdown">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('courses.edit', $course->id) }}">
+                                            <i class="fas fa-edit" style="color:#f59e0b;"></i> Sửa khóa học
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <form action="{{ route('courses.destroy', $course->id) }}" method="POST"
+                                            onsubmit="return confirm('Bạn có chắc chắn muốn xóa khóa học này?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="dropdown-item text-danger"
+                                                style="background:none; border:none; width:100%; text-align:left;">
+                                                <i class="fas fa-trash-alt"></i> Xóa khóa học
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Body --}}
+                    <div class="card-body-inner">
+                        <div class="card-badge">
+                            <i class="fas fa-users" style="font-size:10px;"></i>
+                            {{ $course->classes->first()->name ?? 'Tự do' }}
                         </div>
 
-                        <div class="card-body p-4 d-flex flex-column">
-                            <div class="mb-2">
-                                <span class="badge bg-primary bg-opacity-10 text-primary fw-600 py-1 px-2"
-                                    style="font-size: 0.7rem;">
-                                    <i class="fas fa-users me-1"></i>{{ $course->classes->first()->name ?? 'Tự do' }}
-                                </span>
-                            </div>
+                        <h2 class="card-title">{{ $course->title }}</h2>
 
-                            <h5 class="card-title-custom mb-2">{{ $course->title }}</h5>
-                            <p class="text-muted mb-3"
-                                style="font-size: 0.85rem; height: 40px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.5;">
-                                {{ $course->description ?? 'Chưa có mô tả chi tiết cho khóa học này.' }}
-                            </p>
+                        <p class="card-desc">
+                            {{ $course->description ?? 'Chưa có mô tả chi tiết cho khóa học này.' }}
+                        </p>
 
-                            <div class="course-meta-info mb-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <div class="teacher-avatar me-2">
-                                        <img src="https://ui-avatars.com/api/?name={{ urlencode($course->teacher->name) }}&background=3e80f9&color=fff"
-                                            class="rounded-circle" style="width: 24px; height: 24px;" alt="GV">
-                                    </div>
-                                    <span class="small text-dark fw-medium">{{ $course->teacher->name }}</span>
-                                </div>
-
-                                <div class="d-flex gap-3 text-muted" style="font-size: 0.75rem;">
-                                    <span><i class="fas fa-book-open me-1"></i> {{ $course->lessons_count ?? '0' }} bài
-                                        học</span>
-                                    <span><i class="fas fa-user-graduate me-1"></i> {{ $course->students_count ?? '0' }} học
-                                        sinh</span>
-                                </div>
-                            </div>
-
-                            @if (auth()->user()->role === 'student')
-                                <div class="mt-auto mb-3">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span class="text-muted" style="font-size: 0.7rem;">Tiến độ</span>
-                                        <span class="fw-bold text-primary"
-                                            style="font-size: 0.7rem;">{{ $course->progress }}%</span>
-                                    </div>
-                                    <div class="progress progress-thin">
-                                        <div class="progress-bar bg-primary" role="progressbar"
-                                            style="width: {{ $course->progress }}%"></div>
-                                    </div>
-                                </div>
-                            @else
-                                <div class="mt-auto mb-3 text-muted" style="font-size: 0.7rem;">
-                                    <i class="far fa-clock me-1"></i> Cập nhật: {{ $course->updated_at->diffForHumans() }}
-                                </div>
-                            @endif
-
-                            <a href="{{ route('courses.show', $course->id) }}"
-                                class="btn btn-enter w-100 shadow-sm border-0">
-                                Vào học ngay <i class="fas fa-chevron-right ms-2 small"></i>
-                            </a>
+                        <div class="teacher-row">
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($course->teacher->name) }}&background=2563eb&color=fff&size=48"
+                                alt="{{ $course->teacher->name }}">
+                            <span>{{ $course->teacher->name }}</span>
                         </div>
+
+                        <div class="stats-row">
+                            <span><i class="fas fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
+                            <span><i class="fas fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học sinh</span>
+                        </div>
+
+                        <div class="card-divider"></div>
+
+                        @if (auth()->user()->role === 'student')
+                            <div class="progress-label">
+                                <span>Tiến độ</span>
+                                <span>{{ $course->progress }}%</span>
+                            </div>
+                            <div class="progress-bar-wrap">
+                                <div class="progress-bar-fill" style="width: {{ $course->progress }}%"></div>
+                            </div>
+                        @else
+                            <div class="updated-at">
+                                <i class="far fa-clock"></i>
+                                Cập nhật {{ $course->updated_at->diffForHumans() }}
+                            </div>
+                        @endif
+
+                        <a href="{{ route('courses.show', $course->id) }}" class="btn-enter">
+                            Vào học ngay <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
             @endforeach
         </div>
-    </div>
+    @endif
 @endsection

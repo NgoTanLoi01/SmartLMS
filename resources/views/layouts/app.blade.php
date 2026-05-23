@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <title>@yield('title', 'SmartLMS') - Hệ thống quản lý học tập AI</title>
 
     <meta property="og:type" content="website">
@@ -16,148 +15,334 @@
     <meta property="og:image" content="{{ asset('favicon-v2.png') }}">
     <link rel="icon" type="image/png" href="{{ asset('favicon-v2.png') }}">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {{-- <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet"> --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         :root {
-            --sidebar-width: 260px;
-            --navbar-height: 70px;
-            --primary-navy: #3e80f9;
-            --accent-blue: #0d6efd;
-            --bg-light: #f4f7f9;
+            --sidebar-width: 255px;
+            --navbar-height: 64px;
+            --blue: #2563eb;
+            --blue-light: #eff6ff;
+            --blue-mid: #dbeafe;
+            --surface: #ffffff;
+            --bg: #f1f5f9;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --radius: 10px;
+            --radius-lg: 14px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-light);
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
             margin: 0;
-            color: #2d3436;
+            color: var(--text);
+            font-size: 15px;
         }
 
-        /* Navbar */
+        /* ── Navbar ── */
         .navbar {
             height: var(--navbar-height);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
             z-index: 1060;
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(10px);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
         }
 
-        .btn-navy {
-            background-color: var(--primary-navy);
-            color: white;
-            transition: all 0.2s;
+        .navbar-brand img {
+            height: 44px;
+            width: auto;
         }
 
-        /* Sidebar Chuyên Nghiệp */
+        .user-btn {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--blue-light);
+            border: 1px solid var(--blue-mid);
+            border-radius: 999px;
+            padding: 6px 16px 6px 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--blue);
+        }
+
+        .user-btn:hover {
+            background: var(--blue-mid);
+        }
+
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--blue);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── Sidebar ── */
         .sidebar {
             width: var(--sidebar-width);
             height: calc(100vh - var(--navbar-height));
-            background: white;
-            border-right: 1px solid rgba(0, 0, 0, 0.05);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
             position: fixed;
             top: var(--navbar-height);
             left: 0;
             z-index: 1000;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 0 24px;
+            transition: transform 0.3s cubic-bezier(.4, 0, .2, 1);
         }
 
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 30px;
-            margin-top: var(--navbar-height);
-            min-height: calc(100vh - var(--navbar-height));
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            background-color: #ecf2fe;
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
         }
 
-        /* Menu Cấp 1 */
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        /* Section labels */
+        .nav-section {
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 20px 20px 6px;
+        }
+
+        /* Nav links */
         .nav-link {
-            color: #636e72;
-            font-weight: 500;
-            border-radius: 10px;
-            margin: 4px 15px;
-            padding: 10px 15px;
-            transition: all 0.2s;
             display: flex;
             align-items: center;
-        }
-
-        .nav-link:hover {
-            background-color: #f0f4f8;
-            color: var(--primary-navy);
-        }
-
-        .nav-link.active {
-            background-color: var(--primary-navy) !important;
-            color: white !important;
-            box-shadow: 0 4px 12px rgba(62, 128, 249, 0.2);
+            gap: 10px;
+            padding: 9px 14px;
+            margin: 1px 10px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--muted);
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
         }
 
         .nav-link i {
-            width: 28px;
-            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+            font-size: 15px;
+            flex-shrink: 0;
         }
 
-        /* Dropdown Công cụ */
-        #toolsMenu {
-            margin-bottom: 10px;
-            padding-left: 5px;
-            margin-left: 30px;
+        .nav-link:hover {
+            background: var(--blue-light);
+            color: var(--blue);
         }
 
-        #toolsMenu .nav-link {
-            margin: 2px 10px 2px 0 !important;
-            padding: 8px 12px !important;
-            font-size: 0.85rem !important;
-            color: #718096;
-            background: transparent !important;
-            box-shadow: none !important;
+        .nav-link.active {
+            background: var(--blue);
+            color: #fff;
         }
 
-        #toolsMenu .nav-link:hover {
-            color: var(--primary-navy) !important;
-            background: #f7fafc !important;
+        /* Chevron toggle */
+        .nav-link .chevron {
+            margin-left: auto;
+            font-size: 11px;
+            transition: transform 0.25s;
         }
 
-        #entertainmentMenu {
-            margin-bottom: 10px;
-            padding-left: 5px;
-            margin-left: 30px;
-        }
-
-        #entertainmentMenu .nav-link {
-            margin: 2px 10px 2px 0 !important;
-            padding: 8px 12px !important;
-            font-size: 0.85rem !important;
-            color: #718096;
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-
-        #entertainmentMenu .nav-link:hover {
-            color: var(--primary-navy) !important;
-            background: #f7fafc !important;
-        }
-
-        .transition-all {
-            transition: transform 0.3s ease;
-        }
-
-        .fa-rotate-180 {
+        .nav-link[aria-expanded="true"] .chevron {
             transform: rotate(180deg);
         }
 
+        /* Sub-menu */
+        .sub-menu {
+            margin: 2px 10px 4px 38px !important;
+            border-left: 1.5px solid var(--border);
+            padding-left: 8px !important;
+        }
+
+        .sub-menu .nav-link {
+            margin: 1px 0;
+            padding: 7px 10px;
+            font-size: 13.5px;
+            font-weight: 400;
+            color: var(--muted);
+        }
+
+        .sub-menu .nav-link:hover {
+            color: var(--blue);
+            background: var(--blue-light);
+        }
+
+        .sub-menu .nav-link.active-sub {
+            color: var(--blue);
+            font-weight: 500;
+        }
+
+        /* ── Main content ── */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 28px 28px 40px;
+            margin-top: var(--navbar-height);
+            min-height: calc(100vh - var(--navbar-height));
+            transition: margin-left 0.3s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* ── Dropdown menu ── */
+        .dropdown-menu {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 6px;
+            min-width: 200px;
+        }
+
+        .dropdown-item {
+            border-radius: var(--radius);
+            padding: 8px 14px;
+            font-size: 14px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        .dropdown-item.text-danger:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .dropdown-divider {
+            border-color: var(--border);
+            margin: 4px 0;
+        }
+
+        /* ── Modal ── */
         .modal-content {
-            border-radius: 20px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            padding: 20px 24px 0;
+            border: none;
+        }
+
+        .modal-body {
+            padding: 16px 24px;
+        }
+
+        .modal-footer {
+            padding: 0 24px 20px;
+            border: none;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 5px;
         }
 
         .form-control {
-            border-radius: 10px;
-            padding: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 9px 13px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
 
+        .form-control:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            outline: none;
+        }
+
+        .form-control[readonly] {
+            background: var(--bg);
+            color: var(--muted);
+            cursor: not-allowed;
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc2626;
+        }
+
+        .invalid-feedback {
+            font-size: 12.5px;
+            color: #dc2626;
+            margin-top: 4px;
+        }
+
+        .btn-primary-solid {
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: background 0.15s;
+            width: 100%;
+        }
+
+        .btn-primary-solid:hover {
+            background: #1d4ed8;
+        }
+
+        /* ── Alerts ── */
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Mobile ── */
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -165,11 +350,30 @@
 
             .main-content {
                 margin-left: 0 !important;
+                padding: 20px 16px;
             }
 
             .sidebar.show {
                 transform: translateX(0);
             }
+
+            .hamburger {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                border-radius: var(--radius);
+                background: var(--bg);
+                border: 1px solid var(--border);
+                cursor: pointer;
+                font-size: 16px;
+                color: var(--text);
+            }
+        }
+
+        .hamburger {
+            display: none;
         }
     </style>
 
@@ -179,241 +383,234 @@
 
 <body>
     @auth
-        <nav class="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm">
-            <div class="container-fluid px-4">
-                <a class="navbar-brand d-flex align-items-center" href="{{ route('dashboard') }}">
-                    <img src="{{ asset('smartlms-logo-sharpened.png') }}" alt="Smart LMS"
-                        style="height: 55px; width: auto;">
-                </a>
-                <div class="ms-auto d-flex align-items-center">
-                    <div class="dropdown">
-                        <button class="btn btn-navy dropdown-toggle rounded-pill px-3" type="button"
-                            data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i> {{ Auth::user()->name }}
+        {{-- ── Navbar ── --}}
+        <nav class="navbar">
+            <button class="hamburger me-3" id="sidebarToggle" aria-label="Mở menu">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <a class="navbar-brand" href="{{ route('dashboard') }}">
+                <img src="{{ asset('smartlms-logo-sharpened.png') }}" alt="SmartLMS">
+            </a>
+
+            <div class="user-btn dropdown ms-auto" data-bs-toggle="dropdown" id="userMenuBtn" aria-expanded="false">
+                <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
+                <span>{{ Auth::user()->name }}</span>
+                <i class="fas fa-chevron-down" style="font-size:11px; opacity:.6;"></i>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="userMenuBtn">
+                <li>
+                    <span class="dropdown-item text-muted"
+                        style="font-size:12px; font-weight:600; letter-spacing:.05em; cursor:default;">
+                        {{ strtoupper(Auth::user()->role) }}
+                    </span>
+                </li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                        <i class="fas fa-key" style="color:#f59e0b;"></i> Đổi mật khẩu
+                    </a>
+                </li>
+                <li>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="dropdown-item text-danger"
+                            style="background:none; border:none; width:100%; text-align:left;">
+                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-3 p-2"
-                            style="border-radius: 15px;">
-                            <li><span
-                                    class="dropdown-item-text small text-muted text-center fw-bold">{{ strtoupper(Auth::user()->role) }}</span>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+
+        {{-- ── Sidebar ── --}}
+        <aside class="sidebar" id="sidebar">
+            <ul class="nav flex-column" style="list-style:none; padding:0; margin:0;">
+
+                {{-- Main --}}
+                <li>
+                    <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                        <i class="fas fa-house-chimney"></i> Trang chủ
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}"
+                        href="{{ route('courses.index') }}">
+                        <i class="fas fa-graduation-cap"></i> Khóa học của tôi
+                    </a>
+                </li>
+
+                {{-- Công cụ hỗ trợ --}}
+                <li>
+                    <a class="nav-link {{ request()->routeIs('tools.grade-calculator') ? 'active' : '' }}"
+                        data-bs-toggle="collapse" href="#toolsMenu" role="button"
+                        aria-expanded="{{ request()->routeIs('tools.grade-calculator') ? 'true' : 'false' }}">
+                        <i class="fas fa-toolbox"></i> Công cụ hỗ trợ
+                        <i class="fas fa-chevron-down chevron"></i>
+                    </a>
+                    <div class="collapse {{ request()->routeIs('tools.grade-calculator') ? 'show' : '' }}" id="toolsMenu">
+                        <ul class="sub-menu" style="list-style:none; padding:0; margin:0;">
+                            <li>
+                                <a class="nav-link {{ request()->routeIs('tools.grade-calculator') ? 'active-sub' : '' }}"
+                                    href="{{ route('tools.grade-calculator') }}">
+                                    <i class="fas fa-calculator"></i> Tính điểm nghề
+                                </a>
                             </li>
                             <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item py-2 rounded-3" href="#" data-bs-toggle="modal"
-                                    data-bs-target="#changePasswordModal"><i class="fas fa-key me-2 text-warning"></i> Đổi
-                                    mật khẩu</a></li>
-                            <li>
-                                <form action="{{ route('logout') }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item text-danger py-2 rounded-3"><i
-                                            class="fas fa-sign-out-alt me-2"></i> Đăng xuất</button>
-                                </form>
+                                <a class="nav-link" href="https://ngotanloi.my.canva.site/code-editer" target="_blank"
+                                    rel="noopener">
+                                    <i class="fas fa-code"></i> Trình soạn thảo Code
+                                </a>
                             </li>
                         </ul>
                     </div>
-                </div>
+                </li>
+
+                {{-- Góc giải trí --}}
+                <li>
+                    <a class="nav-link {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'active' : '' }}"
+                        data-bs-toggle="collapse" href="#entertainmentMenu" role="button"
+                        aria-expanded="{{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'true' : 'false' }}">
+                        <i class="fas fa-gamepad"></i> Góc giải trí
+                        <i class="fas fa-chevron-down chevron"></i>
+                    </a>
+                    <div class="collapse {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'show' : '' }}"
+                        id="entertainmentMenu">
+                        <ul class="sub-menu" style="list-style:none; padding:0; margin:0;">
+                            <li>
+                                <a class="nav-link {{ request()->is('tools/chess*') ? 'active-sub' : '' }}"
+                                    href="{{ route('tools.chess.index') }}">
+                                    <i class="fas fa-chess"></i> Cờ vua
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-link {{ request()->is('tools/caro*') ? 'active-sub' : '' }}"
+                                    href="{{ route('tools.caro.index') }}">
+                                    <i class="fas fa-times-circle"></i> Cờ Caro
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
+                {{-- Admin / Teacher sections --}}
+                @if (in_array(Auth::user()->role, ['admin', 'teacher']))
+                    <div class="nav-section">Hệ thống AI</div>
+                    <li>
+                        <a class="nav-link {{ request()->is('documents*') ? 'active' : '' }}"
+                            href="{{ route('documents.upload') }}">
+                            <i class="fas fa-robot"></i> Huấn luyện AI
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link {{ request()->is('question-bank*') ? 'active' : '' }}"
+                            href="{{ route('questions.index') }}">
+                            <i class="fas fa-layer-group"></i> Ngân hàng câu hỏi
+                        </a>
+                    </li>
+
+                    <div class="nav-section">Quản lý</div>
+                    <li>
+                        <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
+                            href="{{ route('classes.index') }}">
+                            <i class="fas fa-chalkboard"></i> Quản lý lớp học
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link {{ request()->is('schedules*') ? 'active' : '' }}"
+                            href="{{ Route::has('schedules.index') ? route('schedules.index') : '#' }}">
+                            <i class="fas fa-calendar-alt"></i> Quản lý lịch học
+                        </a>
+                    </li>
+                    @if (Auth::user()->role === 'admin')
+                        <li>
+                            <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
+                                href="{{ route('users.index') }}">
+                                <i class="fas fa-user-cog"></i> Quản lý người dùng
+                            </a>
+                        </li>
+                    @endif
+                @endif
+            </ul>
+        </aside>
+
+        {{-- ── Modal đổi mật khẩu ── --}}
+        <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form action="{{ route('profile.password.update') }}" method="POST" class="modal-content">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" style="font-size:17px; font-weight:600;">
+                            <i class="fas fa-user-shield me-2" style="color:var(--blue);"></i>Thông tin tài khoản
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Họ và tên</label>
+                                <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" value="{{ Auth::user()->email }}" readonly>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Vai trò</label>
+                                <input type="text" class="form-control" value="{{ strtoupper(Auth::user()->role) }}"
+                                    readonly>
+                            </div>
+                        </div>
+
+                        <hr style="border-color: var(--border); margin: 16px 0;">
+                        <p style="font-size:14px; font-weight:600; margin-bottom:14px;">Đổi mật khẩu mới</p>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu hiện tại <span style="color:#dc2626">*</span></label>
+                            <input type="password" name="current_password"
+                                class="form-control @error('current_password') is-invalid @enderror"
+                                placeholder="Nhập mật khẩu cũ để xác nhận" required>
+                            @error('current_password')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mật khẩu mới <span style="color:#dc2626">*</span></label>
+                            <input type="password" name="new_password"
+                                class="form-control @error('new_password') is-invalid @enderror"
+                                placeholder="Tối thiểu 6 ký tự" required minlength="6">
+                            @error('new_password')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-1">
+                            <label class="form-label">Xác nhận mật khẩu mới <span style="color:#dc2626">*</span></label>
+                            <input type="password" name="new_password_confirmation" class="form-control"
+                                placeholder="Nhập lại mật khẩu mới" required minlength="6">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn-primary-solid">Cập nhật mật khẩu</button>
+                    </div>
+                </form>
             </div>
-        </nav>
+        </div>
     @endauth
 
     <div class="wrapper">
-        @auth
-            <aside class="sidebar py-3 shadow-sm">
-                <div class="d-flex flex-column h-100">
-                    <ul class="nav flex-column mb-auto">
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}"
-                                href="{{ route('dashboard') }}">
-                                <i class="fas fa-home"></i> <span>Trang chủ</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}"
-                                href="{{ route('courses.index') }}">
-                                <i class="fas fa-graduation-cap"></i> <span>Khóa học của tôi</span>
-                            </a>
-                        </li>
-
-                        {{-- CÔNG CỤ HỖ TRỢ (Đã lược bỏ game) --}}
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center justify-content-between {{ request()->routeIs('tools.grade-calculator') ? 'active' : '' }}"
-                                data-bs-toggle="collapse" href="#toolsMenu" role="button">
-                                <div><i class="fas fa-toolbox"></i> <span>Công cụ hỗ trợ</span></div>
-                                <i
-                                    class="fas fa-chevron-down small transition-all {{ request()->routeIs('tools.grade-calculator') ? 'fa-rotate-180' : '' }}"></i>
-                            </a>
-                            <div class="collapse {{ request()->routeIs('tools.grade-calculator') ? 'show' : '' }}"
-                                id="toolsMenu">
-                                <ul class="nav flex-column border-start">
-                                    <li class="nav-item">
-                                        <a class="nav-link py-2 small {{ request()->routeIs('tools.grade-calculator') ? 'text-primary fw-bold' : '' }}"
-                                            href="{{ route('tools.grade-calculator') }}">
-                                            <i class="fas fa-calculator me-2"></i> Tính điểm nghề
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link py-2 small text-muted"
-                                            href="https://ngotanloi.my.canva.site/code-editer" target="_blank">
-                                            <i class="fas fa-code me-2"></i> Trình soạn thảo Code
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-
-                        {{-- GÓC GIẢI TRÍ (DẠNG MENU XỔ XUỐNG) --}}
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center justify-content-between {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'active' : '' }}"
-                                data-bs-toggle="collapse" href="#entertainmentMenu" role="button"
-                                aria-expanded="{{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'true' : 'false' }}">
-                                <div><i class="fas fa-gamepad"></i> <span>Góc giải trí</span></div>
-                                <i
-                                    class="fas fa-chevron-down small transition-all {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'fa-rotate-180' : '' }}"></i>
-                            </a>
-                            <div class="collapse {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'show' : '' }}"
-                                id="entertainmentMenu">
-                                <ul class="nav flex-column border-start">
-                                    {{-- 1. Cờ vua giải trí --}}
-                                    <li class="nav-item">
-                                        <a class="nav-link py-2 small {{ request()->is('tools/chess*') ? 'text-primary fw-bold' : '' }}"
-                                            href="{{ route('tools.chess.index') }}">
-                                            <i class="fas fa-chess me-2"></i> Cờ vua
-                                        </a>
-                                    </li>
-
-                                    {{-- 2. Cờ Caro Online --}}
-                                    <li class="nav-item">
-                                        <a class="nav-link py-2 small {{ request()->is('tools/caro*') ? 'text-primary fw-bold' : '' }}"
-                                            href="{{ route('tools.caro.index') }}">
-                                            <i class="fas fa-times-circle me-2"></i> Cờ Caro
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-
-                        @if (in_array(Auth::user()->role, ['admin', 'teacher']))
-                            <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
-                                style="letter-spacing: 1px;">Hệ thống AI</div>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('documents*') ? 'active' : '' }}"
-                                    href="{{ route('documents.upload') }}">
-                                    <i class="fas fa-robot"></i> <span>Huấn luyện AI</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('question-bank*') ? 'active' : '' }}"
-                                    href="{{ route('questions.index') }}">
-                                    <i class="fas fa-layer-group"></i> <span>Ngân hàng câu hỏi</span>
-                                </a>
-                            </li>
-                            <div class="px-4 mt-4 mb-2 small text-muted text-uppercase fw-bold section-label"
-                                style="letter-spacing: 1px;">Quản lý</div>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
-                                    href="{{ route('classes.index') }}">
-                                    <i class="fas fa-chalkboard"></i> <span>Quản lý lớp học</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('schedules*') ? 'active' : '' }}"
-                                    href="{{ Route::has('schedules.index') ? route('schedules.index') : '#' }}"
-                                    data-tooltip="Quản lý lịch học">
-                                    <i class="fas fa-calendar-alt"></i> <span>Quản lý lịch học</span>
-                                </a>
-                            </li>
-                            @if (Auth::user()->role === 'admin')
-                                <li class="nav-item">
-                                    <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
-                                        href="{{ route('users.index') }}">
-                                        <i class="fas fa-user-cog"></i> <span>Quản lý người dùng</span>
-                                    </a>
-                                </li>
-                            @endif
-                        @endif
-                    </ul>
-                </div>
-            </aside>
-
-            <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <form action="{{ route('profile.password.update') }}" method="POST"
-                        class="modal-content border-0 shadow-lg">
-                        @csrf
-                        @method('PUT')
-                        <div class="modal-header bg-white border-0 pt-4 px-4">
-                            <h5 class="modal-title fw-bold text-navy">
-                                <i class="fas fa-user-shield me-2 text-primary"></i>Thông tin tài khoản
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <div class="row g-3 mb-4">
-                                <div class="col-12">
-                                    <label class="small fw-bold text-muted mb-1">Họ và tên</label>
-                                    <input type="text" class="form-control bg-light border-0 shadow-none"
-                                        value="{{ Auth::user()->name }}" readonly style="cursor: not-allowed;">
-                                </div>
-                                <div class="col-md-7">
-                                    <label class="small fw-bold text-muted mb-1">Email</label>
-                                    <input type="email" class="form-control bg-light border-0 shadow-none"
-                                        value="{{ Auth::user()->email }}" readonly style="cursor: not-allowed;">
-                                </div>
-                                <div class="col-md-5">
-                                    <label class="small fw-bold text-muted mb-1">Vai trò</label>
-                                    <input type="text" class="form-control bg-light border-0 shadow-none"
-                                        value="{{ strtoupper(Auth::user()->role) }}" readonly
-                                        style="cursor: not-allowed;">
-                                </div>
-                            </div>
-
-                            <hr class="text-muted opacity-25 mb-4">
-
-                            <h6 class="fw-bold mb-3 text-navy">Đổi mật khẩu mới</h6>
-
-                            <div class="mb-3">
-                                <label class="small fw-bold mb-1">Mật khẩu hiện tại <span
-                                        class="text-danger">*</span></label>
-                                <input type="password" name="current_password"
-                                    class="form-control shadow-sm @error('current_password') is-invalid @enderror"
-                                    placeholder="Nhập mật khẩu cũ để xác nhận" required>
-                                @error('current_password')
-                                    <div class="invalid-feedback fw-bold">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="small fw-bold mb-1">Mật khẩu mới <span class="text-danger">*</span></label>
-                                <input type="password" name="new_password"
-                                    class="form-control shadow-sm @error('new_password') is-invalid @enderror"
-                                    placeholder="Tối thiểu 6 ký tự" required minlength="6">
-                                @error('new_password')
-                                    <div class="invalid-feedback fw-bold">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="small fw-bold mb-1">Xác nhận mật khẩu mới <span
-                                        class="text-danger">*</span></label>
-                                <input type="password" name="new_password_confirmation" class="form-control shadow-sm"
-                                    placeholder="Nhập lại mật khẩu mới" required minlength="6">
-                            </div>
-                        </div>
-                        <div class="modal-footer border-0 pb-4 px-4 pt-0">
-                            <button type="submit" class="btn btn-navy w-100 py-2 fw-bold rounded-pill shadow">
-                                CẬP NHẬT MẬT KHẨU
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        @endauth
-
-        <main class="{{ Auth::check() ? 'main-content' : 'full-width' }}">
+        <main class="{{ Auth::check() ? 'main-content' : '' }}">
             <div class="container-fluid p-0">
                 @if (session('success'))
-                    <div class="alert alert-success border-0 shadow-sm rounded-3 m-4">
-                        <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+                    <div class="alert-success">
+                        <i class="fas fa-check-circle"></i> {{ session('success') }}
                     </div>
                 @endif
                 @yield('content')
@@ -430,14 +627,15 @@
     @endauth
 
     @stack('scripts')
+
     <script>
-        $(document).ready(function() {
-            // Kiểm tra nếu biến $errors của Laravel có chứa bất kỳ lỗi nào
-            @if ($errors->any())
-                var passwordModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
-                passwordModal.show();
-            @endif
+        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('show');
         });
+
+        @if ($errors->any())
+            (new bootstrap.Modal(document.getElementById('changePasswordModal'))).show();
+        @endif
     </script>
 </body>
 

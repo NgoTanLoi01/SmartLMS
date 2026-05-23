@@ -1,223 +1,797 @@
 @extends('layouts.app')
 
+@push('styles')
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #EEF2FF;
+            --primary-mid: #818CF8;
+            --accent: #06B6D4;
+            --accent-light: #ECFEFF;
+            --surface: #FFFFFF;
+            --surface-2: #F8FAFC;
+            --surface-3: #F1F5F9;
+            --border: #E2E8F0;
+            --border-strong: #CBD5E1;
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-muted: #94A3B8;
+            --danger: #EF4444;
+            --danger-light: #FEF2F2;
+            --warning: #F59E0B;
+            --warning-light: #FFFBEB;
+            --success: #10B981;
+            --success-light: #ECFDF5;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: #F8FAFC;
+            color: var(--text-primary);
+        }
+
+        .page-wrapper {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* === PAGE HEADER === */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .header-icon-wrap {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+        }
+
+        .header-icon-wrap i {
+            font-size: 1.5rem;
+            color: #fff;
+        }
+
+        .page-header h3 {
+            font-size: 1.45rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .page-header p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin: 0.2rem 0 0;
+        }
+
+        /* === NOTICE CARD === */
+        .notice-card {
+            background: var(--warning-light);
+            border: 1px solid #FDE68A;
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .notice-icon {
+            flex-shrink: 0;
+            color: var(--warning);
+            font-size: 1.1rem;
+            padding-top: 1px;
+        }
+
+        .notice-card h6 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #92400E;
+            margin: 0 0 0.5rem;
+        }
+
+        .notice-card p {
+            font-size: 0.85rem;
+            color: #78350F;
+            margin: 0 0 0.6rem;
+            line-height: 1.6;
+        }
+
+        .notice-card ul {
+            font-size: 0.82rem;
+            color: #92400E;
+            margin: 0;
+            padding-left: 1.2rem;
+            line-height: 1.8;
+        }
+
+        .notice-card ul li span.highlight-danger {
+            color: #B91C1C;
+            font-weight: 600;
+        }
+
+        .notice-card ul li strong {
+            color: #78350F;
+        }
+
+        /* === CARD BASE === */
+        .card-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .card-panel-body {
+            padding: 1.75rem;
+        }
+
+        /* === SECTION LABEL === */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .section-label i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        /* === FORM ELEMENTS === */
+        .field-group {
+            margin-bottom: 0;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        select.field-ctrl,
+        .field-ctrl {
+            width: 100%;
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.7rem 1rem;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            transition: border-color 0.18s, box-shadow 0.18s;
+            appearance: none;
+            outline: none;
+        }
+
+        select.field-ctrl {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.85rem center;
+            padding-right: 2.5rem;
+            cursor: pointer;
+        }
+
+        .field-ctrl:focus,
+        select.field-ctrl:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+            background: #fff;
+        }
+
+        /* File input */
+        .file-input-wrap {
+            position: relative;
+        }
+
+        .file-input-wrap input[type="file"] {
+            width: 100%;
+            background: var(--surface-2);
+            border: 1.5px dashed var(--border-strong);
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 1rem;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: border-color 0.18s, background 0.18s;
+            cursor: pointer;
+        }
+
+        .file-input-wrap input[type="file"]:hover {
+            border-color: var(--primary-mid);
+            background: var(--primary-light);
+        }
+
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, #6D28D9 100%);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0.9rem 1.5rem;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: opacity 0.18s, transform 0.18s;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-submit:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-submit i {
+            font-size: 1rem;
+        }
+
+        /* === ALERTS === */
+        .alert-success-custom {
+            background: var(--success-light);
+            border: 1px solid #A7F3D0;
+            border-radius: var(--radius-sm);
+            padding: 0.9rem 1.1rem;
+            font-size: 0.875rem;
+            color: #065F46;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .alert-danger-custom {
+            background: var(--danger-light);
+            border: 1px solid #FECACA;
+            border-radius: var(--radius-sm);
+            padding: 0.9rem 1.1rem;
+            font-size: 0.875rem;
+            color: #991B1B;
+            margin-bottom: 1.25rem;
+        }
+
+        .alert-danger-custom ul {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+
+        /* === PROGRESS === */
+        .progress-wrap {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .progress-pct {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .progress-track {
+            height: 6px;
+            background: var(--surface-3);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 99px;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 80px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
+            animation: shimmer 1.2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .progress-note {
+            margin-top: 0.75rem;
+            background: var(--accent-light);
+            border: 1px solid #A5F3FC;
+            border-radius: var(--radius-sm);
+            padding: 0.7rem 0.9rem;
+            font-size: 0.8rem;
+            color: #164E63;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            line-height: 1.5;
+        }
+
+        /* === TABLE SECTION === */
+        .table-header {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .table-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .table-title i {
+            color: var(--primary);
+        }
+
+        .doc-count-badge {
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: var(--surface-3);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            padding: 0.2rem 0.65rem;
+        }
+
+        table.docs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .docs-table thead th {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            padding: 0.75rem 1rem;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .docs-table thead th:first-child {
+            padding-left: 1.5rem;
+        }
+
+        .docs-table thead th:last-child {
+            padding-right: 1.5rem;
+            text-align: right;
+        }
+
+        .docs-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.12s;
+        }
+
+        .docs-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .docs-table tbody tr:hover {
+            background: var(--surface-2);
+        }
+
+        .docs-table tbody td {
+            padding: 0.95rem 1rem;
+            vertical-align: middle;
+        }
+
+        .docs-table tbody td:first-child {
+            padding-left: 1.5rem;
+        }
+
+        .docs-table tbody td:last-child {
+            padding-right: 1.5rem;
+            text-align: right;
+        }
+
+        .doc-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .doc-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--danger-light);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .doc-icon i {
+            color: var(--danger);
+            font-size: 1rem;
+        }
+
+        .doc-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Badges */
+        .badge-system {
+            background: #F1F5F9;
+            color: #475569;
+            border: 1px solid #CBD5E1;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.3rem 0.65rem;
+            border-radius: 99px;
+            display: inline-block;
+        }
+
+        .badge-course {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            border: 1px solid #BFDBFE;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.3rem 0.65rem;
+            border-radius: 99px;
+            display: inline-block;
+        }
+
+        .badge-danger {
+            background: var(--danger-light);
+            color: #991B1B;
+            border: 1px solid #FECACA;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.3rem 0.65rem;
+            border-radius: 99px;
+            display: inline-block;
+        }
+
+        .badge-vectors {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid #C7D2FE;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.7rem;
+            border-radius: 99px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-vectors i {
+            font-size: 0.7rem;
+        }
+
+        .date-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: color 0.15s, background 0.15s;
+        }
+
+        .btn-delete:hover {
+            color: var(--danger);
+            background: var(--danger-light);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3.5rem 1rem;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 2.5rem;
+            color: var(--border-strong);
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-state p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Field error */
+        .field-error {
+            font-size: 0.78rem;
+            color: var(--danger);
+            margin-top: 0.35rem;
+        }
+    </style>
+@endpush
+
 @section('content')
-    <div class="container py-4">
-        <div class="row justify-content-center">
-            <div class="col-lg-12 col-md-10">
+    <div class="page-wrapper">
 
-                {{-- 1. Tiêu đề trang với Icon AI --}}
-                <div class="d-flex align-items-center mb-4">
-                    <div class="bg-primary text-white rounded-3 p-3 me-3 shadow-sm">
-                        <i class="fas fa-brain fa-2x"></i>
-                    </div>
-                    <div>
-                        <h3 class="fw-bold mb-0">Huấn luyện Trí tuệ nhân tạo</h3>
-                        <p class="text-muted mb-0">Cung cấp tài liệu để AI học kiến thức và hỗ trợ học sinh</p>
-                    </div>
-                </div>
-
-                {{-- 2. Khối Cảnh báo & Lưu ý quan trọng --}}
-                <div class="card border-0 shadow-sm mb-4 overflow-hidden">
-                    <div class="alert bg-warning-subtle border-0 border-start border-warning border-4 rounded-0 mb-0 p-4">
-                        <div class="d-flex">
-                            <div class="me-3">
-                                <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold text-warning-emphasis">Lưu ý quan trọng trước khi Train!</h6>
-                                <p class="mb-2 text-dark-emphasis">
-                                    Nếu file quá lớn (ví dụ sách trên 50 trang): Thầy / Cô <strong>nên chia nhỏ file
-                                        PDF</strong> thành từng chương trước khi upload. Việc này giúp AI tìm kiếm chính xác
-                                    hơn và tránh bị "nghẽn" API Google khi tạo Vector.
-                                </p>
-                                <ul class="small text-dark-emphasis mb-0 ps-3">
-                                    <li>Chỉ sử dụng file PDF dạng văn bản <span style="color: rgb(190, 7, 7)">(không dùng
-                                            ảnh quét/scan)</span>.</li>
-                                    <li>Hệ thống sử dụng Gemini 3 Flash để tạo Vector 3072 chiều.</li>
-                                    <li><strong>Tài liệu được Train sẽ dùng cho phần chatbot và ngân hàng câu hỏi.</strong>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- 3. Form Upload tài liệu --}}
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-4 text-dark">
-                            <i class="fas fa-cloud-upload-alt me-2 text-primary"></i>Tải lên tài liệu mới
-                        </h5>
-
-                        @if (session('success'))
-                            <div class="alert alert-success border-0 shadow-sm mb-4">
-                                <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
-                            </div>
-                        @endif
-
-                        @if ($errors->any())
-                            <div class="alert alert-danger border-0 shadow-sm mb-4">
-                                <ul class="mb-0 small">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-
-                        <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data"
-                            id="uploadForm">
-                            @csrf
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-uppercase text-muted">Khóa học áp
-                                        dụng</label>
-                                    <select name="course_id" class="form-select bg-light border-0 py-2" required>
-                                        <option value="">-- Chọn khóa học để huấn luyện --</option>
-
-                                        {{-- Lặp qua danh sách khóa học từ CSDL --}}
-                                        @foreach ($courses as $course)
-                                            <option value="{{ $course->id }}">{{ $course->title }}</option>
-                                        @endforeach
-
-                                        <option value="0">-- Dùng chung toàn hệ thống --</option>
-                                    </select>
-                                    @error('course_id')
-                                        <div class="text-danger small mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-uppercase text-muted">Tài liệu (Định dạng
-                                        PDF)</label>
-                                    <input class="form-control bg-light border-0 py-2" type="file" name="file"
-                                        accept="application/pdf" required>
-                                    @error('file')
-                                        <div class="text-danger small mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-12 mt-4">
-                                    <button type="submit" class="btn btn-primary fw-bold py-3 w-100 shadow-sm"
-                                        id="btnUpload">
-                                        <i class="fas fa-rocket me-2"></i> BẮT ĐẦU TRÍCH XUẤT KIẾN THỨC
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-
-                        {{-- 4. Thanh tiến trình (Ẩn mặc định) --}}
-                        <div id="progressContainer" class="mt-4 d-none">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="small fw-bold text-primary" id="progressStatus">Đang khởi tạo cấu trúc
-                                    AI...</span>
-                                <span class="small fw-bold text-primary" id="progressPercent">0%</span>
-                            </div>
-                            <div class="progress" style="height: 12px;">
-                                <div id="progressBar"
-                                    class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                                    role="progressbar" style="width: 0%"></div>
-                            </div>
-                            <div class="alert alert-info border-0 mt-3 small">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Hệ thống đang phân tích ngữ cảnh và tạo tọa độ Vector. Vui lòng giữ kết nối internet và
-                                không đóng trình duyệt.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- 5. Danh sách tài liệu hiện có --}}
-                <div class="card shadow-sm border-0 overflow-hidden">
-                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 fw-bold"><i class="fas fa-database me-2 text-primary"></i>Kho tri thức đã huấn luyện
-                        </h6>
-                        <span class="badge bg-light text-dark border">{{ $documents->count() }} tài liệu</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="bg-light">
-                                    <tr class="small text-uppercase text-muted">
-                                        <th class="ps-4 py-3">Tên tài liệu</th>
-                                        <th>Khóa học áp dụng</th>
-                                        <th>Độ chi tiết</th>
-                                        <th>Ngày nạp</th>
-                                        <th class="text-end pe-4">Quản lý</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($documents as $doc)
-                                        <tr>
-                                            <td class="ps-4">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-file-pdf text-danger me-3 fa-lg"></i>
-                                                    <span class="fw-medium text-dark">{{ $doc->document_name }}</span>
-                                                </div>
-                                            </td>
-
-                                            <td>
-                                                @if ($doc->course_id == 0)
-                                                    <span
-                                                        class="badge bg-secondary-subtle text-secondary px-2 py-1 border border-secondary-subtle"
-                                                        style="font-size: 0.8rem;">
-                                                        Dùng chung toàn hệ thống
-                                                    </span>
-                                                @elseif ($doc->course)
-                                                    <span
-                                                        class="badge bg-info-subtle text-info px-2 py-1 border border-info-subtle"
-                                                        style="font-size: 0.8rem;">
-                                                        {{ $doc->course->title }}
-                                                    </span>
-                                                @else
-                                                    <span
-                                                        class="badge bg-danger-subtle text-danger px-2 py-1 border border-danger-subtle"
-                                                        style="font-size: 0.8rem;">
-                                                        Khóa học không khả dụng (ID: {{ $doc->course_id }})
-                                                    </span>
-                                                @endif
-                                            </td>
-
-                                            <td>
-                                                <span class="badge bg-primary-subtle text-primary px-3 rounded-pill">
-                                                    {{ $doc->total_chunks }} Vectors
-                                                </span>
-                                            </td>
-                                            <td class="text-muted small">
-                                                {{ $doc->created_at->format('d/m/Y') }}
-                                            </td>
-                                            <td class="text-end pe-4">
-                                                <form action="{{ route('documents.destroy', $doc->document_name) }}"
-                                                    method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                        class="btn btn-link text-danger p-0 text-decoration-none"
-                                                        onclick="return confirm('Bạn có chắc muốn xóa kiến thức này? AI sẽ không thể trả lời các nội dung liên quan nữa.')">
-                                                        <i class="fas fa-trash-alt"></i> Xóa
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="text-center py-5 text-muted small">
-                                                <i class="fas fa-folder-open fa-3x d-block mb-3 opacity-25"></i>
-                                                Chưa có dữ liệu tri thức nào được nạp.
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
+        {{-- Header --}}
+        <div class="page-header">
+            <div class="header-icon-wrap">
+                <i class="fas fa-brain"></i>
+            </div>
+            <div>
+                <h3>Huấn luyện Trí tuệ Nhân tạo</h3>
+                <p>Cung cấp tài liệu để AI học kiến thức và hỗ trợ học sinh hiệu quả hơn</p>
             </div>
         </div>
+
+        {{-- Notice --}}
+        <div class="notice-card">
+            <div class="notice-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div>
+                <h6>Lưu ý trước khi Train</h6>
+                <p>Nếu file quá lớn (trên 50 trang): Thầy/Cô nên <strong>chia nhỏ file PDF thành từng chương</strong> trước
+                    khi upload để AI tìm kiếm chính xác hơn và tránh nghẽn API Google khi tạo Vector.</p>
+                <ul>
+                    <li>Chỉ dùng file PDF dạng văn bản <span class="highlight-danger">(không dùng ảnh quét/scan)</span></li>
+                    <li>Hệ thống sử dụng Gemini Flash để tạo Vector 3072 chiều</li>
+                    <li><strong>Tài liệu được Train sẽ dùng cho chatbot và ngân hàng câu hỏi</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        {{-- Upload Form --}}
+        <div class="card-panel">
+            <div class="card-panel-body">
+                <div class="section-label">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Tải lên tài liệu mới
+                </div>
+
+                @if (session('success'))
+                    <div class="alert-success-custom">
+                        <i class="fas fa-check-circle"></i> {{ session('success') }}
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="alert-danger-custom">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form action="{{ route('documents.store') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+                    @csrf
+                    <div class="form-row">
+                        <div class="field-group">
+                            <label class="field-label">Khóa học áp dụng</label>
+                            <select name="course_id" class="field-ctrl" required>
+                                <option value="">-- Chọn khóa học --</option>
+                                @foreach ($courses as $course)
+                                    <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                @endforeach
+                                <option value="0">-- Dùng chung toàn hệ thống --</option>
+                            </select>
+                            @error('course_id')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Tài liệu (Định dạng PDF)</label>
+                            <div class="file-input-wrap">
+                                <input type="file" name="file" accept="application/pdf" required>
+                            </div>
+                            @error('file')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="btnUpload">
+                        <i class="fas fa-rocket"></i>
+                        BẮT ĐẦU TRÍCH XUẤT KIẾN THỨC
+                    </button>
+                </form>
+
+                {{-- Progress --}}
+                <div class="progress-wrap" id="progressContainer">
+                    <div class="progress-meta">
+                        <span class="progress-status" id="progressStatus">Đang khởi tạo cấu trúc AI...</span>
+                        <span class="progress-pct" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="progress-note">
+                        <i class="fas fa-circle-notch fa-spin" style="margin-top:2px; flex-shrink:0;"></i>
+                        Hệ thống đang phân tích ngữ cảnh và tạo tọa độ Vector. Vui lòng giữ kết nối và không đóng trình
+                        duyệt.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Document Table --}}
+        <div class="card-panel">
+            <div class="table-header">
+                <div class="table-title">
+                    <i class="fas fa-database"></i>
+                    Kho tri thức đã huấn luyện
+                </div>
+                <span class="doc-count-badge">{{ $documents->count() }} tài liệu</span>
+            </div>
+
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Tên tài liệu</th>
+                        <th>Khóa học</th>
+                        <th>Vectors</th>
+                        <th>Ngày nạp</th>
+                        <th>Quản lý</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($documents as $doc)
+                        <tr>
+                            <td>
+                                <div class="doc-name-cell">
+                                    <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
+                                    <span class="doc-name">{{ $doc->document_name }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                @if ($doc->course_id == 0)
+                                    <span class="badge-system">Toàn hệ thống</span>
+                                @elseif ($doc->course)
+                                    <span class="badge-course">{{ $doc->course->title }}</span>
+                                @else
+                                    <span class="badge-danger">Không khả dụng (ID: {{ $doc->course_id }})</span>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="badge-vectors">
+                                    <i class="fas fa-vector-square"></i>
+                                    {{ $doc->total_chunks }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="date-text">{{ $doc->created_at->format('d/m/Y') }}</span>
+                            </td>
+                            <td>
+                                <form action="{{ route('documents.destroy', $doc->document_name) }}" method="POST"
+                                    class="d-inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn-delete"
+                                        onclick="return confirm('Xóa tài liệu này? AI sẽ không còn trả lời được nội dung liên quan.')">
+                                        <i class="fas fa-trash-alt"></i> Xóa
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+                                    <p>Chưa có tài liệu tri thức nào được nạp</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
     </div>
 
-    {{-- Script xử lý thanh tiến trình thông minh --}}
     <script>
         document.getElementById('uploadForm')?.addEventListener('submit', function() {
             const btn = document.getElementById('btnUpload');
@@ -226,49 +800,36 @@
             const percent = document.getElementById('progressPercent');
             const status = document.getElementById('progressStatus');
 
-            // Hiệu ứng nút và hiện Progress Bar
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Hệ thống đang xử lý...';
-            container.classList.remove('d-none');
+            btn.innerHTML =
+                '<span class="fas fa-circle-notch fa-spin" style="margin-right:.5rem"></span> Hệ thống đang xử lý...';
+            container.style.display = 'block';
 
-            // Danh sách thông điệp mô phỏng quá trình xử lý thực tế
-            const statusMessages = [
+            const messages = [
                 "Đang đọc nội dung file PDF...",
                 "Đang trích xuất văn bản thô...",
                 "Đang chia nhỏ dữ liệu thành các đoạn ngữ cảnh...",
                 "Đang kết nối tới Google Gemini API...",
                 "Đang khởi tạo Vector 3072 chiều...",
                 "Đang mã hóa kiến thức vào không gian đa chiều...",
-                "Đang lưu trữ dữ liệu vào PostgreSQL Vector DB...",
+                "Đang lưu trữ vào PostgreSQL Vector DB...",
                 "Đang hoàn tất quá trình huấn luyện..."
             ];
 
             let width = 0;
-            let messageIndex = 0;
 
-            // Hàm chạy thanh tiến trình mô phỏng
             const interval = setInterval(function() {
                 if (width >= 94) {
-                    // Dừng lại ở 94% để chờ phản hồi thực từ Backend
                     clearInterval(interval);
                     status.innerText = "Đang kiểm tra và phản hồi...";
                 } else {
-                    // Chạy nhanh lúc đầu, chậm dần về sau để tạo cảm giác thực
-                    let increment = 0;
-                    if (width < 40) increment = 1.5;
-                    else if (width < 70) increment = 0.4;
-                    else if (width < 90) increment = 0.1;
-                    else increment = 0.05;
-
-                    width += increment;
+                    let inc = width < 40 ? 1.5 : width < 70 ? 0.4 : width < 90 ? 0.1 : 0.05;
+                    width += inc;
                     bar.style.width = width + '%';
                     percent.innerText = Math.round(width) + '%';
-
-                    // Thay đổi thông báo trạng thái dựa trên % hoàn thành
-                    let msgStep = Math.floor(width / (100 / statusMessages.length));
-                    if (statusMessages[msgStep] && status.innerText !== statusMessages[msgStep]) {
-                        status.innerText = statusMessages[msgStep];
-                    }
+                    const msgIdx = Math.min(Math.floor(width / (100 / messages.length)), messages.length -
+                        1);
+                    if (status.innerText !== messages[msgIdx]) status.innerText = messages[msgIdx];
                 }
             }, 100);
         });
