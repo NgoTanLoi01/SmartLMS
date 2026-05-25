@@ -5,29 +5,46 @@ namespace App\Services;
 use App\Models\Submission;
 use App\Models\Assignment;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Exception;
 
 class SubmissionService
 {
-    /**
-     * Xử lý nộp bài tập
-     */
-    public function submitWork($data, $studentId)
+    public function submitWork($request, $studentId)
     {
-        $assignment = Assignment::findOrFail($data['assignment_id']);
+        $assignment = Assignment::findOrFail($request->assignment_id);
 
-        // 1. Kiểm tra hạn nộp (Logic nghiệp vụ)
+        // Kiểm tra deadline
         if (now()->gt($assignment->due_date)) {
             throw new Exception('Đã quá hạn nộp bài!');
         }
-        if ($data->hasFile('file')) {
-            $path = $data->file('file')->store('submissions', 'local');
+
+        // Validate file
+        $request->validate([
+            'file' => ['required', 'file', 'max:' . $assignment->max_file_size, 'mimes:' . $assignment->allowed_extensions],
+        ]);
+
+        // Kiểm tra bài cũ
+        $oldSubmission = Submission::where([
+            'assignment_id' => $assignment->id,
+            'student_id' => $studentId,
+        ])->first();
+
+        // Xóa file cũ
+        if ($oldSubmission && $oldSubmission->file_path) {
+            Storage::disk('public')->delete($oldSubmission->file_path);
         }
 
-        // 3. Lưu vào Database
+        // Upload file
+        $file = $request->file('file');
+
+        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+
+        $path = $file->storeAs('submissions', $filename, 'public');
+
         return Submission::updateOrCreate(
             [
-                'assignment_id' => $data['assignment_id'],
+                'assignment_id' => $assignment->id,
                 'student_id' => $studentId,
             ],
             [
@@ -37,14 +54,10 @@ class SubmissionService
         );
     }
 
-    /**
-     * Xử lý chấm điểm (Chỉ Teacher/Admin)
-     */
     public function gradeWork($submissionId, $gradeData)
     {
         $submission = Submission::findOrFail($submissionId);
 
-        // Logic: Điểm phải nằm trong khoảng 0-10
         if ($gradeData['grade'] < 0 || $gradeData['grade'] > 10) {
             throw new Exception('Điểm số không hợp lệ.');
         }
