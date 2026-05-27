@@ -67,6 +67,11 @@
             videoContainer.classList.add('d-none');
             externalContainer.classList.add('d-none');
             if (iframe) iframe.src = '';
+
+            // ✅ THÊM: Reset attachment container
+            const attachCont = document.getElementById('lesson-attachment-container');
+            if (attachCont) attachCont.classList.add('d-none');
+
             if (assignmentArea) {
                 assignmentArea.classList.add('d-none');
                 assignmentArea.classList.remove('d-flex');
@@ -114,7 +119,6 @@
                     externalBtn.href = videoUrl;
                     externalContainer.classList.remove('d-none');
                 }
-
                 lessonArea.scrollIntoView({
                     behavior: 'smooth'
                 });
@@ -524,3 +528,4 @@
         });
     </script>
 @endpush
+

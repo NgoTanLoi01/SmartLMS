@@ -373,7 +373,7 @@
             }
 
             .modal.fade .modal-dialog {
-                transform: translate(0, 350px);
+                transform: translate(0, 100px);
                 transition: transform 0.3s ease-out, opacity 0.3s ease-out;
             }
             #viewSubmissionsModal.fade.show .modal-dialog {

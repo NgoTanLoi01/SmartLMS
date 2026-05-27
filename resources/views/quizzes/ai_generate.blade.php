@@ -226,7 +226,7 @@
                                 <i class="fas fa-wand-magic-sparkles"></i>
                             </div>
                             <h5 class="text-gradient fw-bold">Sẵn sàng sáng tạo!</h5>
-                            <p class="text-muted small mt-2">Chỉ cần cấu hình bên trái, AI sẽ giúp bạn soạn đề thi trong
+                            <p class="text-muted small mt-2">Chỉ cần cấu hình bên trái, AI sẽ giúp Thầy/Cô soạn đề thi trong
                                 chớp mắt.</p>
                         </div>
                     </div>
