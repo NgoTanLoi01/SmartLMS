@@ -159,6 +159,7 @@ Route::middleware(['auth'])->group(function () {
                     Route::get('/', [App\Http\Controllers\ChessController::class, 'index'])->name('index');
                     Route::get('/{roomId}', [App\Http\Controllers\ChessController::class, 'play'])->name('play');
                     Route::post('/{roomId}/move', [App\Http\Controllers\ChessController::class, 'broadcastMove'])->name('move');
+                    Route::post('/{roomId}/finish', [App\Http\Controllers\ChessController::class, 'finish'])->middleware('auth');
                 });
             Route::prefix('caro')
                 ->name('caro.')
