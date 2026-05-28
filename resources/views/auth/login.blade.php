@@ -215,7 +215,7 @@
                 </script>
 
                 <div class="footer-links">
-                    &copy; {{ date('Y') }} SmartLMS<br>
+                    &copy; {{ date('Y') }} SmartLMS v1.1.1<br>
                     Phát triển bởi <strong>NgoTanLoi</strong>.
                 </div>
             </div>

@@ -67,7 +67,8 @@
                                     <button class="btn btn-outline-primary rounded-pill fw-bold" data-bs-toggle="modal"
                                         data-bs-target="#submitAssignmentModal" data-id="{{ $assignment->id }}"
                                         data-title="{{ $assignment->title }}"
-                                        data-instructions="{{ strip_tags($assignment->instructions) }}">
+                                        data-instructions="{{ strip_tags($assignment->instructions) }}"
+                                        data-extensions="{{ $assignment->allowed_extensions }}">
                                         {{ $submission ? 'Nộp lại bài làm' : 'Bắt đầu làm bài' }}
                                     </button>
 
@@ -141,7 +142,7 @@
                             <label class="form-label fw-bold small text-muted">Định dạng cho phép (Cách nhau dấu
                                 phẩy)</label>
                             <input type="text" name="allowed_extensions" class="form-control bg-light border-0 py-2"
-                                value="pdf,docx,zip,png,jpg,jpeg">
+                                value="pdf,docx,zip,png,jpg,jpeg,html">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-muted">Dung lượng tối đa (KB)</label>
@@ -202,17 +203,81 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const submitModal = document.getElementById('submitAssignmentModal');
+            let allowedExtensions = [];
+
             if (submitModal) {
                 submitModal.addEventListener('show.bs.modal', function(event) {
                     const button = event.relatedTarget;
                     const id = button.getAttribute('data-id');
                     const title = button.getAttribute('data-title');
                     const instructions = button.getAttribute('data-instructions');
+                    const extensions = button.getAttribute('data-extensions') ||
+                        'pdf,docx,zip,png,jpg,jpeg';
+
+                    allowedExtensions = extensions.split(',').map(e => e.trim().toLowerCase());
 
                     document.getElementById('submitModalTitle').innerText = 'Nộp bài: ' + title;
                     document.getElementById('submitInstructions').innerText = instructions;
                     document.getElementById('submitForm').action = `/assignments/${id}/submit`;
+
+                    // Reset lỗi cũ mỗi lần mở modal
+                    clearError();
                 });
+            }
+
+            const form = document.getElementById('submitForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    clearError();
+
+                    const fileInput = form.querySelector('input[type="file"]');
+                    const file = fileInput.files[0];
+
+                    if (!file) return; // để Laravel validate required
+
+                    const maxSize = 5 * 1024 * 1024; // 5MB
+                    const ext = file.name.split('.').pop().toLowerCase();
+
+                    if (!allowedExtensions.includes(ext)) {
+                        e.preventDefault();
+                        showError(
+                            `Định dạng file <strong>.${ext}</strong> không được chấp nhận. Vui lòng chọn file có định dạng: <strong>${allowedExtensions.join(', ')}</strong>.`
+                        );
+                        return;
+                    }
+
+                    if (file.size > maxSize) {
+                        e.preventDefault();
+                        const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+                        showError(
+                            `File của bạn nặng <strong>${sizeMB} MB</strong>, vượt quá giới hạn cho phép <strong>5 MB</strong>. Vui lòng nén file hoặc chọn file nhỏ hơn.`
+                        );
+                        return;
+                    }
+                });
+            }
+
+            function showError(message) {
+                let alert = document.getElementById('submitFileError');
+                if (!alert) {
+                    alert = document.createElement('div');
+                    alert.id = 'submitFileError';
+                    alert.className =
+                        'alert alert-danger alert-dismissible fade show d-flex align-items-start gap-2 py-2 px-3 small';
+                    alert.setAttribute('role', 'alert');
+                    const fileInput = form.querySelector('.mb-3');
+                    fileInput.parentNode.insertBefore(alert, fileInput);
+                }
+                alert.innerHTML = `
+            <i class="fas fa-exclamation-circle mt-1 flex-shrink-0"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close btn-close-sm ms-auto" data-bs-dismiss="alert"></button>
+        `;
+            }
+
+            function clearError() {
+                const alert = document.getElementById('submitFileError');
+                if (alert) alert.remove();
             }
         });
     </script>
