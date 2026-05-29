@@ -5,7 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'SmartLMS') - Hệ thống quản lý học tập AI</title>
+    <title>@yield('title', 'SmartLMS - Hệ thống quản lý học tập AI thông minh')</title>
+    <meta name="description" content="@yield('meta_description', 'SmartLMS – Nền tảng quản lý học tập tích hợp AI. Quản lý lớp học, giao bài tập, ngân hàng câu hỏi và theo dõi kết quả học tập thông minh.')">
+    <meta name="keywords" content="LMS, quản lý học tập, hệ thống giáo dục AI, e-learning, SmartLMS">
+    <link rel="canonical" href="{{ url()->current() }}">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://smartlms.io.vn/">

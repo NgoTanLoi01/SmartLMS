@@ -1,4 +1,9 @@
-@extends('layouts.app')
+@section('title', 'SmartLMS - Đăng nhập hệ thống')
+@section('meta_description',
+    'Đăng nhập SmartLMS – Hệ thống quản lý học tập AI dành cho giáo viên và học viên. Quản lý
+    khóa học, lớp học và kết quả học tập.')
+
+    @extends('layouts.app')
 
 @section('content')
     <style>
@@ -138,6 +143,23 @@
                 border-radius: 24px;
                 box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
             }
+
+        }
+
+        .footer-links {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .footer-links a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
         }
     </style>
 
@@ -215,8 +237,11 @@
                 </script>
 
                 <div class="footer-links">
-                    &copy; {{ date('Y') }} SmartLMS v1.1.1<br>
-                    Phát triển bởi <strong>NgoTanLoi</strong>.
+                    &copy; {{ date('Y') }} SmartLMS v1.1.2<br>
+                    Phát triển bởi
+                    <a href="mailto:ngotanloi2424@gmail.com">
+                        <strong>NgoTanLoi</strong>
+                    </a>.
                 </div>
             </div>
         </div>

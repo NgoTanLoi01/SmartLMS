@@ -9,13 +9,18 @@ use App\Http\Controllers\ChessController;
 | 1. XÁC THỰC & ĐĂNG NHẬP (AUTHENTICATION)
 |--------------------------------------------------------------------------
 */
+// Trang chủ → Landing page (chưa đăng nhập) hoặc Dashboard (đã đăng nhập)
 Route::get('/', function () {
+    return auth()->check() ? redirect()->route('dashboard') : view('landing');
+})->name('home');
+
+// Đăng nhập
+Route::get('/login', function () {
     return auth()->check() ? redirect()->route('dashboard') : view('auth.login');
 })->name('login');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
 /*
 |--------------------------------------------------------------------------
 | 2. CÁC ROUTE YÊU CẦU ĐĂNG NHẬP (AUTH MIDDLEWARE)
