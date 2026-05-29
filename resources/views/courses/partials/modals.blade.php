@@ -401,7 +401,7 @@
             <div class="modal-body">
                 <div class="cm-field">
                     <label class="cm-label">Tên chương học</label>
-                    <input type="text" name="title" class="cm-ctrl" placeholder="VD: Chương 1 — Giới thiệu..."
+                    <input type="text" name="title" class="cm-ctrl" placeholder="VD: Giới thiệu..."
                         required autofocus>
                 </div>
             </div>
@@ -419,7 +419,7 @@
      2. MODAL: SỬA CHƯƠNG
      ============================================================ --}}
 <div class="modal fade cm-modal" id="editModuleModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog">
         <form id="editModuleForm" method="POST" class="modal-content">
             @csrf @method('PUT')
 
@@ -471,7 +471,7 @@
                     </div>
                     <div class="cm-field">
                         <label class="cm-label">Tiêu đề bài học</label>
-                        <input type="text" name="title" class="cm-ctrl" placeholder="VD: Bài 1 — HTML cơ bản"
+                        <input type="text" name="title" class="cm-ctrl" placeholder="VD: HTML cơ bản"
                             required>
                     </div>
                 </div>

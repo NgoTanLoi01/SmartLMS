@@ -1,246 +1,277 @@
-<div class="col-md-4 col-lg-3">
-    <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
-        <div class="card-header bg-white py-3 border-bottom">
-            <h6 class="mb-0 fw-bold small text-uppercase text-muted"><i class="fas fa-list-ol me-2"></i>Nội
-                dung
-                học tập</h6>
-        </div>
-        <div class="card-body p-0" style="max-height: 75vh; overflow-y: auto;">
-            <div class="accordion accordion-flush" id="courseAccordion">
+<div class="accordion accordion-flush" id="courseAccordion">
 
-                @forelse ($course->modules as $index => $module)
-                    <div class="accordion-item border-bottom">
-                        <div class="position-relative module-header-wrapper d-flex align-items-center">
-                            <button
-                                class="accordion-button {{ $index == 0 ? '' : 'collapsed' }} py-3 fw-bold flex-grow-1 shadow-none"
-                                type="button" data-bs-toggle="collapse" data-bs-target="#module-{{ $module->id }}">
-                                <span class="text-truncate-custom me-4">{{ $module->title }}</span>
-                            </button>
+    @forelse ($course->modules as $moduleIndex => $module)
+        @php
+            $lessonCount = $module->lessons->count();
+            $completedInModule = $module->lessons
+                ->filter(fn($l) => in_array($l->id, $completedLessonIds ?? []))
+                ->count();
+            $totalSeconds = $module->lessons->sum(fn($l) => $l->duration_seconds ?? 0);
+            $durationStr =
+                $totalSeconds > 0
+                    ? sprintf(
+                        '%02d:%02d:%02d',
+                        floor($totalSeconds / 3600),
+                        floor(($totalSeconds % 3600) / 60),
+                        $totalSeconds % 60,
+                    )
+                    : null;
+        @endphp
 
-                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                                <div class="action-buttons position-absolute end-0 me-5 d-flex align-items-center">
-                                    <a href="javascript:void(0)" class="btn-action btn-edit edit-module-btn"
-                                        data-id="{{ $module->id }}" data-title="{{ $module->title }}"
-                                        data-bs-toggle="modal" data-bs-target="#editModuleModal">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form action="{{ route('modules.destroy', $module->id) }}" method="POST"
-                                        class="d-inline mb-0">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn-action btn-delete border-0 bg-transparent"
-                                            onclick="return confirm('Xóa chương này?')"><i
-                                                class="fas fa-trash"></i></button>
-                                    </form>
-                                </div>
-                            @endif
-                        </div>
-
-                        <div id="module-{{ $module->id }}"
-                            class="accordion-collapse collapse {{ $index == 0 ? 'show' : '' }}"
-                            data-bs-parent="#courseAccordion">
-                            <div class="accordion-body p-0">
-                                <div class="list-group list-group-flush">
-                                    @forelse ($module->lessons as $lesson)
-                                        @php $isCompleted = in_array($lesson->id, $completedLessonIds ?? []); @endphp
-                                        <div
-                                            class="list-group-item border-0 px-3 py-2 lesson-item-wrapper d-flex align-items-center justify-content-between shadow-none">
-                                            <a href="javascript:void(0)"
-                                                class="lesson-item text-decoration-none text-dark flex-grow-1 d-flex align-items-center"
-                                                style="min-width: 0;" data-id="{{ $lesson->id }}"
-                                                data-content="{{ $lesson->content }}" data-title="{{ $lesson->title }}"
-                                                data-video="{{ $lesson->video_url }}"
-                                                data-module="{{ $module->id }}"
-                                                data-attachment="{{ $lesson->attachment ? asset('storage/' . $lesson->attachment) : '' }}"
-                                                data-attachment-name="{{ $lesson->attachment ? basename($lesson->attachment) : '' }}">
-                                                <i class="{{ $isCompleted ? 'fas fa-check-circle text-success' : 'far fa-play-circle text-primary' }} me-2 flex-shrink-0 lesson-icon"
-                                                    id="icon-lesson-{{ $lesson->id }}"></i>
-                                                <span class="small text-truncate-custom">{{ $lesson->title }}</span>
-                                            </a>
-
-                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                                                <div class="action-buttons d-flex ms-2">
-                                                    <a href="javascript:void(0)"
-                                                        class="btn-action btn-edit edit-lesson-btn"
-                                                        data-id="{{ $lesson->id }}"
-                                                        data-title="{{ $lesson->title }}"
-                                                        data-content="{{ $lesson->content }}"
-                                                        data-video="{{ $lesson->video_url }}"
-                                                        data-module="{{ $module->id }}" data-bs-toggle="modal"
-                                                        data-bs-target="#editLessonModal">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('lessons.destroy', $lesson->id) }}"
-                                                        method="POST" class="d-inline mb-0">
-                                                        @csrf @method('DELETE')
-                                                        <button type="submit"
-                                                            class="btn-action btn-delete border-0 bg-transparent"
-                                                            onclick="return confirm('Xóa bài này?')"><i
-                                                                class="fas fa-times"></i></button>
-                                                    </form>
-                                                </div>
-                                            @endif
-                                        </div>
-
-                                        {{-- ✅ BÀI TẬP --}}
-                                        @foreach ($lesson->assignments as $assignment)
-                                            @php
-                                                $submission =
-                                                    auth()->user()->role === 'student' &&
-                                                    isset($userSubmissions[$assignment->id])
-                                                        ? $userSubmissions[$assignment->id]
-                                                        : null;
-                                            @endphp
-                                            <div
-                                                class="list-group-item border-0 py-2 assignment-item-wrapper d-flex align-items-center justify-content-between shadow-none bg-light border-bottom">
-                                                <div class="ms-4 flex-grow-1 d-flex align-items-center"
-                                                    style="min-width: 0;">
-                                                    <a href="javascript:void(0)"
-                                                        class="assignment-item text-decoration-none text-dark flex-grow-1 d-flex align-items-center"
-                                                        data-id="{{ $assignment->id }}"
-                                                        data-title="{{ $assignment->title }}"
-                                                        data-instructions="{{ $assignment->instructions }}"
-                                                        data-due="{{ $assignment->due_date ? $assignment->due_date->format('d/m/Y H:i') : '' }}"
-                                                        data-raw-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
-                                                        data-status="{{ $submission ? 'submitted' : 'pending' }}"
-                                                        data-grade="{{ $submission->grade ?? '' }}"
-                                                        data-feedback="{{ $submission->feedback ?? '' }}"
-                                                        data-sub-id="{{ $submission ? $submission->id : '' }}"
-                                                        data-sub-time="{{ $submission ? $submission->submitted_at->format('H:i - d/m/Y') : '' }}"
-                                                        data-sub-file="{{ $submission ? asset('storage/' . $submission->file_path) : '' }}">
-                                                        <i
-                                                            class="{{ $submission ? 'fas fa-check-circle text-success' : 'fas fa-file-signature text-warning' }} me-2 flex-shrink-0"></i>
-                                                        <span
-                                                            class="small text-truncate-custom fw-medium">{{ $assignment->title }}</span>
-                                                    </a>
-                                                </div>
-
-                                                @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                                                    <div class="action-buttons d-flex ms-2 gap-1">
-                                                        <a href="javascript:void(0)" class="btn-action btn-edit"
-                                                            onclick="openEditAssignmentModal(this)"
-                                                            data-id="{{ $assignment->id }}"
-                                                            data-title='@json($assignment->title)'
-                                                            data-instructions='@json($assignment->instructions)'
-                                                            data-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
-                                                            data-lesson="{{ $lesson->id }}" title="Sửa bài tập">
-
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                        <form
-                                                            action="{{ route('assignments.destroy', $assignment->id) }}"
-                                                            method="POST" class="d-inline mb-0">
-                                                            @csrf @method('DELETE')
-                                                            <button type="submit"
-                                                                class="btn-action btn-delete border-0 bg-transparent"
-                                                                onclick="return confirm('Xóa bài tập này?')"
-                                                                title="Xóa bài tập"><i
-                                                                    class="fas fa-trash"></i></button>
-                                                        </form>
-                                                        <a href="javascript:void(0)"
-                                                            class="btn-action text-primary view-submissions-btn border bg-white shadow-sm"
-                                                            data-id="{{ $assignment->id }}" data-bs-toggle="modal"
-                                                            data-bs-target="#viewSubmissionsModal"
-                                                            title="Chấm điểm / Xem danh sách"><i
-                                                                class="fas fa-users-cog"></i>
-                                                        </a>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                    @empty
-                                        <div class="py-2 px-4 text-muted small fst-italic">Trống</div>
-                                    @endforelse
-                                </div>
-                            </div>
-                        </div>
+        <div class="accordion-item">
+            {{-- Module header --}}
+            <div class="module-header-wrapper d-flex align-items-center position-relative">
+                <button class="accordion-button {{ $moduleIndex == 0 ? '' : 'collapsed' }} flex-grow-1 shadow-none py-0"
+                    type="button" data-bs-toggle="collapse" data-bs-target="#module-{{ $module->id }}">
+                    <div class="module-title-block py-3">
+                        <span class="module-title-text">{{ $moduleIndex + 1 }}. {{ $module->title }}</span>
+                        <span
+                            class="module-meta">{{ $completedInModule }}/{{ $lessonCount }}{{ $durationStr ? ' · ' . $durationStr : '' }}</span>
                     </div>
-                @empty
-                    <div class="p-4 text-center text-muted small">Chưa có nội dung.</div>
-                @endforelse
+                </button>
 
-                {{-- ✅ MENU BÀI KIỂM TRA (QUIZZES) NẰM Ở CUỐI --}}
-                @if ($course->quizzes->count() > 0)
-                    <div class="accordion-item border-bottom bg-light">
-                        <div class="position-relative module-header-wrapper d-flex align-items-center">
-                            <button
-                                class="accordion-button collapsed py-3 fw-bold flex-grow-1 shadow-none bg-transparent"
-                                style="color: #6f42c1;" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#course-quizzes-collapse">
-                                <i class="fas fa-clipboard-list me-2"></i> Bài kiểm tra
-                                ({{ $course->quizzes->count() }})
+                @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                    <div class="action-buttons  d-flex align-items-center">
+                        <a href="javascript:void(0)" class="btn-action btn-edit edit-module-btn"
+                            data-id="{{ $module->id }}" data-title="{{ $module->title }}" data-bs-toggle="modal"
+                            data-bs-target="#editModuleModal">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form action="{{ route('modules.destroy', $module->id) }}" method="POST" class="d-inline mb-0">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn-action btn-delete border-0 bg-transparent"
+                                onclick="return confirm('Xóa chương này?')">
+                                <i class="fas fa-trash"></i>
                             </button>
-                        </div>
-
-                        <div id="course-quizzes-collapse" class="accordion-collapse collapse"
-                            data-bs-parent="#courseAccordion">
-                            <div class="accordion-body p-0">
-                                <div class="list-group list-group-flush">
-                                    @foreach ($course->quizzes as $quiz)
-                                        @php
-                                            $attempt =
-                                                auth()->user()->role === 'student' &&
-                                                isset($userQuizAttempts[$quiz->id])
-                                                    ? $userQuizAttempts[$quiz->id]
-                                                    : null;
-                                        @endphp
-                                        <div
-                                            class="list-group-item border-0 py-2 quiz-item-wrapper d-flex align-items-center justify-content-between shadow-none bg-white border-bottom">
-                                            <div class="ms-4 flex-grow-1 d-flex align-items-center"
-                                                style="min-width: 0;">
-                                                <a href="javascript:void(0)"
-                                                    class="quiz-item text-decoration-none text-dark flex-grow-1 d-flex align-items-center"
-                                                    data-id="{{ $quiz->id }}" data-title="{{ $quiz->title }}"
-                                                    data-duration="{{ $quiz->time_limit }}"
-                                                    data-status="{{ $attempt ? 'completed' : 'pending' }}"
-                                                    data-score="{{ $attempt ? $attempt->score : '' }}"
-                                                    data-attempt-id="{{ $attempt ? $attempt->id : '' }}"> <i
-                                                        class="{{ $attempt ? 'fas fa-check-circle text-success' : 'fas fa-stopwatch' }} me-2 flex-shrink-0"
-                                                        style="{{ $attempt ? '' : 'color: #6f42c1;' }}"></i>
-                                                    <span class="small text-truncate-custom fw-bold"
-                                                        style="{{ $attempt ? 'color: #198754;' : 'color: #6f42c1;' }}">
-                                                        {{ $quiz->title }} ({{ $quiz->time_limit }} phút)
-                                                    </span>
-                                                </a>
-                                            </div>
-
-                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                                                <div class="action-buttons d-flex ms-2 gap-1">
-                                                    {{-- NÚT XEM BẢNG ĐIỂM (HIỂN THỊ NỔI BẬT MÀU XANH LÁ) --}}
-                                                    <a href="{{ route('quizzes.submissions', $quiz->id) }}"
-                                                        class="btn-action text-white shadow-sm px-2 d-flex align-items-center"
-                                                        style="background-color: #198754; width: auto; text-decoration: none;"
-                                                        title="Xem điểm học sinh">
-                                                        <i class="fas fa-chart-bar me-1"></i> <span
-                                                            class="small fw-bold">Điểm</span>
-                                                    </a>
-
-                                                    {{-- NÚT QUẢN LÝ CÂU HỎI --}}
-                                                    <a href="{{ route('quizzes.show', $quiz->id) }}"
-                                                        class="btn-action text-white shadow-sm"
-                                                        style="background-color: #6f42c1;" title="Quản lý câu hỏi">
-                                                        <i class="fas fa-list-ul"></i>
-                                                    </a>
-
-                                                    {{-- NÚT XÓA --}}
-                                                    <form action="{{ route('quizzes.destroy', $quiz->id) }}"
-                                                        method="POST" class="d-inline mb-0">
-                                                        @csrf @method('DELETE')
-                                                        <button type="submit"
-                                                            class="btn-action btn-delete border-0 bg-transparent"
-                                                            onclick="return confirm('Xóa bài kiểm tra này?')"
-                                                            title="Xóa đề thi"><i class="fas fa-trash"></i></button>
-                                                    </form>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
+                        </form>
                     </div>
                 @endif
+            </div>
 
+            <div id="module-{{ $module->id }}"
+                class="accordion-collapse collapse {{ $moduleIndex == 0 ? 'show' : '' }}"
+                data-bs-parent="#courseAccordion">
+                <div class="accordion-body p-0">
+                    <div class="list-group list-group-flush">
+
+                        @forelse ($module->lessons as $lessonIndex => $lesson)
+                            @php
+                                $isCompleted = in_array($lesson->id, $completedLessonIds ?? []);
+                                $isVideo = !empty($lesson->video_url);
+                                $durSec = $lesson->duration_seconds ?? 0;
+                                $durLabel =
+                                    $durSec > 0
+                                        ? ($durSec >= 3600
+                                            ? sprintf(
+                                                '%d:%02d:%02d',
+                                                floor($durSec / 3600),
+                                                floor(($durSec % 3600) / 60),
+                                                $durSec % 60,
+                                            )
+                                            : sprintf('%d:%02d', floor($durSec / 60), $durSec % 60))
+                                        : null;
+                            @endphp
+
+                            <div class="list-group-item border-0 px-0 py-0 lesson-item-wrapper d-flex align-items-center justify-content-between shadow-none"
+                                style="min-width:0;">
+                                <a href="javascript:void(0)"
+                                    class="lesson-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 px-3 ps-4 py-2"
+                                    style="min-width:0;" data-id="{{ $lesson->id }}"
+                                    data-content="{{ $lesson->content }}" data-title="{{ $lesson->title }}"
+                                    data-video="{{ $lesson->video_url }}" data-module="{{ $module->id }}"
+                                    data-attachment="{{ $lesson->attachment ? asset('storage/' . $lesson->attachment) : '' }}"
+                                    data-attachment-name="{{ $lesson->attachment ? basename($lesson->attachment) : '' }}">
+
+                                    {{-- Icon trạng thái --}}
+                                    @if ($isCompleted)
+                                        <i class="fas fa-check-circle lesson-icon-done flex-shrink-0"
+                                            id="icon-lesson-{{ $lesson->id }}"></i>
+                                    @elseif ($isVideo)
+                                        <i class="fas fa-play-circle lesson-icon-video flex-shrink-0"
+                                            id="icon-lesson-{{ $lesson->id }}"></i>
+                                    @else
+                                        <i class="fas fa-file-alt lesson-icon-doc flex-shrink-0"
+                                            id="icon-lesson-{{ $lesson->id }}"></i>
+                                    @endif
+
+                                    <div style="min-width:0; flex:1;">
+                                        <div class="lesson-name-text">
+                                            {{ $moduleIndex + 1 }}.{{ $lessonIndex + 1 }} {{ $lesson->title }}
+                                        </div>
+                                        @if ($durLabel)
+                                            <div class="lesson-dur-text">
+                                                <i class="far fa-clock me-1"></i>{{ $durLabel }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </a>
+
+                                @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                    <div class="action-buttons d-flex me-2">
+                                        <a href="javascript:void(0)" class="btn-action btn-edit edit-lesson-btn"
+                                            data-id="{{ $lesson->id }}" data-title="{{ $lesson->title }}"
+                                            data-content="{{ $lesson->content }}"
+                                            data-video="{{ $lesson->video_url }}" data-module="{{ $module->id }}"
+                                            data-bs-toggle="modal" data-bs-target="#editLessonModal">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ route('lessons.destroy', $lesson->id) }}" method="POST"
+                                            class="d-inline mb-0">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn-action btn-delete border-0 bg-transparent"
+                                                onclick="return confirm('Xóa bài này?')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Bài tập --}}
+                            @foreach ($lesson->assignments as $assignment)
+                                @php
+                                    $submission =
+                                        auth()->user()->role === 'student' && isset($userSubmissions[$assignment->id])
+                                            ? $userSubmissions[$assignment->id]
+                                            : null;
+                                @endphp
+                                <div class="list-group-item border-0 px-0 py-0 assignment-item-wrapper d-flex align-items-center justify-content-between shadow-none bg-light"
+                                    style="min-width:0;">
+                                    <a href="javascript:void(0)"
+                                        class="assignment-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 px-3 ps-5 py-2"
+                                        style="min-width:0;" data-id="{{ $assignment->id }}"
+                                        data-title="{{ $assignment->title }}"
+                                        data-instructions="{{ $assignment->instructions }}"
+                                        data-due="{{ $assignment->due_date ? $assignment->due_date->format('d/m/Y H:i') : '' }}"
+                                        data-raw-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
+                                        data-status="{{ $submission ? 'submitted' : 'pending' }}"
+                                        data-grade="{{ $submission->grade ?? '' }}"
+                                        data-feedback="{{ $submission->feedback ?? '' }}"
+                                        data-sub-id="{{ $submission ? $submission->id : '' }}"
+                                        data-sub-time="{{ $submission ? $submission->submitted_at->format('H:i - d/m/Y') : '' }}"
+                                        data-sub-file="{{ $submission ? asset('storage/' . $submission->file_path) : '' }}">
+                                        <i
+                                            class="{{ $submission ? 'fas fa-check-circle lesson-icon-done' : 'fas fa-file-signature lesson-icon-assign' }} flex-shrink-0"></i>
+                                        <div style="min-width:0;">
+                                            <div class="lesson-name-text fw-medium">{{ $assignment->title }}</div>
+                                        </div>
+                                    </a>
+
+                                    @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                        <div class="action-buttons d-flex me-2 gap-1">
+                                            <a href="javascript:void(0)" class="btn-action btn-edit"
+                                                onclick="openEditAssignmentModal(this)" data-id="{{ $assignment->id }}"
+                                                data-title='@json($assignment->title)'
+                                                data-instructions='@json($assignment->instructions)'
+                                                data-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
+                                                data-lesson="{{ $lesson->id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('assignments.destroy', $assignment->id) }}"
+                                                method="POST" class="d-inline mb-0">
+                                                @csrf @method('DELETE')
+                                                <button type="submit"
+                                                    class="btn-action btn-delete border-0 bg-transparent"
+                                                    onclick="return confirm('Xóa bài tập này?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            <a href="javascript:void(0)"
+                                                class="btn-action text-primary view-submissions-btn border bg-white shadow-sm"
+                                                data-id="{{ $assignment->id }}" data-bs-toggle="modal"
+                                                data-bs-target="#viewSubmissionsModal" title="Chấm điểm">
+                                                <i class="fas fa-users-cog"></i>
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+
+                        @empty
+                            <div class="py-2 px-4 text-muted small fst-italic">Trống</div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    @empty
+        <div class="p-4 text-center text-muted small">Chưa có nội dung.</div>
+    @endforelse
+
+    {{-- Quizzes --}}
+    @if ($course->quizzes->count() > 0)
+        <div class="accordion-item">
+            <div class="module-header-wrapper d-flex align-items-center">
+                <button class="accordion-button collapsed flex-grow-1 shadow-none py-0 bg-transparent"
+                    style="color:#6f42c1;" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#course-quizzes-collapse">
+                    <div class="module-title-block py-3">
+                        <span class="module-title-text" style="color:#6f42c1;">
+                            <i class="fas fa-clipboard-list me-2"></i>Bài kiểm tra
+                        </span>
+                        <span class="module-meta">{{ $course->quizzes->count() }} đề</span>
+                    </div>
+                </button>
+            </div>
+            <div id="course-quizzes-collapse" class="accordion-collapse collapse" data-bs-parent="#courseAccordion">
+                <div class="accordion-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach ($course->quizzes as $quiz)
+                            @php
+                                $attempt =
+                                    auth()->user()->role === 'student' && isset($userQuizAttempts[$quiz->id])
+                                        ? $userQuizAttempts[$quiz->id]
+                                        : null;
+                            @endphp
+                            <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper d-flex align-items-center justify-content-between shadow-none bg-white"
+                                style="min-width:0;">
+                                <a href="javascript:void(0)"
+                                    class="quiz-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 px-3 ps-4 py-2"
+                                    style="min-width:0;" data-id="{{ $quiz->id }}"
+                                    data-title="{{ $quiz->title }}" data-duration="{{ $quiz->time_limit }}"
+                                    data-status="{{ $attempt ? 'completed' : 'pending' }}"
+                                    data-score="{{ $attempt ? $attempt->score : '' }}"
+                                    data-attempt-id="{{ $attempt ? $attempt->id : '' }}">
+                                    <i class="{{ $attempt ? 'fas fa-check-circle lesson-icon-done' : 'fas fa-stopwatch' }} flex-shrink-0"
+                                        style="{{ $attempt ? '' : 'color:#6f42c1;' }}"></i>
+                                    <div style="min-width:0;">
+                                        <div class="lesson-name-text"
+                                            style="{{ $attempt ? 'color:#198754;' : 'color:#6f42c1;' }}">
+                                            {{ $quiz->title }}
+                                        </div>
+                                        <div class="lesson-dur-text"><i
+                                                class="far fa-clock me-1"></i>{{ $quiz->time_limit }} phút</div>
+                                    </div>
+                                </a>
+
+                                @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                    <div class="action-buttons d-flex me-2 gap-1">
+                                        <a href="{{ route('quizzes.submissions', $quiz->id) }}"
+                                            class="btn-action text-white px-2 d-flex align-items-center"
+                                            style="background:#198754;width:auto;text-decoration:none;border-radius:6px;font-size:11px;font-weight:600;gap:3px;">
+                                            <i class="fas fa-chart-bar"></i> Điểm
+                                        </a>
+                                        <a href="{{ route('quizzes.show', $quiz->id) }}"
+                                            class="btn-action text-white" style="background:#6f42c1;">
+                                            <i class="fas fa-list-ul"></i>
+                                        </a>
+                                        <form action="{{ route('quizzes.destroy', $quiz->id) }}" method="POST"
+                                            class="d-inline mb-0">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                class="btn-action btn-delete border-0 bg-transparent"
+                                                onclick="return confirm('Xóa bài kiểm tra này?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
 </div>

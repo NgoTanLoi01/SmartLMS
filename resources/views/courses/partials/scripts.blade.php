@@ -415,17 +415,6 @@
                 document.getElementById('editLessonModule').value = this.getAttribute('data-module');
             });
         });
-        document.querySelectorAll('.edit-lesson-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                document.getElementById('editLessonForm').action =
-                    `/lessons/${this.getAttribute('data-id')}`;
-                document.getElementById('editLessonTitle').value = this.getAttribute('data-title');
-                document.getElementById('editLessonContent').value = this.getAttribute('data-content');
-                document.getElementById('editLessonVideo').value = this.getAttribute('data-video');
-                document.getElementById('editLessonModule').value = this.getAttribute('data-module');
-            });
-        });
 
         document.querySelectorAll('.edit-assignment-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
@@ -526,6 +515,17 @@
                 });
             });
         });
+
+        // ==========================================
+        // 8. SỬA CHƯƠNG
+        // ==========================================
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.edit-module-btn');
+            if (!btn) return;
+
+            e.stopPropagation(); // Không trigger accordion
+            document.getElementById('editModuleForm').action = '/modules/' + btn.dataset.id;
+            document.getElementById('editModuleTitle').value = btn.dataset.title;
+        });
     </script>
 @endpush
-
