@@ -37,7 +37,7 @@
                     class="fs-1 fw-bold {{ $attempt->score >= 5 ? 'text-success' : 'text-danger' }}">{{ $attempt->score }}</span>
                 <span class="fs-5 text-muted fw-bold"> / 10 Điểm</span>
             </div>
-            <p class="text-muted mt-3 mb-0 small fw-bold"><i class="fas fa-clock me-1"></i> Nộp lúc:
+            <p class="text-muted mt-3 mb-0 small fw-bold"><i class="fas fa-clock me-1"></i> Giời gian làm bài:
                 {{ \Carbon\Carbon::parse($attempt->completed_at)->format('H:i - d/m/Y') }}</p>
         </div>
 

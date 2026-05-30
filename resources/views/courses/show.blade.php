@@ -396,7 +396,7 @@
         .accordion-button {
             padding-right: 3rem;
             font-weight: 700;
-            font-size: 13px;
+            font-size: 15px;
         }
 
         .accordion-item {
@@ -874,7 +874,10 @@
             background: #FEF3C7 !important;
             border-left-color: #D97706;
         }
-
+        .lesson-name-text {
+            font-size: 14px;
+            color: #111827;
+        }
         .assignment-item .lesson-name-text {
             color: #92400E;
             font-weight: 600;
