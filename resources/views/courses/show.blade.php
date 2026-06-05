@@ -187,7 +187,7 @@
 
         /* ── MOBILE SIDEBAR OVERLAY + DRAWER ── */
         /* The sidebar col stays in normal flow on desktop.
-                               On mobile we use a separate off-canvas panel + overlay. */
+                                   On mobile we use a separate off-canvas panel + overlay. */
 
         #mobile-sidebar-overlay {
             display: none;
@@ -874,10 +874,12 @@
             background: #FEF3C7 !important;
             border-left-color: #D97706;
         }
+
         .lesson-name-text {
             font-size: 14px;
             color: #111827;
         }
+
         .assignment-item .lesson-name-text {
             color: #92400E;
             font-weight: 600;

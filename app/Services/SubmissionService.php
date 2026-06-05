@@ -21,7 +21,7 @@ class SubmissionService
 
         // Validate file
         $request->validate([
-            'file' => ['required', 'file', 'max:' . $assignment->max_file_size, 'mimes:' . $assignment->allowed_extensions],
+            'file' => ['required', 'file', 'max:' . $assignment->max_file_size, 'mimes:' . ($assignment->allowed_extensions ?? 'pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif,html,htm,zip,rar')],
         ]);
 
         // Kiểm tra bài cũ

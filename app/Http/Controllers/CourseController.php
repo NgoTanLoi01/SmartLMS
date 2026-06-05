@@ -91,7 +91,7 @@ class CourseController extends Controller
             $userQuizAttempts = \App\Models\QuizAttempt::where('user_id', auth()->id())
                 ->whereIn('quiz_id', $course->quizzes->pluck('id'))
                 ->get()
-                ->keyBy('quiz_id'); // Gom nhóm theo ID bài kiểm tra để blade dễ kiểm tra
+                ->keyBy('quiz_id');
         }
 
         return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts'));

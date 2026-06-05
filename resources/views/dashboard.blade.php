@@ -5,8 +5,8 @@
 @push('styles')
     <style>
         /* =========================================
-           CORE VARIABLES & RESET
-        ========================================= */
+                   CORE VARIABLES & RESET
+                ========================================= */
         :root {
             --brand: #3e80f9;
             --brand-dark: #2563eb;
@@ -34,8 +34,8 @@
         }
 
         /* =========================================
-           GREETING BANNER
-        ========================================= */
+                   GREETING BANNER
+                ========================================= */
         .greeting-banner {
             background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 50%, var(--accent) 100%);
             border-radius: var(--radius-lg);
@@ -108,8 +108,8 @@
         }
 
         /* =========================================
-           STAT CARDS
-        ========================================= */
+                   STAT CARDS
+                ========================================= */
         .stat-card {
             background: var(--surface);
             border-radius: var(--radius);
@@ -206,8 +206,8 @@
         }
 
         /* =========================================
-           GENERIC CARD / PANEL
-        ========================================= */
+                   GENERIC CARD / PANEL
+                ========================================= */
         .panel {
             background: var(--surface);
             border-radius: var(--radius);
@@ -241,8 +241,8 @@
         }
 
         /* =========================================
-           TABLE
-        ========================================= */
+                   TABLE
+                ========================================= */
         .tbl {
             width: 100%;
             border-collapse: collapse;
@@ -284,8 +284,8 @@
         }
 
         /* =========================================
-           BADGE
-        ========================================= */
+                   BADGE
+                ========================================= */
         .bdg {
             display: inline-flex;
             align-items: center;
@@ -334,8 +334,8 @@
         }
 
         /* =========================================
-           LIST ITEMS (submission feed)
-        ========================================= */
+                   LIST ITEMS (submission feed)
+                ========================================= */
         .feed-item {
             display: flex;
             justify-content: space-between;
@@ -373,8 +373,8 @@
         }
 
         /* =========================================
-           TODO / DEADLINE LIST
-        ========================================= */
+                   TODO / DEADLINE LIST
+                ========================================= */
         .todo-item {
             display: flex;
             justify-content: space-between;
@@ -428,8 +428,8 @@
         }
 
         /* =========================================
-           SCORE HERO (student avg)
-        ========================================= */
+                   SCORE HERO (student avg)
+                ========================================= */
         .score-hero {
             background: linear-gradient(135deg, #1d4ed8 0%, var(--accent) 100%);
             border-radius: var(--radius);
@@ -467,8 +467,8 @@
         }
 
         /* =========================================
-           BTN
-        ========================================= */
+                   BTN
+                ========================================= */
         .btn-xs {
             display: inline-flex;
             align-items: center;
@@ -516,8 +516,8 @@
         }
 
         /* =========================================
-           EMPTY STATE
-        ========================================= */
+                   EMPTY STATE
+                ========================================= */
         .empty-state {
             text-align: center;
             padding: 3rem 2rem;
@@ -537,15 +537,15 @@
         }
 
         /* =========================================
-           CHART WRAPPER
-        ========================================= */
+                   CHART WRAPPER
+                ========================================= */
         .chart-wrap {
             padding: 1.25rem;
         }
 
         /* =========================================
-           RESPONSIVE
-        ========================================= */
+                   RESPONSIVE
+                ========================================= */
         @media (max-width: 576px) {
             .greeting-banner__content {
                 padding: 1.75rem 1.5rem;
@@ -570,11 +570,10 @@
     <div class="container-fluid py-4">
 
         {{-- ══════════════════════════════════════
-         GREETING BANNER
+     GREETING BANNER
     ══════════════════════════════════════ --}}
         <div class="greeting-banner mb-4">
             <img src="{{ asset('grettings-pattern.png') }}" alt="" class="greeting-banner__pattern">
-
             <div class="row w-100 align-items-center g-0">
                 <div class="col-sm-7">
                     <div class="greeting-banner__content">
@@ -591,10 +590,12 @@
             </div>
         </div>
 
+        @php $role = auth()->user()->role; @endphp
+
         {{-- ══════════════════════════════════════
-         ADMIN VIEW
+     ADMIN VIEW
     ══════════════════════════════════════ --}}
-        @if (auth()->user()->role === 'admin')
+        @if ($role === 'admin')
 
             {{-- Stat row --}}
             <div class="row g-3 mb-4">
@@ -602,7 +603,7 @@
                     <div class="stat-card stat-card--blue">
                         <div class="stat-card__icon"><i class="fas fa-users"></i></div>
                         <div>
-                            <div class="stat-card__label">Tổng học sinh</div>
+                            <div class="stat-card__label">Học sinh</div>
                             <div class="stat-card__value">{{ $data['total_students'] }}</div>
                         </div>
                     </div>
@@ -611,7 +612,7 @@
                     <div class="stat-card stat-card--teal">
                         <div class="stat-card__icon"><i class="fas fa-chalkboard-teacher"></i></div>
                         <div>
-                            <div class="stat-card__label">Tổng giáo viên</div>
+                            <div class="stat-card__label">Giáo viên</div>
                             <div class="stat-card__value">{{ $data['total_teachers'] }}</div>
                         </div>
                     </div>
@@ -621,7 +622,8 @@
                         <div class="stat-card__icon"><i class="fas fa-layer-group"></i></div>
                         <div>
                             <div class="stat-card__label">Khóa / Lớp</div>
-                            <div class="stat-card__value">{{ $data['total_courses'] }}<span
+                            <div class="stat-card__value">
+                                {{ $data['total_courses'] }}<span
                                     style="font-size:1rem;font-weight:600;color:var(--text-muted)">/{{ $data['total_classes'] }}</span>
                             </div>
                         </div>
@@ -629,10 +631,10 @@
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="stat-card stat-card--amber">
-                        <div class="stat-card__icon"><i class="fas fa-globe"></i></div>
+                        <div class="stat-card__icon"><i class="fas fa-hourglass-half"></i></div>
                         <div>
-                            <div class="stat-card__label">Đang online</div>
-                            <div class="stat-card__value">{{ $data['online_users'] }}</div>
+                            <div class="stat-card__label">Bài chờ chấm</div>
+                            <div class="stat-card__value">{{ $data['pending_grades'] ?? 0 }}</div>
                         </div>
                     </div>
                 </div>
@@ -645,7 +647,7 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <i class="fas fa-user-plus" style="color:var(--brand)"></i>
-                                Người dùng đăng ký mới
+                                Người dùng mới
                             </h6>
                         </div>
                         <div class="table-responsive">
@@ -659,14 +661,14 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($data['recent_users'] as $user)
+                                    @forelse ($data['recent_users'] as $user)
+                                        @php $r = $user->role; @endphp
                                         <tr>
                                             <td class="fw-bold">{{ $user->name }}</td>
                                             <td style="color:var(--text-muted)">{{ $user->email }}</td>
                                             <td>
-                                                @php $r = $user->role; @endphp
                                                 <span
-                                                    class="bdg {{ $r == 'teacher' ? 'bdg--info' : ($r == 'admin' ? 'bdg--dark' : 'bdg--primary') }}">
+                                                    class="bdg {{ $r === 'teacher' ? 'bdg--info' : ($r === 'admin' ? 'bdg--dark' : 'bdg--primary') }}">
                                                     {{ strtoupper($r) }}
                                                 </span>
                                             </td>
@@ -674,7 +676,16 @@
                                                 {{ \Carbon\Carbon::parse($user->created_at)->format('d/m/Y') }}
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr>
+                                            <td colspan="4">
+                                                <div class="empty-state">
+                                                    <i class="fas fa-users"></i>
+                                                    <p>Chưa có người dùng mới.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -696,20 +707,17 @@
             </div>
 
             {{-- ══════════════════════════════════════
-         TEACHER VIEW
+     TEACHER VIEW
     ══════════════════════════════════════ --}}
-        @elseif (auth()->user()->role === 'teacher')
+        @elseif ($role === 'teacher')
             {{-- Stat row --}}
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
                     <div class="stat-card stat-card--red stat-card--accent-left">
                         <div class="stat-card__icon"><i class="fas fa-hourglass-half"></i></div>
                         <div>
-                            <div class="stat-card__label">Cần xử lý ngay</div>
-                            <div class="stat-card__value" style="color:var(--danger)">
-                                {{ $data['pending_grades'] }}
-                                <small style="font-size:.9rem;font-weight:600;color:var(--text-muted)">bài chờ chấm</small>
-                            </div>
+                            <div class="stat-card__label">Bài chờ chấm</div>
+                            <div class="stat-card__value" style="color:var(--danger)">{{ $data['pending_grades'] }}</div>
                         </div>
                     </div>
                 </div>
@@ -740,7 +748,7 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <i class="fas fa-inbox" style="color:var(--danger)"></i>
-                                Bài tập vừa nộp — chờ chấm
+                                Bài vừa nộp — chờ chấm
                             </h6>
                         </div>
                         <div style="max-height:340px;overflow-y:auto;">
@@ -748,9 +756,7 @@
                                 <div class="feed-item">
                                     <div>
                                         <div class="feed-item__name">{{ $sub->student_name }}</div>
-                                        <div class="feed-item__meta">
-                                            Bài: <strong>{{ $sub->assignment_title ?? 'N/A' }}</strong>
-                                        </div>
+                                        <div class="feed-item__meta">{{ $sub->assignment_title ?? 'N/A' }}</div>
                                         <div class="mt-1">
                                             <span class="bdg bdg--primary">
                                                 <i class="fas fa-book"></i> {{ $sub->course_title ?? 'N/A' }}
@@ -770,7 +776,7 @@
                             @empty
                                 <div class="empty-state">
                                     <i class="fas fa-check-circle text-success"></i>
-                                    <p>Tuyệt vời! Thầy / Cô đã chấm hết bài tập.</p>
+                                    <p>Tuyệt vời! Thầy / Cô đã chấm hết bài.</p>
                                 </div>
                             @endforelse
                         </div>
@@ -798,7 +804,7 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <i class="fas fa-calendar-alt" style="color:var(--brand)"></i>
-                                Lịch dạy trong tuần
+                                Lịch dạy tuần này
                             </h6>
                             <span class="bdg bdg--primary">Tuần này</span>
                         </div>
@@ -806,9 +812,9 @@
                             <table class="tbl">
                                 <thead>
                                     <tr>
-                                        <th>Ngày / Thứ</th>
+                                        <th>Ngày</th>
                                         <th>Giờ dạy</th>
-                                        <th>Môn học / Lớp</th>
+                                        <th>Môn / Lớp</th>
                                         <th>Phòng</th>
                                     </tr>
                                 </thead>
@@ -842,7 +848,7 @@
                                                 @if ($today)
                                                     <span class="bdg bdg--success mb-1">Hôm nay</span><br>
                                                 @elseif ($past)
-                                                    <span class="bdg bdg--muted mb-1">Đã học</span><br>
+                                                    <span class="bdg bdg--muted mb-1">Đã dạy</span><br>
                                                 @endif
                                                 <span class="bdg bdg--muted">{{ $slot->room ?? 'Online' }}</span>
                                             </td>
@@ -852,7 +858,7 @@
                                             <td colspan="4">
                                                 <div class="empty-state">
                                                     <i class="fas fa-calendar-times"></i>
-                                                    <p><strong>Chưa có lịch học</strong><br>Lịch giảng dạy sẽ hiển thị tại
+                                                    <p><strong>Chưa có lịch dạy</strong><br>Lịch giảng dạy sẽ hiển thị tại
                                                         đây.</p>
                                                 </div>
                                             </td>
@@ -866,7 +872,7 @@
             </div>
 
             {{-- ══════════════════════════════════════
-         STUDENT VIEW
+     STUDENT VIEW
     ══════════════════════════════════════ --}}
         @else
             {{-- Score hero + Deadline list --}}
@@ -883,56 +889,56 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <i class="fas fa-clock" style="color:var(--warning)"></i>
-                                Việc cần làm — Deadline & Bài kiểm tra
+                                Deadline & Bài kiểm tra
                             </h6>
                         </div>
                         <div style="max-height:300px;overflow-y:auto">
+                            @php
+                                $deadlines = $data['upcoming_deadlines'] ?? [];
+                                $quizzes = $data['pending_quizzes'] ?? [];
+                            @endphp
 
-                            @if (isset($data['upcoming_deadlines']))
-                                @foreach ($data['upcoming_deadlines'] as $dl)
-                                    <div class="todo-item">
-                                        <div>
-                                            <span class="bdg bdg--warning mb-1">Bài tập</span>
-                                            <div class="todo-item__label">{{ $dl->title }}</div>
-                                            <div class="todo-item__sub">
-                                                <i class="fas fa-book me-1"></i>{{ $dl->course_title ?? 'N/A' }}
-                                            </div>
-                                        </div>
-                                        <div style="text-align:right;flex-shrink:0">
-                                            <div class="todo-item__deadline">
-                                                <i class="fas fa-hourglass-half me-1"></i>
-                                                {{ \Carbon\Carbon::parse($dl->due_date)->format('H:i - d/m/Y') }}
-                                            </div>
-                                            <a href="{{ route('courses.show', $dl->course_id ?? 0) }}"
-                                                class="btn-xs btn-xs--warning">Nộp bài</a>
+                            @foreach ($deadlines as $dl)
+                                <div class="todo-item">
+                                    <div>
+                                        <span class="bdg bdg--warning mb-1">Bài tập</span>
+                                        <div class="todo-item__label">{{ $dl->title }}</div>
+                                        <div class="todo-item__sub">
+                                            <i class="fas fa-book me-1"></i>{{ $dl->course_title ?? 'N/A' }}
                                         </div>
                                     </div>
-                                @endforeach
-                            @endif
-
-                            @if (isset($data['pending_quizzes']))
-                                @foreach ($data['pending_quizzes'] as $quiz)
-                                    <div class="todo-item todo-item--quiz">
-                                        <div>
-                                            <span class="bdg bdg--primary mb-1">Kiểm tra</span>
-                                            <div class="todo-item__label" style="color:var(--brand)">{{ $quiz->title }}
-                                            </div>
-                                            <div class="todo-item__sub">
-                                                <i class="fas fa-book me-1"></i>{{ $quiz->course_title ?? 'N/A' }}
-                                            </div>
+                                    <div style="text-align:right;flex-shrink:0">
+                                        <div class="todo-item__deadline">
+                                            <i class="fas fa-hourglass-half me-1"></i>
+                                            {{ \Carbon\Carbon::parse($dl->due_date)->format('H:i - d/m/Y') }}
                                         </div>
-                                        <div style="text-align:right;flex-shrink:0">
-                                            <div class="todo-item__time-limit">
-                                                <i class="fas fa-stopwatch me-1"></i>{{ $quiz->time_limit }} phút
-                                            </div>
-                                            <a href="{{ route('courses.show', $quiz->course_id ?? 0) }}"
-                                                class="btn-xs btn-xs--primary">Làm ngay</a>
+                                        <a href="{{ route('courses.show', $dl->course_id ?? 0) }}"
+                                            class="btn-xs btn-xs--warning">Nộp bài</a>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            @foreach ($quizzes as $quiz)
+                                <div class="todo-item todo-item--quiz">
+                                    <div>
+                                        <span class="bdg bdg--primary mb-1">Kiểm tra</span>
+                                        <div class="todo-item__label" style="color:var(--brand)">{{ $quiz->title }}
+                                        </div>
+                                        <div class="todo-item__sub">
+                                            <i class="fas fa-book me-1"></i>{{ $quiz->course_title ?? 'N/A' }}
                                         </div>
                                     </div>
-                                @endforeach
-                            @endif
+                                    <div style="text-align:right;flex-shrink:0">
+                                        <div class="todo-item__time-limit">
+                                            <i class="fas fa-stopwatch me-1"></i>{{ $quiz->time_limit }} phút
+                                        </div>
+                                        <a href="{{ route('courses.show', $quiz->course_id ?? 0) }}"
+                                            class="btn-xs btn-xs--primary">Làm ngay</a>
+                                    </div>
+                                </div>
+                            @endforeach
 
-                            @if (empty($data['upcoming_deadlines']) && empty($data['pending_quizzes']))
+                            @if (empty($deadlines) && empty($quizzes))
                                 <div class="empty-state">
                                     <i class="fas fa-glass-cheers" style="color:var(--success)"></i>
                                     <p>Tuyệt vời! Bạn đã hoàn thành hết các nhiệm vụ.</p>
@@ -950,7 +956,7 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <i class="fas fa-calendar-check" style="color:var(--success)"></i>
-                                Lịch học trong tuần
+                                Lịch học tuần này
                             </h6>
                             <span class="bdg bdg--success">Tuần này</span>
                         </div>
@@ -958,9 +964,9 @@
                             <table class="tbl">
                                 <thead>
                                     <tr>
-                                        <th>Ngày / Thứ</th>
+                                        <th>Ngày</th>
                                         <th>Giờ học</th>
-                                        <th>Môn học / Lớp</th>
+                                        <th>Môn / Lớp</th>
                                         <th>Phòng</th>
                                     </tr>
                                 </thead>
@@ -1024,11 +1030,11 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <i class="fas fa-chart-bar" style="color:var(--accent)"></i>
-                                Phổ điểm các bài kiểm tra gần đây
+                                Điểm các bài kiểm tra gần đây
                             </h6>
                         </div>
                         <div class="chart-wrap">
-                            @if (count($data['chart_quiz_data']) > 0)
+                            @if (!empty($data['chart_quiz_data']))
                                 <div id="studentChart"></div>
                             @else
                                 <div class="empty-state">
@@ -1040,10 +1046,10 @@
                     </div>
                 </div>
             </div>
+
         @endif
 
     </div>{{-- /container-fluid --}}
-
     @push('scripts')
         <script>
             document.addEventListener("DOMContentLoaded", function() {
