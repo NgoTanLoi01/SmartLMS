@@ -35,6 +35,20 @@
             opacity: 1;
         }
 
+        .student-stat-card {
+            min-height: 100%;
+        }
+
+        .student-alert-list {
+            max-width: 280px;
+        }
+
+        .student-filter-form .form-control,
+        .student-filter-form .form-select,
+        .student-filter-form .btn {
+            min-height: 38px;
+        }
+
         @media (hover: none), (max-width: 767.98px) {
             .action-btn {
                 opacity: 1;
@@ -55,8 +69,22 @@
                 width: 100% !important;
             }
 
+            .student-filter-form .btn,
+            .student-filter-form .form-control,
+            .student-filter-form .form-select {
+                width: 100%;
+            }
+
+            .student-stat-card {
+                min-height: auto;
+            }
+
+            .student-alert-list {
+                max-width: none;
+            }
+
             .table-custom {
-                min-width: 720px;
+                min-width: 960px;
             }
 
             .modal-footer {
@@ -130,15 +158,86 @@
             @endif
         </div>
 
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="student-stat-card bg-white border rounded-3 p-3 shadow-sm">
+                    <div class="text-muted small mb-1">Học sinh trong lớp</div>
+                    <div class="h4 fw-bold mb-0">{{ $classStats['total'] ?? $classroom->students->count() }}</div>
+                    <div class="text-muted small mt-1">Đang hiển thị: {{ $classStats['shown'] ?? $classroom->students->count() }}</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="student-stat-card bg-white border rounded-3 p-3 shadow-sm">
+                    <div class="text-muted small mb-1">Cần theo dõi</div>
+                    <div class="h4 fw-bold text-danger mb-0">{{ $classStats['needs_attention'] ?? 0 }}</div>
+                    <div class="text-muted small mt-1">Có cảnh báo học tập hoặc điểm danh</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="student-stat-card bg-white border rounded-3 p-3 shadow-sm">
+                    <div class="text-muted small mb-1">Chưa nộp bài</div>
+                    <div class="h4 fw-bold text-warning mb-0">{{ $classStats['missing_assignments'] ?? 0 }}</div>
+                    <div class="text-muted small mt-1">Học sinh còn thiếu bài tập</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="student-stat-card bg-white border rounded-3 p-3 shadow-sm">
+                    <div class="text-muted small mb-1">Có lượt vắng</div>
+                    <div class="h4 fw-bold text-primary mb-0">{{ $classStats['absent'] ?? 0 }}</div>
+                    <div class="text-muted small mt-1">Tính từ dữ liệu điểm danh</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Danh sách học sinh -->
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h6 class="mb-0 fw-bold"><i class="fas fa-list-ul me-2 text-primary"></i>Danh sách học viên</h6>
-                <div class="student-list-search input-group input-group-sm w-auto">
-                    <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" class="form-control bg-light border-0 shadow-none"
-                        placeholder="Tìm kiếm học sinh...">
+            <div class="card-header bg-white py-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-list-ul me-2 text-primary"></i>Danh sách học viên</h6>
+                    <span class="badge bg-light text-dark border">{{ ($studentSummaries ?? collect())->count() }} kết quả</span>
                 </div>
+                <form action="{{ route('classes.students.index', $classroom->id) }}" method="GET"
+                    class="student-filter-form row g-2 align-items-end">
+                    <div class="col-12 col-md-4 col-xl-5">
+                        <label class="form-label small text-muted mb-1">Tìm kiếm</label>
+                        <div class="student-list-search input-group input-group-sm">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control bg-light border-0 shadow-none"
+                                placeholder="Tên hoặc email học sinh" value="{{ $filters['search'] ?? '' }}">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-3 col-xl-3">
+                        <label class="form-label small text-muted mb-1">Khóa học</label>
+                        <select name="course_id" class="form-select form-select-sm bg-light border-0 shadow-none">
+                            <option value="">Tất cả khóa học</option>
+                            @foreach (($availableCourses ?? collect()) as $course)
+                                <option value="{{ $course->id }}" @selected(($filters['course_id'] ?? '') == $course->id)>
+                                    {{ $course->title }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3 col-xl-3">
+                        <label class="form-label small text-muted mb-1">Trạng thái</label>
+                        <select name="status" class="form-select form-select-sm bg-light border-0 shadow-none">
+                            <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>Tất cả</option>
+                            <option value="needs_attention" @selected(($filters['status'] ?? '') === 'needs_attention')>Cần theo dõi</option>
+                            <option value="missing_assignments" @selected(($filters['status'] ?? '') === 'missing_assignments')>Chưa nộp bài</option>
+                            <option value="low_score" @selected(($filters['status'] ?? '') === 'low_score')>Điểm quiz thấp</option>
+                            <option value="absent" @selected(($filters['status'] ?? '') === 'absent')>Có lượt vắng</option>
+                            <option value="no_activity" @selected(($filters['status'] ?? '') === 'no_activity')>Chưa có hoạt động</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2 col-xl-1 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm fw-bold flex-fill">
+                            <i class="fas fa-filter me-1"></i>Lọc
+                        </button>
+                        <a href="{{ route('classes.students.index', $classroom->id) }}"
+                            class="btn btn-light btn-sm border flex-fill" title="Xóa lọc">
+                            <i class="fas fa-rotate-left"></i>
+                        </a>
+                    </div>
+                </form>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -146,13 +245,19 @@
                         <thead class="bg-light text-muted small text-uppercase">
                             <tr>
                                 <th class="px-4 py-3 border-0">Học sinh</th>
-                                <th class="px-4 py-3 border-0">Email</th>
-                                <th class="px-4 py-3 border-0">Ngày tham gia</th>
+                                <th class="px-4 py-3 border-0">Tình trạng</th>
+                                <th class="px-4 py-3 border-0">Bài tập</th>
+                                <th class="px-4 py-3 border-0">Quiz</th>
+                                <th class="px-4 py-3 border-0">Điểm danh</th>
+                                <th class="px-4 py-3 border-0">Hoạt động gần nhất</th>
                                 <th class="px-4 py-3 border-0 text-end">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($classroom->students as $student)
+                            @forelse($studentSummaries ?? collect() as $summary)
+                                @php
+                                    $student = $summary['student'];
+                                @endphp
                                 <tr>
                                     <td class="px-4 py-3">
                                         <div class="d-flex align-items-center">
@@ -162,14 +267,48 @@
                                             <div>
                                                 <div class="fw-bold text-dark">{{ $student->name }}</div>
                                                 <div class="text-muted small">ID: #{{ $student->id }}</div>
+                                                <div class="text-muted small">{{ $student->email }}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-muted">{{ $student->email }}</td>
+                                    <td class="px-4 py-3">
+                                        @if ($summary['needs_attention'])
+                                            <span class="badge bg-danger">Cần theo dõi</span>
+                                        @else
+                                            <span class="badge bg-success">Ổn định</span>
+                                        @endif
+                                        <div class="student-alert-list mt-2">
+                                            @forelse($summary['alerts'] as $alert)
+                                                <div class="small text-{{ $alert['level'] }} mb-1">
+                                                    <i class="fas fa-circle-exclamation me-1"></i>{{ $alert['text'] }}
+                                                </div>
+                                            @empty
+                                                <div class="small text-muted">Chưa có cảnh báo</div>
+                                            @endforelse
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 small">
+                                        <div class="fw-bold">{{ $summary['assignment_submitted_count'] }}/{{ $summary['assignment_total'] }} đã nộp</div>
+                                        <div class="text-muted">{{ $summary['assignment_missing_count'] }} thiếu, {{ $summary['assignment_overdue_missing_count'] }} quá hạn</div>
+                                        <div class="text-muted">TB: {{ $summary['assignment_average'] ?? 'N/A' }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 small">
+                                        <div class="fw-bold">{{ $summary['quiz_attempted_count'] }}/{{ $summary['quiz_total'] }} đã làm</div>
+                                        <div class="text-muted">TB: {{ $summary['quiz_average'] ?? 'N/A' }}</div>
+                                        <div class="text-muted">{{ $summary['quiz_pending_count'] }} chưa làm</div>
+                                    </td>
+                                    <td class="px-4 py-3 small">
+                                        <div class="fw-bold">{{ $summary['absence_count'] }} lượt vắng</div>
+                                        <div class="text-muted">{{ $summary['note_count'] }} ghi chú</div>
+                                    </td>
                                     <td class="px-4 py-3 text-muted small">
-                                        {{ $student->pivot->created_at ? $student->pivot->created_at->format('d/m/Y H:i') : 'N/A' }}
+                                        {{ $summary['last_activity_at'] ? $summary['last_activity_at']->format('d/m/Y H:i') : 'Chưa có' }}
                                     </td>
                                     <td class="px-4 py-3 text-end">
+                                        <a href="{{ route('classes.students.show', ['classId' => $classroom->id, 'studentId' => $student->id]) }}"
+                                            class="btn btn-link text-primary p-0 action-btn text-decoration-none shadow-none me-3">
+                                            <i class="fas fa-chart-line"></i> Hồ sơ
+                                        </a>
                                         @if (auth()->user()->role === 'admin' || auth()->id() === $classroom->teacher_id)
                                             <form
                                                 action="{{ route('classes.students.destroy', ['classId' => $classroom->id, 'studentId' => $student->id]) }}"
@@ -187,11 +326,11 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center py-5">
+                                    <td colspan="7" class="text-center py-5">
                                         <div class="opacity-50">
                                             <i class="fas fa-user-graduate fa-3x mb-3 text-muted"></i>
-                                            <h6 class="text-muted fw-bold">Lớp học chưa có học sinh</h6>
-                                            <p class="text-muted small mb-0">Hãy thêm học sinh mới để bắt đầu khóa học.</p>
+                                            <h6 class="text-muted fw-bold">Không tìm thấy học sinh phù hợp</h6>
+                                            <p class="text-muted small mb-0">Hãy đổi bộ lọc hoặc thêm học sinh mới để bắt đầu khóa học.</p>
                                         </div>
                                     </td>
                                 </tr>

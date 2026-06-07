@@ -2,13 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\StudentImport;
+use App\Models\AssignmentSubmission;
+use App\Models\Assignments;
+use App\Models\AttendanceColumn;
+use App\Models\AttendanceData;
 use App\Models\User;
 use App\Models\Classroom;
 use App\Models\Course;
+use App\Models\Lesson;
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\StudentImport;
 
 class ClassManagementController extends Controller
 {
@@ -40,9 +49,75 @@ class ClassManagementController extends Controller
 
     public function getStudentsByClass($classId)
     {
-        $classroom = Classroom::with('students')->findOrFail($classId);
+        $classroom = Classroom::with(['students', 'teacher', 'courses'])->findOrFail($classId);
+        $this->authorizeClassroomAccess($classroom);
 
-        return view('classes.students', compact('classroom'));
+        $filters = [
+            'search' => trim(request('search', '')),
+            'course_id' => request('course_id'),
+            'status' => request('status', 'all'),
+        ];
+
+        $availableCourses = $classroom->courses;
+        $selectedCourseIds = $filters['course_id']
+            ? [(int) $filters['course_id']]
+            : $availableCourses->pluck('id')->all();
+
+        $students = $classroom->students;
+
+        if ($filters['search'] !== '') {
+            $keyword = mb_strtolower($filters['search']);
+            $students = $students->filter(function ($student) use ($keyword) {
+                return str_contains(mb_strtolower($student->name), $keyword)
+                    || str_contains(mb_strtolower($student->email), $keyword);
+            });
+        }
+
+        $allStudentSummaries = $students
+            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $selectedCourseIds))
+            ->values();
+
+        $studentSummaries = $allStudentSummaries;
+        if ($filters['status'] !== 'all') {
+            $studentSummaries = $studentSummaries
+                ->filter(fn ($summary) => $this->matchesStudentStatus($summary, $filters['status']))
+                ->values();
+        }
+
+        $classStats = [
+            'total' => $classroom->students->count(),
+            'shown' => $studentSummaries->count(),
+            'needs_attention' => $allStudentSummaries->where('needs_attention', true)->count(),
+            'missing_assignments' => $allStudentSummaries->filter(fn ($summary) => $summary['assignment_missing_count'] > 0)->count(),
+            'low_score' => $allStudentSummaries->filter(fn ($summary) => $summary['quiz_average'] !== null && $summary['quiz_average'] < 5)->count(),
+            'absent' => $allStudentSummaries->filter(fn ($summary) => $summary['absence_count'] > 0)->count(),
+        ];
+
+        return view('classes.students', compact('classroom', 'availableCourses', 'studentSummaries', 'classStats', 'filters'));
+    }
+
+    public function showStudent($classId, $studentId)
+    {
+        $classroom = Classroom::with(['students', 'teacher', 'courses'])->findOrFail($classId);
+        $this->authorizeClassroomAccess($classroom);
+
+        $student = $classroom->students()
+            ->where('users.id', $studentId)
+            ->where('role', 'student')
+            ->firstOrFail();
+
+        $availableCourses = $classroom->courses;
+        $selectedCourseIds = request('course_id')
+            ? [(int) request('course_id')]
+            : $availableCourses->pluck('id')->all();
+
+        $filters = [
+            'course_id' => request('course_id'),
+        ];
+
+        $studentProfile = $this->buildStudentSnapshot($classroom, $student, $selectedCourseIds);
+
+        return view('classes.student-profile', compact('classroom', 'student', 'availableCourses', 'studentProfile', 'filters'));
     }
 
     public function index()
@@ -186,5 +261,196 @@ class ClassManagementController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
         }
+    }
+
+    private function authorizeClassroomAccess(Classroom $classroom): void
+    {
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $classroom->teacher_id) {
+            abort(403, 'Bạn không có quyền xem lớp này.');
+        }
+    }
+
+    private function matchesStudentStatus(array $summary, string $status): bool
+    {
+        return match ($status) {
+            'needs_attention' => $summary['needs_attention'],
+            'missing_assignments' => $summary['assignment_missing_count'] > 0,
+            'low_score' => $summary['quiz_average'] !== null && $summary['quiz_average'] < 5,
+            'absent' => $summary['absence_count'] > 0,
+            'no_activity' => $summary['last_activity_at'] === null,
+            default => true,
+        };
+    }
+
+    private function buildStudentSnapshot(Classroom $classroom, User $student, array $courseIds): array
+    {
+        $courses = Course::whereIn('id', $courseIds)->get()->keyBy('id');
+
+        $assignments = Assignments::whereIn('course_id', $courseIds)
+            ->orderByRaw('due_date IS NULL')
+            ->orderBy('due_date')
+            ->get();
+        $assignmentIds = $assignments->pluck('id');
+        $submissions = AssignmentSubmission::where('user_id', $student->id)
+            ->whereIn('assignment_id', $assignmentIds)
+            ->get()
+            ->keyBy('assignment_id');
+
+        $submittedCount = $submissions->count();
+        $missingCount = max($assignments->count() - $submittedCount, 0);
+        $overdueMissingCount = $assignments->filter(function ($assignment) use ($submissions) {
+            return $assignment->due_date
+                && Carbon::parse($assignment->due_date)->isPast()
+                && !$submissions->has($assignment->id);
+        })->count();
+        $assignmentAverage = $submissions->pluck('grade')->filter(fn ($grade) => $grade !== null)->avg();
+
+        $assignmentDetails = $assignments->map(function ($assignment) use ($submissions, $courses) {
+            $submission = $submissions->get($assignment->id);
+
+            return [
+                'id' => $assignment->id,
+                'title' => $assignment->title,
+                'course_title' => $courses->get($assignment->course_id)?->title ?? 'Chưa rõ khóa học',
+                'due_date' => $assignment->due_date,
+                'is_overdue' => $assignment->due_date && Carbon::parse($assignment->due_date)->isPast() && !$submission,
+                'submitted_at' => $submission?->submitted_at,
+                'grade' => $submission?->grade,
+                'feedback' => $submission?->feedback,
+                'status' => $submission ? 'submitted' : 'missing',
+            ];
+        })->values();
+
+        $quizzes = Quiz::whereIn('course_id', $courseIds)->get();
+        $quizIds = $quizzes->pluck('id');
+        $attempts = QuizAttempt::where('user_id', $student->id)
+            ->whereIn('quiz_id', $quizIds)
+            ->orderByDesc('completed_at')
+            ->get()
+            ->groupBy('quiz_id');
+        $latestAttempts = $attempts->map(fn ($quizAttempts) => $quizAttempts->first());
+        $quizAverage = $latestAttempts->pluck('score')->filter(fn ($score) => $score !== null)->avg();
+
+        $quizDetails = $quizzes->map(function ($quiz) use ($latestAttempts, $courses) {
+            $attempt = $latestAttempts->get($quiz->id);
+
+            return [
+                'id' => $quiz->id,
+                'title' => $quiz->title,
+                'course_title' => $courses->get($quiz->course_id)?->title ?? 'Chưa rõ khóa học',
+                'score' => $attempt?->score,
+                'completed_at' => $attempt?->completed_at,
+                'status' => $attempt ? 'attempted' : 'pending',
+            ];
+        })->values();
+
+        $lessonIds = Lesson::query()
+            ->join('modules', 'lessons.module_id', '=', 'modules.id')
+            ->whereIn('modules.course_id', $courseIds)
+            ->pluck('lessons.id');
+        $completedLessons = DB::table('lesson_user')
+            ->where('user_id', $student->id)
+            ->whereIn('lesson_id', $lessonIds)
+            ->get();
+        $lessonTotal = $lessonIds->count();
+        $lessonCompleted = $completedLessons->count();
+        $lessonProgress = $lessonTotal > 0 ? round(($lessonCompleted / $lessonTotal) * 100) : 0;
+
+        $attendanceColumns = AttendanceColumn::whereIn('course_id', $courseIds)->get()->keyBy('id');
+        $attendanceData = AttendanceData::where('user_id', $student->id)
+            ->whereIn('attendance_column_id', $attendanceColumns->keys())
+            ->get();
+        $absenceCount = $attendanceData
+            ->filter(function ($entry) use ($attendanceColumns) {
+                $column = $attendanceColumns->get($entry->attendance_column_id);
+                return $column?->type === 'attendance' && $this->isAbsentValue($entry->value);
+            })
+            ->count();
+        $notes = $attendanceData
+            ->filter(function ($entry) use ($attendanceColumns) {
+                $column = $attendanceColumns->get($entry->attendance_column_id);
+                return $column?->type === 'note' && filled($entry->value);
+            })
+            ->map(function ($entry) use ($attendanceColumns, $courses) {
+                $column = $attendanceColumns->get($entry->attendance_column_id);
+
+                return [
+                    'title' => $column?->name ?? 'Ghi chú',
+                    'course_title' => $courses->get($column?->course_id)?->title ?? 'Chưa rõ khóa học',
+                    'value' => $entry->value,
+                    'updated_at' => $entry->updated_at,
+                ];
+            })
+            ->values();
+
+        $lastSubmissionAt = $submissions->pluck('submitted_at')->filter()->max();
+        $lastQuizAt = $latestAttempts->pluck('completed_at')->filter()->max();
+        $lastLessonAt = $completedLessons->pluck('completed_at')->filter()->max();
+        $lastActivityAt = collect([$lastSubmissionAt, $lastQuizAt, $lastLessonAt])
+            ->filter()
+            ->map(fn ($date) => Carbon::parse($date))
+            ->sortByDesc(fn ($date) => $date->timestamp)
+            ->first();
+
+        $alerts = [];
+        if ($overdueMissingCount > 0) {
+            $alerts[] = ['level' => 'danger', 'text' => "Có {$overdueMissingCount} bài quá hạn chưa nộp"];
+        } elseif ($missingCount > 0) {
+            $alerts[] = ['level' => 'warning', 'text' => "Còn {$missingCount} bài chưa nộp"];
+        }
+
+        if ($quizAverage !== null && $quizAverage < 5) {
+            $alerts[] = ['level' => 'danger', 'text' => 'Điểm quiz trung bình dưới 5'];
+        }
+
+        if ($absenceCount >= 2) {
+            $alerts[] = ['level' => 'warning', 'text' => "Có {$absenceCount} lượt vắng/nghỉ"];
+        }
+
+        if (!$lastActivityAt && ($assignments->count() > 0 || $quizzes->count() > 0 || $lessonTotal > 0)) {
+            $alerts[] = ['level' => 'secondary', 'text' => 'Chưa có hoạt động học tập'];
+        }
+
+        return [
+            'student' => $student,
+            'courses' => $courses->values(),
+            'course_count' => $courses->count(),
+            'assignment_total' => $assignments->count(),
+            'assignment_submitted_count' => $submittedCount,
+            'assignment_missing_count' => $missingCount,
+            'assignment_overdue_missing_count' => $overdueMissingCount,
+            'assignment_average' => $assignmentAverage !== null ? round($assignmentAverage, 1) : null,
+            'assignment_details' => $assignmentDetails,
+            'quiz_total' => $quizzes->count(),
+            'quiz_attempted_count' => $latestAttempts->count(),
+            'quiz_pending_count' => max($quizzes->count() - $latestAttempts->count(), 0),
+            'quiz_average' => $quizAverage !== null ? round($quizAverage, 1) : null,
+            'quiz_details' => $quizDetails,
+            'lesson_total' => $lessonTotal,
+            'lesson_completed' => $lessonCompleted,
+            'lesson_progress' => $lessonProgress,
+            'absence_count' => $absenceCount,
+            'note_count' => $notes->count(),
+            'notes' => $notes,
+            'last_activity_at' => $lastActivityAt,
+            'alerts' => $alerts,
+            'needs_attention' => collect($alerts)->whereIn('level', ['danger', 'warning'])->isNotEmpty(),
+        ];
+    }
+
+    private function isAbsentValue($value): bool
+    {
+        if (!filled($value)) {
+            return false;
+        }
+
+        $normalized = mb_strtolower(trim((string) $value));
+
+        return in_array($normalized, ['0', 'no', 'false', 'abs', 'absent', 'v', 'vang', 'vắng', 'nghi', 'nghỉ'], true)
+            || str_contains($normalized, 'vắng')
+            || str_contains($normalized, 'vang')
+            || str_contains($normalized, 'nghỉ')
+            || str_contains($normalized, 'nghi')
+            || str_contains($normalized, 'absent');
     }
 }

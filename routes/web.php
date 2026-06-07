@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Quản lý Học sinh trong Lớp học
     Route::get('/classes/{classId}/students', [ClassManagementController::class, 'getStudentsByClass'])->name('classes.students.index');
+    Route::get('/classes/{classId}/students/{studentId}', [ClassManagementController::class, 'showStudent'])->name('classes.students.show');
     Route::post('/classes/{classId}/students', [ClassManagementController::class, 'storeStudent'])->name('classes.students.store');
     Route::delete('/classes/{classId}/students/{studentId}', [ClassManagementController::class, 'removeStudent'])->name('classes.students.destroy');
     Route::post('/classes/{classId}/students/import', [ClassManagementController::class, 'importStudents'])->name('classes.students.import');
