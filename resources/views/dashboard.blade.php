@@ -563,11 +563,91 @@
                 font-size: 1.55rem;
             }
         }
+
+        @media (max-width: 767.98px) {
+            .dashboard-wrap {
+                padding-top: 0.75rem !important;
+                padding-bottom: 1.25rem !important;
+            }
+
+            .greeting-banner {
+                min-height: 150px;
+                border-radius: var(--radius);
+                margin-bottom: 1rem !important;
+            }
+
+            .greeting-banner__content {
+                padding: 1.25rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+                gap: 0.85rem;
+            }
+
+            .stat-card__icon {
+                width: 44px;
+                height: 44px;
+                font-size: 1.1rem;
+            }
+
+            .panel__header {
+                align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.85rem 1rem;
+            }
+
+            .tbl {
+                min-width: 640px;
+            }
+
+            .tbl thead th,
+            .tbl tbody td {
+                padding: 0.7rem 1rem;
+            }
+
+            .chart-wrap {
+                overflow-x: auto;
+                padding: 1rem;
+            }
+
+            .chart-wrap>div {
+                max-width: 100%;
+            }
+
+            .feed-item,
+            .todo-item {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 0.75rem;
+                padding: 0.9rem 1rem;
+            }
+
+            .feed-item>div:last-child,
+            .todo-item>div:last-child {
+                text-align: left !important;
+            }
+
+            .btn-xs {
+                justify-content: center;
+                width: 100%;
+                white-space: normal;
+            }
+
+            .score-hero {
+                padding: 1.5rem;
+            }
+
+            .score-hero__value {
+                font-size: 4rem;
+            }
+        }
     </style>
 @endpush
 
 @section('content')
-    <div class="container-fluid py-4">
+    <div class="dashboard-wrap container-fluid py-4">
 
         {{-- ══════════════════════════════════════
      GREETING BANNER
@@ -599,7 +679,7 @@
 
             {{-- Stat row --}}
             <div class="row g-3 mb-4">
-                <div class="col-6 col-md-3">
+                <div class="col-12 col-md-3">
                     <div class="stat-card stat-card--blue">
                         <div class="stat-card__icon"><i class="fas fa-users"></i></div>
                         <div>
@@ -608,7 +688,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-12 col-md-3">
                     <div class="stat-card stat-card--teal">
                         <div class="stat-card__icon"><i class="fas fa-chalkboard-teacher"></i></div>
                         <div>
@@ -617,7 +697,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-12 col-md-3">
                     <div class="stat-card stat-card--green">
                         <div class="stat-card__icon"><i class="fas fa-layer-group"></i></div>
                         <div>
@@ -629,7 +709,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-12 col-md-3">
                     <div class="stat-card stat-card--amber">
                         <div class="stat-card__icon"><i class="fas fa-hourglass-half"></i></div>
                         <div>

@@ -51,18 +51,42 @@
     .selected-square {
         box-shadow: inset 0 0 3px 3px rgba(255, 193, 7, 0.9);
     }
+
+    #myBoard {
+        width: min(100%, 550px);
+        max-width: 550px;
+        aspect-ratio: 1 / 1;
+    }
+
+    @media (max-width: 767.98px) {
+        .chess-room-header {
+            align-items: stretch !important;
+            flex-direction: column;
+            gap: 0.75rem;
+            text-align: center;
+        }
+
+        .chess-room-header #status-badge {
+            align-self: center;
+            white-space: normal;
+        }
+
+        #myBoard {
+            width: min(100%, calc(100vw - 56px));
+        }
+    }
 </style>
 @section('content')
     <div class="container py-4">
         <div class="row">
             <div class="col-lg-8 mb-4">
                 <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="chess-room-header d-flex justify-content-between align-items-center mb-4">
                         <h4 class="fw-bold mb-0 text-primary">Phòng: {{ $roomId }}</h4>
                         <div id="status-badge" class="badge bg-secondary rounded-pill px-3 py-2">Đang đợi đối thủ...</div>
                     </div>
 
-                    <div id="myBoard" class="mx-auto" style="width: 100%; max-width: 550px; min-height: 400px;"></div>
+                    <div id="myBoard" class="mx-auto"></div>
 
                     <div class="mt-4">
 
@@ -499,6 +523,12 @@
                 setTimeout(() => {
                     board.resize();
                 }, 500);
+
+                let resizeTimer;
+                window.addEventListener('resize', function() {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(() => board.resize(), 120);
+                });
             }
 
             // =========================

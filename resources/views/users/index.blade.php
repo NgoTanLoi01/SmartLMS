@@ -73,6 +73,46 @@
             width: auto;
             padding: 0 15px;
         }
+
+        @media (max-width: 767.98px) {
+            .user-toolbar-actions {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .user-toolbar-actions form,
+            .user-toolbar-actions button {
+                width: 100%;
+            }
+
+            .user-toolbar-actions input[name="search"] {
+                width: 100% !important;
+                min-width: 0;
+            }
+
+            .table-custom {
+                min-width: 760px;
+            }
+
+            .user-row td:last-child {
+                white-space: nowrap;
+            }
+
+            .pagination-wrapper {
+                overflow-x: auto;
+                justify-content: flex-start;
+                padding-bottom: 0.25rem;
+            }
+
+            .modal-footer {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .modal-footer .btn {
+                width: 100%;
+            }
+        }
     </style>
 
     <div class="container-fluid py-4">
@@ -82,7 +122,7 @@
                 <p class="text-muted mb-0 small">Quản lý tài khoản Admin, Giáo viên và Học viên</p>
             </div>
 
-            <div class="d-flex align-items-center gap-2">
+            <div class="user-toolbar-actions d-flex align-items-center gap-2">
                 <form action="{{ route('users.index') }}" method="GET"
                     class="input-group rounded-pill overflow-hidden shadow-sm"
                     style="background: white; border: 1px solid #dee2e6;">

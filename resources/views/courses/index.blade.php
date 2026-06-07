@@ -343,6 +343,26 @@
             top: 10px;
             right: 10px;
         }
+
+        @media (max-width: 767.98px) {
+            .page-header {
+                align-items: stretch;
+            }
+
+            .btn-create {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-row {
+                flex-wrap: wrap;
+                gap: 8px 14px;
+            }
+        }
     </style>
 
     <div class="page-header">

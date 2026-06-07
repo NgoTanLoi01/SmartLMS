@@ -289,6 +289,80 @@
             align-items: center;
             margin-left: auto;
         }
+
+        @media (max-width: 767.98px) {
+            .calendar-card {
+                padding: 12px;
+                border-radius: 12px;
+            }
+
+            .fc .fc-toolbar {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .fc .fc-toolbar-chunk {
+                display: flex;
+                justify-content: center;
+            }
+
+            .fc .fc-toolbar-title {
+                font-size: 15px;
+                text-align: center;
+            }
+
+            .fc .fc-button {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .fc-direction-ltr .fc-toolbar>*> :not(:first-child) {
+                margin-left: 4px;
+            }
+
+            .modal-header {
+                padding: 18px 18px 0;
+            }
+
+            .modal-body {
+                padding: 16px 18px;
+            }
+
+            .modal-footer {
+                padding: 0 18px 18px;
+                align-items: stretch;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .form-row[style] {
+                margin-bottom: 0 !important;
+            }
+
+            .form-row[style] .form-group {
+                margin-bottom: 14px !important;
+            }
+
+            .footer-right {
+                width: 100%;
+                margin-left: 0;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .btn-delete,
+            .btn-cancel,
+            .btn-save {
+                justify-content: center;
+                width: 100%;
+            }
+        }
     </style>
 
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
@@ -305,7 +379,7 @@
 
     {{-- ── Modal ── --}}
     <div class="modal fade" id="scheduleModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">
@@ -377,13 +451,14 @@
             const calendarEl = document.getElementById('calendar');
             const scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
 
             const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
+                initialView: isMobile ? 'dayGridMonth' : 'timeGridWeek',
                 headerToolbar: {
-                    left: 'prev,next today',
+                    left: isMobile ? 'prev,next' : 'prev,next today',
                     center: 'title',
-                    right: 'timeGridWeek,dayGridMonth'
+                    right: isMobile ? 'today' : 'timeGridWeek,dayGridMonth'
                 },
                 buttonText: {
                     today: 'Hôm nay',

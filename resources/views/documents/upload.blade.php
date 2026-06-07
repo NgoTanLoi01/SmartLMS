@@ -480,6 +480,12 @@
             text-align: right;
         }
 
+        .docs-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .doc-name-cell {
             display: flex;
             align-items: center;
@@ -610,6 +616,68 @@
             color: var(--danger);
             margin-top: 0.35rem;
         }
+
+        @media (max-width: 767.98px) {
+            .page-wrapper {
+                padding: 1.25rem 0.75rem;
+            }
+
+            .page-header,
+            .notice-card {
+                align-items: flex-start;
+            }
+
+            .page-header {
+                gap: 0.9rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .header-icon-wrap {
+                width: 46px;
+                height: 46px;
+            }
+
+            .page-header h3 {
+                font-size: 1.15rem;
+                line-height: 1.3;
+            }
+
+            .card-panel-body {
+                padding: 1.1rem;
+            }
+
+            .notice-card {
+                padding: 1rem;
+            }
+
+            .table-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 0.6rem;
+                padding: 1rem;
+            }
+
+            table.docs-table {
+                min-width: 720px;
+            }
+
+            .docs-table thead th:first-child,
+            .docs-table tbody td:first-child {
+                padding-left: 1rem;
+            }
+
+            .docs-table thead th:last-child,
+            .docs-table tbody td:last-child {
+                padding-right: 1rem;
+            }
+
+            .doc-name {
+                max-width: 220px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
     </style>
 @endpush
 
@@ -728,66 +796,68 @@
                 <span class="doc-count-badge">{{ $documents->count() }} tài liệu</span>
             </div>
 
-            <table class="docs-table">
-                <thead>
-                    <tr>
-                        <th>Tên tài liệu</th>
-                        <th>Khóa học</th>
-                        <th>Vectors</th>
-                        <th>Ngày nạp</th>
-                        <th>Quản lý</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($documents as $doc)
+            <div class="docs-table-wrap">
+                <table class="docs-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <div class="doc-name-cell">
-                                    <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
-                                    <span class="doc-name">{{ $doc->document_name }}</span>
-                                </div>
-                            </td>
-                            <td>
-                                @if ($doc->course_id == 0)
-                                    <span class="badge-system">Toàn hệ thống</span>
-                                @elseif ($doc->course)
-                                    <span class="badge-course">{{ $doc->course->title }}</span>
-                                @else
-                                    <span class="badge-danger">Không khả dụng (ID: {{ $doc->course_id }})</span>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="badge-vectors">
-                                    <i class="fas fa-vector-square"></i>
-                                    {{ $doc->total_chunks }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="date-text">{{ $doc->created_at->format('d/m/Y') }}</span>
-                            </td>
-                            <td>
-                                <form action="{{ route('documents.destroy', $doc->document_name) }}" method="POST"
-                                    class="d-inline">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn-delete"
-                                        onclick="return confirm('Xóa tài liệu này? AI sẽ không còn trả lời được nội dung liên quan.')">
-                                        <i class="fas fa-trash-alt"></i> Xóa
-                                    </button>
-                                </form>
-                            </td>
+                            <th>Tên tài liệu</th>
+                            <th>Khóa học</th>
+                            <th>Vectors</th>
+                            <th>Ngày nạp</th>
+                            <th>Quản lý</th>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state">
-                                    <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
-                                    <p>Chưa có tài liệu tri thức nào được nạp</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @forelse($documents as $doc)
+                            <tr>
+                                <td>
+                                    <div class="doc-name-cell">
+                                        <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
+                                        <span class="doc-name">{{ $doc->document_name }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if ($doc->course_id == 0)
+                                        <span class="badge-system">Toàn hệ thống</span>
+                                    @elseif ($doc->course)
+                                        <span class="badge-course">{{ $doc->course->title }}</span>
+                                    @else
+                                        <span class="badge-danger">Không khả dụng (ID: {{ $doc->course_id }})</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="badge-vectors">
+                                        <i class="fas fa-vector-square"></i>
+                                        {{ $doc->total_chunks }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="date-text">{{ $doc->created_at->format('d/m/Y') }}</span>
+                                </td>
+                                <td>
+                                    <form action="{{ route('documents.destroy', $doc->document_name) }}" method="POST"
+                                        class="d-inline">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn-delete"
+                                            onclick="return confirm('Xóa tài liệu này? AI sẽ không còn trả lời được nội dung liên quan.')">
+                                            <i class="fas fa-trash-alt"></i> Xóa
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state">
+                                        <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+                                        <p>Chưa có tài liệu tri thức nào được nạp</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
     </div>

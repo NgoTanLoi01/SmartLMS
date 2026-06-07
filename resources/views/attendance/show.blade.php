@@ -587,6 +587,155 @@
                 color: var(--text-4);
                 margin: 0;
             }
+
+            @media (max-width: 767.98px) {
+                .att-page {
+                    height: auto;
+                    min-height: calc(100dvh - 64px);
+                    padding: 0.75rem;
+                }
+
+                .att-toolbar {
+                    align-items: stretch;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                    padding: 0.85rem;
+                    border-radius: var(--r-md) var(--r-md) 0 0;
+                }
+
+                .att-title-block h5 {
+                    white-space: normal;
+                    line-height: 1.25;
+                }
+
+                .att-title-block small {
+                    max-width: none;
+                    white-space: normal;
+                    overflow: visible;
+                    text-overflow: clip;
+                    line-height: 1.35;
+                }
+
+                .att-actions {
+                    width: 100%;
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 0.6rem;
+                }
+
+                .att-search,
+                .att-search input,
+                .chip-btn {
+                    width: 100%;
+                }
+
+                .chip-btn {
+                    justify-content: center;
+                }
+
+                .att-divider {
+                    display: none;
+                }
+
+                .add-col-form {
+                    width: 100%;
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 0.5rem;
+                }
+
+                .add-col-form input,
+                .add-col-form select {
+                    width: 100%;
+                    min-height: 38px;
+                }
+
+                .att-table-wrap {
+                    max-height: 62dvh;
+                    -webkit-overflow-scrolling: touch;
+                }
+
+                .col-stt {
+                    width: 38px !important;
+                    min-width: 38px !important;
+                    max-width: 38px !important;
+                }
+
+                .col-name {
+                    left: 38px !important;
+                    width: 142px !important;
+                    min-width: 142px !important;
+                    max-width: 142px !important;
+                }
+
+                .att-table thead .col-name {
+                    padding-left: 0.65rem;
+                }
+
+                .stt-cell {
+                    padding: 0.5rem 0.25rem;
+                }
+
+                .name-cell {
+                    padding: 0.5rem 0.65rem;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                .att-table input[type="text"] {
+                    min-width: 72px;
+                    padding: 0.55rem 0.35rem;
+                }
+
+                .col-note-cell input {
+                    min-width: 120px;
+                }
+
+                .btn-delete-col {
+                    opacity: 1;
+                }
+
+                .att-footer {
+                    align-items: stretch;
+                    flex-direction: column;
+                    padding: 0.85rem;
+                    border-radius: 0 0 var(--r-md) var(--r-md);
+                }
+
+                .att-hint {
+                    line-height: 1.35;
+                }
+
+                .btn-save {
+                    justify-content: center;
+                    width: 100%;
+                }
+
+                .save-flash {
+                    right: 0.75rem;
+                    bottom: 0.75rem;
+                    left: 0.75rem;
+                    justify-content: center;
+                }
+            }
+
+            @media (min-width: 576px) and (max-width: 767.98px) {
+                .att-actions {
+                    grid-template-columns: 1fr auto;
+                    align-items: center;
+                }
+
+                .att-search {
+                    grid-column: 1 / -1;
+                }
+
+                .add-col-form {
+                    grid-column: 1 / -1;
+                    grid-template-columns: 1fr 150px auto;
+                    align-items: center;
+                }
+            }
         </style>
     @endpush
 

@@ -2,8 +2,8 @@
 
 @section('content')
     <div class="container py-4 text-center">
-        <div class="card border-0 shadow-sm rounded-4 p-4 mx-auto" style="max-width: 700px;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="caro-play-card card border-0 shadow-sm rounded-4 p-4 mx-auto" style="max-width: 700px;">
+            <div class="caro-room-header d-flex justify-content-between align-items-center mb-3">
                 <h4 class="fw-bold mb-0">Phòng Caro: <span class="text-primary">{{ $roomId }}</span></h4>
                 <div id="status-badge" class="badge bg-secondary rounded-pill px-3 py-2">Đang đợi đối thủ...</div>
             </div>
@@ -75,6 +75,44 @@
         }
 
         /* Màu Đỏ cho O */
+        @media (max-width: 767.98px) {
+            .caro-play-card {
+                padding: 0.75rem !important;
+            }
+
+            .caro-room-header {
+                align-items: stretch !important;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .caro-room-header h4 {
+                font-size: 1.05rem;
+                line-height: 1.35;
+            }
+
+            .caro-room-header #status-badge {
+                align-self: center;
+                white-space: normal;
+            }
+
+            #caro-board {
+                width: min(100%, calc(100vw - 56px));
+                max-width: 550px;
+                touch-action: manipulation;
+            }
+
+            .caro-cell {
+                border-width: 0.5px;
+                font-size: clamp(0.75rem, 4.4vw, 1.15rem);
+                touch-action: manipulation;
+            }
+
+            #turn-info {
+                font-size: 1rem !important;
+                line-height: 1.35;
+            }
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

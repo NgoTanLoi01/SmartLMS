@@ -34,6 +34,40 @@
         .table-custom tbody tr:hover .action-btn {
             opacity: 1;
         }
+
+        @media (hover: none), (max-width: 767.98px) {
+            .action-btn {
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .class-students-actions {
+                width: 100%;
+            }
+
+            .class-students-actions .btn {
+                width: 100%;
+                margin-right: 0 !important;
+            }
+
+            .student-list-search {
+                width: 100% !important;
+            }
+
+            .table-custom {
+                min-width: 720px;
+            }
+
+            .modal-footer {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .modal-footer .btn {
+                width: 100%;
+            }
+        }
     </style>
 
     <div class="container-fluid py-4">
@@ -64,7 +98,7 @@
         @endif
 
         <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+        <div class="d-flex justify-content-between align-items-center mb-4 px-2 flex-wrap gap-3">
             <div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-1">
@@ -82,7 +116,7 @@
             </div>
 
             @if (auth()->user()->role === 'admin' || auth()->id() === $classroom->teacher_id)
-                <div class="d-flex gap-2">
+                <div class="class-students-actions d-flex gap-2 flex-wrap">
                     <button class="btn btn-outline-success fw-bold shadow-sm me-2" data-bs-toggle="modal"
                         data-bs-target="#importExcelModal">
                         <i class="fas fa-file-excel me-2"></i> Nhập từ Excel
@@ -98,9 +132,9 @@
 
         <!-- Danh sách học sinh -->
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h6 class="mb-0 fw-bold"><i class="fas fa-list-ul me-2 text-primary"></i>Danh sách học viên</h6>
-                <div class="input-group input-group-sm w-auto">
+                <div class="student-list-search input-group input-group-sm w-auto">
                     <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
                     <input type="text" class="form-control bg-light border-0 shadow-none"
                         placeholder="Tìm kiếm học sinh...">

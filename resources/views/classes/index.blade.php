@@ -382,11 +382,39 @@
         .btn-modal-submit:hover {
             background: #1d4ed8;
         }
+
+        @media (max-width: 767.98px) {
+            .btn-create {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .classes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .class-card {
+                padding: 16px;
+            }
+
+            .card-top {
+                align-items: center;
+            }
+
+            .modal-footer {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .btn-modal-cancel,
+            .btn-modal-submit {
+                width: 100%;
+            }
+        }
     </style>
 
     {{-- Header --}}
-    <div
-        style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
+    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
         <div>
             <h1 class="page-title">Danh sách lớp học</h1>
             <p class="page-subtitle">Quản lý các lớp học và học viên</p>

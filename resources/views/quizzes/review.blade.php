@@ -18,21 +18,62 @@
             background-color: #dc3545;
             border-color: #dc3545;
         }
+
+        @media (max-width: 767.98px) {
+            .quiz-review-header {
+                align-items: stretch !important;
+            }
+
+            .quiz-review-header .btn {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .quiz-review-score {
+                padding: 1.25rem !important;
+            }
+
+            .quiz-review-score-box {
+                display: block !important;
+                width: 100%;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            .quiz-review-option {
+                align-items: flex-start !important;
+                flex-wrap: wrap;
+                gap: 0.25rem 0;
+            }
+
+            .quiz-review-option-text {
+                flex: 1 1 calc(100% - 2.25rem);
+                min-width: 0;
+                overflow-wrap: anywhere;
+                line-height: 1.45;
+            }
+
+            .quiz-review-option .badge {
+                margin-left: 2rem !important;
+                white-space: normal;
+                text-align: left;
+            }
+        }
     </style>
 
     <div class="container py-4" style="max-width: 850px;">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="quiz-review-header d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <a href="{{ route('courses.show', $attempt->quiz->course_id) }}"
-                class="btn btn-white shadow-sm rounded-pill px-4 fw-bold text-primary">
+                class="btn btn-white shadow-sm rounded-pill px-4 fw-bold text-primary d-inline-flex align-items-center">
                 <i class="fas fa-arrow-left me-2"></i> Trở về khóa học
             </a>
             <h4 class="fw-bold text-dark mb-0">Chi tiết bài làm</h4>
         </div>
 
-        <div class="card border-0 shadow-sm rounded-4 mb-5 p-4 text-center"
+        <div class="quiz-review-score card border-0 shadow-sm rounded-4 mb-5 p-4 text-center"
             style="background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);">
             <h2 class="fw-bold mb-3" style="color: #6f42c1;">{{ $attempt->quiz->title }}</h2>
-            <div class="bg-white d-inline-block px-5 py-3 rounded-4 shadow-sm">
+            <div class="quiz-review-score-box bg-white d-inline-block px-5 py-3 rounded-4 shadow-sm">
                 <span
                     class="fs-1 fw-bold {{ $attempt->score >= 5 ? 'text-success' : 'text-danger' }}">{{ $attempt->score }}</span>
                 <span class="fs-5 text-muted fw-bold"> / 10 Điểm</span>
@@ -109,10 +150,10 @@
                             @endphp
 
                             <label
-                                class="list-group-item d-flex align-items-center p-3 mb-2 rounded-3 border {{ $bgColor }} {{ $border }}">
+                                class="quiz-review-option list-group-item d-flex align-items-center p-3 mb-2 rounded-3 border {{ $bgColor }} {{ $border }}">
                                 <input type="radio" class="form-check-input mt-0 me-3 {{ $radioClass }}" disabled
                                     {{ $isSelected ? 'checked' : '' }}>
-                                <span class="{{ $textColor }} fs-6">{{ $option->option_text }}</span>
+                                <span class="quiz-review-option-text {{ $textColor }} fs-6">{{ $option->option_text }}</span>
                                 {!! $badge !!}
                             </label>
                         @endforeach
