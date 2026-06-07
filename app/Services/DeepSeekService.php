@@ -28,6 +28,94 @@ class DeepSeekService
         }
     }
 
+    public function analyzeLearning(array $payload): array
+    {
+        try {
+            $apiKey = config('services.deepseek.key');
+            $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
+
+            if (!$apiKey) {
+                return [
+                    'success' => false,
+                    'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.',
+                ];
+            }
+
+            $systemPrompt = <<<PROMPT
+Bạn là AI phân tích học tập cho giáo viên trong hệ thống SmartLMS.
+Hãy phân tích dữ liệu lớp/học sinh bằng tiếng Việt, ngắn gọn, thực tế, ưu tiên hành động.
+
+Chỉ trả về JSON hợp lệ, không dùng markdown, không bọc ```json.
+Schema:
+{
+  "summary": "Tóm tắt tình hình học tập",
+  "risks": [
+    {"level": "high|medium|low", "type": "score_drop|absence|quiz_missing|slow_progress|assignment_missing|other", "student": "Tên học sinh hoặc Toàn lớp", "reason": "Lý do cụ thể từ dữ liệu"}
+  ],
+  "actions": [
+    {"priority": "high|medium|low", "student": "Tên học sinh hoặc Nhóm học sinh", "action": "Hành động giáo viên nên làm", "reason": "Vì sao nên làm"}
+  ],
+  "student_comments": [
+    {"student": "Tên học sinh", "comment": "Nhận xét ngắn có thể dùng gửi phụ huynh/học sinh"}
+  ]
+}
+
+Quy tắc:
+- Không bịa dữ liệu ngoài payload.
+- Nếu thiếu dữ liệu lịch sử để kết luận điểm giảm, hãy nói là chưa đủ dữ liệu thay vì khẳng định.
+- Ưu tiên phát hiện: điểm giảm, vắng nhiều, không làm quiz, chậm tiến độ, thiếu bài tập.
+- Đề xuất hành động cụ thể: nhắc nộp bài, giao bài bổ sung, ôn lại chủ đề/khóa học liên quan.
+PROMPT;
+
+            $response = Http::withToken($apiKey)
+                ->timeout(90)
+                ->withoutVerifying()
+                ->post("{$baseUrl}/chat/completions", [
+                    'model' => 'deepseek-v4-flash',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => json_encode($payload, JSON_UNESCAPED_UNICODE)],
+                    ],
+                    'temperature' => 0.2,
+                ]);
+
+            if ($response->failed()) {
+                Log::warning('DeepSeek learning analysis failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'DeepSeek chưa phản hồi được. Vui lòng thử lại sau.',
+                ];
+            }
+
+            $content = $response->json('choices.0.message.content');
+            $analysis = $this->decodeJsonResponse($content);
+
+            if (!$analysis) {
+                return [
+                    'success' => false,
+                    'message' => 'AI trả về dữ liệu chưa đúng định dạng.',
+                    'raw' => $content,
+                ];
+            }
+
+            return [
+                'success' => true,
+                'analysis' => $analysis,
+            ];
+        } catch (\Exception $e) {
+            Log::error('DeepSeek learning analysis error: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Không thể kết nối đến AI phân tích học tập.',
+            ];
+        }
+    }
+
     private function getGeminiEmbedding(string $text): ?array
     {
         try {
@@ -82,5 +170,30 @@ class DeepSeekService
             ]);
 
         return $response->successful() ? $response->json('choices.0.message.content') : 'AI đang bận, thử lại sau nhé!';
+    }
+
+    private function decodeJsonResponse(?string $content): ?array
+    {
+        if (!$content) {
+            return null;
+        }
+
+        $cleaned = trim($content);
+        $cleaned = preg_replace('/^```(?:json)?\s*/i', '', $cleaned);
+        $cleaned = preg_replace('/\s*```$/', '', $cleaned);
+
+        $decoded = json_decode($cleaned, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return $decoded;
+        }
+
+        if (preg_match('/\{.*\}/s', $cleaned, $matches)) {
+            $decoded = json_decode($matches[0], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return null;
     }
 }

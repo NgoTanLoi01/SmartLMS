@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Quản lý Học sinh trong Lớp học
     Route::get('/classes/{classId}/progress', [ClassManagementController::class, 'showProgress'])->name('classes.progress');
+    Route::post('/classes/{classId}/ai-analysis', [ClassManagementController::class, 'analyzeLearningWithAi'])->name('classes.ai-analysis');
     Route::get('/classes/{classId}/students', [ClassManagementController::class, 'getStudentsByClass'])->name('classes.students.index');
     Route::get('/classes/{classId}/students/{studentId}', [ClassManagementController::class, 'showStudent'])->name('classes.students.show');
     Route::post('/classes/{classId}/students', [ClassManagementController::class, 'storeStudent'])->name('classes.students.store');

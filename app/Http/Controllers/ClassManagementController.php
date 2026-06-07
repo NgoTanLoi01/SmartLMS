@@ -13,6 +13,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
+use App\Services\DeepSeekService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -158,6 +159,46 @@ class ClassManagementController extends Controller
             ->values();
 
         return view('classes.progress', compact('classroom', 'availableCourses', 'studentProgress', 'classReport', 'courseReports', 'filters'));
+    }
+
+    public function analyzeLearningWithAi(Request $request, DeepSeekService $deepSeekService, $classId)
+    {
+        $classroom = Classroom::with(['students', 'teacher', 'courses'])->findOrFail($classId);
+        $this->authorizeClassroomAccess($classroom);
+
+        $courseIds = $request->filled('course_id')
+            ? [(int) $request->input('course_id')]
+            : $classroom->courses->pluck('id')->all();
+
+        $students = $classroom->students;
+        if ($request->filled('student_id')) {
+            $students = $students->where('id', (int) $request->input('student_id'))->values();
+        }
+
+        $studentSummaries = $students
+            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $courseIds))
+            ->values();
+
+        $payload = [
+            'scope' => $request->filled('student_id') ? 'student' : 'class',
+            'class' => [
+                'name' => $classroom->name,
+                'code' => $classroom->code,
+                'teacher' => $classroom->teacher?->name,
+            ],
+            'courses' => Course::whereIn('id', $courseIds)
+                ->get(['id', 'title'])
+                ->map(fn ($course) => ['id' => $course->id, 'title' => $course->title])
+                ->values(),
+            'class_report' => $this->buildClassProgressReport($studentSummaries),
+            'students' => $studentSummaries
+                ->map(fn ($summary) => $this->formatStudentAiPayload($summary))
+                ->values(),
+        ];
+
+        $result = $deepSeekService->analyzeLearning($payload);
+
+        return response()->json($result, $result['success'] ? 200 : 422);
     }
 
     public function index()
@@ -346,6 +387,56 @@ class ClassManagementController extends Controller
         ];
     }
 
+    private function formatStudentAiPayload(array $summary): array
+    {
+        return [
+            'name' => $summary['student']->name,
+            'email' => $summary['student']->email,
+            'lesson_progress_percent' => $summary['lesson_progress'],
+            'lessons_completed' => $summary['lesson_completed'],
+            'lessons_total' => $summary['lesson_total'],
+            'assignments_submitted' => $summary['assignment_submitted_count'],
+            'assignments_total' => $summary['assignment_total'],
+            'assignments_missing' => $summary['assignment_missing_count'],
+            'assignments_overdue_missing' => $summary['assignment_overdue_missing_count'],
+            'missing_assignments' => $summary['assignment_details']
+                ->where('status', 'missing')
+                ->take(8)
+                ->map(fn ($assignment) => [
+                    'title' => $assignment['title'],
+                    'course' => $assignment['course_title'],
+                    'is_overdue' => $assignment['is_overdue'],
+                ])
+                ->values(),
+            'quizzes_attempted' => $summary['quiz_attempted_count'],
+            'quizzes_total' => $summary['quiz_total'],
+            'quizzes_pending' => $summary['quiz_pending_count'],
+            'pending_quizzes' => $summary['quiz_details']
+                ->where('status', 'pending')
+                ->take(8)
+                ->map(fn ($quiz) => [
+                    'title' => $quiz['title'],
+                    'course' => $quiz['course_title'],
+                ])
+                ->values(),
+            'assignment_average' => $summary['assignment_average'],
+            'quiz_average' => $summary['quiz_average'],
+            'score_average' => $summary['score_average'],
+            'score_trend' => $summary['score_trend'],
+            'score_events' => $summary['score_events']->slice(-10)->values(),
+            'absence_count' => $summary['absence_count'],
+            'notes' => $summary['notes']
+                ->take(5)
+                ->map(fn ($note) => [
+                    'course' => $note['course_title'],
+                    'note' => $note['value'],
+                ])
+                ->values(),
+            'last_activity_at' => $summary['last_activity_at']?->format('Y-m-d H:i'),
+            'system_alerts' => collect($summary['alerts'])->pluck('text')->values(),
+        ];
+    }
+
     private function buildStudentSnapshot(Classroom $classroom, User $student, array $courseIds): array
     {
         $courses = Course::whereIn('id', $courseIds)->get()->keyBy('id');
@@ -387,11 +478,11 @@ class ClassManagementController extends Controller
 
         $quizzes = Quiz::whereIn('course_id', $courseIds)->get();
         $quizIds = $quizzes->pluck('id');
-        $attempts = QuizAttempt::where('user_id', $student->id)
+        $quizAttempts = QuizAttempt::where('user_id', $student->id)
             ->whereIn('quiz_id', $quizIds)
             ->orderByDesc('completed_at')
-            ->get()
-            ->groupBy('quiz_id');
+            ->get();
+        $attempts = $quizAttempts->groupBy('quiz_id');
         $latestAttempts = $attempts->map(fn ($quizAttempts) => $quizAttempts->first());
         $quizAverage = $latestAttempts->pluck('score')->filter(fn ($score) => $score !== null)->avg();
 
@@ -495,6 +586,7 @@ class ClassManagementController extends Controller
         $scoreAverage = collect([$assignmentAverage, $quizAverage])
             ->filter(fn ($score) => $score !== null)
             ->avg();
+        $scoreEvents = $this->buildScoreEvents($submissions, $assignments, $quizAttempts, $quizzes, $courses);
 
         return [
             'student' => $student,
@@ -522,7 +614,73 @@ class ClassManagementController extends Controller
             'alerts' => $alerts,
             'needs_attention' => collect($alerts)->whereIn('level', ['danger', 'warning'])->isNotEmpty(),
             'score_average' => $scoreAverage !== null ? round($scoreAverage, 1) : null,
+            'score_events' => $scoreEvents,
+            'score_trend' => $this->detectScoreTrend($scoreEvents),
         ];
+    }
+
+    private function buildScoreEvents($submissions, $assignments, $quizAttempts, $quizzes, $courses)
+    {
+        $assignmentsById = $assignments->keyBy('id');
+        $quizzesById = $quizzes->keyBy('id');
+
+        $assignmentScoreEvents = $submissions
+            ->filter(fn ($submission) => $submission->grade !== null)
+            ->map(function ($submission) use ($assignmentsById, $courses) {
+                $assignment = $assignmentsById->get($submission->assignment_id);
+
+                return [
+                    'type' => 'assignment',
+                    'title' => $assignment?->title ?? 'Bài tập',
+                    'course' => $courses->get($assignment?->course_id)?->title ?? 'Chưa rõ khóa học',
+                    'score' => round((float) $submission->grade, 1),
+                    'date' => optional($submission->submitted_at)->format('Y-m-d H:i'),
+                ];
+            })
+            ->values();
+
+        $quizScoreEvents = $quizAttempts
+            ->filter(fn ($attempt) => $attempt->score !== null)
+            ->map(function ($attempt) use ($quizzesById, $courses) {
+                $quiz = $quizzesById->get($attempt->quiz_id);
+
+                return [
+                    'type' => 'quiz',
+                    'title' => $quiz?->title ?? 'Quiz',
+                    'course' => $courses->get($quiz?->course_id)?->title ?? 'Chưa rõ khóa học',
+                    'score' => round((float) $attempt->score, 1),
+                    'date' => $attempt->completed_at ? Carbon::parse($attempt->completed_at)->format('Y-m-d H:i') : null,
+                ];
+            })
+            ->values();
+
+        return collect($assignmentScoreEvents)
+            ->merge($quizScoreEvents)
+            ->sortBy(fn ($event) => $event['date'] ?? '9999-12-31')
+            ->values();
+    }
+
+    private function detectScoreTrend($scoreEvents): string
+    {
+        $scores = $scoreEvents->pluck('score')->filter(fn ($score) => $score !== null)->values();
+
+        if ($scores->count() < 3) {
+            return 'insufficient_data';
+        }
+
+        $half = (int) floor($scores->count() / 2);
+        $earlyAverage = $scores->take($half)->avg();
+        $recentAverage = $scores->slice(-$half)->avg();
+
+        if ($recentAverage <= $earlyAverage - 1) {
+            return 'declining';
+        }
+
+        if ($recentAverage >= $earlyAverage + 1) {
+            return 'improving';
+        }
+
+        return 'stable';
     }
 
     private function isAbsentValue($value): bool

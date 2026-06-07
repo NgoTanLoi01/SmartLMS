@@ -22,6 +22,14 @@
             overflow-y: auto;
         }
 
+        .ai-analysis-panel {
+            border-left: 4px solid #2563eb;
+        }
+
+        .ai-result-column {
+            min-height: 100%;
+        }
+
         @media (max-width: 767.98px) {
             .progress-container {
                 padding-left: .75rem !important;
@@ -67,12 +75,62 @@
                 </div>
             </div>
             <div class="progress-header-actions d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-primary" data-ai-scope="class">
+                    <i class="fas fa-robot me-1"></i>Phân tích AI toàn lớp
+                </button>
                 <a href="{{ route('classes.students.index', $classroom->id) }}" class="btn btn-light border">
                     <i class="fas fa-user-graduate me-1"></i>Danh sách học sinh
                 </a>
                 <a href="{{ route('classes.index') }}" class="btn btn-light border">
                     <i class="fas fa-arrow-left me-1"></i>Quay lại lớp học
                 </a>
+            </div>
+        </div>
+
+        <div class="card ai-analysis-panel border-0 shadow-sm rounded-3 mb-4 d-none" id="aiAnalysisPanel">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h6 class="fw-bold mb-0"><i class="fas fa-wand-magic-sparkles me-2 text-primary"></i>Phân tích học tập bằng AI</h6>
+                    <div class="text-muted small" id="aiAnalysisScope">Đang chờ dữ liệu phân tích</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-light border" id="aiAnalysisClose">
+                    <i class="fas fa-xmark me-1"></i>Đóng
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="aiAnalysisLoading" class="d-none">
+                    <div class="d-flex align-items-center gap-2 text-muted">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        DeepSeek đang phân tích dữ liệu học tập...
+                    </div>
+                </div>
+                <div id="aiAnalysisError" class="alert alert-warning border-0 d-none mb-0"></div>
+                <div id="aiAnalysisContent" class="d-none">
+                    <div class="mb-4">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Tóm tắt</div>
+                        <p class="mb-0" id="aiSummary"></p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-xl-4">
+                            <div class="ai-result-column border rounded-3 p-3">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-triangle-exclamation me-2 text-danger"></i>Rủi ro AI phát hiện</h6>
+                                <div id="aiRisks"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-xl-4">
+                            <div class="ai-result-column border rounded-3 p-3">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Hành động đề xuất</h6>
+                                <div id="aiActions"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-xl-4">
+                            <div class="ai-result-column border rounded-3 p-3">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-comment-dots me-2 text-primary"></i>Nhận xét học sinh</h6>
+                                <div id="aiComments"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -259,6 +317,10 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-end">
+                                        <button class="btn btn-sm btn-primary" data-ai-scope="student"
+                                            data-student-id="{{ $student->id }}" data-student-name="{{ $student->name }}">
+                                            <i class="fas fa-robot me-1"></i>AI
+                                        </button>
                                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                                             data-bs-target="#{{ $modalId }}">
                                             <i class="fas fa-list-check me-1"></i>Chi tiết
@@ -358,4 +420,116 @@
             </div>
         @endforeach
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const panel = document.getElementById('aiAnalysisPanel');
+            const loading = document.getElementById('aiAnalysisLoading');
+            const errorBox = document.getElementById('aiAnalysisError');
+            const content = document.getElementById('aiAnalysisContent');
+            const scopeLabel = document.getElementById('aiAnalysisScope');
+            const summaryBox = document.getElementById('aiSummary');
+            const risksBox = document.getElementById('aiRisks');
+            const actionsBox = document.getElementById('aiActions');
+            const commentsBox = document.getElementById('aiComments');
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            const emptyText = (text) => `<div class="text-muted small">${escapeHtml(text)}</div>`;
+
+            const renderRisks = (risks = []) => {
+                if (!risks.length) return emptyText('AI chưa phát hiện rủi ro rõ ràng.');
+
+                return risks.map((risk) => {
+                    const color = risk.level === 'high' ? 'danger' : (risk.level === 'medium' ? 'warning text-dark' : 'secondary');
+                    return `
+                        <div class="border-bottom pb-3 mb-3">
+                            <span class="badge bg-${color} mb-2">${escapeHtml(risk.level || 'risk')}</span>
+                            <div class="fw-bold small">${escapeHtml(risk.student || 'Toàn lớp')}</div>
+                            <div class="text-muted small">${escapeHtml(risk.type || 'other')}</div>
+                            <div class="mt-1">${escapeHtml(risk.reason || '')}</div>
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            const renderActions = (actions = []) => {
+                if (!actions.length) return emptyText('Chưa có hành động đề xuất.');
+
+                return actions.map((item) => `
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="fw-bold">${escapeHtml(item.action || '')}</div>
+                        <div class="text-muted small">${escapeHtml(item.student || 'Nhóm học sinh')} · Ưu tiên ${escapeHtml(item.priority || 'medium')}</div>
+                        <div class="mt-1 small">${escapeHtml(item.reason || '')}</div>
+                    </div>
+                `).join('');
+            };
+
+            const renderComments = (comments = []) => {
+                if (!comments.length) return emptyText('Chưa có nhận xét học sinh.');
+
+                return comments.map((item) => `
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="fw-bold small">${escapeHtml(item.student || 'Học sinh')}</div>
+                        <div>${escapeHtml(item.comment || '')}</div>
+                    </div>
+                `).join('');
+            };
+
+            const setState = (state, message = '') => {
+                panel.classList.remove('d-none');
+                loading.classList.toggle('d-none', state !== 'loading');
+                errorBox.classList.toggle('d-none', state !== 'error');
+                content.classList.toggle('d-none', state !== 'success');
+                if (state === 'error') {
+                    errorBox.textContent = message;
+                }
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+
+            document.querySelectorAll('[data-ai-scope]').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const studentId = button.dataset.studentId || '';
+                    const studentName = button.dataset.studentName || '';
+                    const courseId = document.querySelector('select[name="course_id"]')?.value || '';
+
+                    scopeLabel.textContent = studentId
+                        ? `Phân tích học sinh: ${studentName}`
+                        : 'Phân tích tổng quan toàn lớp';
+                    setState('loading');
+
+                    try {
+                        const response = await axios.post('{{ route('classes.ai-analysis', $classroom->id) }}', {
+                            student_id: studentId || null,
+                            course_id: courseId || null,
+                        }, {
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                        });
+
+                        const analysis = response.data.analysis || {};
+                        summaryBox.textContent = analysis.summary || 'AI chưa có tóm tắt.';
+                        risksBox.innerHTML = renderRisks(analysis.risks || []);
+                        actionsBox.innerHTML = renderActions(analysis.actions || []);
+                        commentsBox.innerHTML = renderComments(analysis.student_comments || []);
+                        setState('success');
+                    } catch (error) {
+                        const message = error.response?.data?.message || 'Không thể gọi AI phân tích học tập. Vui lòng thử lại.';
+                        setState('error', message);
+                    }
+                });
+            });
+
+            document.getElementById('aiAnalysisClose')?.addEventListener('click', () => {
+                panel.classList.add('d-none');
+            });
+        });
+    </script>
 @endsection
