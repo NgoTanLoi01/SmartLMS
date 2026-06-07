@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Course;
+use App\Models\Classroom;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -26,10 +27,24 @@ class DashboardController extends Controller
             $data['total_teachers'] = User::where('role', 'teacher')->count();
             $data['total_classes'] = DB::table('classes')->count();
             $data['total_courses'] = Course::count();
-            $data['online_users'] = rand(5, 20);
             $data['recent_users'] = User::orderBy('created_at', 'desc')->take(7)->get();
             $data['chart_role_labels'] = ['Học sinh', 'Giáo viên', 'Admin'];
             $data['chart_role_data'] = [$data['total_students'], $data['total_teachers'], User::where('role', 'admin')->count()];
+            $data['pending_grades'] = DB::table('assignment_submissions')->whereNull('grade')->count();
+            $data['today_schedules'] = DB::table('schedules')
+                ->join('courses', 'schedules.course_id', '=', 'courses.id')
+                ->join('classes', 'schedules.class_id', '=', 'classes.id')
+                ->whereDate('schedules.schedule_date', now()->toDateString())
+                ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
+                ->orderBy('schedules.start_time')
+                ->take(6)
+                ->get();
+            $data['class_overview'] = Classroom::withCount('students')
+                ->with(['teacher', 'courses'])
+                ->orderByDesc('students_count')
+                ->take(5)
+                ->get();
+            $data['recent_courses'] = Course::with('teacher')->latest()->take(5)->get();
         }
 
         // ==========================================
@@ -39,6 +54,12 @@ class DashboardController extends Controller
             $courseIds = Course::where('teacher_id', $user->id)->pluck('id');
 
             $data['total_courses'] = $courseIds->count();
+            $data['teacher_classes'] = Classroom::where('teacher_id', $user->id)
+                ->withCount('students')
+                ->with('courses')
+                ->latest()
+                ->take(6)
+                ->get();
 
             // Bài chờ chấm
             $data['pending_grades'] = DB::table('assignment_submissions')->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')->whereIn('assignments.course_id', $courseIds)->whereNull('assignment_submissions.grade')->count();
@@ -66,6 +87,26 @@ class DashboardController extends Controller
                 ->orderBy('schedules.start_time', 'asc')
                 ->take(10)
                 ->get();
+
+            $gradeSummary = DB::table('assignment_submissions')
+                ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')
+                ->whereIn('assignments.course_id', $courseIds)
+                ->select('assignment_submissions.user_id', DB::raw('AVG(assignment_submissions.grade) as avg_grade'))
+                ->groupBy('assignment_submissions.user_id');
+
+            $data['attention_students'] = DB::table('class_user')
+                ->join('classes', 'class_user.class_id', '=', 'classes.id')
+                ->join('users', 'class_user.user_id', '=', 'users.id')
+                ->leftJoinSub($gradeSummary, 'grade_summary', function ($join) {
+                    $join->on('grade_summary.user_id', '=', 'users.id');
+                })
+                ->where('classes.teacher_id', $user->id)
+                ->where('users.role', 'student')
+                ->select('users.id', 'users.name', 'users.email', 'classes.id as class_id', 'classes.name as class_name', 'grade_summary.avg_grade')
+                ->orderByRaw('grade_summary.avg_grade IS NULL DESC')
+                ->orderBy('avg_grade')
+                ->take(5)
+                ->get();
         }
 
         // ==========================================
@@ -85,6 +126,27 @@ class DashboardController extends Controller
                 ->pluck('course_id');
 
             $data['total_courses'] = $courseIds->count();
+            $data['course_progress'] = Course::whereIn('id', $courseIds)
+                ->get()
+                ->map(function ($course) use ($user) {
+                    $lessonIds = DB::table('lessons')
+                        ->join('modules', 'lessons.module_id', '=', 'modules.id')
+                        ->where('modules.course_id', $course->id)
+                        ->pluck('lessons.id');
+                    $completed = DB::table('lesson_user')
+                        ->where('user_id', $user->id)
+                        ->whereIn('lesson_id', $lessonIds)
+                        ->count();
+
+                    return (object) [
+                        'id' => $course->id,
+                        'title' => $course->title,
+                        'lesson_total' => $lessonIds->count(),
+                        'lesson_completed' => $completed,
+                        'progress' => $lessonIds->count() > 0 ? round(($completed / $lessonIds->count()) * 100) : 0,
+                    ];
+                })
+                ->take(5);
 
             // ==========================================
             // BÀI TẬP SẮP ĐẾN HẠN
@@ -108,6 +170,14 @@ class DashboardController extends Controller
                 ->take(5)
 
                 ->get();
+            $submittedAssignmentIds = DB::table('assignment_submissions')
+                ->where('user_id', $user->id)
+                ->pluck('assignment_id');
+            $data['missing_assignments_count'] = DB::table('assignments')
+                ->whereIn('course_id', $courseIds)
+                ->whereNull('deleted_at')
+                ->whereNotIn('id', $submittedAssignmentIds)
+                ->count();
 
             // ==========================================
             // BÀI KIỂM TRA CHƯA LÀM
@@ -134,6 +204,10 @@ class DashboardController extends Controller
                 ->take(5)
 
                 ->get();
+            $data['pending_quizzes_count'] = DB::table('quizzes')
+                ->whereIn('course_id', $courseIds)
+                ->whereNotIn('id', $attemptedQuizIds)
+                ->count();
             // ==========================================
             // ĐIỂM TRUNG BÌNH QUIZ
             // ==========================================

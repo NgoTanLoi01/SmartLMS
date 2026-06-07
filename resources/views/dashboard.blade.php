@@ -515,6 +515,57 @@
             background: var(--brand-dark);
         }
 
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .quick-action {
+            align-items: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            display: inline-flex;
+            font-size: .875rem;
+            font-weight: 700;
+            gap: .55rem;
+            min-height: 44px;
+            padding: .7rem 1rem;
+            text-decoration: none;
+            transition: background .15s, border-color .15s, color .15s;
+        }
+
+        .quick-action:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: var(--brand-dark);
+        }
+
+        .compact-card {
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.25rem;
+        }
+
+        .compact-card:last-child {
+            border-bottom: none;
+        }
+
+        .progress-line {
+            background: #e2e8f0;
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .progress-line span {
+            background: var(--brand);
+            display: block;
+            height: 100%;
+        }
+
         /* =========================================
                    EMPTY STATE
                 ========================================= */
@@ -635,6 +686,15 @@
                 white-space: normal;
             }
 
+            .quick-actions {
+                flex-direction: column;
+            }
+
+            .quick-action {
+                justify-content: center;
+                width: 100%;
+            }
+
             .score-hero {
                 padding: 1.5rem;
             }
@@ -671,6 +731,24 @@
         </div>
 
         @php $role = auth()->user()->role; @endphp
+
+        <div class="quick-actions">
+            @if ($role === 'admin')
+                <a href="{{ route('users.index') }}" class="quick-action"><i class="fas fa-users-cog"></i> Quản lý người dùng</a>
+                <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-school"></i> Quản lý lớp</a>
+                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Quản lý khóa học</a>
+                <a href="{{ route('documents.upload') }}" class="quick-action"><i class="fas fa-robot"></i> Huấn luyện AI</a>
+            @elseif ($role === 'teacher')
+                <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-school"></i> Lớp của tôi</a>
+                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Khóa học của tôi</a>
+                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-clipboard-check"></i> Chấm bài</a>
+                <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fas fa-calendar-alt"></i> Lịch dạy</a>
+            @else
+                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Vào học</a>
+                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-paper-plane"></i> Bài tập</a>
+                <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fas fa-calendar-check"></i> Lịch học</a>
+            @endif
+        </div>
 
         {{-- ══════════════════════════════════════
      ADMIN VIEW
@@ -786,6 +864,80 @@
                 </div>
             </div>
 
+            <div class="row g-3 mt-1">
+                <div class="col-12 col-xl-4">
+                    <div class="panel">
+                        <div class="panel__header">
+                            <h6 class="panel__title">
+                                <i class="fas fa-calendar-day" style="color:var(--warning)"></i>
+                                Lịch học hôm nay
+                            </h6>
+                            <span class="bdg bdg--warning">{{ ($data['today_schedules'] ?? collect())->count() }} ca</span>
+                        </div>
+                        @forelse ($data['today_schedules'] ?? [] as $slot)
+                            <div class="compact-card">
+                                <div class="fw-bold">{{ $slot->course_title }}</div>
+                                <div class="text-muted small">{{ $slot->class_name }} · {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}</div>
+                            </div>
+                        @empty
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-check"></i>
+                                <p>Hôm nay chưa có lịch học.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+                <div class="col-12 col-xl-4">
+                    <div class="panel">
+                        <div class="panel__header">
+                            <h6 class="panel__title">
+                                <i class="fas fa-school" style="color:var(--brand)"></i>
+                                Lớp nổi bật
+                            </h6>
+                            <a href="{{ route('classes.index') }}" class="btn-xs btn-xs--primary">Xem lớp</a>
+                        </div>
+                        @forelse ($data['class_overview'] ?? [] as $class)
+                            <div class="compact-card">
+                                <div class="d-flex justify-content-between gap-2">
+                                    <div>
+                                        <div class="fw-bold">{{ $class->name }}</div>
+                                        <div class="text-muted small">{{ $class->teacher->name ?? 'Chưa phân công' }}</div>
+                                    </div>
+                                    <span class="bdg bdg--primary">{{ $class->students_count }} HS</span>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-state">
+                                <i class="fas fa-school"></i>
+                                <p>Chưa có lớp học.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+                <div class="col-12 col-xl-4">
+                    <div class="panel">
+                        <div class="panel__header">
+                            <h6 class="panel__title">
+                                <i class="fas fa-book-open" style="color:var(--success)"></i>
+                                Khóa học mới
+                            </h6>
+                            <a href="{{ route('courses.index') }}" class="btn-xs btn-xs--primary">Xem khóa</a>
+                        </div>
+                        @forelse ($data['recent_courses'] ?? [] as $course)
+                            <div class="compact-card">
+                                <div class="fw-bold">{{ $course->title }}</div>
+                                <div class="text-muted small">{{ $course->teacher->name ?? 'Chưa rõ giáo viên' }}</div>
+                            </div>
+                        @empty
+                            <div class="empty-state">
+                                <i class="fas fa-book"></i>
+                                <p>Chưa có khóa học.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
             {{-- ══════════════════════════════════════
      TEACHER VIEW
     ══════════════════════════════════════ --}}
@@ -817,6 +969,86 @@
                             <div class="stat-card__label">Tổng học sinh</div>
                             <div class="stat-card__value" style="color:var(--success)">{{ $data['total_students'] }}</div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-xl-7">
+                    <div class="panel">
+                        <div class="panel__header">
+                            <h6 class="panel__title">
+                                <i class="fas fa-school" style="color:var(--brand)"></i>
+                                Lớp phụ trách
+                            </h6>
+                            <a href="{{ route('classes.index') }}" class="btn-xs btn-xs--primary">Quản lý lớp</a>
+                        </div>
+                        <div class="row g-0">
+                            @forelse ($data['teacher_classes'] ?? [] as $class)
+                                <div class="col-12 col-lg-6">
+                                    <div class="compact-card h-100">
+                                        <div class="d-flex justify-content-between gap-2 mb-2">
+                                            <div>
+                                                <div class="fw-bold">{{ $class->name }}</div>
+                                                <div class="text-muted small">{{ $class->code }} · {{ $class->courses->count() }} khóa học</div>
+                                            </div>
+                                            <span class="bdg bdg--primary">{{ $class->students_count }} HS</span>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <a href="{{ route('classes.progress', $class->id) }}" class="btn-xs btn-xs--primary">
+                                                <i class="fas fa-chart-line"></i> Tiến độ
+                                            </a>
+                                            <a href="{{ route('classes.students.index', $class->id) }}" class="btn-xs btn-xs--warning">
+                                                <i class="fas fa-user-graduate"></i> Học sinh
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="col-12">
+                                    <div class="empty-state">
+                                        <i class="fas fa-school"></i>
+                                        <p>Thầy / Cô chưa được phân công lớp.</p>
+                                    </div>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-5">
+                    <div class="panel">
+                        <div class="panel__header">
+                            <h6 class="panel__title">
+                                <i class="fas fa-user-clock" style="color:var(--danger)"></i>
+                                Học sinh cần chú ý
+                            </h6>
+                            <span class="bdg bdg--danger">Ưu tiên</span>
+                        </div>
+                        @forelse ($data['attention_students'] ?? [] as $student)
+                            <div class="compact-card">
+                                <div class="d-flex justify-content-between gap-2">
+                                    <div>
+                                        <div class="fw-bold">{{ $student->name }}</div>
+                                        <div class="text-muted small">{{ $student->class_name }} · {{ $student->email }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="bdg {{ $student->avg_grade !== null && $student->avg_grade < 5 ? 'bdg--danger' : 'bdg--muted' }}">
+                                            TB {{ $student->avg_grade !== null ? round($student->avg_grade, 1) : 'N/A' }}
+                                        </div>
+                                        <div class="mt-2">
+                                            <a href="{{ route('classes.students.show', ['classId' => $student->class_id, 'studentId' => $student->id]) }}" class="btn-xs btn-xs--primary">
+                                                Hồ sơ
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-state">
+                                <i class="fas fa-check-circle" style="color:var(--success)"></i>
+                                <p>Chưa có học sinh cần ưu tiên theo dõi.</p>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             </div>
@@ -955,6 +1187,36 @@
      STUDENT VIEW
     ══════════════════════════════════════ --}}
         @else
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-4">
+                    <div class="stat-card stat-card--blue">
+                        <div class="stat-card__icon"><i class="fas fa-book-open"></i></div>
+                        <div>
+                            <div class="stat-card__label">Khóa học đang học</div>
+                            <div class="stat-card__value">{{ $data['total_courses'] }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="stat-card stat-card--amber">
+                        <div class="stat-card__icon"><i class="fas fa-file-signature"></i></div>
+                        <div>
+                            <div class="stat-card__label">Bài tập còn thiếu</div>
+                            <div class="stat-card__value">{{ $data['missing_assignments_count'] ?? 0 }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="stat-card stat-card--violet">
+                        <div class="stat-card__icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div>
+                            <div class="stat-card__label">Quiz chưa làm</div>
+                            <div class="stat-card__value">{{ $data['pending_quizzes_count'] ?? 0 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Score hero + Deadline list --}}
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
@@ -1018,12 +1280,56 @@
                                 </div>
                             @endforeach
 
-                            @if (empty($deadlines) && empty($quizzes))
+                            @if (count($deadlines) === 0 && count($quizzes) === 0)
                                 <div class="empty-state">
                                     <i class="fas fa-glass-cheers" style="color:var(--success)"></i>
                                     <p>Tuyệt vời! Bạn đã hoàn thành hết các nhiệm vụ.</p>
                                 </div>
                             @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <div class="panel">
+                        <div class="panel__header">
+                            <h6 class="panel__title">
+                                <i class="fas fa-chart-line" style="color:var(--brand)"></i>
+                                Tiến độ khóa học của tôi
+                            </h6>
+                            <a href="{{ route('courses.index') }}" class="btn-xs btn-xs--primary">Vào học</a>
+                        </div>
+                        <div class="row g-0">
+                            @forelse ($data['course_progress'] ?? [] as $course)
+                                <div class="col-12 col-lg-6">
+                                    <div class="compact-card">
+                                        <div class="d-flex justify-content-between gap-2 mb-2">
+                                            <div>
+                                                <div class="fw-bold">{{ $course->title }}</div>
+                                                <div class="text-muted small">{{ $course->lesson_completed }}/{{ $course->lesson_total }} bài học hoàn thành</div>
+                                            </div>
+                                            <span class="bdg bdg--primary">{{ $course->progress }}%</span>
+                                        </div>
+                                        <div class="progress-line">
+                                            <span style="width: {{ $course->progress }}%"></span>
+                                        </div>
+                                        <div class="mt-3">
+                                            <a href="{{ route('courses.show', $course->id) }}" class="btn-xs btn-xs--primary">
+                                                Tiếp tục học
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="col-12">
+                                    <div class="empty-state">
+                                        <i class="fas fa-book-open"></i>
+                                        <p>Bạn chưa được gán khóa học.</p>
+                                    </div>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
