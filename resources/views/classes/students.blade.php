@@ -145,6 +145,11 @@
 
             @if (auth()->user()->role === 'admin' || auth()->id() === $classroom->teacher_id)
                 <div class="class-students-actions d-flex gap-2 flex-wrap">
+                    <a href="{{ route('classes.progress', $classroom->id) }}"
+                        class="btn btn-outline-primary fw-bold shadow-sm me-2">
+                        <i class="fas fa-chart-line me-2"></i> Theo dõi tiến độ
+                    </a>
+
                     <button class="btn btn-outline-success fw-bold shadow-sm me-2" data-bs-toggle="modal"
                         data-bs-target="#importExcelModal">
                         <i class="fas fa-file-excel me-2"></i> Nhập từ Excel

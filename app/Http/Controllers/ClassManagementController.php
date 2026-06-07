@@ -120,6 +120,46 @@ class ClassManagementController extends Controller
         return view('classes.student-profile', compact('classroom', 'student', 'availableCourses', 'studentProfile', 'filters'));
     }
 
+    public function showProgress($classId)
+    {
+        $classroom = Classroom::with(['students', 'teacher', 'courses'])->findOrFail($classId);
+        $this->authorizeClassroomAccess($classroom);
+
+        $filters = [
+            'course_id' => request('course_id'),
+            'attention_only' => request()->boolean('attention_only'),
+        ];
+
+        $availableCourses = $classroom->courses;
+        $selectedCourseIds = $filters['course_id']
+            ? [(int) $filters['course_id']]
+            : $availableCourses->pluck('id')->all();
+
+        $allStudentProgress = $classroom->students
+            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $selectedCourseIds))
+            ->values();
+
+        $studentProgress = $filters['attention_only']
+            ? $allStudentProgress->where('needs_attention', true)->values()
+            : $allStudentProgress;
+
+        $classReport = $this->buildClassProgressReport($allStudentProgress);
+        $courseReports = $availableCourses
+            ->map(function ($course) use ($classroom) {
+                $courseProgress = $classroom->students
+                    ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, [$course->id]))
+                    ->values();
+
+                return [
+                    'course' => $course,
+                    'report' => $this->buildClassProgressReport($courseProgress),
+                ];
+            })
+            ->values();
+
+        return view('classes.progress', compact('classroom', 'availableCourses', 'studentProgress', 'classReport', 'courseReports', 'filters'));
+    }
+
     public function index()
     {
         $user = auth()->user();
@@ -282,6 +322,30 @@ class ClassManagementController extends Controller
         };
     }
 
+    private function buildClassProgressReport($studentSummaries): array
+    {
+        $lessonTotal = $studentSummaries->sum('lesson_total');
+        $lessonCompleted = $studentSummaries->sum('lesson_completed');
+        $assignmentTotal = $studentSummaries->sum('assignment_total');
+        $assignmentSubmitted = $studentSummaries->sum('assignment_submitted_count');
+        $scoreAverage = $studentSummaries->pluck('score_average')->filter(fn ($score) => $score !== null)->avg();
+
+        return [
+            'student_count' => $studentSummaries->count(),
+            'needs_attention_count' => $studentSummaries->where('needs_attention', true)->count(),
+            'lesson_completion_rate' => $lessonTotal > 0 ? round(($lessonCompleted / $lessonTotal) * 100) : 0,
+            'lesson_completed' => $lessonCompleted,
+            'lesson_total' => $lessonTotal,
+            'assignment_submission_rate' => $assignmentTotal > 0 ? round(($assignmentSubmitted / $assignmentTotal) * 100) : 0,
+            'assignment_submitted' => $assignmentSubmitted,
+            'assignment_total' => $assignmentTotal,
+            'score_average' => $scoreAverage !== null ? round($scoreAverage, 1) : null,
+            'absence_total' => $studentSummaries->sum('absence_count'),
+            'missing_assignment_total' => $studentSummaries->sum('assignment_missing_count'),
+            'pending_quiz_total' => $studentSummaries->sum('quiz_pending_count'),
+        ];
+    }
+
     private function buildStudentSnapshot(Classroom $classroom, User $student, array $courseIds): array
     {
         $courses = Course::whereIn('id', $courseIds)->get()->keyBy('id');
@@ -344,17 +408,34 @@ class ClassManagementController extends Controller
             ];
         })->values();
 
-        $lessonIds = Lesson::query()
+        $lessons = Lesson::query()
+            ->select('lessons.*', 'modules.course_id', 'modules.title as module_title')
             ->join('modules', 'lessons.module_id', '=', 'modules.id')
             ->whereIn('modules.course_id', $courseIds)
-            ->pluck('lessons.id');
+            ->orderBy('modules.order')
+            ->orderBy('lessons.order')
+            ->get();
+        $lessonIds = $lessons->pluck('id');
         $completedLessons = DB::table('lesson_user')
             ->where('user_id', $student->id)
             ->whereIn('lesson_id', $lessonIds)
             ->get();
+        $completedLessonIds = $completedLessons->pluck('lesson_id');
         $lessonTotal = $lessonIds->count();
         $lessonCompleted = $completedLessons->count();
         $lessonProgress = $lessonTotal > 0 ? round(($lessonCompleted / $lessonTotal) * 100) : 0;
+        $lessonDetails = $lessons->map(function ($lesson) use ($completedLessonIds, $completedLessons, $courses) {
+            $completion = $completedLessons->firstWhere('lesson_id', $lesson->id);
+
+            return [
+                'id' => $lesson->id,
+                'title' => $lesson->title,
+                'module_title' => $lesson->module_title,
+                'course_title' => $courses->get($lesson->course_id)?->title ?? 'Chưa rõ khóa học',
+                'is_completed' => $completedLessonIds->contains($lesson->id),
+                'completed_at' => $completion?->completed_at,
+            ];
+        })->values();
 
         $attendanceColumns = AttendanceColumn::whereIn('course_id', $courseIds)->get()->keyBy('id');
         $attendanceData = AttendanceData::where('user_id', $student->id)
@@ -411,6 +492,10 @@ class ClassManagementController extends Controller
             $alerts[] = ['level' => 'secondary', 'text' => 'Chưa có hoạt động học tập'];
         }
 
+        $scoreAverage = collect([$assignmentAverage, $quizAverage])
+            ->filter(fn ($score) => $score !== null)
+            ->avg();
+
         return [
             'student' => $student,
             'courses' => $courses->values(),
@@ -429,12 +514,14 @@ class ClassManagementController extends Controller
             'lesson_total' => $lessonTotal,
             'lesson_completed' => $lessonCompleted,
             'lesson_progress' => $lessonProgress,
+            'lesson_details' => $lessonDetails,
             'absence_count' => $absenceCount,
             'note_count' => $notes->count(),
             'notes' => $notes,
             'last_activity_at' => $lastActivityAt,
             'alerts' => $alerts,
             'needs_attention' => collect($alerts)->whereIn('level', ['danger', 'warning'])->isNotEmpty(),
+            'score_average' => $scoreAverage !== null ? round($scoreAverage, 1) : null,
         ];
     }
 

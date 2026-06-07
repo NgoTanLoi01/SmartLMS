@@ -449,6 +449,16 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end card-dropdown">
                                     <li>
+                                        <a class="dropdown-item" href="{{ route('classes.progress', $class->id) }}">
+                                            <i class="fas fa-chart-line" style="color:#2563eb;"></i> Theo dõi tiến độ
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('classes.students.index', $class->id) }}">
+                                            <i class="fas fa-user-graduate" style="color:#16a34a;"></i> Quản lý học sinh
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item edit-class-btn" href="#" data-id="{{ $class->id }}"
                                             data-name="{{ $class->name }}" data-code="{{ $class->code }}"
                                             data-teacher="{{ $class->teacher_id }}"
