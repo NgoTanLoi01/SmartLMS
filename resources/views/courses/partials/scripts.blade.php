@@ -516,6 +516,21 @@
             });
         });
 
+        document.querySelectorAll('.course-jump-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const type = this.getAttribute('data-target-type');
+                const id = this.getAttribute('data-target-id');
+                const selector = type === 'assignment'
+                    ? `.assignment-item[data-id="${id}"]`
+                    : (type === 'quiz' ? `.quiz-item[data-id="${id}"]` : `.lesson-item[data-id="${id}"]`);
+                const target = document.querySelector(selector);
+
+                if (target) {
+                    target.click();
+                }
+            });
+        });
+
         // ==========================================
         // 8. SỬA CHƯƠNG
         // ==========================================

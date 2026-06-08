@@ -38,7 +38,7 @@
             padding: 9px 18px;
             font-size: 14px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             text-decoration: none;
             white-space: nowrap;
             transition: background 0.15s;

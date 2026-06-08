@@ -746,7 +746,6 @@
             @else
                 <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Vào học</a>
                 <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-paper-plane"></i> Bài tập</a>
-                <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fas fa-calendar-check"></i> Lịch học</a>
             @endif
         </div>
 

@@ -530,6 +530,9 @@
                     </div>
                     <div><span class="qz-warn-chip"><i class="fas fa-exclamation-triangle"></i> Không tải lại trang (F5)
                             trong quá trình làm bài</span></div>
+                    <div><span class="qz-warn-chip" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;">
+                            <i class="fas fa-rotate-left"></i> Nếu lỡ thoát, bạn có thể quay lại khi còn thời gian
+                        </span></div>
                 </div>
 
                 <form id="quiz-form" action="{{ route('quizzes.submit', $quiz->id) }}" method="POST">
@@ -591,8 +594,9 @@
         <script>
             (function() {
                 const TOTAL = {{ $total }};
-                let remaining = {{ $quiz->time_limit }} * 60;
+                let remaining = {{ $remainingSeconds ?? $quiz->time_limit * 60 }};
                 let answered = 0;
+                const storageKey = 'smartlms_quiz_answers_{{ auth()->id() }}_{{ $quiz->id }}';
 
                 const timerEl = document.getElementById('qz-timer');
                 const countdown = document.getElementById('qz-countdown');
@@ -605,8 +609,7 @@
                 /* ── Answered tracking ── */
                 const answeredSet = new Set();
 
-                document.querySelectorAll('.qz-radio').forEach(radio => {
-                    radio.addEventListener('change', function() {
+                function markAnswered(radio) {
                         const qid = this.dataset.qid;
                         const qcard = document.getElementById('qcard-' + qid);
                         const idx = parseInt(this.closest('.qz-qcard').querySelector('.qz-q-num')
@@ -625,20 +628,57 @@
 
                         // Update progress
                         if (progressEl) progressEl.style.width = (answered / TOTAL * 100) + '%';
+                }
+
+                function saveDraftAnswers() {
+                    const draft = {};
+                    document.querySelectorAll('.qz-radio:checked').forEach(radio => {
+                        draft[radio.dataset.qid] = radio.value;
+                    });
+                    localStorage.setItem(storageKey, JSON.stringify(draft));
+                }
+
+                function restoreDraftAnswers() {
+                    try {
+                        const draft = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                        Object.entries(draft).forEach(([qid, optionId]) => {
+                            const radio = document.querySelector(`.qz-radio[data-qid="${qid}"][value="${optionId}"]`);
+                            if (radio) {
+                                radio.checked = true;
+                                markAnswered.call(radio);
+                            }
+                        });
+                    } catch (error) {
+                        localStorage.removeItem(storageKey);
+                    }
+                }
+
+                document.querySelectorAll('.qz-radio').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        markAnswered.call(this);
+                        saveDraftAnswers();
                     });
                 });
+
+                restoreDraftAnswers();
 
                 /* ── Countdown ── */
                 function pad(n) {
                     return String(n).padStart(2, '0');
                 }
 
+                function renderCountdown() {
+                    const m = Math.floor(Math.max(remaining, 0) / 60);
+                    const s = Math.max(remaining, 0) % 60;
+                    if (countdown) countdown.textContent = pad(m) + ':' + pad(s);
+                }
+
+                renderCountdown();
+
                 const tick = setInterval(function() {
                     remaining--;
 
-                    const m = Math.floor(remaining / 60);
-                    const s = remaining % 60;
-                    if (countdown) countdown.textContent = pad(m) + ':' + pad(s);
+                    renderCountdown();
 
                     if (remaining < 60 && timerEl) {
                         timerEl.classList.add('urgent');
@@ -651,6 +691,7 @@
                         if (form) form.classList.add('form-locked');
                         if (btnSubmit) btnSubmit.disabled = true;
                         window.removeEventListener('beforeunload', guard);
+                        localStorage.removeItem(storageKey);
                         alert('⏳ Đã hết thời gian làm bài! Hệ thống đang tự động thu bài.');
                         form && form.submit();
                     }
@@ -669,6 +710,7 @@
                             btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang nộp bài...';
                             form.classList.add('form-locked');
                             window.removeEventListener('beforeunload', guard);
+                            localStorage.removeItem(storageKey);
                             form.submit();
                         }
                     });

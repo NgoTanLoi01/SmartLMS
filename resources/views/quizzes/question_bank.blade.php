@@ -42,7 +42,7 @@
             padding: 8px 16px;
             font-size: 13.5px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             cursor: pointer;
             text-decoration: none;
             border: 1px solid transparent;
@@ -123,7 +123,7 @@
             border-radius: 10px;
             padding: 8px 12px;
             font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             color: #0f172a;
             background: #f8fafc;
             transition: border-color 0.15s;
@@ -401,7 +401,7 @@
             border-radius: 10px;
             padding: 9px 13px;
             font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             color: #0f172a;
             transition: border-color 0.15s, box-shadow 0.15s;
             background: #fff;
@@ -467,7 +467,7 @@
             border: none;
             background: transparent;
             font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             color: #0f172a;
         }
 
@@ -514,7 +514,7 @@
             padding: 9px 20px;
             font-size: 14px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             cursor: pointer;
             transition: background 0.15s;
         }
@@ -531,7 +531,7 @@
             padding: 9px 24px;
             font-size: 14px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             cursor: pointer;
             transition: background 0.15s;
         }

@@ -6,7 +6,7 @@
     <style>
         /* ── FullCalendar overrides ── */
         #calendar {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
         }
 
         .fc .fc-toolbar-title {
@@ -178,7 +178,7 @@
             border-radius: 10px;
             padding: 9px 13px;
             font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             color: #0f172a;
             background: #fff;
             transition: border-color 0.15s, box-shadow 0.15s;
@@ -221,7 +221,7 @@
             padding: 9px 22px;
             font-size: 14px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             cursor: pointer;
             transition: background 0.15s;
             display: inline-flex;
@@ -245,7 +245,7 @@
             padding: 9px 20px;
             font-size: 14px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             cursor: pointer;
             transition: background 0.15s;
         }
@@ -262,7 +262,7 @@
             padding: 9px 18px;
             font-size: 14px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             cursor: pointer;
             transition: background 0.15s;
             display: inline-flex;

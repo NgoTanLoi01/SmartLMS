@@ -4,7 +4,7 @@
 @once
     @push('styles')
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap');
 
             /* ── Base ── */
             .cm-modal .modal-content {
@@ -12,7 +12,7 @@
                 border-radius: 18px;
                 overflow: hidden;
                 box-shadow: 0 24px 60px rgba(0, 0, 0, 0.14);
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
             }
 
             /* ── Header ── */
@@ -96,7 +96,7 @@
                 border: 1.5px solid #E5E7EB;
                 border-radius: 10px;
                 padding: 0.65rem 0.9rem;
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 0.875rem;
                 color: #111827;
                 transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
@@ -233,7 +233,7 @@
                 width: 100%;
                 border: none;
                 background: transparent;
-                font-family: 'Nunito', monospace;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 1.4rem;
                 font-weight: 800;
                 text-align: center;
@@ -254,7 +254,7 @@
                 border: none;
                 border-radius: 10px;
                 padding: 0.75rem 1rem;
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 0.875rem;
                 font-weight: 800;
                 cursor: pointer;
@@ -791,7 +791,7 @@
                     'table', 'help', 'wordcount'
                 ],
                 toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code | help',
-                content_style: "body { font-family: 'Nunito', sans-serif; font-size: 14px; }",
+                content_style: "body { font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; }",
                 paste_data_images: true,
                 automatic_uploads: true,
                 images_upload_url: '/tinymce/upload-image',

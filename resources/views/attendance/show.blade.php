@@ -3,7 +3,7 @@
 @section('content')
     @push('styles')
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 
             :root {
                 --surface: #FFFFFF;
@@ -50,7 +50,7 @@
             }
 
             body {
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 background: var(--surface-3);
             }
 
@@ -136,7 +136,7 @@
 
             .att-search input {
                 padding: 0.45rem 0.75rem 0.45rem 1.9rem;
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 0.78rem;
                 background: var(--surface-2);
                 border: 1.5px solid var(--border);
@@ -171,7 +171,7 @@
             .add-col-form input,
             .add-col-form select {
                 padding: 0.45rem 0.7rem;
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 0.78rem;
                 background: var(--surface-2);
                 border: 1.5px solid var(--border);
@@ -205,7 +205,7 @@
                 display: inline-flex;
                 align-items: center;
                 gap: 0.35rem;
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 0.75rem;
                 font-weight: 700;
                 border-radius: var(--r-sm);
@@ -426,7 +426,7 @@
             .col-note-cell input {
                 text-align: left;
                 padding: 0.55rem 0.65rem;
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 0.78rem;
             }
 
@@ -519,7 +519,7 @@
                 display: inline-flex;
                 align-items: center;
                 gap: 0.5rem;
-                font-family: 'Nunito', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 0.875rem;
                 font-weight: 800;
                 background: var(--green-600);

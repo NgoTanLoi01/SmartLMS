@@ -8,6 +8,7 @@ use App\Models\QuizAttempt;
 use App\Models\Option;
 use App\Models\Question;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class QuizAttemptController extends Controller
@@ -19,18 +20,42 @@ class QuizAttemptController extends Controller
     {
         $quiz = Quiz::findOrFail($quiz_id);
         $userId = auth()->id();
+        $this->authorizeStudentCanAttempt($quiz);
 
         // Chặn làm lại bài đã hoàn thành
-        $existingAttempt = QuizAttempt::where('quiz_id', $quiz_id)->where('user_id', $userId)->first();
+        $existingAttempt = QuizAttempt::where('quiz_id', $quiz_id)
+            ->where('user_id', $userId)
+            ->whereNotNull('completed_at')
+            ->first();
 
         if ($existingAttempt) {
             return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Bạn đã hoàn thành bài kiểm tra này. Không thể làm lại!');
         }
 
-        // [CHỐNG GIAN LẬN] Chặn mở nhiều tab / session đồng thời
+        $cacheKey = "quiz_session_{$quiz_id}_{$userId}";
         $activeKey = "quiz_active_{$quiz_id}_{$userId}";
+        $sessionData = Cache::get($cacheKey);
+
+        if ($sessionData) {
+            $elapsed = now()->timestamp - $sessionData['started_at'];
+            $remainingSeconds = max(($sessionData['time_limit'] ?? ($quiz->time_limit * 60)) - $elapsed, 0);
+
+            if ($remainingSeconds <= 0) {
+                Cache::forget($cacheKey);
+                Cache::forget($activeKey);
+
+                return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Phiên làm bài đã hết thời gian. Vui lòng liên hệ giáo viên nếu cần hỗ trợ.');
+            }
+
+            $examQuestions = $this->loadExamFromSession($sessionData);
+
+            Cache::put($activeKey, true, now()->addSeconds($remainingSeconds + 300));
+
+            return view('quizzes.attempt', compact('quiz', 'examQuestions', 'remainingSeconds'));
+        }
+
         if (Cache::has($activeKey)) {
-            return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Bạn đang có một phiên làm bài đang mở. Không thể mở thêm tab!');
+            Cache::forget($activeKey);
         }
 
         // Sinh đề ngẫu nhiên
@@ -44,6 +69,9 @@ class QuizAttemptController extends Controller
             "quiz_session_{$quiz_id}_{$userId}",
             [
                 'question_ids' => $examQuestions->pluck('id')->toArray(),
+                'option_ids' => $examQuestions->mapWithKeys(fn ($question) => [
+                    $question->id => $question->options->pluck('id')->toArray(),
+                ])->toArray(),
                 'started_at' => now()->timestamp,
                 'time_limit' => $quiz->time_limit * 60,
             ],
@@ -51,8 +79,9 @@ class QuizAttemptController extends Controller
         );
 
         Cache::put($activeKey, true, $ttl);
+        $remainingSeconds = $quiz->time_limit * 60;
 
-        return view('quizzes.attempt', compact('quiz', 'examQuestions'));
+        return view('quizzes.attempt', compact('quiz', 'examQuestions', 'remainingSeconds'));
     }
 
     // ==========================================
@@ -62,6 +91,7 @@ class QuizAttemptController extends Controller
     {
         $quiz = Quiz::findOrFail($quiz_id);
         $userId = auth()->id();
+        $this->authorizeStudentCanAttempt($quiz);
 
         // [CHỐNG GIAN LẬN] Lấy đề từ Cache — không tin question_ids từ form
         $cacheKey = "quiz_session_{$quiz_id}_{$userId}";
@@ -156,6 +186,47 @@ class QuizAttemptController extends Controller
         }
 
         return $examQuestions;
+    }
+
+    private function authorizeStudentCanAttempt(Quiz $quiz): void
+    {
+        if (auth()->user()->role !== 'student') {
+            abort(403, 'Chỉ học sinh mới được làm bài kiểm tra.');
+        }
+
+        $hasCourseAccess = DB::table('class_user')
+            ->join('class_course', 'class_user.class_id', '=', 'class_course.class_id')
+            ->where('class_user.user_id', auth()->id())
+            ->where('class_course.course_id', $quiz->course_id)
+            ->exists();
+
+        if (!$hasCourseAccess) {
+            abort(403, 'Bạn không có quyền làm bài kiểm tra này.');
+        }
+    }
+
+    private function loadExamFromSession(array $sessionData)
+    {
+        $questionIds = $sessionData['question_ids'] ?? [];
+        $optionIdsByQuestion = $sessionData['option_ids'] ?? [];
+
+        return Question::with('options')
+            ->whereIn('id', $questionIds)
+            ->get()
+            ->sortBy(fn ($question) => array_search($question->id, $questionIds))
+            ->map(function ($question) use ($optionIdsByQuestion) {
+                $optionIds = $optionIdsByQuestion[$question->id] ?? [];
+
+                if (!empty($optionIds)) {
+                    $question->setRelation(
+                        'options',
+                        $question->options->sortBy(fn ($option) => array_search($option->id, $optionIds))->values()
+                    );
+                }
+
+                return $question;
+            })
+            ->values();
     }
 
     /**

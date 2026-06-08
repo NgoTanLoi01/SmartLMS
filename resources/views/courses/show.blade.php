@@ -969,6 +969,101 @@
         .quiz-item-wrapper.completed .lesson-dur-text {
             color: #16A34A;
         }
+
+        .course-dashboard-grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-bottom: 16px;
+        }
+
+        .course-dashboard-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+        }
+
+        .course-dashboard-label {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .course-dashboard-value {
+            color: #0f172a;
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-top: 6px;
+        }
+
+        .course-dashboard-sub {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .course-action-panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .course-action-header {
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+        }
+
+        .course-action-body {
+            padding: 16px;
+        }
+
+        .course-todo-list {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .course-todo-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        @media (max-width: 991.98px) {
+            .course-dashboard-grid,
+            .course-todo-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .course-dashboard-grid,
+            .course-todo-list {
+                grid-template-columns: 1fr;
+            }
+
+            .course-action-header {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .course-action-header .btn,
+            .course-todo-item .btn {
+                width: 100%;
+            }
+        }
     </style>
 
     {{-- Mobile overlay + drawer --}}
@@ -1029,6 +1124,71 @@
                 </div>
             @endif
         </div>
+
+        @if (auth()->user()->role === 'student')
+            {{-- <div class="course-action-panel">
+                <div class="course-action-header">
+                    <div>
+                        <h6 class="fw-bold mb-1"><i class="fas fa-route me-2 text-primary"></i>Lộ trình học của bạn</h6>
+                        <div class="text-muted small">{{ $studentTodoItems->count() }} việc còn cần xử lý trong khóa học này</div>
+                    </div>
+                    @if ($studentNextAction)
+                        <button type="button" class="btn btn-primary fw-bold course-jump-btn"
+                            data-target-type="{{ $studentNextAction['type'] }}"
+                            data-target-id="{{ $studentNextAction['target_id'] }}">
+                            <i class="fas fa-play me-1"></i>Tiếp tục học
+                        </button>
+                    @endif
+                </div>
+                <div class="course-action-body">
+                    @if ($studentTodoItems->isNotEmpty())
+                        <div class="course-todo-list">
+                            @foreach ($studentTodoItems->take(6) as $todo)
+                                <div class="course-todo-item">
+                                    <span class="badge {{ $todo['type'] === 'assignment' ? 'bg-warning text-dark' : ($todo['type'] === 'quiz' ? 'bg-primary' : 'bg-success') }} mb-2">
+                                        {{ $todo['label'] }}
+                                    </span>
+                                    <div class="fw-bold">{{ $todo['title'] }}</div>
+                                    <div class="text-muted small mb-3">{{ $todo['meta'] }}</div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary course-jump-btn"
+                                        data-target-type="{{ $todo['type'] }}"
+                                        data-target-id="{{ $todo['target_id'] }}">
+                                        Mở ngay
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-check-circle text-success me-1"></i>Bạn đã hoàn thành các việc cần làm trong khóa học này.
+                        </div>
+                    @endif
+                </div>
+            </div> --}}
+        @else
+            <div class="course-dashboard-grid">
+                <div class="course-dashboard-card">
+                    <div class="course-dashboard-label">Học sinh</div>
+                    <div class="course-dashboard-value">{{ $courseDashboard['students_count'] }}</div>
+                    <div class="course-dashboard-sub">{{ $courseDashboard['modules_count'] }} chương · {{ $courseDashboard['lessons_count'] }} bài học</div>
+                </div>
+                <div class="course-dashboard-card">
+                    <div class="course-dashboard-label">Hoàn thành bài học</div>
+                    <div class="course-dashboard-value">{{ $courseDashboard['lesson_completion_rate'] }}%</div>
+                    <div class="course-dashboard-sub">Tỷ lệ hoàn thành toàn khóa</div>
+                </div>
+                <div class="course-dashboard-card">
+                    <div class="course-dashboard-label">Nộp bài tập</div>
+                    <div class="course-dashboard-value">{{ $courseDashboard['assignment_submission_rate'] }}%</div>
+                    <div class="course-dashboard-sub">{{ $courseDashboard['pending_grades'] }} bài đang chờ chấm</div>
+                </div>
+                <div class="course-dashboard-card">
+                    <div class="course-dashboard-label">Quiz</div>
+                    <div class="course-dashboard-value">{{ $courseDashboard['quiz_completion_rate'] }}%</div>
+                    <div class="course-dashboard-sub">Điểm TB: {{ $courseDashboard['average_score'] !== null ? round($courseDashboard['average_score'], 1) : 'N/A' }}</div>
+                </div>
+            </div>
+        @endif
 
         {{-- ── MAIN GRID ── --}}
         <div class="row g-3 align-items-start">

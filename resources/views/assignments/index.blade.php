@@ -1,7 +1,12 @@
 @extends('layouts.app')
 
 @section('title', 'Quản lý bài tập')
-
+<style>
+    .modal.fade .modal-dialog {
+        transition: transform .3s ease-out;
+        transform: translate(0, 190px) !important;
+    }
+</style>
 @section('content')
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4 px-2">

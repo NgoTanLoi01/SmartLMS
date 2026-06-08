@@ -17,7 +17,7 @@ class Course extends Model
 
     public function assignments()
     {
-        return $this->hasMany(Assignment::class);
+        return $this->hasMany(Assignments::class);
     }
 
     public function teacher()
@@ -39,15 +39,4 @@ class Course extends Model
         return $this->hasManyThrough(Lesson::class, Module::class);
     }
 
-    public function students()
-    {
-        return $this->hasManyThrough(
-            User::class,
-            \App\Models\ClassUser::class,
-            'course_id',
-            'id',
-            'id',
-            'user_id',
-        );
-    }
 }

@@ -18,9 +18,9 @@
     <meta property="og:image" content="{{ asset('favicon-v2.png') }}">
     <link rel="icon" type="image/png" href="{{ asset('favicon-v2.png') }}">
 
-    {{-- <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap"
-        rel="stylesheet"> --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -47,7 +47,7 @@
         }
 
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             background: var(--bg);
             margin: 0;
             color: var(--text);
@@ -287,7 +287,7 @@
             border: 1px solid var(--border);
             padding: 9px 13px;
             font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             transition: border-color 0.15s, box-shadow 0.15s;
         }
 
@@ -321,7 +321,7 @@
             padding: 10px 20px;
             font-size: 14px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             cursor: pointer;
             transition: background 0.15s;
             width: 100%;

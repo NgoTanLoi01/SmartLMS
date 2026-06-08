@@ -81,7 +81,7 @@
         }
 
         .result-number {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             font-weight: 800;
             letter-spacing: -0.5px;
         }

@@ -42,7 +42,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
 
     {{-- STRUCTURED DATA --}}
@@ -120,7 +120,7 @@
             }
 
             body {
-                font-family: 'DM Sans', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 background: var(--white);
                 color: var(--navy);
                 overflow-x: hidden;
@@ -211,7 +211,7 @@
                 border-radius: 999px;
                 font-size: 14px;
                 font-weight: 600;
-                font-family: 'DM Sans', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 cursor: pointer;
                 text-decoration: none;
                 transition: all .2s;
@@ -300,7 +300,7 @@
                 font-size: 13px;
                 font-weight: 600;
                 margin-bottom: 24px;
-                font-family: 'DM Sans', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
             }
 
             .badge-dot {
@@ -327,7 +327,7 @@
             }
 
             h1 {
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: clamp(36px, 4vw, 56px);
                 font-weight: 800;
                 line-height: 1.1;
@@ -369,7 +369,7 @@
                 border-radius: 999px;
                 font-size: 15px;
                 font-weight: 600;
-                font-family: 'DM Sans', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 cursor: pointer;
                 text-decoration: none;
                 display: inline-flex;
@@ -464,7 +464,7 @@
             }
 
             .card-title {
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 15px;
                 font-weight: 700;
                 color: var(--navy);
@@ -657,7 +657,7 @@
             }
 
             .section-title {
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: clamp(28px, 3vw, 40px);
                 font-weight: 800;
                 letter-spacing: -1px;
@@ -727,7 +727,7 @@
             }
 
             .feature-title {
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 16px;
                 font-weight: 700;
                 color: var(--navy);
@@ -781,7 +781,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 22px;
                 font-weight: 800;
                 margin: 0 auto 22px;
@@ -797,7 +797,7 @@
             }
 
             .step-title {
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 17px;
                 font-weight: 700;
                 color: var(--navy);
@@ -863,7 +863,7 @@
             }
 
             .banner-content h2 {
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: clamp(24px, 3vw, 36px);
                 font-weight: 800;
                 letter-spacing: -.5px;
@@ -893,7 +893,7 @@
                 border-radius: 999px;
                 font-size: 16px;
                 font-weight: 700;
-                font-family: 'DM Sans', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 cursor: pointer;
                 text-decoration: none;
                 display: inline-block;
@@ -931,7 +931,7 @@
             }
 
             .footer-brand .footer-logo {
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-weight: 800;
                 font-size: 24px;
                 color: #fff;
@@ -972,7 +972,7 @@
             }
 
             .footer-col h4 {
-                font-family: 'Sora', sans-serif;
+                font-family: 'Be Vietnam Pro', sans-serif;
                 font-size: 14px;
                 font-weight: 700;
                 color: #fff;
