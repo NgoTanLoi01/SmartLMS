@@ -25,16 +25,28 @@
 
         <div class="row g-4">
             @forelse($assignments as $assignment)
+                @php
+                    $assignmentTypeLabel = match ($assignment->type ?? 'file') {
+                        'essay' => 'Tự luận',
+                        'mixed' => 'File + tự luận',
+                        default => 'Nộp file',
+                    };
+                    $submission = auth()->user()->role === 'student' ? $assignment->submissions->first() : null;
+                @endphp
                 <div class="col-md-6 col-lg-4">
                     <div class="card border-0 shadow-sm h-100 rounded-3 hover-shadow transition-all">
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-bold small">
-                                    <i class="fas fa-book me-1"></i> {{ $assignment->course->title }}
+                                <div class="d-flex flex-column gap-2 align-items-start">
+                                    <div class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-bold small">
+                                        <i class="fas fa-book me-1"></i> {{ $assignment->course->title }}
+                                    </div>
+                                    <div class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
+                                        <i class="fas fa-pen-alt me-1"></i> {{ $assignmentTypeLabel }}
+                                    </div>
                                 </div>
 
                                 @if (auth()->user()->role === 'student')
-                                    @php $submission = $assignment->submissions->first(); @endphp
                                     @if ($submission)
                                         <div class="badge bg-success rounded-pill px-2 py-1 small">
                                             <i class="fas fa-check"></i> Đã nộp
@@ -60,10 +72,17 @@
                                     <span class="fw-bold">Hạn nộp:</span>
                                     <span class="ms-1">{{ $assignment->due_date->format('d/m/Y H:i') }}</span>
                                 </div>
-                                <div class="d-flex align-items-center small">
-                                    <i class="fas fa-file-upload text-muted me-2"></i>
-                                    <span class="text-muted">Định dạng: {{ $assignment->allowed_extensions }}</span>
-                                </div>
+                                @if (($assignment->type ?? 'file') !== 'essay')
+                                    <div class="d-flex align-items-center small">
+                                        <i class="fas fa-file-upload text-muted me-2"></i>
+                                        <span class="text-muted">Định dạng: {{ $assignment->allowed_extensions }}</span>
+                                    </div>
+                                @else
+                                    <div class="d-flex align-items-center small">
+                                        <i class="fas fa-align-left text-muted me-2"></i>
+                                        <span class="text-muted">Nhập câu trả lời trực tiếp</span>
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="d-grid gap-2">
@@ -73,7 +92,10 @@
                                         data-bs-target="#submitAssignmentModal" data-id="{{ $assignment->id }}"
                                         data-title="{{ $assignment->title }}"
                                         data-instructions="{{ strip_tags($assignment->instructions) }}"
-                                        data-extensions="{{ $assignment->allowed_extensions }}">
+                                        data-extensions="{{ $assignment->allowed_extensions }}"
+                                        data-type="{{ $assignment->type ?? 'file' }}"
+                                        data-has-file="{{ $submission && $submission->file_path ? '1' : '0' }}"
+                                        data-text-answer='@json($submission?->text_answer ?? "")'>
                                         {{ $submission ? 'Nộp lại bài làm' : 'Bắt đầu làm bài' }}
                                     </button>
 
@@ -120,9 +142,33 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold small text-muted">Chọn khóa học</label>
-                            <select name="course_id" class="form-select bg-light border-0 py-2" required>
+                            <select name="course_id" id="createAssignmentCourseSelect"
+                                class="form-select bg-light border-0 py-2" required>
                                 @foreach ($courses as $course)
                                     <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Loại bài tập</label>
+                            <select name="type" class="form-select bg-light border-0 py-2" required>
+                                <option value="file">Nộp file</option>
+                                <option value="essay">Tự luận</option>
+                                <option value="mixed">File + tự luận</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Thuộc bài học</label>
+                            <select name="lesson_id" id="createAssignmentLessonSelect"
+                                class="form-select bg-light border-0 py-2" required>
+                                @foreach ($courses as $course)
+                                    @foreach ($course->modules as $module)
+                                        @foreach ($module->lessons as $lesson)
+                                            <option value="{{ $lesson->id }}" data-course="{{ $course->id }}">
+                                                {{ $course->title }} - {{ $module->title }} - {{ $lesson->title }}
+                                            </option>
+                                        @endforeach
+                                    @endforeach
                                 @endforeach
                             </select>
                         </div>
@@ -141,6 +187,7 @@
                             <select name="status" class="form-select bg-light border-0 py-2">
                                 <option value="published">Xuất bản ngay</option>
                                 <option value="draft">Lưu nháp</option>
+                                <option value="hidden">Ẩn khỏi học sinh</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -178,9 +225,15 @@
                         <p class="small text-muted mb-0" id="submitInstructions"></p>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3 d-none" id="submitEssayField">
+                        <label class="form-label fw-bold small text-muted">Bài làm tự luận</label>
+                        <textarea name="text_answer" id="submitTextAnswer" class="form-control bg-light border-0" rows="8"
+                            placeholder="Nhập bài làm tự luận của bạn..."></textarea>
+                    </div>
+
+                    <div class="mb-3" id="submitFileField">
                         <label class="form-label fw-bold small text-muted">Chọn file từ máy tính</label>
-                        <input type="file" name="file" class="form-control bg-light border-0 py-2" required>
+                        <input type="file" name="file" id="submitFileInput" class="form-control bg-light border-0 py-2">
                         <div class="form-text small">Chỉ chấp nhận file định dạng yêu cầu, tối đa 5MB.</div>
                     </div>
                 </div>
@@ -208,7 +261,33 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const submitModal = document.getElementById('submitAssignmentModal');
+            const courseSelect = document.getElementById('createAssignmentCourseSelect');
+            const lessonSelect = document.getElementById('createAssignmentLessonSelect');
             let allowedExtensions = [];
+            let currentAssignmentType = 'file';
+
+            function syncLessonOptions() {
+                if (!courseSelect || !lessonSelect) return;
+
+                const selectedCourseId = courseSelect.value;
+                let firstVisibleOption = null;
+
+                Array.from(lessonSelect.options).forEach(option => {
+                    const visible = option.dataset.course === selectedCourseId;
+                    option.hidden = !visible;
+                    option.disabled = !visible;
+                    if (visible && !firstVisibleOption) firstVisibleOption = option;
+                });
+
+                if (firstVisibleOption && lessonSelect.selectedOptions[0]?.disabled) {
+                    lessonSelect.value = firstVisibleOption.value;
+                }
+            }
+
+            if (courseSelect) {
+                courseSelect.addEventListener('change', syncLessonOptions);
+                syncLessonOptions();
+            }
 
             if (submitModal) {
                 submitModal.addEventListener('show.bs.modal', function(event) {
@@ -218,12 +297,31 @@
                     const instructions = button.getAttribute('data-instructions');
                     const extensions = button.getAttribute('data-extensions') ||
                         'pdf,docx,zip,png,jpg,jpeg';
+                    const textAnswer = JSON.parse(button.getAttribute('data-text-answer') || '""');
+                    currentAssignmentType = button.getAttribute('data-type') || 'file';
+                    const needsFile = ['file', 'mixed'].includes(currentAssignmentType);
+                    const needsEssay = ['essay', 'mixed'].includes(currentAssignmentType);
+                    const hasExistingFile = button.getAttribute('data-has-file') === '1';
+                    const fileField = document.getElementById('submitFileField');
+                    const fileInput = document.getElementById('submitFileInput');
+                    const essayField = document.getElementById('submitEssayField');
+                    const essayInput = document.getElementById('submitTextAnswer');
 
                     allowedExtensions = extensions.split(',').map(e => e.trim().toLowerCase());
 
                     document.getElementById('submitModalTitle').innerText = 'Nộp bài: ' + title;
                     document.getElementById('submitInstructions').innerText = instructions;
                     document.getElementById('submitForm').action = `/assignments/${id}/submit`;
+                    if (fileField) fileField.classList.toggle('d-none', !needsFile);
+                    if (fileInput) {
+                        fileInput.required = needsFile && !hasExistingFile;
+                        fileInput.value = '';
+                    }
+                    if (essayField) essayField.classList.toggle('d-none', !needsEssay);
+                    if (essayInput) {
+                        essayInput.required = needsEssay;
+                        essayInput.value = textAnswer || '';
+                    }
 
                     // Reset lỗi cũ mỗi lần mở modal
                     clearError();
@@ -235,10 +333,20 @@
                 form.addEventListener('submit', function(e) {
                     clearError();
 
-                    const fileInput = form.querySelector('input[type="file"]');
+                    const fileInput = document.getElementById('submitFileInput');
+                    const essayInput = document.getElementById('submitTextAnswer');
                     const file = fileInput.files[0];
+                    const needsFile = ['file', 'mixed'].includes(currentAssignmentType);
+                    const needsEssay = ['essay', 'mixed'].includes(currentAssignmentType);
 
-                    if (!file) return; // để Laravel validate required
+                    if (needsEssay && essayInput.value.trim().length < 10) {
+                        e.preventDefault();
+                        showError('Bài tự luận cần có ít nhất 10 ký tự.');
+                        return;
+                    }
+
+                    if (needsFile && !file) return; // để Laravel validate required
+                    if (!file) return;
 
                     const maxSize = 5 * 1024 * 1024; // 5MB
                     const ext = file.name.split('.').pop().toLowerCase();
@@ -270,8 +378,8 @@
                     alert.className =
                         'alert alert-danger alert-dismissible fade show d-flex align-items-start gap-2 py-2 px-3 small';
                     alert.setAttribute('role', 'alert');
-                    const fileInput = form.querySelector('.mb-3');
-                    fileInput.parentNode.insertBefore(alert, fileInput);
+                    const anchor = document.getElementById('submitEssayField') || document.getElementById('submitFileField');
+                    anchor.parentNode.insertBefore(alert, anchor);
                 }
                 alert.innerHTML = `
             <i class="fas fa-exclamation-circle mt-1 flex-shrink-0"></i>

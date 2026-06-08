@@ -156,16 +156,28 @@
                                         data-instructions="{{ $assignment->instructions }}"
                                         data-due="{{ $assignment->due_date ? $assignment->due_date->format('d/m/Y H:i') : '' }}"
                                         data-raw-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
+                                        data-assignment-type="{{ $assignment->type ?? 'file' }}"
                                         data-status="{{ $submission ? 'submitted' : 'pending' }}"
                                         data-grade="{{ $submission->grade ?? '' }}"
                                         data-feedback="{{ $submission->feedback ?? '' }}"
                                         data-sub-id="{{ $submission ? $submission->id : '' }}"
                                         data-sub-time="{{ $submission ? $submission->submitted_at->format('H:i - d/m/Y') : '' }}"
-                                        data-sub-file="{{ $submission ? asset('storage/' . $submission->file_path) : '' }}">
+                                        data-sub-file="{{ $submission && $submission->file_path ? asset('storage/' . $submission->file_path) : '' }}"
+                                        data-text-answer='@json($submission?->text_answer ?? "")'>
                                         <i
                                             class="{{ $submission ? 'fas fa-check-circle lesson-icon-done' : 'fas fa-file-signature lesson-icon-assign' }} flex-shrink-0"></i>
                                         <div style="min-width:0;">
                                             <div class="lesson-name-text fw-medium">{{ $assignment->title }}</div>
+                                            <div class="lesson-dur-text">
+                                                @php
+                                                    $assignmentTypeLabel = match ($assignment->type ?? 'file') {
+                                                        'essay' => 'Tự luận',
+                                                        'mixed' => 'File + tự luận',
+                                                        default => 'Nộp file',
+                                                    };
+                                                @endphp
+                                                <span class="badge bg-info text-dark">{{ $assignmentTypeLabel }}</span>
+                                            </div>
                                             @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
                                                 <div class="lesson-dur-text">
                                                     <span class="badge bg-{{ $assignment->status === 'published' ? 'success' : ($assignment->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
@@ -187,6 +199,7 @@
                                                 data-instructions='@json($assignment->instructions)'
                                                 data-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
                                                 data-lesson="{{ $lesson->id }}"
+                                                data-type="{{ $assignment->type ?? 'file' }}"
                                                 data-status="{{ $assignment->status ?? 'published' }}"
                                                 data-available-from="{{ $assignment->available_from?->format('Y-m-d\TH:i') }}">
                                                 <i class="fas fa-edit"></i>

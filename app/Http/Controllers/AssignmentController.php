@@ -41,7 +41,11 @@ class AssignmentController extends Controller
                 ->get();
         }
 
-        $courses = Course::all();
+        if ($user->role === 'teacher') {
+            $courses = Course::with('modules.lessons')->where('teacher_id', $user->id)->get();
+        } else {
+            $courses = Course::with('modules.lessons')->get();
+        }
 
         return view('assignments.index', compact('assignments', 'courses'));
     }
@@ -51,6 +55,7 @@ class AssignmentController extends Controller
         $request->validate([
             'course_id' => 'required|exists:courses,id',
             'lesson_id' => 'required|exists:lessons,id',
+            'type' => 'required|in:file,essay,mixed',
             'title' => 'required|string|max:255',
             'instructions' => 'required|string',
             'due_date' => 'required|date',
@@ -101,7 +106,8 @@ class AssignmentController extends Controller
                 'student_name' => $student->name,
                 'student_email' => $student->email,
                 'submitted_at' => $submission ? $submission->submitted_at->format('d/m/Y H:i') : null,
-                'file_url' => $submission ? asset('storage/' . $submission->file_path) : null,
+                'file_url' => $submission && $submission->file_path ? asset('storage/' . $submission->file_path) : null,
+                'text_answer' => $submission ? $submission->text_answer : null,
                 'grade' => $submission ? $submission->grade : null,
                 'submission_id' => $submission ? $submission->id : null,
                 'feedback' => $submission ? $submission->feedback : null,
@@ -132,29 +138,48 @@ class AssignmentController extends Controller
         // 1. Lấy thông tin bài nộp cũ nếu có
         $oldSubmission = AssignmentSubmission::where('assignment_id', $id)->where('user_id', $user->id)->first();
 
-        // 2. Validate file mới
+        // 2. Validate nội dung theo loại bài tập
         $allowed = $assignment->allowed_extensions ?? 'pdf,docx,zip,png,jpg,jpeg';
         $maxSize = $assignment->max_file_size ?? 10240;
+        $rules = [];
 
-        $request->validate([
-            'file' => 'required|file|mimes:' . str_replace(' ', '', $allowed) . "|max:{$maxSize}",
-        ]);
+        $hasExistingFile = $oldSubmission && !empty($oldSubmission->file_path);
+
+        if (in_array($assignment->type, ['file', 'mixed'], true) && !$hasExistingFile) {
+            $rules['file'] = 'required|file|mimes:' . str_replace(' ', '', $allowed) . "|max:{$maxSize}";
+        } else {
+            $rules['file'] = 'nullable|file|mimes:' . str_replace(' ', '', $allowed) . "|max:{$maxSize}";
+        }
+
+        if (in_array($assignment->type, ['essay', 'mixed'], true)) {
+            $rules['text_answer'] = 'required|string|min:10';
+        } else {
+            $rules['text_answer'] = 'nullable|string';
+        }
+
+        $request->validate($rules);
 
         // 3. Nếu đã có bài nộp cũ, thực hiện xóa file cũ trước khi lưu file mới
-        if ($oldSubmission && $oldSubmission->file_path) {
+        if ($request->hasFile('file') && $oldSubmission && $oldSubmission->file_path) {
             if (Storage::disk('public')->exists($oldSubmission->file_path)) {
                 Storage::disk('public')->delete($oldSubmission->file_path);
             }
         }
 
         // 4. Lưu file mới vào folder assignments
-        $filePath = $request->file('file')->store('assignments', 'public');
+        $filePath = $oldSubmission?->file_path;
+        if ($request->hasFile('file')) {
+            $filePath = $request->file('file')->store('assignments', 'public');
+        } elseif ($assignment->type === 'essay') {
+            $filePath = null;
+        }
 
         // 5. Cập nhật hoặc tạo mới record trong Database
         AssignmentSubmission::updateOrCreate(
             ['assignment_id' => $id, 'user_id' => $user->id],
             [
                 'file_path' => $filePath,
+                'text_answer' => $request->input('text_answer'),
                 'submitted_at' => now(),
             ],
         );
@@ -175,7 +200,7 @@ class AssignmentController extends Controller
         }
 
         // Xóa file vật lý trong storage
-        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($submission->file_path)) {
+        if ($submission->file_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($submission->file_path)) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($submission->file_path);
         }
 
@@ -192,6 +217,7 @@ class AssignmentController extends Controller
             'instructions' => 'required|string',
             'due_date' => 'required|date',
             'lesson_id' => 'required|exists:lessons,id',
+            'type' => 'nullable|in:file,essay,mixed',
             'status' => 'nullable|in:draft,published,hidden',
             'available_from' => 'nullable|date',
         ]);

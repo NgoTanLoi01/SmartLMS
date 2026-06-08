@@ -61,6 +61,14 @@
         const iframe = document.getElementById('lesson-video');
         const externalBtn = document.getElementById('external-link-btn');
 
+        function parseDataJson(value, fallback = '') {
+            try {
+                return JSON.parse(value || JSON.stringify(fallback));
+            } catch (e) {
+                return fallback;
+            }
+        }
+
         // Helper: ẩn tất cả các khu vực nội dung
         function hideAllAreas() {
             lessonArea.classList.add('d-none');
@@ -171,15 +179,27 @@
                 const isOverdue = rawDue ? new Date(rawDue) < new Date() : false;
 
                 const status = this.getAttribute('data-status');
+                const assignmentType = this.getAttribute('data-assignment-type') || 'file';
+                const needsFile = ['file', 'mixed'].includes(assignmentType);
+                const needsEssay = ['essay', 'mixed'].includes(assignmentType);
                 const badge = document.getElementById('assignment-badge');
                 const grade = this.getAttribute('data-grade');
                 const feedback = this.getAttribute('data-feedback');
                 const subId = this.getAttribute('data-sub-id');
                 const subTime = this.getAttribute('data-sub-time');
                 const subFile = this.getAttribute('data-sub-file');
+                const textAnswer = parseDataJson(this.getAttribute('data-text-answer'), '');
 
                 const submittedArea = document.getElementById('submitted-info-area');
                 const uploadArea = document.getElementById('upload-form-area');
+                const submittedFileCard = document.getElementById('submitted-file-card');
+                const submittedFileLink = document.getElementById('submitted-file-link');
+                const submittedTextAnswerCard = document.getElementById('submitted-text-answer-card');
+                const submittedTextAnswerText = document.getElementById('submitted-text-answer-text');
+                const fileUploadField = document.getElementById('file-upload-field');
+                const fileInput = document.getElementById('assignment-file-input');
+                const essayAnswerField = document.getElementById('essay-answer-field');
+                const essayAnswerInput = document.getElementById('essay-answer-input');
                 const gradingResult = document.getElementById('grading-result');
                 const submissionActions = document.getElementById('submission-actions');
                 let gradedWarning = document.getElementById('graded-warning');
@@ -187,6 +207,22 @@
                 const btnEditSub = document.getElementById('btn-edit-submission');
                 const deleteForm = document.getElementById('delete-submission-form');
                 const submitForm = document.getElementById('course-submit-assignment-form');
+
+                if (fileUploadField) fileUploadField.classList.toggle('d-none', !needsFile);
+                if (fileInput) {
+                    fileInput.required = needsFile && status !== 'submitted';
+                    if (!needsFile) fileInput.value = '';
+                }
+                if (essayAnswerField) essayAnswerField.classList.toggle('d-none', !needsEssay);
+                if (essayAnswerInput) {
+                    essayAnswerInput.required = needsEssay;
+                    essayAnswerInput.value = textAnswer || '';
+                }
+
+                if (submittedFileCard) submittedFileCard.classList.toggle('d-none', !subFile);
+                if (submittedFileLink && subFile) submittedFileLink.href = subFile;
+                if (submittedTextAnswerCard) submittedTextAnswerCard.classList.toggle('d-none', !textAnswer);
+                if (submittedTextAnswerText) submittedTextAnswerText.innerText = textAnswer || '';
 
                 let lockedAlert = document.getElementById('overdue-locked-alert');
                 if (!lockedAlert && uploadArea) {
@@ -206,7 +242,6 @@
                         submittedArea.classList.remove('d-none');
                         uploadArea.classList.add('d-none');
                         document.getElementById('submitted-time-text').innerText = subTime;
-                        document.getElementById('submitted-file-link').href = subFile;
                         if (deleteForm) deleteForm.action = `/submissions/${subId}/delete`;
                         if (btnCancelEdit) btnCancelEdit.classList.remove('d-none');
                     }
@@ -360,6 +395,13 @@
                             return;
                         }
 
+                        const escapeHtml = (value) => String(value ?? '')
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#039;');
+
                         data.submissions.forEach(sub => {
                             let statusBadge = sub.submitted_at ?
                                 '<span class="badge bg-success">Đã nộp</span>' :
@@ -367,7 +409,15 @@
 
                             let fileLink = sub.file_url ?
                                 `<a href="${sub.file_url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-download me-1"></i>Tải file</a>` :
-                                '<span class="text-muted small">---</span>';
+                                '';
+
+                            let textAnswer = sub.text_answer ?
+                                `<div class="small bg-light rounded-3 p-2 mt-2 text-dark" style="white-space:pre-wrap;max-width:360px;">${escapeHtml(sub.text_answer)}</div>` :
+                                '';
+
+                            let submissionContent = fileLink || textAnswer
+                                ? `${fileLink}${textAnswer}`
+                                : '<span class="text-muted small">---</span>';
 
                             let gradeForm = sub.submission_id ?
                                 `<form action="/submissions/${sub.submission_id}/grade" method="POST" class="d-flex gap-2">@csrf<input type="number" name="grade" step="0.1" class="form-control form-control-sm" style="width:70px" value="${sub.grade || ''}" placeholder="0-10"><input type="text" name="feedback" class="form-control form-control-sm" value="${sub.feedback || ''}" placeholder="Nhận xét..."><button type="submit" class="btn btn-sm btn-success"><i class="fas fa-save"></i></button></form>` :
@@ -381,7 +431,7 @@
                                     </td>
                                     <td class="px-4">${statusBadge}</td>
                                     <td class="px-4 small text-muted">${sub.submitted_at || '---'}</td>
-                                    <td class="px-4">${fileLink}</td>
+                                    <td class="px-4">${submissionContent}</td>
                                     <td class="px-4">${gradeForm}</td>
                                 </tr>
                             `;

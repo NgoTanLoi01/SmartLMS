@@ -620,6 +620,14 @@
 
                 <div class="cm-row cols-2">
                     <div class="cm-field">
+                        <label class="cm-label">Loại bài tập</label>
+                        <select name="type" class="cm-ctrl" required>
+                            <option value="file">Nộp file</option>
+                            <option value="essay">Tự luận</option>
+                            <option value="mixed">File + tự luận</option>
+                        </select>
+                    </div>
+                    <div class="cm-field">
                         <label class="cm-label">Thuộc bài học</label>
                         <select name="lesson_id" class="cm-ctrl" required>
                             <option value="" disabled selected>-- Chọn bài học --</option>
@@ -693,6 +701,14 @@
 
                 <div class="cm-row cols-2">
                     <div class="cm-field">
+                        <label class="cm-label">Loại bài tập</label>
+                        <select name="type" id="editAssignmentType" class="cm-ctrl" required>
+                            <option value="file">Nộp file</option>
+                            <option value="essay">Tự luận</option>
+                            <option value="mixed">File + tự luận</option>
+                        </select>
+                    </div>
+                    <div class="cm-field">
                         <label class="cm-label">Thuộc bài học</label>
                         <select name="lesson_id" id="editAssignmentLesson" class="cm-ctrl" required>
                             @foreach ($course->modules as $module)
@@ -761,7 +777,7 @@
                                 <th>Học sinh</th>
                                 <th>Trạng thái</th>
                                 <th>Thời gian nộp</th>
-                                <th>File bài làm</th>
+                                <th>Bài làm</th>
                                 <th>Chấm điểm</th>
                             </tr>
                         </thead>
@@ -900,9 +916,11 @@
             const lessonId = button.dataset.lesson;
             const status = button.dataset.status || 'published';
             const availableFrom = button.dataset.availableFrom || '';
+            const type = button.dataset.type || 'file';
 
             document.getElementById('editAssignmentForm').action = `/assignments/${id}`;
             document.getElementById('editAssignmentTitle').value = title;
+            document.getElementById('editAssignmentType').value = type;
             document.getElementById('editAssignmentLesson').value = lessonId;
             document.getElementById('editAssignmentDue').value = dueDate;
             document.getElementById('editAssignmentStatus').value = status;

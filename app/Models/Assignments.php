@@ -12,7 +12,7 @@ class Assignments extends Model
     // Khai báo rõ tên bảng vì tên Model đang là số nhiều
     protected $table = 'assignments';
 
-    protected $fillable = ['course_id', 'lesson_id', 'title', 'instructions', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'published_at', 'available_from'];
+    protected $fillable = ['course_id', 'lesson_id', 'type', 'title', 'instructions', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
         'due_date' => 'datetime',

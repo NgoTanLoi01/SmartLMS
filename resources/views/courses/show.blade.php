@@ -1286,7 +1286,7 @@
                                     <h6 class="fw-bold text-success mb-3">
                                         <i class="fas fa-check-circle me-2"></i>Bài làm của bạn
                                     </h6>
-                                    <div class="submitted-file-card mb-3">
+                                    <div id="submitted-file-card" class="submitted-file-card mb-3">
                                         <div>
                                             <p class="mb-1 fw-bold" style="font-size:14px;">
                                                 <i class="fas fa-file-alt me-2 text-primary"></i>Tài liệu đã tải lên
@@ -1300,6 +1300,15 @@
                                             class="btn btn-outline-primary btn-sm rounded-pill px-3 flex-shrink-0">
                                             <i class="fas fa-eye me-1"></i> Xem file
                                         </a>
+                                    </div>
+                                    <div id="submitted-text-answer-card" class="submitted-file-card d-none mb-3 align-items-start">
+                                        <div class="w-100">
+                                            <p class="mb-2 fw-bold" style="font-size:14px;">
+                                                <i class="fas fa-align-left me-2 text-primary"></i>Bài tự luận đã nộp
+                                            </p>
+                                            <div id="submitted-text-answer-text" class="bg-light rounded-3 p-3 text-dark"
+                                                style="font-size:14px;line-height:1.7;white-space:pre-wrap;"></div>
+                                        </div>
                                     </div>
                                     <div id="grading-result" class="d-none mb-3 grading-result-box">
                                         <h6 class="fw-bold text-success mb-2">
@@ -1339,9 +1348,19 @@
                                     <form id="course-submit-assignment-form" method="POST" enctype="multipart/form-data"
                                         action="">
                                         @csrf
+                                        <div id="essay-answer-field" class="mb-3 d-none">
+                                            <label for="essay-answer-input" class="form-label small fw-bold text-muted">
+                                                Nội dung bài tự luận
+                                            </label>
+                                            <textarea name="text_answer" id="essay-answer-input" class="form-control bg-white border-0 shadow-sm"
+                                                rows="8" placeholder="Nhập bài làm tự luận của bạn..."></textarea>
+                                        </div>
                                         <div class="d-flex flex-column flex-sm-row gap-2">
-                                            <input type="file" name="file"
-                                                class="form-control bg-white border-0 shadow-sm" required>
+                                            <div id="file-upload-field" class="flex-grow-1">
+                                                <input type="file" name="file" id="assignment-file-input"
+                                                    class="form-control bg-white border-0 shadow-sm">
+                                                <div class="form-text small">Chỉ cần chọn file với bài dạng nộp file hoặc file + tự luận.</div>
+                                            </div>
                                             <button class="btn btn-warning text-dark px-4 fw-bold flex-shrink-0"
                                                 type="submit">
                                                 <i class="fas fa-paper-plane me-1"></i>Gửi bài
