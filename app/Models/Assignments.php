@@ -12,11 +12,28 @@ class Assignments extends Model
     // Khai báo rõ tên bảng vì tên Model đang là số nhiều
     protected $table = 'assignments';
 
-    protected $fillable = ['course_id', 'lesson_id', 'title', 'instructions', 'due_date', 'allowed_extensions', 'max_file_size', 'status'];
+    protected $fillable = ['course_id', 'lesson_id', 'title', 'instructions', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
         'due_date' => 'datetime',
+        'published_at' => 'datetime',
+        'available_from' => 'datetime',
     ];
+
+    public function scopeVisibleToStudents($query)
+    {
+        return $query->where('status', 'published')
+            ->where(function ($q) {
+                $q->whereNull('available_from')
+                    ->orWhere('available_from', '<=', now());
+            });
+    }
+
+    public function isVisibleToStudents(): bool
+    {
+        return $this->status === 'published'
+            && (!$this->available_from || $this->available_from->lte(now()));
+    }
 
     public function course()
     {

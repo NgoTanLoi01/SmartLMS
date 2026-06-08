@@ -37,14 +37,16 @@ class CourseController extends Controller
                 ->whereHas('classes', function ($q) use ($classIds) {
                     $q->whereIn('classes.id', $classIds);
                 })
+                ->visibleToStudents()
                 ->with(['modules.lessons'])
                 ->latest()
                 ->get();
 
             // Giữ nguyên logic tính progress của thầy
             foreach ($courses as $course) {
-                $totalLessons = $course->modules->flatMap->lessons->count();
-                $courseLessonIds = $course->modules->flatMap->lessons->pluck('id')->toArray();
+                $visibleLessons = $course->modules->flatMap->lessons->filter(fn ($lesson) => $lesson->isVisibleToStudents());
+                $totalLessons = $visibleLessons->count();
+                $courseLessonIds = $visibleLessons->pluck('id')->toArray();
                 $completedLessons = $user->lessons()->whereIn('lesson_id', $courseLessonIds)->whereNotNull('lesson_user.completed_at')->count();
                 $course->progress = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
             }
@@ -67,6 +69,34 @@ class CourseController extends Controller
         // Load khóa học cùng giáo viên, bài học và bài tập của từng bài học
         $course = Course::with(['teacher', 'classes', 'modules.lessons.assignments', 'quizzes'])->findOrFail($id);
         $this->authorizeCourseAccess($course);
+
+        if (auth()->user()->role === 'student') {
+            $course->setRelation(
+                'modules',
+                $course->modules
+                    ->map(function ($module) {
+                        $module->setRelation(
+                            'lessons',
+                            $module->lessons
+                                ->filter(fn ($lesson) => $lesson->isVisibleToStudents())
+                                ->map(function ($lesson) {
+                                    $lesson->setRelation(
+                                        'assignments',
+                                        $lesson->assignments->filter(fn ($assignment) => $assignment->isVisibleToStudents())->values()
+                                    );
+
+                                    return $lesson;
+                                })
+                                ->values()
+                        );
+
+                        return $module;
+                    })
+                    ->filter(fn ($module) => $module->lessons->isNotEmpty())
+                    ->values()
+            );
+            $course->setRelation('quizzes', $course->quizzes->filter(fn ($quiz) => $quiz->isVisibleToStudents())->values());
+        }
 
         $completedLessonIds = [];
         $progress = 0;
@@ -116,12 +146,17 @@ class CourseController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required',
+            'status' => 'nullable|in:draft,published,hidden',
+            'available_from' => 'nullable|date',
         ]);
 
         Course::create([
             'title' => $request->title,
             'description' => $request->description,
             'teacher_id' => auth()->id(),
+            'status' => $request->input('status', 'published'),
+            'published_at' => $request->input('status', 'published') === 'published' ? now() : null,
+            'available_from' => $request->available_from,
         ]);
 
         return redirect()->route('courses.index')->with('success', 'Tạo khóa học thành công!');
@@ -145,9 +180,17 @@ class CourseController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required',
+            'status' => 'nullable|in:draft,published,hidden',
+            'available_from' => 'nullable|date',
         ]);
 
-        $course->update($request->only(['title', 'description']));
+        $course->update([
+            'title' => $request->title,
+            'description' => $request->description,
+            'status' => $request->input('status', $course->status),
+            'published_at' => $request->input('status', $course->status) === 'published' ? ($course->published_at ?? now()) : null,
+            'available_from' => $request->available_from,
+        ]);
 
         return redirect()->route('courses.index')->with('success', 'Cập nhật thành công!');
     }
@@ -172,6 +215,10 @@ class CourseController extends Controller
         }
 
         if ($user->role === 'student') {
+            if (!$course->isVisibleToStudents()) {
+                abort(403, 'Khóa học này chưa được xuất bản.');
+            }
+
             $studentClassIds = $user->classes()->pluck('classes.id');
             $hasAccess = $course->classes()->whereIn('classes.id', $studentClassIds)->exists();
 
@@ -256,6 +303,7 @@ class CourseController extends Controller
             ->values());
 
         $assignmentTodos = collect(Assignments::where('course_id', $course->id)
+            ->visibleToStudents()
             ->orderByRaw('due_date IS NULL')
             ->orderBy('due_date')
             ->get()

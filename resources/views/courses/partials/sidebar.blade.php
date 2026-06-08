@@ -98,6 +98,16 @@
                                         <div class="lesson-name-text">
                                             {{ $moduleIndex + 1 }}.{{ $lessonIndex + 1 }} {{ $lesson->title }}
                                         </div>
+                                        @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                            <div class="lesson-dur-text">
+                                                <span class="badge bg-{{ $lesson->status === 'published' ? 'success' : ($lesson->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
+                                                    {{ strtoupper($lesson->status ?? 'published') }}
+                                                </span>
+                                                @if ($lesson->available_from)
+                                                    <span class="ms-1">Mở: {{ $lesson->available_from->format('d/m/Y H:i') }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
                                         @if ($durLabel)
                                             <div class="lesson-dur-text">
                                                 <i class="far fa-clock me-1"></i>{{ $durLabel }}
@@ -112,6 +122,8 @@
                                             data-id="{{ $lesson->id }}" data-title="{{ $lesson->title }}"
                                             data-content="{{ $lesson->content }}"
                                             data-video="{{ $lesson->video_url }}" data-module="{{ $module->id }}"
+                                            data-status="{{ $lesson->status ?? 'published' }}"
+                                            data-available-from="{{ $lesson->available_from?->format('Y-m-d\TH:i') }}"
                                             data-bs-toggle="modal" data-bs-target="#editLessonModal">
                                             <i class="fas fa-edit"></i>
                                         </a>
@@ -154,6 +166,16 @@
                                             class="{{ $submission ? 'fas fa-check-circle lesson-icon-done' : 'fas fa-file-signature lesson-icon-assign' }} flex-shrink-0"></i>
                                         <div style="min-width:0;">
                                             <div class="lesson-name-text fw-medium">{{ $assignment->title }}</div>
+                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                                <div class="lesson-dur-text">
+                                                    <span class="badge bg-{{ $assignment->status === 'published' ? 'success' : ($assignment->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
+                                                        {{ strtoupper($assignment->status ?? 'published') }}
+                                                    </span>
+                                                    @if ($assignment->available_from)
+                                                        <span class="ms-1">Mở: {{ $assignment->available_from->format('d/m/Y H:i') }}</span>
+                                                    @endif
+                                                </div>
+                                            @endif
                                         </div>
                                     </a>
 
@@ -164,7 +186,9 @@
                                                 data-title='@json($assignment->title)'
                                                 data-instructions='@json($assignment->instructions)'
                                                 data-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
-                                                data-lesson="{{ $lesson->id }}">
+                                                data-lesson="{{ $lesson->id }}"
+                                                data-status="{{ $assignment->status ?? 'published' }}"
+                                                data-available-from="{{ $assignment->available_from?->format('Y-m-d\TH:i') }}">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <form action="{{ route('assignments.destroy', $assignment->id) }}"
@@ -239,6 +263,16 @@
                                             style="{{ $attempt ? 'color:#198754;' : 'color:#6f42c1;' }}">
                                             {{ $quiz->title }}
                                         </div>
+                                        @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                            <div class="lesson-dur-text">
+                                                <span class="badge bg-{{ $quiz->status === 'published' ? 'success' : ($quiz->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
+                                                    {{ strtoupper($quiz->status ?? 'published') }}
+                                                </span>
+                                                @if ($quiz->available_from)
+                                                    <span class="ms-1">Mở: {{ $quiz->available_from->format('d/m/Y H:i') }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
                                         <div class="lesson-dur-text"><i
                                                 class="far fa-clock me-1"></i>{{ $quiz->time_limit }} phút</div>
                                     </div>

@@ -194,6 +194,10 @@ class QuizAttemptController extends Controller
             abort(403, 'Chỉ học sinh mới được làm bài kiểm tra.');
         }
 
+        if (!$quiz->course->isVisibleToStudents() || !$quiz->isVisibleToStudents()) {
+            abort(403, 'Bài kiểm tra này chưa được mở.');
+        }
+
         $hasCourseAccess = DB::table('class_user')
             ->join('class_course', 'class_user.class_id', '=', 'class_course.class_id')
             ->where('class_user.user_id', auth()->id())

@@ -16,7 +16,11 @@ class LessonController extends Controller
             'video_url' => 'nullable|url',
             'module_id' => 'required|exists:modules,id',
             'attachment' => 'nullable|file|max:20480', // Max 20MB
+            'status' => 'nullable|in:draft,published,hidden',
+            'available_from' => 'nullable|date',
         ]);
+        $data['status'] = $data['status'] ?? 'published';
+        $data['published_at'] = $data['status'] === 'published' ? now() : null;
 
         if ($request->hasFile('attachment')) {
             $data['attachment'] = $request->file('attachment')->store('lessons/attachments', 'public');
@@ -37,7 +41,11 @@ class LessonController extends Controller
             'video_url' => 'nullable|url',
             'module_id' => 'required|exists:modules,id',
             'attachment' => 'nullable|file|max:20480',
+            'status' => 'nullable|in:draft,published,hidden',
+            'available_from' => 'nullable|date',
         ]);
+        $data['status'] = $data['status'] ?? $lesson->status;
+        $data['published_at'] = $data['status'] === 'published' ? ($lesson->published_at ?? now()) : null;
 
         if ($request->hasFile('attachment')) {
             // Xóa file cũ nếu có
@@ -68,6 +76,19 @@ class LessonController extends Controller
     public function toggleComplete($id)
     {
         $user = auth()->user();
+        $lesson = Lesson::with('module.course.classes')->findOrFail($id);
+
+        if ($user->role === 'student') {
+            $studentClassIds = $user->classes()->pluck('classes.id');
+            $hasAccess = $lesson->module->course->classes
+                ->pluck('id')
+                ->intersect($studentClassIds)
+                ->isNotEmpty();
+
+            if (!$hasAccess || !$lesson->module->course->isVisibleToStudents() || !$lesson->isVisibleToStudents()) {
+                return response()->json(['message' => 'Bài học này chưa được mở.'], 403);
+            }
+        }
 
         // Cập nhật cột completed_at bằng thời gian hiện tại
         $user->lessons()->syncWithoutDetaching([

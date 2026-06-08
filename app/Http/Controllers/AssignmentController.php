@@ -23,9 +23,11 @@ class AssignmentController extends Controller
         } else {
             // Học sinh: Chỉ lấy bài tập trạng thái 'published' và thuộc lớp đang học
             $classIds = $user->classes()->pluck('classes.id');
-            $courseIds = Course::whereHas('classes', function ($q) use ($classIds) {
-                $q->whereIn('classes.id', $classIds);
-            })->pluck('id');
+            $courseIds = Course::visibleToStudents()
+                ->whereHas('classes', function ($q) use ($classIds) {
+                    $q->whereIn('classes.id', $classIds);
+                })
+                ->pluck('id');
 
             $assignments = Assignments::with([
                 'course',
@@ -34,7 +36,7 @@ class AssignmentController extends Controller
                 },
             ])
                 ->whereIn('course_id', $courseIds)
-                ->where('status', 'published') // Chỉ hiện bài đã xuất bản
+                ->visibleToStudents()
                 ->latest()
                 ->get();
         }
@@ -54,10 +56,14 @@ class AssignmentController extends Controller
             'due_date' => 'required|date',
             'allowed_extensions' => 'nullable|string',
             'max_file_size' => 'nullable|integer',
-            'status' => 'required|in:draft,published',
+            'status' => 'required|in:draft,published,hidden',
+            'available_from' => 'nullable|date',
         ]);
 
-        Assignments::create($request->all());
+        $data = $request->all();
+        $data['published_at'] = $data['status'] === 'published' ? now() : null;
+
+        Assignments::create($data);
         return back()->with('success', 'Đã tạo bài tập thành công!');
     }
 
@@ -110,8 +116,18 @@ class AssignmentController extends Controller
 
     public function submit(Request $request, $id)
     {
-        $assignment = Assignments::findOrFail($id);
+        $assignment = Assignments::with('course.classes')->findOrFail($id);
         $user = auth()->user();
+
+        $studentClassIds = $user->classes()->pluck('classes.id');
+        $hasAccess = $assignment->course->classes
+            ->pluck('id')
+            ->intersect($studentClassIds)
+            ->isNotEmpty();
+
+        if (!$hasAccess || !$assignment->course->isVisibleToStudents() || !$assignment->isVisibleToStudents()) {
+            return back()->withErrors(['Bài tập này chưa được mở cho học sinh.']);
+        }
 
         // 1. Lấy thông tin bài nộp cũ nếu có
         $oldSubmission = AssignmentSubmission::where('assignment_id', $id)->where('user_id', $user->id)->first();
@@ -176,10 +192,15 @@ class AssignmentController extends Controller
             'instructions' => 'required|string',
             'due_date' => 'required|date',
             'lesson_id' => 'required|exists:lessons,id',
+            'status' => 'nullable|in:draft,published,hidden',
+            'available_from' => 'nullable|date',
         ]);
 
         // SỬA CHỖ NÀY
         $assignment = Assignments::findOrFail($id);
+
+        $validated['status'] = $validated['status'] ?? $assignment->status;
+        $validated['published_at'] = $validated['status'] === 'published' ? ($assignment->published_at ?? now()) : null;
 
         $assignment->update($validated);
 

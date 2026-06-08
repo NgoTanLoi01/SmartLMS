@@ -413,6 +413,8 @@
 
                 document.getElementById('editLessonVideo').value = this.getAttribute('data-video');
                 document.getElementById('editLessonModule').value = this.getAttribute('data-module');
+                document.getElementById('editLessonStatus').value = this.getAttribute('data-status') || 'published';
+                document.getElementById('editLessonAvailableFrom').value = this.getAttribute('data-available-from') || '';
             });
         });
 

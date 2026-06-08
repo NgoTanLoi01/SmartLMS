@@ -489,6 +489,22 @@
                     </div>
                 </div>
 
+                <div class="cm-row cols-2">
+                    <div class="cm-field">
+                        <label class="cm-label">Trạng thái xuất bản</label>
+                        <select name="status" class="cm-ctrl">
+                            <option value="published">Published - mở cho học sinh</option>
+                            <option value="draft">Draft - bản nháp</option>
+                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                        </select>
+                    </div>
+                    <div class="cm-field">
+                        <label class="cm-label">Mở từ thời điểm</label>
+                        <input type="datetime-local" name="available_from" class="cm-ctrl">
+                        <div class="cm-hint">Bỏ trống nếu mở ngay.</div>
+                    </div>
+                </div>
+
                 <div class="cm-field">
                     <label class="cm-label">Nội dung chi tiết</label>
                     <textarea name="content" id="addLessonContent" class="cm-ctrl" rows="4"
@@ -549,6 +565,22 @@
                     </div>
                 </div>
 
+                <div class="cm-row cols-2">
+                    <div class="cm-field">
+                        <label class="cm-label">Trạng thái xuất bản</label>
+                        <select name="status" id="editLessonStatus" class="cm-ctrl">
+                            <option value="published">Published - mở cho học sinh</option>
+                            <option value="draft">Draft - bản nháp</option>
+                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                        </select>
+                    </div>
+                    <div class="cm-field">
+                        <label class="cm-label">Mở từ thời điểm</label>
+                        <input type="datetime-local" name="available_from" id="editLessonAvailableFrom" class="cm-ctrl">
+                        <div class="cm-hint">Bỏ trống nếu mở ngay.</div>
+                    </div>
+                </div>
+
                 <div class="cm-field">
                     <label class="cm-label">Nội dung chi tiết</label>
                     <textarea name="content" id="editLessonContent" class="cm-ctrl" rows="4"></textarea>
@@ -572,7 +604,6 @@
         <form action="{{ route('assignments.store') }}" method="POST" class="modal-content">
             @csrf
             <input type="hidden" name="course_id" value="{{ $course->id }}">
-            <input type="hidden" name="status" value="published">
 
             <div class="modal-header">
                 <div class="cm-header-icon icon-amber"><i class="fas fa-tasks"></i></div>
@@ -604,6 +635,22 @@
                     <div class="cm-field">
                         <label class="cm-label">Hạn nộp (Deadline)</label>
                         <input type="datetime-local" name="due_date" class="cm-ctrl" required>
+                    </div>
+                </div>
+
+                <div class="cm-row cols-2">
+                    <div class="cm-field">
+                        <label class="cm-label">Trạng thái xuất bản</label>
+                        <select name="status" class="cm-ctrl">
+                            <option value="published">Published - mở cho học sinh</option>
+                            <option value="draft">Draft - bản nháp</option>
+                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                        </select>
+                    </div>
+                    <div class="cm-field">
+                        <label class="cm-label">Mở từ thời điểm</label>
+                        <input type="datetime-local" name="available_from" class="cm-ctrl">
+                        <div class="cm-hint">Bỏ trống nếu mở ngay.</div>
                     </div>
                 </div>
 
@@ -661,6 +708,22 @@
                         <label class="cm-label">Hạn nộp (Deadline)</label>
                         <input type="datetime-local" name="due_date" id="editAssignmentDue" class="cm-ctrl"
                             required>
+                    </div>
+                </div>
+
+                <div class="cm-row cols-2">
+                    <div class="cm-field">
+                        <label class="cm-label">Trạng thái xuất bản</label>
+                        <select name="status" id="editAssignmentStatus" class="cm-ctrl">
+                            <option value="published">Published - mở cho học sinh</option>
+                            <option value="draft">Draft - bản nháp</option>
+                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                        </select>
+                    </div>
+                    <div class="cm-field">
+                        <label class="cm-label">Mở từ thời điểm</label>
+                        <input type="datetime-local" name="available_from" id="editAssignmentAvailableFrom" class="cm-ctrl">
+                        <div class="cm-hint">Bỏ trống nếu mở ngay.</div>
                     </div>
                 </div>
 
@@ -748,6 +811,22 @@
                     Hệ thống sẽ bốc ngẫu nhiên câu hỏi từ Ngân hàng và trộn đề riêng cho mỗi học sinh.
                 </div>
 
+                <div class="cm-row cols-2">
+                    <div class="cm-field">
+                        <label class="cm-label">Trạng thái xuất bản</label>
+                        <select name="status" class="cm-ctrl">
+                            <option value="published">Published - mở cho học sinh</option>
+                            <option value="draft">Draft - bản nháp</option>
+                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                        </select>
+                    </div>
+                    <div class="cm-field">
+                        <label class="cm-label">Mở từ thời điểm</label>
+                        <input type="datetime-local" name="available_from" class="cm-ctrl">
+                        <div class="cm-hint">Bỏ trống nếu mở ngay.</div>
+                    </div>
+                </div>
+
                 <div class="difficulty-grid">
                     <div class="diff-card">
                         <div class="diff-label diff-easy">Câu dễ</div>
@@ -819,11 +898,15 @@
             const instructions = JSON.parse(button.dataset.instructions || '""');
             const dueDate = button.dataset.due;
             const lessonId = button.dataset.lesson;
+            const status = button.dataset.status || 'published';
+            const availableFrom = button.dataset.availableFrom || '';
 
             document.getElementById('editAssignmentForm').action = `/assignments/${id}`;
             document.getElementById('editAssignmentTitle').value = title;
             document.getElementById('editAssignmentLesson').value = lessonId;
             document.getElementById('editAssignmentDue').value = dueDate;
+            document.getElementById('editAssignmentStatus').value = status;
+            document.getElementById('editAssignmentAvailableFrom').value = availableFrom;
             document.getElementById('editAssignmentInstructions').value = instructions;
 
             setTimeout(() => {

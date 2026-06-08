@@ -117,13 +117,11 @@ class DashboardController extends Controller
             // LẤY DANH SÁCH KHÓA HỌC HỌC SINH THAM GIA
             // ==========================================
 
-            $courseIds = DB::table('class_user')
-
-                ->where('user_id', $user->id)
-
-                ->join('class_course', 'class_user.class_id', '=', 'class_course.class_id')
-
-                ->pluck('course_id');
+            $courseIds = Course::visibleToStudents()
+                ->whereHas('classes', function ($q) use ($user) {
+                    $q->whereIn('classes.id', $user->classes()->pluck('classes.id'));
+                })
+                ->pluck('id');
 
             $data['total_courses'] = $courseIds->count();
             $data['course_progress'] = Course::whereIn('id', $courseIds)
@@ -132,6 +130,11 @@ class DashboardController extends Controller
                     $lessonIds = DB::table('lessons')
                         ->join('modules', 'lessons.module_id', '=', 'modules.id')
                         ->where('modules.course_id', $course->id)
+                        ->where('lessons.status', 'published')
+                        ->where(function ($q) {
+                            $q->whereNull('lessons.available_from')
+                                ->orWhere('lessons.available_from', '<=', now());
+                        })
                         ->pluck('lessons.id');
                     $completed = DB::table('lesson_user')
                         ->where('user_id', $user->id)
@@ -157,6 +160,11 @@ class DashboardController extends Controller
                 ->join('courses', 'assignments.course_id', '=', 'courses.id')
 
                 ->whereIn('assignments.course_id', $courseIds)
+                ->where('assignments.status', 'published')
+                ->where(function ($q) {
+                    $q->whereNull('assignments.available_from')
+                        ->orWhere('assignments.available_from', '<=', now());
+                })
 
                 // FIX SOFT DELETE
                 ->whereNull('assignments.deleted_at')
@@ -175,6 +183,11 @@ class DashboardController extends Controller
                 ->pluck('assignment_id');
             $data['missing_assignments_count'] = DB::table('assignments')
                 ->whereIn('course_id', $courseIds)
+                ->where('status', 'published')
+                ->where(function ($q) {
+                    $q->whereNull('available_from')
+                        ->orWhere('available_from', '<=', now());
+                })
                 ->whereNull('deleted_at')
                 ->whereNotIn('id', $submittedAssignmentIds)
                 ->count();
@@ -194,6 +207,11 @@ class DashboardController extends Controller
                 ->join('courses', 'quizzes.course_id', '=', 'courses.id')
 
                 ->whereIn('quizzes.course_id', $courseIds)
+                ->where('quizzes.status', 'published')
+                ->where(function ($q) {
+                    $q->whereNull('quizzes.available_from')
+                        ->orWhere('quizzes.available_from', '<=', now());
+                })
 
                 ->whereNotIn('quizzes.id', $attemptedQuizIds)
 
@@ -206,6 +224,11 @@ class DashboardController extends Controller
                 ->get();
             $data['pending_quizzes_count'] = DB::table('quizzes')
                 ->whereIn('course_id', $courseIds)
+                ->where('status', 'published')
+                ->where(function ($q) {
+                    $q->whereNull('available_from')
+                        ->orWhere('available_from', '<=', now());
+                })
                 ->whereNotIn('id', $attemptedQuizIds)
                 ->count();
             // ==========================================

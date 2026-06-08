@@ -8,7 +8,27 @@ class Course extends Model
 {
     protected $connection = 'mysql';
 
-    protected $fillable = ['title', 'description', 'teacher_id'];
+    protected $fillable = ['title', 'description', 'teacher_id', 'status', 'published_at', 'available_from'];
+
+    protected $casts = [
+        'published_at' => 'datetime',
+        'available_from' => 'datetime',
+    ];
+
+    public function scopeVisibleToStudents($query)
+    {
+        return $query->where('status', 'published')
+            ->where(function ($q) {
+                $q->whereNull('available_from')
+                    ->orWhere('available_from', '<=', now());
+            });
+    }
+
+    public function isVisibleToStudents(): bool
+    {
+        return $this->status === 'published'
+            && (!$this->available_from || $this->available_from->lte(now()));
+    }
 
     public function modules()
     {

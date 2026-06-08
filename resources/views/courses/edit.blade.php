@@ -44,6 +44,24 @@
                                 @enderror
                             </div>
 
+                            <div class="row g-3 mb-4">
+                                <div class="col-12 col-md-6">
+                                    <label for="status" class="form-label fw-bold">Trạng thái xuất bản</label>
+                                    <select name="status" id="status" class="form-select">
+                                        <option value="published" @selected(old('status', $course->status) === 'published')>Published - Học sinh có thể thấy</option>
+                                        <option value="draft" @selected(old('status', $course->status) === 'draft')>Draft - Bản nháp</option>
+                                        <option value="hidden" @selected(old('status', $course->status) === 'hidden')>Hidden - Ẩn khỏi học sinh</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="available_from" class="form-label fw-bold">Mở từ thời điểm</label>
+                                    <input type="datetime-local" name="available_from" id="available_from"
+                                        class="form-control"
+                                        value="{{ old('available_from', $course->available_from?->format('Y-m-d\TH:i')) }}">
+                                    <div class="form-text">Bỏ trống nếu muốn mở ngay khi published.</div>
+                                </div>
+                            </div>
+
                             <div class="d-flex align-items-center gap-2 pt-3">
                                 <button type="submit" class="btn btn-warning px-4 rounded-pill fw-bold text-white">
                                     <i class="fas fa-sync-alt me-2"></i>Cập nhật thay đổi

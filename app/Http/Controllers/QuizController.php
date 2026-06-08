@@ -17,6 +17,8 @@ class QuizController extends Controller
             'easy_count' => 'required|integer|min:0',
             'medium_count' => 'required|integer|min:0',
             'hard_count' => 'required|integer|min:0',
+            'status' => 'nullable|in:draft,published,hidden',
+            'available_from' => 'nullable|date',
         ]);
 
         Quiz::create([
@@ -27,6 +29,9 @@ class QuizController extends Controller
             'easy_count' => $request->easy_count,
             'medium_count' => $request->medium_count,
             'hard_count' => $request->hard_count,
+            'status' => $request->input('status', 'published'),
+            'published_at' => $request->input('status', 'published') === 'published' ? now() : null,
+            'available_from' => $request->available_from,
         ]);
 
         return back()->with('success', 'Đã tạo cấu hình bài kiểm tra ngẫu nhiên thành công!');

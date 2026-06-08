@@ -427,6 +427,15 @@
                             <i class="fas fa-users" style="font-size:10px;"></i>
                             {{ $course->classes->first()->name ?? 'Tự do' }}
                         </div>
+                        @if (auth()->user()->role !== 'student')
+                            <div class="card-badge" style="background:{{ $course->status === 'published' ? '#ecfdf5' : ($course->status === 'hidden' ? '#f1f5f9' : '#fffbeb') }};color:{{ $course->status === 'published' ? '#047857' : ($course->status === 'hidden' ? '#475569' : '#92400e') }};">
+                                <i class="fas fa-eye" style="font-size:10px;"></i>
+                                {{ strtoupper($course->status ?? 'published') }}
+                                @if ($course->available_from)
+                                    · mở {{ $course->available_from->format('d/m/Y H:i') }}
+                                @endif
+                            </div>
+                        @endif
 
                         <h2 class="card-title">{{ $course->title }}</h2>
 
