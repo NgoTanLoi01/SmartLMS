@@ -81,11 +81,11 @@ class DashboardController extends Controller
                 ->join('courses', 'schedules.course_id', '=', 'courses.id')
                 ->join('classes', 'schedules.class_id', '=', 'classes.id')
                 ->where('classes.teacher_id', $user->id)
-                ->whereDate('schedules.schedule_date', '>=', now()->subDays(1))
+                ->whereDate('schedules.schedule_date', '>=', $startOfWeek)
+                ->whereDate('schedules.schedule_date', '<=', $endOfWeek)
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
                 ->orderBy('schedules.schedule_date', 'asc')
                 ->orderBy('schedules.start_time', 'asc')
-                ->take(10)
                 ->get();
 
             $gradeSummary = DB::table('assignment_submissions')
@@ -279,15 +279,15 @@ class DashboardController extends Controller
 
                 ->where('class_user.user_id', $user->id)
 
-                ->whereDate('schedules.schedule_date', '>=', now()->subDays(1))
+                ->whereDate('schedules.schedule_date', '>=', $startOfWeek)
+
+                ->whereDate('schedules.schedule_date', '<=', $endOfWeek)
 
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
 
                 ->orderBy('schedules.schedule_date', 'asc')
 
                 ->orderBy('schedules.start_time', 'asc')
-
-                ->take(10)
 
                 ->get();
         }

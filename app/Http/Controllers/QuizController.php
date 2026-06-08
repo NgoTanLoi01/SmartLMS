@@ -48,12 +48,26 @@ class QuizController extends Controller
         // THUẬT TOÁN LẤY ĐỀ NGẪU NHIÊN & XÁO TRỘN
         // ==========================================
         if ($quiz->is_random) {
+            $bankIds = $quiz->course->questionBanks()->pluck('question_banks.id');
+            $pick = fn ($difficulty, $limit) => Question::with('options')
+                ->where(function ($q) use ($quiz, $bankIds) {
+                    if ($bankIds->isNotEmpty()) {
+                        $q->whereIn('question_bank_id', $bankIds);
+                    }
+
+                    $q->orWhere('course_id', $quiz->course_id);
+                })
+                ->where('difficulty', $difficulty)
+                ->inRandomOrder()
+                ->limit($limit)
+                ->get();
+
             // 1. Bốc ngẫu nhiên câu hỏi từ Ngân hàng theo độ khó
-            $easyQuestions = Question::with('options')->where('course_id', $quiz->course_id)->where('difficulty', 'easy')->inRandomOrder()->limit($quiz->easy_count)->get();
+            $easyQuestions = $pick('easy', $quiz->easy_count);
 
-            $mediumQuestions = Question::with('options')->where('course_id', $quiz->course_id)->where('difficulty', 'medium')->inRandomOrder()->limit($quiz->medium_count)->get();
+            $mediumQuestions = $pick('medium', $quiz->medium_count);
 
-            $hardQuestions = Question::with('options')->where('course_id', $quiz->course_id)->where('difficulty', 'hard')->inRandomOrder()->limit($quiz->hard_count)->get();
+            $hardQuestions = $pick('hard', $quiz->hard_count);
 
             // 2. Gộp tất cả lại thành 1 đề thi duy nhất
             $examQuestions = $easyQuestions->merge($mediumQuestions)->merge($hardQuestions);

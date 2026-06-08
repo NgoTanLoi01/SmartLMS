@@ -110,6 +110,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Ngân hàng câu hỏi
     Route::get('/question-bank', [QuestionController::class, 'index'])->name('questions.index');
+    Route::post('/question-bank/banks', [QuestionController::class, 'storeQuestionBank'])->name('questions.banks.store');
+    Route::post('/question-bank/banks/attach', [QuestionController::class, 'attachQuestionBank'])->name('questions.banks.attach');
     Route::post('/question-bank', [QuestionController::class, 'storeBank'])->name('questions.storeBank');
     Route::post('/question-bank/import', [QuestionController::class, 'importBank'])->name('questions.importBank');
     Route::put('/question-bank/{id}', [QuestionController::class, 'updateBank'])->name('questions.updateBank');

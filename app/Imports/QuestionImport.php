@@ -11,11 +11,13 @@ use Maatwebsite\Excel\Concerns\WithStartRow; // Thêm thư viện này
 class QuestionImport implements ToCollection, WithStartRow
 {
     protected $courseId;
+    protected $questionBankId;
     public $importedCount = 0; // Biến đếm số câu thành công
 
-    public function __construct($courseId)
+    public function __construct($courseId, $questionBankId = null)
     {
         $this->courseId = $courseId;
+        $this->questionBankId = $questionBankId;
     }
 
     // Bắt đầu đọc từ dòng 2 (bỏ qua dòng tiêu đề A1->G1)
@@ -43,6 +45,7 @@ class QuestionImport implements ToCollection, WithStartRow
             // 1. Tạo câu hỏi
             $question = Question::create([
                 'course_id' => $this->courseId,
+                'question_bank_id' => $this->questionBankId,
                 'difficulty' => $difficulty,
                 'question_text' => $questionText,
             ]);

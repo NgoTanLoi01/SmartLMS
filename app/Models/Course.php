@@ -53,6 +53,11 @@ class Course extends Model
     {
         return $this->hasMany(Quiz::class);
     }
+
+    public function questionBanks()
+    {
+        return $this->belongsToMany(QuestionBank::class, 'course_question_bank')->withTimestamps();
+    }
     // 1. Lấy tất cả bài học thông qua modules
     public function lessons()
     {

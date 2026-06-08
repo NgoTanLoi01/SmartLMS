@@ -8,8 +8,8 @@
         rel="stylesheet">
     <style>
         /* =========================================
-               CORE VARIABLES
-            ========================================= */
+                   CORE VARIABLES
+                ========================================= */
         :root {
             --brand: #4f7fff;
             --brand-dark: #2952e3;
@@ -64,8 +64,8 @@
         }
 
         /* =========================================
-               GREETING BANNER
-            ========================================= */
+                   GREETING BANNER
+                ========================================= */
         .greeting-banner {
             position: relative;
             background: var(--text);
@@ -228,8 +228,8 @@
         }
 
         /* =========================================
-               QUICK ACTIONS
-            ========================================= */
+                   QUICK ACTIONS
+                ========================================= */
         .quick-actions {
             display: flex;
             flex-wrap: wrap;
@@ -275,8 +275,8 @@
         }
 
         /* =========================================
-               STAT CARDS
-            ========================================= */
+                   STAT CARDS
+                ========================================= */
         .stat-card {
             background: var(--surface);
             border-radius: var(--radius);
@@ -408,8 +408,8 @@
         }
 
         /* =========================================
-               PANEL / CARD
-            ========================================= */
+                   PANEL / CARD
+                ========================================= */
         .panel {
             background: var(--surface);
             border-radius: var(--radius);
@@ -450,8 +450,8 @@
         }
 
         /* =========================================
-               TABLE
-            ========================================= */
+                   TABLE
+                ========================================= */
         .tbl {
             width: 100%;
             border-collapse: collapse;
@@ -497,8 +497,8 @@
         }
 
         /* =========================================
-               BADGE
-            ========================================= */
+                   BADGE
+                ========================================= */
         .bdg {
             display: inline-flex;
             align-items: center;
@@ -553,8 +553,8 @@
         }
 
         /* =========================================
-               FEED ITEMS
-            ========================================= */
+                   FEED ITEMS
+                ========================================= */
         .feed-item {
             display: flex;
             justify-content: space-between;
@@ -606,8 +606,8 @@
         }
 
         /* =========================================
-               TODO ITEMS
-            ========================================= */
+                   TODO ITEMS
+                ========================================= */
         .todo-item {
             display: flex;
             justify-content: space-between;
@@ -661,8 +661,8 @@
         }
 
         /* =========================================
-               SCORE HERO
-            ========================================= */
+                   SCORE HERO
+                ========================================= */
         .score-hero {
             background: var(--text);
             border-radius: var(--radius);
@@ -747,8 +747,8 @@
         }
 
         /* =========================================
-               BUTTONS
-            ========================================= */
+                   BUTTONS
+                ========================================= */
         .btn-xs {
             display: inline-flex;
             align-items: center;
@@ -816,8 +816,8 @@
         }
 
         /* =========================================
-               COMPACT CARD
-            ========================================= */
+                   COMPACT CARD
+                ========================================= */
         .compact-card {
             border-bottom: 1px solid var(--border);
             padding: 1rem 1.35rem;
@@ -833,8 +833,8 @@
         }
 
         /* =========================================
-               PROGRESS BAR
-            ========================================= */
+                   PROGRESS BAR
+                ========================================= */
         .progress-line {
             background: var(--surface-3);
             border-radius: 999px;
@@ -851,8 +851,8 @@
         }
 
         /* =========================================
-               EMPTY STATE
-            ========================================= */
+                   EMPTY STATE
+                ========================================= */
         .empty-state {
             text-align: center;
             padding: 2.5rem 2rem;
@@ -879,8 +879,8 @@
         }
 
         /* =========================================
-               SECTION HEADING
-            ========================================= */
+                   SECTION HEADING
+                ========================================= */
         .section-heading {
             font-size: .7rem;
             font-weight: 800;
@@ -901,15 +901,15 @@
         }
 
         /* =========================================
-               CHART
-            ========================================= */
+                   CHART
+                ========================================= */
         .chart-wrap {
             padding: 1.25rem;
         }
 
         /* =========================================
-               USER TABLE AVATAR
-            ========================================= */
+                   USER TABLE AVATAR
+                ========================================= */
         .user-avatar {
             width: 32px;
             height: 32px;
@@ -927,8 +927,8 @@
         }
 
         /* =========================================
-               ICON DOT COLORS
-            ========================================= */
+                   ICON DOT COLORS
+                ========================================= */
         .idot--blue {
             background: var(--brand-light);
             color: var(--brand);
@@ -960,8 +960,8 @@
         }
 
         /* =========================================
-               RESPONSIVE
-            ========================================= */
+                   RESPONSIVE
+                ========================================= */
         @media (max-width: 767.98px) {
             .dashboard-wrap {
                 padding: .75rem !important;
@@ -1049,8 +1049,8 @@
         }
 
         /* =========================================
-               ANIMATIONS
-            ========================================= */
+                   ANIMATIONS
+                ========================================= */
         @keyframes fadeUp {
             from {
                 opacity: 0;
@@ -1546,6 +1546,18 @@
                             <span class="bdg bdg--primary">Tuần này</span>
                         </div>
                         <div class="table-responsive">
+                            @php
+                                $days = [
+                                    'Monday' => 'Thứ Hai',
+                                    'Tuesday' => 'Thứ Ba',
+                                    'Wednesday' => 'Thứ Tư',
+                                    'Thursday' => 'Thứ Năm',
+                                    'Friday' => 'Thứ Sáu',
+                                    'Saturday' => 'Thứ Bảy',
+                                    'Sunday' => 'Chủ Nhật',
+                                ];
+                            @endphp
+
                             <table class="tbl">
                                 <thead>
                                     <tr>
@@ -1562,42 +1574,58 @@
                                             $today = $d->isToday();
                                             $past = $d->isPast() && !$today;
                                         @endphp
+
                                         <tr class="{{ $today ? 'is-today' : ($past ? 'is-past' : '') }}">
                                             <td>
-                                                <div class="fw-bold" style="font-size:.85rem">{{ $d->format('d/m/Y') }}
+                                                <div class="fw-bold" style="font-size:.85rem">
+                                                    {{ $d->format('d/m/Y') }}
                                                 </div>
                                                 <div style="font-size:.75rem;color:var(--text-muted)">
-                                                    {{ $d->translatedFormat('l') }}</div>
+                                                    {{ $days[$d->format('l')] ?? $d->format('l') }}
+                                                </div>
                                             </td>
+
                                             <td>
                                                 <span
                                                     style="font-size:.84rem;font-weight:700;color:var(--brand);font-family:var(--font-mono)">
-                                                    {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} –
+                                                    {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }}
+                                                    –
                                                     {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
                                                 </span>
                                             </td>
+
                                             <td>
-                                                <div class="fw-bold" style="font-size:.85rem">{{ $slot->course_title }}
+                                                <div class="fw-bold" style="font-size:.85rem">
+                                                    {{ $slot->course_title }}
                                                 </div>
-                                                <div style="font-size:.75rem;color:var(--text-muted)">Lớp:
-                                                    {{ $slot->class_name }}</div>
+                                                <div style="font-size:.75rem;color:var(--text-muted)">
+                                                    Lớp: {{ $slot->class_name }}
+                                                </div>
                                             </td>
+
                                             <td>
                                                 @if ($today)
                                                     <span class="bdg bdg--success mb-1">Hôm nay</span><br>
                                                 @elseif ($past)
                                                     <span class="bdg bdg--muted mb-1">Đã dạy</span><br>
                                                 @endif
-                                                <span class="bdg bdg--muted">{{ $slot->room ?? 'Online' }}</span>
+
+                                                <span class="bdg bdg--muted">
+                                                    {{ $slot->room ?? 'Online' }}
+                                                </span>
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
                                             <td colspan="4">
                                                 <div class="empty-state">
-                                                    <div class="empty-icon"><i class="fas fa-calendar-times"></i></div>
-                                                    <p><strong>Chưa có lịch dạy.</strong><br>Lịch giảng dạy sẽ hiển thị tại
-                                                        đây.</p>
+                                                    <div class="empty-icon">
+                                                        <i class="fas fa-calendar-times"></i>
+                                                    </div>
+                                                    <p>
+                                                        <strong>Chưa có lịch dạy.</strong><br>
+                                                        Lịch giảng dạy sẽ hiển thị tại đây.
+                                                    </p>
                                                 </div>
                                             </td>
                                         </tr>

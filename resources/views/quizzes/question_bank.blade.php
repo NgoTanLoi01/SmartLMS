@@ -578,6 +578,12 @@
             <p class="page-subtitle">Quản lý kho câu hỏi trắc nghiệm dùng để trộn đề thi ngẫu nhiên</p>
         </div>
         <div class="btn-group-actions">
+            <button class="btn-act btn-act-ghost" data-bs-toggle="modal" data-bs-target="#addQuestionBankModal">
+                <i class="fas fa-layer-group"></i> Tạo bank
+            </button>
+            <button class="btn-act btn-act-ghost" data-bs-toggle="modal" data-bs-target="#attachQuestionBankModal">
+                <i class="fas fa-link"></i> Gắn bank
+            </button>
             <button class="btn-act btn-act-ghost-green" data-bs-toggle="modal" data-bs-target="#importQuestionModal">
                 <i class="fas fa-file-excel"></i> Nhập từ Excel
             </button>
@@ -602,6 +608,24 @@
                     </option>
                 @endforeach
             </select>
+            @if (request('question_bank_id'))
+                <input type="hidden" name="question_bank_id" value="{{ request('question_bank_id') }}">
+            @endif
+        </form>
+
+        <form action="{{ route('questions.index') }}" method="GET" class="filter-group">
+            <label class="filter-label">Lọc theo ngân hàng</label>
+            <select name="question_bank_id" onchange="this.form.submit()">
+                <option value="">Tất cả ngân hàng</option>
+                @foreach ($questionBanks as $bank)
+                    <option value="{{ $bank->id }}" {{ request('question_bank_id') == $bank->id ? 'selected' : '' }}>
+                        {{ $bank->name }}
+                    </option>
+                @endforeach
+            </select>
+            @if (request('course_id'))
+                <input type="hidden" name="course_id" value="{{ request('course_id') }}">
+            @endif
         </form>
 
         <div>
@@ -631,7 +655,8 @@
                     <tr>
                         <th style="width:52px;">ID</th>
                         <th style="width:36%;">Nội dung câu hỏi</th>
-                        <th>Khóa học</th>
+                        <th>Ngân hàng</th>
+                        <th>Dùng cho</th>
                         <th>Giáo viên</th>
                         <th style="width:150px;">Độ khó</th>
                         <th style="width:90px; text-align:right;">Thao tác</th>
@@ -649,12 +674,20 @@
                                     {{ $correctOpt ? Str::limit($correctOpt->option_text, 45) : 'Chưa có đáp án đúng' }}
                                 </div>
                             </td>
-                            <td><span class="q-course">{{ $question->course->title ?? 'N/A' }}</span></td>
+                            <td><span class="q-course">{{ $question->questionBank->name ?? $question->course->title ?? 'N/A' }}</span></td>
+                            <td>
+                                <span class="q-course">
+                                    {{ $question->questionBank?->courses?->pluck('title')->take(2)->implode(', ') ?: ($question->course->title ?? 'N/A') }}
+                                    @if (($question->questionBank?->courses?->count() ?? 0) > 2)
+                                        ...
+                                    @endif
+                                </span>
+                            </td>
                             <td>
                                 <div class="teacher-chip">
                                     <div class="teacher-avatar-sm"><i class="fas fa-user-tie" style="font-size:10px;"></i>
                                     </div>
-                                    {{ $question->course->teacher->name ?? 'N/A' }}
+                                    {{ $question->questionBank->teacher->name ?? $question->course->teacher->name ?? 'N/A' }}
                                 </div>
                             </td>
                             <td>
@@ -671,6 +704,7 @@
                                     <button type="button" class="action-btn" data-bs-toggle="modal"
                                         data-bs-target="#editQuestionModal" data-id="{{ $question->id }}"
                                         data-course="{{ $question->course_id }}"
+                                        data-bank="{{ $question->question_bank_id }}"
                                         data-difficulty="{{ $question->difficulty }}"
                                         data-text="{{ htmlspecialchars($question->question_text) }}"
                                         data-options="{{ $question->options->sortBy('id')->values()->toJson() }}"
@@ -690,7 +724,7 @@
                         </tr>
                     @empty
                         <tr class="empty-row">
-                            <td colspan="6">
+                            <td colspan="7">
                                 <i class="fas fa-box-open"></i>
                                 <p>Kho câu hỏi trống. Hãy thêm câu hỏi mới!</p>
                             </td>
@@ -703,6 +737,90 @@
         @if ($questions->hasPages())
             <div class="pagination-wrap">{{ $questions->links() }}</div>
         @endif
+    </div>
+
+    {{-- ══════════════════════════════
+     MODAL: Tạo ngân hàng câu hỏi
+══════════════════════════════ --}}
+    <div class="modal fade" id="addQuestionBankModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ route('questions.banks.store') }}" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-layer-group"></i>Tạo ngân hàng câu hỏi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="margin-bottom:14px;">
+                            <label class="form-label-sm">Tên ngân hàng</label>
+                            <input type="text" name="name" class="form-ctrl" placeholder="VD: Web Frontend" required>
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label class="form-label-sm">Mô tả</label>
+                            <textarea name="description" class="form-ctrl" rows="3" placeholder="Mô tả ngắn về bộ câu hỏi..."></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label-sm">Gắn với khóa học</label>
+                            <select name="course_ids[]" class="form-ctrl" multiple size="5">
+                                @foreach ($courses as $course)
+                                    <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
+                                        {{ $course->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="info-note mt-2">
+                                <i class="fas fa-info-circle"></i>
+                                Một ngân hàng có thể dùng chung cho nhiều khóa học/lớp.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn-modal-submit">Tạo bank</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- ══════════════════════════════
+     MODAL: Gắn ngân hàng với khóa học
+══════════════════════════════ --}}
+    <div class="modal fade" id="attachQuestionBankModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ route('questions.banks.attach') }}" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-link"></i>Gắn bank với khóa học</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="margin-bottom:14px;">
+                            <label class="form-label-sm">Ngân hàng câu hỏi</label>
+                            <select name="question_bank_id" class="form-ctrl" required>
+                                @foreach ($questionBanks as $bank)
+                                    <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label-sm">Khóa học được dùng bank này</label>
+                            <select name="course_ids[]" class="form-ctrl" multiple size="6" required>
+                                @foreach ($courses as $course)
+                                    <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn-modal-submit">Gắn bank</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     {{-- ══════════════════════════════
@@ -726,6 +844,17 @@
                                         <option value="{{ $course->id }}"
                                             {{ request('course_id') == $course->id ? 'selected' : '' }}>
                                             {{ $course->title }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-flex-2">
+                                <label class="form-label-sm">Ngân hàng câu hỏi</label>
+                                <select name="question_bank_id" class="form-ctrl">
+                                    <option value="">Tự chọn/tạo theo khóa học</option>
+                                    @foreach ($questionBanks as $bank)
+                                        <option value="{{ $bank->id }}" {{ request('question_bank_id') == $bank->id ? 'selected' : '' }}>
+                                            {{ $bank->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -792,6 +921,15 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="col-flex-2">
+                                <label class="form-label-sm">Ngân hàng câu hỏi</label>
+                                <select name="question_bank_id" id="edit_question_bank_id" class="form-ctrl">
+                                    <option value="">Tự chọn/tạo theo khóa học</option>
+                                    @foreach ($questionBanks as $bank)
+                                        <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="col-flex-1">
                                 <label class="form-label-sm">Độ khó</label>
                                 <select name="difficulty" id="edit_difficulty" class="form-ctrl" required>
@@ -851,8 +989,17 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div style="margin-bottom:14px;">
+                            <label class="form-label-sm">2. Chọn ngân hàng câu hỏi</label>
+                            <select name="question_bank_id" class="form-ctrl">
+                                <option value="">Tự chọn/tạo theo khóa học</option>
+                                @foreach ($questionBanks as $bank)
+                                    <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div style="margin-bottom:16px;">
-                            <label class="form-label-sm">2. Tải lên file .xlsx</label>
+                            <label class="form-label-sm">3. Tải lên file .xlsx</label>
                             <input type="file" name="file" class="form-ctrl" accept=".xlsx" required>
                         </div>
                         <div class="warn-note">
@@ -889,12 +1036,14 @@
                 var btn = event.relatedTarget;
                 var id = btn.getAttribute('data-id');
                 var courseId = btn.getAttribute('data-course');
+                var bankId = btn.getAttribute('data-bank') || '';
                 var difficulty = btn.getAttribute('data-difficulty');
                 var text = btn.getAttribute('data-text');
                 var options = JSON.parse(btn.getAttribute('data-options') || '[]');
 
                 document.getElementById('editQuestionForm').action = '/question-bank/' + id;
                 document.getElementById('edit_course_id').value = courseId;
+                document.getElementById('edit_question_bank_id').value = bankId;
                 document.getElementById('edit_difficulty').value = difficulty;
                 document.getElementById('edit_question_text').value = text;
 

@@ -174,7 +174,19 @@ class QuizAttemptController extends Controller
      */
     private function generateExam(Quiz $quiz)
     {
-        $pick = fn($difficulty, $limit) => Question::with('options')->where('course_id', $quiz->course_id)->where('difficulty', $difficulty)->inRandomOrder()->limit($limit)->get();
+        $bankIds = $quiz->course->questionBanks()->pluck('question_banks.id');
+        $pick = fn($difficulty, $limit) => Question::with('options')
+            ->where(function ($q) use ($quiz, $bankIds) {
+                if ($bankIds->isNotEmpty()) {
+                    $q->whereIn('question_bank_id', $bankIds);
+                }
+
+                $q->orWhere('course_id', $quiz->course_id);
+            })
+            ->where('difficulty', $difficulty)
+            ->inRandomOrder()
+            ->limit($limit)
+            ->get();
 
         $examQuestions = $pick('easy', $quiz->easy_count)
             ->merge($pick('medium', $quiz->medium_count))

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Question;
 use App\Models\Option;
 use App\Models\Course;
+use App\Models\QuestionBank;
 use Maatwebsite\Excel\Facades\Excel;
 
 class QuestionController extends Controller
@@ -21,17 +22,32 @@ class QuestionController extends Controller
 
         // Admin thấy tất cả khóa học, Giáo viên chỉ thấy khóa mình dạy
         if ($user->role === 'admin') {
-            $courses = Course::all();
-            // Thêm 'course.teacher' để load thông tin giáo viên phụ trách khóa học
-            $query = Question::with(['course.teacher', 'options']);
+            $courses = Course::with('questionBanks')->get();
+            $questionBanks = QuestionBank::with(['teacher', 'courses'])->latest()->get();
+            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options']);
         } else {
-            $courses = Course::where('teacher_id', $user->id)->get();
-            $query = Question::with(['course.teacher', 'options'])->whereIn('course_id', $courses->pluck('id'));
+            $courses = Course::with('questionBanks')->where('teacher_id', $user->id)->get();
+            $courseIds = $courses->pluck('id');
+            $questionBanks = QuestionBank::with(['teacher', 'courses'])
+                ->where(function ($q) use ($user, $courseIds) {
+                    $q->where('teacher_id', $user->id)
+                        ->orWhereHas('courses', fn ($courseQuery) => $courseQuery->whereIn('courses.id', $courseIds));
+                })
+                ->latest()
+                ->get();
+            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options'])
+                ->whereIn('question_bank_id', $questionBanks->pluck('id'));
         }
 
-        // Xử lý bộ lọc theo khóa học
+        if ($request->filled('question_bank_id')) {
+            $query->where('question_bank_id', $request->question_bank_id);
+        }
+
         if ($request->has('course_id') && $request->course_id != '') {
-            $query->where('course_id', $request->course_id);
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('questionBank.courses', fn ($courseQuery) => $courseQuery->where('courses.id', $request->course_id))
+                    ->orWhere('course_id', $request->course_id);
+            });
         }
 
         // Lấy danh sách câu hỏi (có phân trang)
@@ -40,7 +56,48 @@ class QuestionController extends Controller
         // Giữ lại query string khi chuyển trang
         $questions->appends($request->all());
 
-        return view('quizzes.question_bank', compact('courses', 'questions'));
+        return view('quizzes.question_bank', compact('courses', 'questionBanks', 'questions'));
+    }
+
+    public function storeQuestionBank(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'course_ids' => 'nullable|array',
+            'course_ids.*' => 'exists:courses,id',
+        ]);
+
+        $user = auth()->user();
+        $courseIds = $this->authorizedCourseIds($request->input('course_ids', []));
+
+        $bank = QuestionBank::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'teacher_id' => $user->role === 'admin' ? null : $user->id,
+        ]);
+
+        if (!empty($courseIds)) {
+            $bank->courses()->syncWithoutDetaching($courseIds);
+        }
+
+        return back()->with('success', 'Đã tạo ngân hàng câu hỏi dùng chung.');
+    }
+
+    public function attachQuestionBank(Request $request)
+    {
+        $request->validate([
+            'question_bank_id' => 'required|exists:question_banks,id',
+            'course_ids' => 'required|array|min:1',
+            'course_ids.*' => 'exists:courses,id',
+        ]);
+
+        $bank = QuestionBank::findOrFail($request->question_bank_id);
+        $this->authorizeQuestionBank($bank);
+
+        $bank->courses()->syncWithoutDetaching($this->authorizedCourseIds($request->course_ids));
+
+        return back()->with('success', 'Đã gắn ngân hàng câu hỏi với khóa học.');
     }
 
     // ==========================================
@@ -50,14 +107,23 @@ class QuestionController extends Controller
     {
         $request->validate([
             'course_id' => 'required|exists:courses,id',
+            'question_bank_id' => 'nullable|exists:question_banks,id',
             'difficulty' => 'required|in:easy,medium,hard',
             'question_text' => 'required|string',
             'options' => 'required|array|size:4',
             'correct_option' => 'required|in:1,2,3,4',
         ]);
 
+        $bank = $request->filled('question_bank_id')
+            ? QuestionBank::findOrFail($request->question_bank_id)
+            : $this->defaultQuestionBankForCourse((int) $request->course_id);
+        $this->authorizeCourse(Course::findOrFail($request->course_id));
+        $this->authorizeQuestionBank($bank);
+        $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
+
         $question = Question::create([
             'course_id' => $request->course_id,
+            'question_bank_id' => $bank->id,
             'difficulty' => $request->difficulty,
             'question_text' => $request->question_text,
         ]);
@@ -80,6 +146,7 @@ class QuestionController extends Controller
     {
         $request->validate([
             'course_id' => 'required|exists:courses,id',
+            'question_bank_id' => 'nullable|exists:question_banks,id',
             'difficulty' => 'required|in:easy,medium,hard',
             'question_text' => 'required|string',
             'options' => 'required|array|size:4',
@@ -88,12 +155,18 @@ class QuestionController extends Controller
 
         $question = Question::findOrFail($id);
 
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $question->course->teacher_id) {
-            abort(403, 'Bạn không có quyền sửa câu hỏi này.');
-        }
+        $this->authorizeQuestionAccess($question);
+
+        $bank = $request->filled('question_bank_id')
+            ? QuestionBank::findOrFail($request->question_bank_id)
+            : $this->defaultQuestionBankForCourse((int) $request->course_id);
+        $this->authorizeCourse(Course::findOrFail($request->course_id));
+        $this->authorizeQuestionBank($bank);
+        $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
 
         $question->update([
             'course_id' => $request->course_id,
+            'question_bank_id' => $bank->id,
             'difficulty' => $request->difficulty,
             'question_text' => $request->question_text,
         ]);
@@ -121,9 +194,7 @@ class QuestionController extends Controller
     {
         $question = Question::findOrFail($id);
 
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $question->course->teacher_id) {
-            abort(403, 'Bạn không có quyền xóa câu hỏi này.');
-        }
+        $this->authorizeQuestionAccess($question);
 
         $question->delete();
 
@@ -136,12 +207,20 @@ class QuestionController extends Controller
     {
         $request->validate([
             'course_id' => 'required|exists:courses,id',
+            'question_bank_id' => 'nullable|exists:question_banks,id',
             'file' => 'required|file|max:5120', // Tạm bỏ "mimes" để chống lỗi chặn file Excel ẩn
         ]);
 
         try {
             // Khởi tạo Import Class
-            $import = new \App\Imports\QuestionImport($request->course_id);
+            $bank = $request->filled('question_bank_id')
+                ? QuestionBank::findOrFail($request->question_bank_id)
+                : $this->defaultQuestionBankForCourse((int) $request->course_id);
+            $this->authorizeCourse(Course::findOrFail($request->course_id));
+            $this->authorizeQuestionBank($bank);
+            $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
+
+            $import = new \App\Imports\QuestionImport($request->course_id, $bank->id);
 
             // Chạy Import
             Excel::import($import, $request->file('file'));
@@ -279,6 +358,7 @@ class QuestionController extends Controller
     {
         $request->validate([
             'course_id' => 'required|exists:courses,id',
+            'question_bank_id' => 'nullable|exists:question_banks,id',
             'difficulty' => 'required',
             'questions' => 'required|array',
         ]);
@@ -287,9 +367,17 @@ class QuestionController extends Controller
         $difficultyMap = ['Dễ' => 'easy', 'Trung bình' => 'medium', 'Khó' => 'hard'];
         $dbDifficulty = $difficultyMap[$request->difficulty] ?? 'medium';
 
+        $bank = $request->filled('question_bank_id')
+            ? QuestionBank::findOrFail($request->question_bank_id)
+            : $this->defaultQuestionBankForCourse((int) $request->course_id);
+        $this->authorizeCourse(Course::findOrFail($request->course_id));
+        $this->authorizeQuestionBank($bank);
+        $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
+
         foreach ($request->questions as $q) {
             $question = Question::create([
                 'course_id' => $request->course_id,
+                'question_bank_id' => $bank->id,
                 'difficulty' => $dbDifficulty,
                 'question_text' => $q['question'],
             ]);
@@ -304,5 +392,78 @@ class QuestionController extends Controller
         }
 
         return response()->json(['success' => 'Đã lưu ' . count($request->questions) . ' câu hỏi vào ngân hàng!']);
+    }
+
+    private function defaultQuestionBankForCourse(int $courseId): QuestionBank
+    {
+        $course = Course::with('questionBanks')->findOrFail($courseId);
+        $this->authorizeCourse($course);
+
+        if ($course->questionBanks->isNotEmpty()) {
+            return $course->questionBanks->first();
+        }
+
+        $bank = QuestionBank::create([
+            'name' => $course->title,
+            'description' => 'Ngân hàng câu hỏi dùng chung cho ' . $course->title,
+            'teacher_id' => $course->teacher_id,
+        ]);
+
+        $bank->courses()->syncWithoutDetaching([$course->id]);
+
+        return $bank;
+    }
+
+    private function authorizeQuestionBank(QuestionBank $bank): void
+    {
+        $user = auth()->user();
+
+        if ($user->role === 'admin') {
+            return;
+        }
+
+        $teacherOwnsBank = $bank->teacher_id === $user->id;
+        $teacherOwnsLinkedCourse = $bank->courses()->where('courses.teacher_id', $user->id)->exists();
+
+        if (!$teacherOwnsBank && !$teacherOwnsLinkedCourse) {
+            abort(403, 'Bạn không có quyền sử dụng ngân hàng câu hỏi này.');
+        }
+    }
+
+    private function authorizeQuestionAccess(Question $question): void
+    {
+        if (auth()->user()->role === 'admin') {
+            return;
+        }
+
+        if ($question->questionBank) {
+            $this->authorizeQuestionBank($question->questionBank);
+            return;
+        }
+
+        if (!$question->course || $question->course->teacher_id !== auth()->id()) {
+            abort(403, 'Bạn không có quyền thao tác câu hỏi này.');
+        }
+    }
+
+    private function authorizeCourse(Course $course): void
+    {
+        if (auth()->user()->role !== 'admin' && $course->teacher_id !== auth()->id()) {
+            abort(403, 'Bạn không có quyền sử dụng khóa học này.');
+        }
+    }
+
+    private function authorizedCourseIds(array $courseIds): array
+    {
+        $ids = collect($courseIds)->map(fn ($id) => (int) $id)->filter()->unique()->values();
+
+        if (auth()->user()->role === 'admin') {
+            return $ids->all();
+        }
+
+        return Course::where('teacher_id', auth()->id())
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->all();
     }
 }
