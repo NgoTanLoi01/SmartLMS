@@ -178,6 +178,24 @@
                                 placeholder="Viết mô tả chi tiết yêu cầu nộp bài..." required></textarea>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Thang điểm</label>
+                            <input type="number" name="grading_scale" class="form-control bg-light border-0 py-2"
+                                value="10" min="1" max="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">AI hỗ trợ chấm</label>
+                            <select name="ai_grading_enabled" class="form-select bg-light border-0 py-2">
+                                <option value="1">Bật AI hỗ trợ chấm</option>
+                                <option value="0">Tắt AI hỗ trợ chấm</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted">Tiêu chí chấm điểm</label>
+                            <textarea name="grading_rubric" class="form-control bg-light border-0" rows="4"
+                                placeholder="VD: Đúng yêu cầu: 4 điểm&#10;Đầy đủ ý: 3 điểm&#10;Ví dụ minh họa: 2 điểm&#10;Trình bày rõ ràng: 1 điểm"></textarea>
+                            <div class="form-text">AI sẽ ưu tiên chấm theo tiêu chí này để nhận xét bám sát hơn.</div>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label fw-bold small text-muted">Hạn chót (Deadline)</label>
                             <input type="datetime-local" name="due_date" class="form-control bg-light border-0 py-2"
                                 required>

@@ -116,6 +116,116 @@ PROMPT;
         }
     }
 
+    public function analyzeAssignmentSubmission(array $payload): array
+    {
+        try {
+            $apiKey = config('services.deepseek.key');
+            $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
+
+            if (!$apiKey) {
+                return [
+                    'success' => false,
+                    'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.',
+                ];
+            }
+
+            $systemPrompt = <<<PROMPT
+Bạn là trợ lý AI hỗ trợ giáo viên chấm bài tự luận trong hệ thống SmartLMS.
+Nhiệm vụ của bạn là đọc yêu cầu bài tập và bài làm học sinh, sau đó đề xuất điểm và nhận xét để giáo viên duyệt/chỉnh.
+Nếu payload có grading_rubric, bắt buộc chấm theo rubric đó. Nếu grading_rubric trống, hãy tạo rubric tạm từ yêu cầu bài tập nhưng phải ghi rõ trong grading_notes rằng đề chưa có tiêu chí chấm cụ thể.
+
+Chỉ trả về JSON hợp lệ, không dùng markdown, không bọc ```json.
+Schema:
+{
+  "suggested_score": 8.0,
+  "feedback": "Nhận xét ngắn gọn có thể gửi cho học sinh",
+  "rubric_breakdown": [
+    {"criterion": "Tên tiêu chí", "max_score": 4.0, "score": 3.0, "comment": "Lý do chấm tiêu chí này"}
+  ],
+  "strengths": ["Điểm làm tốt"],
+  "improvements": ["Điểm cần cải thiện"],
+  "grading_notes": "Ghi chú ngắn cho giáo viên về lý do đề xuất điểm"
+}
+
+Quy tắc:
+- Chấm theo thang điểm assignment.grading_scale trong payload, mặc định là 10 nếu không có.
+- Tổng điểm suggested_score phải bằng tổng score của rubric_breakdown, làm tròn 1 chữ số.
+- Không cho điểm vượt quá max_score của từng tiêu chí.
+- Không bịa nội dung ngoài yêu cầu và bài làm được cung cấp.
+- Nếu bài làm quá ngắn, thiếu ý hoặc không liên quan, hãy giảm điểm và nêu rõ lý do.
+- Nhận xét phải bằng tiếng Việt, cụ thể, lịch sự, có thể dùng trực tiếp cho học sinh.
+- Ưu tiên nhận xét ngắn, bám tiêu chí; không viết lan man.
+- Đây chỉ là gợi ý; giáo viên là người quyết định cuối cùng.
+PROMPT;
+
+            $response = Http::withToken($apiKey)
+                ->timeout(90)
+                ->withoutVerifying()
+                ->post("{$baseUrl}/chat/completions", [
+                    'model' => 'deepseek-v4-flash',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => json_encode($payload, JSON_UNESCAPED_UNICODE)],
+                    ],
+                    'temperature' => 0.15,
+                ]);
+
+            if ($response->failed()) {
+                Log::warning('DeepSeek assignment grading failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'DeepSeek chưa phản hồi được. Vui lòng thử lại sau.',
+                ];
+            }
+
+            $content = $response->json('choices.0.message.content');
+            $analysis = $this->decodeJsonResponse($content);
+
+            if (!$analysis) {
+                return [
+                    'success' => false,
+                    'message' => 'AI trả về dữ liệu chưa đúng định dạng.',
+                    'raw' => $content,
+                ];
+            }
+
+            $scale = max(1, (float) data_get($payload, 'assignment.grading_scale', 10));
+            $score = isset($analysis['suggested_score']) ? (float) $analysis['suggested_score'] : null;
+            if ($score !== null) {
+                $analysis['suggested_score'] = max(0, min($scale, round($score, 1)));
+            }
+
+            $analysis['rubric_breakdown'] = collect($analysis['rubric_breakdown'] ?? [])
+                ->filter(fn ($item) => is_array($item))
+                ->map(function ($item) {
+                    return [
+                        'criterion' => (string) ($item['criterion'] ?? 'Tiêu chí'),
+                        'max_score' => isset($item['max_score']) ? round((float) $item['max_score'], 1) : null,
+                        'score' => isset($item['score']) ? round((float) $item['score'], 1) : null,
+                        'comment' => (string) ($item['comment'] ?? ''),
+                    ];
+                })
+                ->values()
+                ->all();
+
+            return [
+                'success' => true,
+                'analysis' => $analysis,
+            ];
+        } catch (\Exception $e) {
+            Log::error('DeepSeek assignment grading error: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Không thể kết nối đến AI hỗ trợ chấm bài.',
+            ];
+        }
+    }
+
     private function getGeminiEmbedding(string $text): ?array
     {
         try {

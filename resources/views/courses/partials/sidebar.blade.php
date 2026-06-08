@@ -197,6 +197,9 @@
                                                 onclick="openEditAssignmentModal(this)" data-id="{{ $assignment->id }}"
                                                 data-title='@json($assignment->title)'
                                                 data-instructions='@json($assignment->instructions)'
+                                                data-grading-rubric='@json($assignment->grading_rubric)'
+                                                data-grading-scale="{{ $assignment->grading_scale ?? 10 }}"
+                                                data-ai-enabled="{{ $assignment->ai_grading_enabled ? '1' : '0' }}"
                                                 data-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
                                                 data-lesson="{{ $lesson->id }}"
                                                 data-type="{{ $assignment->type ?? 'file' }}"

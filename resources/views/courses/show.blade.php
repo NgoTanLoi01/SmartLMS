@@ -1286,15 +1286,23 @@
                                     <h6 class="fw-bold text-success mb-3">
                                         <i class="fas fa-check-circle me-2"></i>Bài làm của bạn
                                     </h6>
+                                    <div class="submitted-file-card mb-3">
+                                        <div>
+                                            <p class="mb-1 fw-bold" style="font-size:14px;">
+                                                <i class="fas fa-clock me-2 text-success"></i>Thông tin nộp bài
+                                            </p>
+                                            <p class="mb-0 text-muted" style="font-size:12px;">
+                                                Đã nộp lúc:
+                                                <span id="submitted-time-text" class="fw-medium"></span>
+                                            </p>
+                                        </div>
+                                    </div>
                                     <div id="submitted-file-card" class="submitted-file-card mb-3">
                                         <div>
                                             <p class="mb-1 fw-bold" style="font-size:14px;">
                                                 <i class="fas fa-file-alt me-2 text-primary"></i>Tài liệu đã tải lên
                                             </p>
-                                            <p class="mb-0 text-muted" style="font-size:12px;">
-                                                <i class="fas fa-clock me-1"></i>Đã nộp lúc:
-                                                <span id="submitted-time-text" class="fw-medium"></span>
-                                            </p>
+                                            <p class="mb-0 text-muted" style="font-size:12px;">Mở file để xem chi tiết bài làm.</p>
                                         </div>
                                         <a href="#" id="submitted-file-link" target="_blank"
                                             class="btn btn-outline-primary btn-sm rounded-pill px-3 flex-shrink-0">

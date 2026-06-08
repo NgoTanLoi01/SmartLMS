@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Services\DeepSeekService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -58,6 +59,9 @@ class AssignmentController extends Controller
             'type' => 'required|in:file,essay,mixed',
             'title' => 'required|string|max:255',
             'instructions' => 'required|string',
+            'grading_rubric' => 'nullable|string',
+            'grading_scale' => 'nullable|integer|min:1|max:100',
+            'ai_grading_enabled' => 'nullable|boolean',
             'due_date' => 'required|date',
             'allowed_extensions' => 'nullable|string',
             'max_file_size' => 'nullable|integer',
@@ -66,6 +70,8 @@ class AssignmentController extends Controller
         ]);
 
         $data = $request->all();
+        $data['grading_scale'] = $data['grading_scale'] ?? 10;
+        $data['ai_grading_enabled'] = $request->boolean('ai_grading_enabled');
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
 
         Assignments::create($data);
@@ -75,18 +81,112 @@ class AssignmentController extends Controller
     // Giáo viên chấm điểm
     public function grade(Request $request, $submissionId)
     {
+        $submission = AssignmentSubmission::with('assignment')->findOrFail($submissionId);
+        $scale = $submission->assignment?->grading_scale ?? 10;
+
         $request->validate([
-            'grade' => 'required|numeric|min:0|max:10',
+            'grade' => 'required|numeric|min:0|max:' . $scale,
             'feedback' => 'nullable|string',
         ]);
 
-        $submission = AssignmentSubmission::findOrFail($submissionId);
         $submission->update([
             'grade' => $request->grade,
             'feedback' => $request->feedback,
         ]);
 
         return back()->with('success', 'Đã lưu điểm và nhận xét!');
+    }
+
+    public function analyzeSubmissionWithAi($submissionId, DeepSeekService $deepSeekService)
+    {
+        $submission = AssignmentSubmission::with(['assignment.course', 'user'])->findOrFail($submissionId);
+        $assignment = $submission->assignment;
+        $course = $assignment->course;
+
+        if (!$this->canManageAssignmentCourse($course)) {
+            abort(403, 'Bạn không có quyền phân tích bài nộp này.');
+        }
+
+        if (!$assignment->ai_grading_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI hỗ trợ chấm đang tắt cho bài tập này.',
+            ], 422);
+        }
+
+        if (!trim((string) $submission->text_answer)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI chỉ phân tích được bài có nội dung tự luận. Với bài chỉ nộp file, giáo viên cần xem file thủ công.',
+            ], 422);
+        }
+
+        $payload = [
+            'assignment' => [
+                'title' => $assignment->title,
+                'type' => $assignment->type ?? 'file',
+                'instructions' => trim(strip_tags($assignment->instructions)),
+                'grading_rubric' => trim((string) $assignment->grading_rubric),
+                'grading_scale' => $assignment->grading_scale ?? 10,
+                'ai_grading_enabled' => (bool) $assignment->ai_grading_enabled,
+                'due_date' => $assignment->due_date?->format('d/m/Y H:i'),
+                'course' => $course->title,
+            ],
+            'student' => [
+                'name' => $submission->user?->name,
+                'email' => $submission->user?->email,
+                'submitted_at' => $submission->submitted_at?->format('d/m/Y H:i'),
+            ],
+            'submission' => [
+                'text_answer' => $submission->text_answer,
+                'has_file' => !empty($submission->file_path),
+                'current_grade' => $submission->grade,
+                'current_feedback' => $submission->feedback,
+            ],
+        ];
+
+        $result = $deepSeekService->analyzeAssignmentSubmission($payload);
+
+        if ($result['success']) {
+            $analysis = $result['analysis'] ?? [];
+
+            $submission->update([
+                'ai_suggested_score' => $analysis['suggested_score'] ?? null,
+                'ai_feedback' => $analysis['feedback'] ?? null,
+                'ai_rubric_breakdown' => $analysis['rubric_breakdown'] ?? null,
+                'ai_grading_notes' => $analysis['grading_notes'] ?? null,
+                'ai_analyzed_at' => now(),
+            ]);
+        }
+
+        return response()->json($result, $result['success'] ? 200 : 500);
+    }
+
+    public function reviewSubmission($submissionId)
+    {
+        $submission = AssignmentSubmission::with(['assignment.course', 'assignment.lesson', 'user'])->findOrFail($submissionId);
+        $assignment = $submission->assignment;
+        $course = $assignment->course;
+
+        if (!$this->canManageAssignmentCourse($course)) {
+            abort(403, 'Bạn không có quyền xem bài nộp này.');
+        }
+
+        $assignmentTypeLabel = match ($assignment->type ?? 'file') {
+            'essay' => 'Tự luận',
+            'mixed' => 'File + tự luận',
+            default => 'Nộp file',
+        };
+
+        $fileUrl = $submission->file_path ? asset('storage/' . $submission->file_path) : null;
+
+        return view('assignments.submission_review', compact(
+            'submission',
+            'assignment',
+            'course',
+            'assignmentTypeLabel',
+            'fileUrl',
+        ));
     }
     // 1. Hàm lấy danh sách bài nộp cho Giáo viên (Dùng AJAX để load vào Modal)
     public function listSubmissions($id)
@@ -215,6 +315,9 @@ class AssignmentController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'instructions' => 'required|string',
+            'grading_rubric' => 'nullable|string',
+            'grading_scale' => 'nullable|integer|min:1|max:100',
+            'ai_grading_enabled' => 'nullable|boolean',
             'due_date' => 'required|date',
             'lesson_id' => 'required|exists:lessons,id',
             'type' => 'nullable|in:file,essay,mixed',
@@ -226,6 +329,8 @@ class AssignmentController extends Controller
         $assignment = Assignments::findOrFail($id);
 
         $validated['status'] = $validated['status'] ?? $assignment->status;
+        $validated['grading_scale'] = $validated['grading_scale'] ?? 10;
+        $validated['ai_grading_enabled'] = $request->boolean('ai_grading_enabled');
         $validated['published_at'] = $validated['status'] === 'published' ? ($assignment->published_at ?? now()) : null;
 
         $assignment->update($validated);
@@ -241,5 +346,12 @@ class AssignmentController extends Controller
         $assignment->delete();
 
         return back()->with('success', 'Đã xóa bài tập thành công!');
+    }
+
+    private function canManageAssignmentCourse(Course $course): bool
+    {
+        $user = auth()->user();
+
+        return $user->role === 'admin' || ($user->role === 'teacher' && $course->teacher_id === $user->id);
     }
 }

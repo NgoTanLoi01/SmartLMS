@@ -12,12 +12,14 @@ class Assignments extends Model
     // Khai báo rõ tên bảng vì tên Model đang là số nhiều
     protected $table = 'assignments';
 
-    protected $fillable = ['course_id', 'lesson_id', 'type', 'title', 'instructions', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'published_at', 'available_from'];
+    protected $fillable = ['course_id', 'lesson_id', 'type', 'title', 'instructions', 'grading_rubric', 'grading_scale', 'ai_grading_enabled', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
         'due_date' => 'datetime',
         'published_at' => 'datetime',
         'available_from' => 'datetime',
+        'ai_grading_enabled' => 'boolean',
+        'grading_scale' => 'integer',
     ];
 
     public function scopeVisibleToStudents($query)

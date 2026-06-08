@@ -379,6 +379,7 @@
             #viewSubmissionsModal.fade.show .modal-dialog {
                 transform: translate(0, 0);
             }
+
         </style>
     @endpush
 @endonce
@@ -667,6 +668,27 @@
                     <textarea name="instructions" id="addAssignmentInstructions" class="cm-ctrl" rows="5"
                         placeholder="Nhập yêu cầu chi tiết..."></textarea>
                 </div>
+
+                <div class="cm-row cols-2">
+                    <div class="cm-field">
+                        <label class="cm-label">Thang điểm</label>
+                        <input type="number" name="grading_scale" class="cm-ctrl" value="10" min="1" max="100">
+                    </div>
+                    <div class="cm-field">
+                        <label class="cm-label">AI hỗ trợ chấm</label>
+                        <select name="ai_grading_enabled" class="cm-ctrl">
+                            <option value="1">Bật AI hỗ trợ chấm</option>
+                            <option value="0">Tắt AI hỗ trợ chấm</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="cm-field">
+                    <label class="cm-label">Tiêu chí chấm điểm</label>
+                    <textarea name="grading_rubric" class="cm-ctrl" rows="4"
+                        placeholder="VD: Đúng yêu cầu: 4 điểm&#10;Đầy đủ ý: 3 điểm&#10;Ví dụ minh họa: 2 điểm&#10;Trình bày rõ ràng: 1 điểm"></textarea>
+                    <div class="cm-hint">AI sẽ ưu tiên chấm theo tiêu chí này để tránh nhận xét lan man.</div>
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -747,6 +769,27 @@
                     <label class="cm-label">Nội dung yêu cầu</label>
                     <textarea name="instructions" id="editAssignmentInstructions" class="cm-ctrl" rows="5"></textarea>
                 </div>
+
+                <div class="cm-row cols-2">
+                    <div class="cm-field">
+                        <label class="cm-label">Thang điểm</label>
+                        <input type="number" name="grading_scale" id="editAssignmentGradingScale" class="cm-ctrl"
+                            value="10" min="1" max="100">
+                    </div>
+                    <div class="cm-field">
+                        <label class="cm-label">AI hỗ trợ chấm</label>
+                        <select name="ai_grading_enabled" id="editAssignmentAiEnabled" class="cm-ctrl">
+                            <option value="1">Bật AI hỗ trợ chấm</option>
+                            <option value="0">Tắt AI hỗ trợ chấm</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="cm-field">
+                    <label class="cm-label">Tiêu chí chấm điểm</label>
+                    <textarea name="grading_rubric" id="editAssignmentGradingRubric" class="cm-ctrl" rows="4"></textarea>
+                    <div class="cm-hint">AI sẽ ưu tiên chấm theo tiêu chí này.</div>
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -777,8 +820,7 @@
                                 <th>Học sinh</th>
                                 <th>Trạng thái</th>
                                 <th>Thời gian nộp</th>
-                                <th>Bài làm</th>
-                                <th>Chấm điểm</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="submissions-table-body"></tbody>
@@ -917,6 +959,9 @@
             const status = button.dataset.status || 'published';
             const availableFrom = button.dataset.availableFrom || '';
             const type = button.dataset.type || 'file';
+            const gradingRubric = JSON.parse(button.dataset.gradingRubric || '""');
+            const gradingScale = button.dataset.gradingScale || '10';
+            const aiEnabled = button.dataset.aiEnabled || '0';
 
             document.getElementById('editAssignmentForm').action = `/assignments/${id}`;
             document.getElementById('editAssignmentTitle').value = title;
@@ -926,6 +971,9 @@
             document.getElementById('editAssignmentStatus').value = status;
             document.getElementById('editAssignmentAvailableFrom').value = availableFrom;
             document.getElementById('editAssignmentInstructions').value = instructions;
+            document.getElementById('editAssignmentGradingRubric').value = gradingRubric;
+            document.getElementById('editAssignmentGradingScale').value = gradingScale;
+            document.getElementById('editAssignmentAiEnabled').value = aiEnabled;
 
             setTimeout(() => {
                 tinymce.get('editAssignmentInstructions')?.setContent(instructions);

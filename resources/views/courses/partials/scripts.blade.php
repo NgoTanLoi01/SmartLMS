@@ -374,7 +374,7 @@
                 // Hiển thị trạng thái đang tải
                 document.getElementById('modal-assignment-name').innerText = 'Đang tải dữ liệu...';
                 tableBody.innerHTML =
-                    '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+                    '<tr><td colspan="4" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
 
                 // Dùng fetch gọi API
                 fetch(`/assignments/${id}/submissions-list`)
@@ -391,37 +391,20 @@
 
                         if (!data.submissions || data.submissions.length === 0) {
                             tableBody.innerHTML =
-                                '<tr><td colspan="5" class="text-center text-muted py-4">Chưa có học sinh nào nộp bài</td></tr>';
+                                '<tr><td colspan="4" class="text-center text-muted py-4">Chưa có học sinh nào nộp bài</td></tr>';
                             return;
                         }
-
-                        const escapeHtml = (value) => String(value ?? '')
-                            .replace(/&/g, '&amp;')
-                            .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;')
-                            .replace(/"/g, '&quot;')
-                            .replace(/'/g, '&#039;');
 
                         data.submissions.forEach(sub => {
                             let statusBadge = sub.submitted_at ?
                                 '<span class="badge bg-success">Đã nộp</span>' :
                                 '<span class="badge bg-light text-muted border">Chưa nộp</span>';
 
-                            let fileLink = sub.file_url ?
-                                `<a href="${sub.file_url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-download me-1"></i>Tải file</a>` :
-                                '';
-
-                            let textAnswer = sub.text_answer ?
-                                `<div class="small bg-light rounded-3 p-2 mt-2 text-dark" style="white-space:pre-wrap;max-width:360px;">${escapeHtml(sub.text_answer)}</div>` :
-                                '';
-
-                            let submissionContent = fileLink || textAnswer
-                                ? `${fileLink}${textAnswer}`
-                                : '<span class="text-muted small">---</span>';
-
-                            let gradeForm = sub.submission_id ?
-                                `<form action="/submissions/${sub.submission_id}/grade" method="POST" class="d-flex gap-2">@csrf<input type="number" name="grade" step="0.1" class="form-control form-control-sm" style="width:70px" value="${sub.grade || ''}" placeholder="0-10"><input type="text" name="feedback" class="form-control form-control-sm" value="${sub.feedback || ''}" placeholder="Nhận xét..."><button type="submit" class="btn btn-sm btn-success"><i class="fas fa-save"></i></button></form>` :
-                                '<span class="text-muted small">N/A</span>';
+                            let reviewButton = sub.submission_id ?
+                                `<a href="/submissions/${sub.submission_id}/review" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>Xem & chấm
+                                </a>` :
+                                '<span class="text-muted small">---</span>';
 
                             tableBody.innerHTML += `
                                 <tr>
@@ -431,15 +414,14 @@
                                     </td>
                                     <td class="px-4">${statusBadge}</td>
                                     <td class="px-4 small text-muted">${sub.submitted_at || '---'}</td>
-                                    <td class="px-4">${submissionContent}</td>
-                                    <td class="px-4">${gradeForm}</td>
+                                    <td class="px-4">${reviewButton}</td>
                                 </tr>
                             `;
                         });
                     })
                     .catch(error => {
                         tableBody.innerHTML =
-                            `<tr><td colspan="5" class="text-center text-danger py-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi: ${error.message}</td></tr>`;
+                            `<tr><td colspan="4" class="text-center text-danger py-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi: ${error.message}</td></tr>`;
                     });
             });
         });
