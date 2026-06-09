@@ -8,7 +8,7 @@ class Course extends Model
 {
     protected $connection = 'mysql';
 
-    protected $fillable = ['title', 'description', 'teacher_id', 'status', 'published_at', 'available_from'];
+    protected $fillable = ['title', 'description', 'teacher_id', 'learning_program_id', 'course_type', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
         'published_at' => 'datetime',
@@ -17,7 +17,8 @@ class Course extends Model
 
     public function scopeVisibleToStudents($query)
     {
-        return $query->where('status', 'published')
+        return $query->where('course_type', 'delivery')
+            ->where('status', 'published')
             ->where(function ($q) {
                 $q->whereNull('available_from')
                     ->orWhere('available_from', '<=', now());
@@ -26,8 +27,14 @@ class Course extends Model
 
     public function isVisibleToStudents(): bool
     {
-        return $this->status === 'published'
+        return $this->course_type === 'delivery'
+            && $this->status === 'published'
             && (!$this->available_from || $this->available_from->lte(now()));
+    }
+
+    public function isTemplate(): bool
+    {
+        return $this->course_type === 'template';
     }
 
     public function modules()
@@ -43,6 +50,11 @@ class Course extends Model
     public function teacher()
     {
         return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function learningProgram()
+    {
+        return $this->belongsTo(LearningProgram::class);
     }
 
     public function classes()

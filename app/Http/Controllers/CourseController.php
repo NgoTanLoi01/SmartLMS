@@ -5,9 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
+use App\Models\LearningProgram;
+use App\Models\Lesson;
+use App\Models\Module;
+use App\Models\Question;
 use App\Models\QuizAttempt;
+use App\Models\Quiz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
@@ -17,7 +24,7 @@ class CourseController extends Controller
         $user = auth()->user();
 
         // Khởi tạo query cơ bản kèm đếm số lượng bài học (lessons)
-        $query = Course::with(['teacher', 'classes'])
+        $query = Course::with(['teacher', 'classes', 'learningProgram'])
             ->withCount('modules') // Đếm số module
             // Đếm tổng bài học của tất cả các module trong khóa học
             ->withCount([
@@ -61,7 +68,10 @@ class CourseController extends Controller
                 ->count();
         }
 
-        return view('courses.index', compact('courses'));
+        $deliveryCourses = $courses->where('course_type', 'delivery')->values();
+        $templateCourses = $courses->where('course_type', 'template')->values();
+
+        return view('courses.index', compact('courses', 'deliveryCourses', 'templateCourses'));
     }
 
     public function show($id)
@@ -138,28 +148,55 @@ class CourseController extends Controller
 
     public function create()
     {
-        return view('courses.create');
+        $this->authorizeCourseCreation();
+
+        $programs = $this->availablePrograms();
+        $templateCourses = $this->availableTemplateCourses(request('template_course_id'));
+
+        return view('courses.create', compact('programs', 'templateCourses'));
     }
 
     public function store(Request $request)
     {
+        $this->authorizeCourseCreation();
+
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required',
+            'learning_program_id' => 'nullable|exists:learning_programs,id',
+            'course_type' => 'required|in:delivery,template',
+            'template_course_id' => 'nullable|exists:courses,id',
             'status' => 'nullable|in:draft,published,hidden',
             'available_from' => 'nullable|date',
         ]);
 
-        Course::create([
-            'title' => $request->title,
-            'description' => $request->description,
-            'teacher_id' => auth()->id(),
-            'status' => $request->input('status', 'published'),
-            'published_at' => $request->input('status', 'published') === 'published' ? now() : null,
-            'available_from' => $request->available_from,
-        ]);
+        $this->authorizeProgramSelection($request->input('learning_program_id'));
+        $templateCourse = $request->filled('template_course_id')
+            ? $this->authorizedTemplateCourse($request->template_course_id)
+            : null;
 
-        return redirect()->route('courses.index')->with('success', 'Tạo khóa học thành công!');
+        DB::transaction(function () use ($request, $templateCourse) {
+            $course = Course::create([
+                'title' => $request->title,
+                'description' => $request->description,
+                'teacher_id' => auth()->id(),
+                'learning_program_id' => $request->learning_program_id,
+                'course_type' => $request->course_type,
+                'status' => $request->input('status', 'published'),
+                'published_at' => $request->input('status', 'published') === 'published' ? now() : null,
+                'available_from' => $request->available_from,
+            ]);
+
+            if ($templateCourse) {
+                $this->cloneCourseContent($templateCourse, $course);
+            }
+        });
+
+        $message = $templateCourse
+            ? 'Tạo khóa học từ mẫu thành công!'
+            : 'Tạo khóa học thành công!';
+
+        return redirect()->route('courses.index')->with('success', $message);
     }
 
     public function edit($id)
@@ -168,8 +205,9 @@ class CourseController extends Controller
 
         // Chỉ cho phép giáo viên của khóa học hoặc admin sửa
         $this->authorizeCourseOwner($course);
+        $programs = $this->availablePrograms($course);
 
-        return view('courses.edit', compact('course'));
+        return view('courses.edit', compact('course', 'programs'));
     }
 
     public function update(Request $request, $id)
@@ -180,13 +218,19 @@ class CourseController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required',
+            'learning_program_id' => 'nullable|exists:learning_programs,id',
+            'course_type' => 'required|in:delivery,template',
             'status' => 'nullable|in:draft,published,hidden',
             'available_from' => 'nullable|date',
         ]);
 
+        $this->authorizeProgramSelection($request->input('learning_program_id'), $course);
+
         $course->update([
             'title' => $request->title,
             'description' => $request->description,
+            'learning_program_id' => $request->learning_program_id,
+            'course_type' => $request->course_type,
             'status' => $request->input('status', $course->status),
             'published_at' => $request->input('status', $course->status) === 'published' ? ($course->published_at ?? now()) : null,
             'available_from' => $request->available_from,
@@ -235,6 +279,192 @@ class CourseController extends Controller
         if (auth()->user()->role !== 'admin' && auth()->id() !== $course->teacher_id) {
             abort(403, 'Bạn không có quyền thao tác khóa học này.');
         }
+    }
+
+    private function authorizeCourseCreation(): void
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'teacher'])) {
+            abort(403, 'Bạn không có quyền tạo khóa học.');
+        }
+    }
+
+    private function availablePrograms(?Course $course = null)
+    {
+        $query = LearningProgram::orderBy('name');
+
+        if (auth()->user()->role === 'teacher') {
+            $query->where('teacher_id', auth()->id());
+        }
+
+        $programs = $query->get();
+
+        if ($course?->learning_program_id && !$programs->contains('id', $course->learning_program_id)) {
+            $programs->push($course->learningProgram);
+        }
+
+        return $programs->filter()->sortBy('name')->values();
+    }
+
+    private function availableTemplateCourses($selectedCourseId = null)
+    {
+        $query = Course::with('learningProgram')
+            ->where('course_type', 'template')
+            ->orderBy('title');
+
+        if (auth()->user()->role === 'teacher') {
+            $query->where('teacher_id', auth()->id());
+        }
+
+        $courses = $query->get();
+
+        if ($selectedCourseId && !$courses->contains('id', (int) $selectedCourseId)) {
+            $courses->push($this->authorizedTemplateCourse($selectedCourseId));
+        }
+
+        return $courses->sortBy('title')->values();
+    }
+
+    private function authorizedTemplateCourse($courseId): Course
+    {
+        $query = Course::with([
+            'modules.lessons',
+            'assignments',
+            'quizzes',
+            'questionBanks',
+        ]);
+
+        if (auth()->user()->role === 'teacher') {
+            $query->where('teacher_id', auth()->id());
+        }
+
+        return $query->findOrFail($courseId);
+    }
+
+    private function authorizeProgramSelection($programId, ?Course $course = null): void
+    {
+        if (!$programId || auth()->user()->role === 'admin') {
+            return;
+        }
+
+        if ($course && (int) $course->learning_program_id === (int) $programId) {
+            return;
+        }
+
+        $ownsProgram = LearningProgram::where('id', $programId)
+            ->where('teacher_id', auth()->id())
+            ->exists();
+
+        if (!$ownsProgram) {
+            abort(403, 'Bạn không có quyền gắn khóa học vào chương trình này.');
+        }
+    }
+
+    private function cloneCourseContent(Course $sourceCourse, Course $targetCourse): void
+    {
+        $lessonIdMap = [];
+
+        foreach ($sourceCourse->modules as $sourceModule) {
+            $targetModule = Module::create([
+                'course_id' => $targetCourse->id,
+                'title' => $sourceModule->title,
+                'order' => $sourceModule->order,
+            ]);
+
+            foreach ($sourceModule->lessons as $sourceLesson) {
+                $targetLesson = Lesson::create([
+                    'module_id' => $targetModule->id,
+                    'title' => $sourceLesson->title,
+                    'content' => $sourceLesson->content,
+                    'video_url' => $sourceLesson->video_url,
+                    'attachment_path' => $this->copyLessonAttachment($sourceLesson->attachment_path),
+                    'attachment' => $this->copyLessonAttachment($sourceLesson->attachment),
+                    'order' => $sourceLesson->order,
+                    'status' => $sourceLesson->status,
+                    'published_at' => $sourceLesson->published_at,
+                    'available_from' => $sourceLesson->available_from,
+                ]);
+
+                $lessonIdMap[$sourceLesson->id] = $targetLesson->id;
+            }
+        }
+
+        foreach ($sourceCourse->assignments as $sourceAssignment) {
+            Assignments::create([
+                'course_id' => $targetCourse->id,
+                'lesson_id' => $sourceAssignment->lesson_id ? ($lessonIdMap[$sourceAssignment->lesson_id] ?? null) : null,
+                'type' => $sourceAssignment->type,
+                'title' => $sourceAssignment->title,
+                'instructions' => $sourceAssignment->instructions,
+                'grading_rubric' => $sourceAssignment->grading_rubric,
+                'grading_scale' => $sourceAssignment->grading_scale,
+                'ai_grading_enabled' => $sourceAssignment->ai_grading_enabled,
+                'due_date' => $sourceAssignment->due_date,
+                'allowed_extensions' => $sourceAssignment->allowed_extensions,
+                'max_file_size' => $sourceAssignment->max_file_size,
+                'status' => $sourceAssignment->status,
+                'published_at' => $sourceAssignment->published_at,
+                'available_from' => $sourceAssignment->available_from,
+            ]);
+        }
+
+        foreach ($sourceCourse->quizzes as $sourceQuiz) {
+            Quiz::create([
+                'course_id' => $targetCourse->id,
+                'title' => $sourceQuiz->title,
+                'time_limit' => $sourceQuiz->time_limit,
+                'is_random' => $sourceQuiz->is_random,
+                'easy_count' => $sourceQuiz->easy_count,
+                'medium_count' => $sourceQuiz->medium_count,
+                'hard_count' => $sourceQuiz->hard_count,
+                'status' => $sourceQuiz->status,
+                'published_at' => $sourceQuiz->published_at,
+                'available_from' => $sourceQuiz->available_from,
+            ]);
+        }
+
+        $targetCourse->questionBanks()->syncWithoutDetaching(
+            $sourceCourse->questionBanks->pluck('id')->all()
+        );
+
+        $this->cloneCourseSpecificQuestions($sourceCourse, $targetCourse);
+    }
+
+    private function cloneCourseSpecificQuestions(Course $sourceCourse, Course $targetCourse): void
+    {
+        Question::with('options')
+            ->where('course_id', $sourceCourse->id)
+            ->whereNull('question_bank_id')
+            ->get()
+            ->each(function ($sourceQuestion) use ($targetCourse) {
+                $targetQuestion = Question::create([
+                    'course_id' => $targetCourse->id,
+                    'question_bank_id' => null,
+                    'question_text' => $sourceQuestion->question_text,
+                    'difficulty' => $sourceQuestion->difficulty,
+                ]);
+
+                foreach ($sourceQuestion->options as $sourceOption) {
+                    $targetQuestion->options()->create([
+                        'option_text' => $sourceOption->option_text,
+                        'is_correct' => $sourceOption->is_correct,
+                    ]);
+                }
+            });
+    }
+
+    private function copyLessonAttachment(?string $path): ?string
+    {
+        if (!$path || !Storage::disk('public')->exists($path)) {
+            return $path;
+        }
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $filename = Str::uuid() . ($extension ? '.' . $extension : '');
+        $targetPath = 'lessons/attachments/' . $filename;
+
+        Storage::disk('public')->copy($path, $targetPath);
+
+        return $targetPath;
     }
 
     private function buildCourseDashboard(Course $course): array

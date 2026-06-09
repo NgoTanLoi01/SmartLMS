@@ -26,7 +26,7 @@ class DashboardController extends Controller
             $data['total_students'] = User::where('role', 'student')->count();
             $data['total_teachers'] = User::where('role', 'teacher')->count();
             $data['total_classes'] = DB::table('classes')->count();
-            $data['total_courses'] = Course::count();
+            $data['total_courses'] = Course::where('course_type', 'delivery')->count();
             $data['recent_users'] = User::orderBy('created_at', 'desc')->take(7)->get();
             $data['chart_role_labels'] = ['Học sinh', 'Giáo viên', 'Admin'];
             $data['chart_role_data'] = [$data['total_students'], $data['total_teachers'], User::where('role', 'admin')->count()];
@@ -44,14 +44,16 @@ class DashboardController extends Controller
                 ->orderByDesc('students_count')
                 ->take(5)
                 ->get();
-            $data['recent_courses'] = Course::with('teacher')->latest()->take(5)->get();
+            $data['recent_courses'] = Course::with('teacher')->where('course_type', 'delivery')->latest()->take(5)->get();
         }
 
         // ==========================================
         // 2. DỮ LIỆU CHO GIÁO VIÊN
         // ==========================================
         elseif ($user->role === 'teacher') {
-            $courseIds = Course::where('teacher_id', $user->id)->pluck('id');
+            $courseIds = Course::where('teacher_id', $user->id)
+                ->where('course_type', 'delivery')
+                ->pluck('id');
 
             $data['total_courses'] = $courseIds->count();
             $data['teacher_classes'] = Classroom::where('teacher_id', $user->id)

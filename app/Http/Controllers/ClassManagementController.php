@@ -216,14 +216,16 @@ class ClassManagementController extends Controller
             $classes = Classroom::withCount('students')
                 ->with(['teacher', 'courses'])
                 ->get();
-            $courses = Course::all();
+            $courses = Course::where('course_type', 'delivery')->get();
         } else {
             // Giáo viên: Chỉ thấy lớp mình dạy và khóa học mình tạo
             $classes = Classroom::where('teacher_id', $user->id)->withCount('students')->with('courses')->get();
 
             // GIẢ SỬ: Bảng courses của thầy có cột 'teacher_id'
             // để xác định ai là người tạo khóa học đó
-            $courses = Course::where('teacher_id', $user->id)->get();
+            $courses = Course::where('teacher_id', $user->id)
+                ->where('course_type', 'delivery')
+                ->get();
         }
 
         return view('classes.index', compact('classes', 'teachers', 'courses'));

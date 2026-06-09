@@ -44,6 +44,28 @@
                                 @enderror
                             </div>
 
+                            <div class="mb-4">
+                                <label for="learning_program_id" class="form-label fw-bold">Chương trình học</label>
+                                <select name="learning_program_id" id="learning_program_id" class="form-select">
+                                    <option value="">Chưa gắn chương trình</option>
+                                    @foreach ($programs as $program)
+                                        <option value="{{ $program->id }}" @selected(old('learning_program_id', $course->learning_program_id) == $program->id)>
+                                            {{ $program->name }} ({{ $program->code }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">Gắn khóa học này vào một chương trình/môn học chuẩn.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="course_type" class="form-label fw-bold">Loại khóa học</label>
+                                <select name="course_type" id="course_type" class="form-select" required>
+                                    <option value="delivery" @selected(old('course_type', $course->course_type) === 'delivery')>Khóa đang dạy - triển khai cho lớp thật</option>
+                                    <option value="template" @selected(old('course_type', $course->course_type) === 'template')>Khóa mẫu - dùng để nhân bản nội dung</option>
+                                </select>
+                                <div class="form-text">Khóa mẫu sẽ được tách riêng khỏi danh sách khóa đang dạy.</div>
+                            </div>
+
                             <div class="row g-3 mb-4">
                                 <div class="col-12 col-md-6">
                                     <label for="status" class="form-label fw-bold">Trạng thái xuất bản</label>

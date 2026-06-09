@@ -516,6 +516,12 @@
 
                     <div class="nav-section">Quản lý</div>
                     <li>
+                        <a class="nav-link {{ request()->is('programs*') ? 'active' : '' }}"
+                            href="{{ route('programs.index') }}">
+                            <i class="fas fa-sitemap"></i> Chương trình học
+                        </a>
+                    </li>
+                    <li>
                         <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
                             href="{{ route('classes.index') }}">
                             <i class="fas fa-chalkboard"></i> Quản lý lớp học

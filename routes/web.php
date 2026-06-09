@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -61,6 +61,7 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     // 2.4. QUẢN LÝ KHÓA HỌC (COURSES)
     // ==========================================
+    Route::resource('programs', LearningProgramController::class)->except(['create', 'show', 'edit']);
     Route::resource('courses', CourseController::class);
 
     // ==========================================

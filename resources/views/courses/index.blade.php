@@ -54,14 +54,50 @@
             font-size: 12px;
         }
 
-        /* ── Grid ── */
+        /* Grid */
         .courses-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 18px;
         }
 
-        /* ── Card ── */
+        .course-section {
+            margin-bottom: 32px;
+        }
+
+        .course-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .course-section-title {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .course-section-subtitle {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .course-section-count {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            white-space: nowrap;
+        }
+
+        /* Card */
         .course-card {
             background: #fff;
             border: 1px solid #e8edf3;
@@ -69,18 +105,23 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
         }
 
         .course-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.09);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
             border-color: #bfdbfe;
         }
 
-        /* ── Card thumb ── */
+        .course-card-template {
+            border-style: dashed;
+            border-color: #c7d2fe;
+        }
+
+        /* Thumb */
         .card-thumb {
-            height: 130px;
+            height: 120px;
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             display: flex;
             align-items: center;
@@ -90,15 +131,18 @@
         }
 
         .card-thumb .thumb-icon {
-            font-size: 2.4rem;
+            font-size: 2.2rem;
             color: #93c5fd;
         }
 
-        /* ── Action menu (3 chấm) ── */
-        .card-menu-btn {
+        /* Action menu */
+        .dropdown {
             position: absolute;
             top: 10px;
             right: 10px;
+        }
+
+        .card-menu-btn {
             width: 30px;
             height: 30px;
             border-radius: 8px;
@@ -110,7 +154,7 @@
             cursor: pointer;
             font-size: 13px;
             color: #64748b;
-            transition: background 0.15s;
+            transition: background 0.15s, color 0.15s;
             padding: 0;
         }
 
@@ -122,7 +166,7 @@
         .card-dropdown {
             border: 1px solid #e8edf3;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
             padding: 6px;
             min-width: 180px;
         }
@@ -152,9 +196,9 @@
             margin: 4px 0;
         }
 
-        /* ── Card body ── */
+        /* Card body */
         .card-body-inner {
-            padding: 18px 18px 20px;
+            padding: 16px 18px 18px;
             display: flex;
             flex-direction: column;
             flex: 1;
@@ -166,19 +210,24 @@
             gap: 5px;
             background: #eff6ff;
             color: #2563eb;
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 500;
-            padding: 3px 10px;
+            padding: 3px 9px;
             border-radius: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 9px;
             max-width: 100%;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
         }
 
+        .card-badge-template {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+
         .card-title {
-            font-size: 15px;
+            font-size: 14.5px;
             font-weight: 600;
             color: #0f172a;
             line-height: 1.45;
@@ -187,38 +236,38 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            min-height: 44px;
+            min-height: 42px;
         }
 
         .card-desc {
-            font-size: 13px;
+            font-size: 12.5px;
             color: #64748b;
             line-height: 1.55;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         /* Teacher row */
         .teacher-row {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
+            gap: 7px;
+            margin-bottom: 9px;
         }
 
         .teacher-row img {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
         }
 
         .teacher-row span {
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 500;
             color: #334155;
             overflow: hidden;
@@ -226,13 +275,14 @@
             text-overflow: ellipsis;
         }
 
-        /* Stats row */
+        /* Stats */
         .stats-row {
             display: flex;
-            gap: 14px;
-            font-size: 12px;
+            gap: 12px;
+            font-size: 11.5px;
             color: #94a3b8;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
         }
 
         .stats-row span {
@@ -249,14 +299,14 @@
         .card-divider {
             height: 1px;
             background: #f1f5f9;
-            margin: 0 0 14px;
+            margin: 0 0 12px;
         }
 
         /* Progress */
         .progress-label {
             display: flex;
             justify-content: space-between;
-            font-size: 11.5px;
+            font-size: 11px;
             margin-bottom: 5px;
             color: #94a3b8;
         }
@@ -271,7 +321,7 @@
             background: #e8edf3;
             border-radius: 4px;
             overflow: hidden;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         .progress-bar-fill {
@@ -283,9 +333,9 @@
 
         /* Updated at */
         .updated-at {
-            font-size: 11.5px;
+            font-size: 11px;
             color: #94a3b8;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 5px;
@@ -301,11 +351,11 @@
             color: #2563eb;
             border: 1px solid #bfdbfe;
             border-radius: 10px;
-            padding: 9px 14px;
-            font-size: 13.5px;
+            padding: 8px 14px;
+            font-size: 13px;
             font-weight: 500;
             text-decoration: none;
-            transition: background 0.15s, border-color 0.15s;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
             margin-top: auto;
         }
 
@@ -313,6 +363,18 @@
             background: #2563eb;
             color: #fff;
             border-color: #2563eb;
+        }
+
+        .btn-enter-template {
+            background: #eef2ff;
+            color: #4f46e5;
+            border-color: #c7d2fe;
+        }
+
+        .btn-enter-template:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: #fff;
         }
 
         .btn-enter i {
@@ -338,12 +400,6 @@
             margin: 0;
         }
 
-        .dropdown {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
-
         @media (max-width: 767.98px) {
             .page-header {
                 align-items: stretch;
@@ -359,8 +415,12 @@
             }
 
             .stats-row {
-                flex-wrap: wrap;
-                gap: 8px 14px;
+                gap: 8px 12px;
+            }
+
+            .course-section-header {
+                align-items: flex-start;
+                flex-direction: column;
             }
         }
     </style>
@@ -383,100 +443,40 @@
             <p>Chưa có khóa học nào. Hãy tạo hoặc tham gia khóa học đầu tiên!</p>
         </div>
     @else
-        <div class="courses-grid">
-            @foreach ($courses as $course)
-                <div class="course-card">
-
-                    {{-- Thumb --}}
-                    <div class="card-thumb">
-                        <i class="fas fa-laptop-code thumb-icon"></i>
-
-                        @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                            <div class="dropdown">
-                                <button class="card-menu-btn" type="button" data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end card-dropdown">
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('courses.edit', $course->id) }}">
-                                            <i class="fas fa-edit" style="color:#f59e0b;"></i> Sửa khóa học
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li>
-                                        <form action="{{ route('courses.destroy', $course->id) }}" method="POST"
-                                            onsubmit="return confirm('Bạn có chắc chắn muốn xóa khóa học này?')">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="dropdown-item text-danger"
-                                                style="background:none; border:none; width:100%; text-align:left;">
-                                                <i class="fas fa-trash-alt"></i> Xóa khóa học
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
-                        @endif
-                    </div>
-
-                    {{-- Body --}}
-                    <div class="card-body-inner">
-                        <div class="card-badge">
-                            <i class="fas fa-users" style="font-size:10px;"></i>
-                            {{ $course->classes->first()->name ?? 'Tự do' }}
-                        </div>
-                        @if (auth()->user()->role !== 'student')
-                            <div class="card-badge" style="background:{{ $course->status === 'published' ? '#ecfdf5' : ($course->status === 'hidden' ? '#f1f5f9' : '#fffbeb') }};color:{{ $course->status === 'published' ? '#047857' : ($course->status === 'hidden' ? '#475569' : '#92400e') }};">
-                                <i class="fas fa-eye" style="font-size:10px;"></i>
-                                {{ strtoupper($course->status ?? 'published') }}
-                                @if ($course->available_from)
-                                    · mở {{ $course->available_from->format('d/m/Y H:i') }}
-                                @endif
-                            </div>
-                        @endif
-
-                        <h2 class="card-title">{{ $course->title }}</h2>
-
-                        <p class="card-desc">
-                            {{ $course->description ?? 'Chưa có mô tả chi tiết cho khóa học này.' }}
+        @if ($deliveryCourses->isNotEmpty())
+            <section class="course-section">
+                <div class="course-section-header">
+                    <div>
+                        <h2 class="course-section-title">Khóa đang dạy</h2>
+                        <p class="course-section-subtitle">Các khóa triển khai cho lớp thật, có học sinh và tiến độ học tập.
                         </p>
-
-                        <div class="teacher-row">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode($course->teacher->name) }}&background=2563eb&color=fff&size=48"
-                                alt="{{ $course->teacher->name }}">
-                            <span>{{ $course->teacher->name }}</span>
-                        </div>
-
-                        <div class="stats-row">
-                            <span><i class="fas fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
-                            <span><i class="fas fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học sinh</span>
-                        </div>
-
-                        <div class="card-divider"></div>
-
-                        @if (auth()->user()->role === 'student')
-                            <div class="progress-label">
-                                <span>Tiến độ</span>
-                                <span>{{ $course->progress }}%</span>
-                            </div>
-                            <div class="progress-bar-wrap">
-                                <div class="progress-bar-fill" style="width: {{ $course->progress }}%"></div>
-                            </div>
-                        @else
-                            <div class="updated-at">
-                                <i class="far fa-clock"></i>
-                                Cập nhật {{ $course->updated_at->diffForHumans() }}
-                            </div>
-                        @endif
-
-                        <a href="{{ route('courses.show', $course->id) }}" class="btn-enter">
-                            Vào học ngay <i class="fas fa-arrow-right"></i>
-                        </a>
                     </div>
+                    <span class="course-section-count">{{ $deliveryCourses->count() }} khóa</span>
                 </div>
-            @endforeach
-        </div>
+                <div class="courses-grid">
+                    @foreach ($deliveryCourses as $course)
+                        @include('courses.partials.course-card', ['course' => $course])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @if (auth()->user()->role !== 'student' && $templateCourses->isNotEmpty())
+            <section class="course-section">
+                <div class="course-section-header">
+                    <div>
+                        <h2 class="course-section-title">Khóa mẫu</h2>
+                        <p class="course-section-subtitle">Nội dung chuẩn dùng để tạo nhanh khóa mới, không tính học sinh
+                            hay tiến độ.</p>
+                    </div>
+                    <span class="course-section-count">{{ $templateCourses->count() }} mẫu</span>
+                </div>
+                <div class="courses-grid">
+                    @foreach ($templateCourses as $course)
+                        @include('courses.partials.course-card', ['course' => $course])
+                    @endforeach
+                </div>
+            </section>
+        @endif
     @endif
 @endsection

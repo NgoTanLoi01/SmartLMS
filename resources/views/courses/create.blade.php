@@ -45,6 +45,44 @@
                                 @enderror
                             </div>
 
+                            <div class="mb-4">
+                                <label for="learning_program_id" class="form-label fw-bold">Chương trình học</label>
+                                <select name="learning_program_id" id="learning_program_id" class="form-select">
+                                    <option value="">Chưa gắn chương trình</option>
+                                    @foreach ($programs as $program)
+                                        <option value="{{ $program->id }}" @selected(old('learning_program_id') == $program->id)>
+                                            {{ $program->name }} ({{ $program->code }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">Dùng để gom các khóa học cùng chương trình/môn học chuẩn.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="course_type" class="form-label fw-bold">Loại khóa học</label>
+                                <select name="course_type" id="course_type" class="form-select" required>
+                                    <option value="delivery" @selected(old('course_type', 'delivery') === 'delivery')>Khóa đang dạy - triển khai cho lớp thật</option>
+                                    <option value="template" @selected(old('course_type') === 'template')>Khóa mẫu - dùng để nhân bản nội dung</option>
+                                </select>
+                                <div class="form-text">Khóa mẫu sẽ không hiển thị cho học sinh và không tính tiến độ/học sinh.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="template_course_id" class="form-label fw-bold">Khóa học mẫu</label>
+                                <select name="template_course_id" id="template_course_id" class="form-select">
+                                    <option value="">Tạo khóa học trống</option>
+                                    @foreach ($templateCourses as $templateCourse)
+                                        <option value="{{ $templateCourse->id }}" @selected(old('template_course_id', request('template_course_id')) == $templateCourse->id)>
+                                            {{ $templateCourse->title }}
+                                            @if ($templateCourse->learningProgram)
+                                                - {{ $templateCourse->learningProgram->name }}
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">Copy module, bài học, bài tập, quiz và liên kết ngân hàng câu hỏi. Không copy học sinh, tiến độ, bài nộp, điểm danh.</div>
+                            </div>
+
                             <div class="row g-3 mb-4">
                                 <div class="col-12 col-md-6">
                                     <label for="status" class="form-label fw-bold">Trạng thái xuất bản</label>
