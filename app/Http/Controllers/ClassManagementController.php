@@ -14,6 +14,7 @@ use App\Models\Lesson;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Services\DeepSeekService;
+use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -32,20 +33,23 @@ class ClassManagementController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'password' => 'required|min:6',
         ]);
 
+        $username = StudentLoginCode::generateForClass($classroom);
+
         $student = User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'username' => $username,
+            'email' => $request->filled('email') ? $request->email : StudentLoginCode::emailFromUsername($username),
             'password' => Hash::make($request->password),
             'role' => 'student',
         ]);
 
         $classroom->students()->attach($student->id);
 
-        return back()->with('success', 'Đã tạo học sinh và gán vào lớp thành công!');
+        return back()->with('success', "Đã tạo học sinh và gán vào lớp thành công! Mã đăng nhập: {$username}");
     }
 
     public function getStudentsByClass($classId)
@@ -70,7 +74,8 @@ class ClassManagementController extends Controller
             $keyword = mb_strtolower($filters['search']);
             $students = $students->filter(function ($student) use ($keyword) {
                 return str_contains(mb_strtolower($student->name), $keyword)
-                    || str_contains(mb_strtolower($student->email), $keyword);
+                    || str_contains(mb_strtolower($student->email), $keyword)
+                    || str_contains(mb_strtolower($student->username ?? ''), $keyword);
             });
         }
 

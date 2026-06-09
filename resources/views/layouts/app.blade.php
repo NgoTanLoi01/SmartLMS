@@ -568,6 +568,12 @@
                                 <input type="text" class="form-control" value="{{ strtoupper(Auth::user()->role) }}"
                                     readonly>
                             </div>
+                            @if (Auth::user()->username)
+                                <div class="col-12">
+                                    <label class="form-label">Mã đăng nhập</label>
+                                    <input type="text" class="form-control" value="{{ Auth::user()->username }}" readonly>
+                                </div>
+                            @endif
                         </div>
 
                         <hr style="border-color: var(--border); margin: 16px 0;">

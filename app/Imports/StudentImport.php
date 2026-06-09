@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\User;
 use App\Models\Classroom;
+use App\Support\StudentLoginCode;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str; 
@@ -27,6 +28,9 @@ class StudentImport implements ToCollection, WithStartRow
     public function collection(Collection $rows)
     {
         $classroom = Classroom::find($this->classId);
+        if (!$classroom) {
+            return;
+        }
 
         foreach ($rows as $row) {
             // Nếu cột Mã HS Nghề (index 3) bị rỗng thì bỏ qua
@@ -39,25 +43,28 @@ class StudentImport implements ToCollection, WithStartRow
             $ten = trim($row[5]);
             $fullName = $ho . ' ' . $ten;
 
-            // 1. Tạo email ảo: Chuyển "Nguyễn Gia Bảo" -> "nguyengiabao"
-            // Hàm Str::slug mặc định sẽ bỏ dấu tiếng Việt, tham số '' giúp xóa khoảng trắng
-            $emailPrefix = Str::slug($fullName, '');
-            $email = $emailPrefix . '@gmail.com';
+            $studentCode = Str::slug($maHs, '');
+            $emailPrefix = $studentCode ?: Str::slug($fullName, '');
+            $email = $emailPrefix . '@student.smartlms.local';
+            $legacyEmail = Str::slug($fullName, '') . '@gmail.com';
 
-            // 2. Kiểm tra xem user này đã có trên hệ thống chưa
-            $user = User::where('email', $email)->first();
+            $user = User::whereIn('email', [$email, $legacyEmail])->first();
 
-            // 3. Nếu chưa có thì tạo mới
             if (!$user) {
+                $username = StudentLoginCode::generateForClass($classroom);
                 $user = User::create([
                     'name' => $fullName,
+                    'username' => $username,
                     'email' => $email,
                     'password' => Hash::make('123456'), // Mặc định pass là 123456
                     'role' => 'student',
                 ]);
+            } elseif (!$user->username) {
+                $user->update([
+                    'username' => StudentLoginCode::generateForClass($classroom),
+                ]);
             }
 
-            // 4. Gán học sinh này vào lớp
             $classroom->students()->syncWithoutDetaching([$user->id]);
         }
     }

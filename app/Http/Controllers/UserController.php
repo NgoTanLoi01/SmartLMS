@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -13,7 +14,9 @@ class UserController extends Controller
         $search = $request->input('search');
 
         $users = User::when($search, function ($query, $search) {
-            return $query->where('name', 'LIKE', "%{$search}%")->orWhere('email', 'LIKE', "%{$search}%");
+            return $query->where('name', 'LIKE', "%{$search}%")
+                ->orWhere('email', 'LIKE', "%{$search}%")
+                ->orWhere('username', 'LIKE', "%{$search}%");
         })
             ->orderBy('created_at', 'desc')
             ->paginate(20)
@@ -30,19 +33,33 @@ class UserController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required|in:admin,teacher,student',
         ]);
 
+        if ($request->role !== 'student' && !$request->filled('email')) {
+            return back()->withErrors(['email' => 'Email là bắt buộc với tài khoản quản trị viên và giáo viên.'])->withInput();
+        }
+
+        $username = $request->role === 'student'
+            ? StudentLoginCode::generate('HS', User::where('role', 'student')->count() + 1)
+            : null;
+
         User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'username' => $username,
+            'email' => $request->filled('email') ? $request->email : StudentLoginCode::emailFromUsername($username),
             'password' => Hash::make($request->password),
             'role' => $request->role,
         ]);
 
-        return back()->with('success', 'Đã tạo tài khoản ' . strtoupper($request->role) . ' thành công!');
+        $message = 'Đã tạo tài khoản ' . strtoupper($request->role) . ' thành công!';
+        if ($username) {
+            $message .= ' Mã đăng nhập: ' . $username;
+        }
+
+        return back()->with('success', $message);
     }
 
     public function destroy($id)
@@ -75,6 +92,8 @@ class UserController extends Controller
             'password' => Hash::make($defaultPassword),
         ]);
 
-        return back()->with('success', "Đã cấp lại mật khẩu cho tài khoản {$user->email}. Mật khẩu mới là: {$defaultPassword}");
+        $loginName = $user->username ?: $user->email;
+
+        return back()->with('success', "Đã cấp lại mật khẩu cho tài khoản {$loginName}. Mật khẩu mới là: {$defaultPassword}");
     }
 }

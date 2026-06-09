@@ -906,7 +906,7 @@
                     <div class="lms-input-icon">
                         <i class="fas fa-search"></i>
                         <input type="text" name="search" class="lms-input" style="width:100%;"
-                            placeholder="Tên hoặc email..." value="{{ $filters['search'] ?? '' }}">
+                            placeholder="Tên, mã đăng nhập hoặc email..." value="{{ $filters['search'] ?? '' }}">
                     </div>
                 </div>
                 <div class="lms-filter-group" style="flex:1.5; min-width:160px;">
@@ -966,6 +966,11 @@
                                         <div class="lms-avatar">{{ mb_strtoupper(mb_substr($student->name, 0, 1)) }}</div>
                                         <div>
                                             <div class="lms-student-name">{{ $student->name }}</div>
+                                            @if ($student->username)
+                                                <div class="lms-student-email">
+                                                    <i class="fas fa-id-badge"></i> {{ $student->username }}
+                                                </div>
+                                            @endif
                                             <div class="lms-student-email">{{ $student->email }}</div>
                                             <div class="lms-student-id">#{{ $student->id }}</div>
                                         </div>
@@ -1098,8 +1103,8 @@
                 <div class="modal-body" style="padding-top:8px;">
                     <div class="lms-info-box">
                         <i class="fas fa-info-circle" style="flex-shrink:0; margin-top:1px;"></i>
-                        <span>Học sinh sẽ được tạo tài khoản và tự động gán vào lớp
-                            <strong>{{ $classroom->name }}</strong>.</span>
+                        <span>Học sinh sẽ được tạo mã đăng nhập ngắn theo lớp
+                            <strong>{{ $classroom->name }}</strong> và tự động gán vào lớp.</span>
                     </div>
                     <div class="lms-form-group">
                         <label class="lms-form-label">Họ và tên</label>
@@ -1107,9 +1112,9 @@
                             required value="{{ old('name') }}">
                     </div>
                     <div class="lms-form-group">
-                        <label class="lms-form-label">Địa chỉ Email</label>
+                        <label class="lms-form-label">Địa chỉ Email <span style="font-weight:500; color:var(--lms-muted);">(không bắt buộc)</span></label>
                         <input type="email" name="email" class="lms-form-control"
-                            placeholder="nguyenvana@example.com" required value="{{ old('email') }}">
+                            placeholder="nguyenvana@example.com" value="{{ old('email') }}">
                     </div>
                     <div class="lms-form-group" style="margin-bottom:0;">
                         <label class="lms-form-label">Mật khẩu khởi tạo</label>
@@ -1148,7 +1153,7 @@
                         <ul>
                             <li>Hệ thống đọc từ <strong>Dòng số 5</strong></li>
                             <li>Cột: <strong>D</strong> (Mã HS) · <strong>E</strong> (Họ) · <strong>F</strong> (Tên)</li>
-                            <li>Email: <code>hovaten@gmail.com</code></li>
+                            <li>Mã đăng nhập được tự động tạo theo mã lớp, ví dụ <code>{{ $classroom->code }}-01</code></li>
                             <li>Mật khẩu mặc định: <code>123456</code></li>
                         </ul>
                         <a href="{{ asset('templates/mau_danh_sach_hoc_sinh.xlsx') }}"

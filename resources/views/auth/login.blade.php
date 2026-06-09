@@ -185,11 +185,12 @@
                 <form action="{{ route('login.post') }}" method="POST">
                     @csrf
                     <div class="form-group-custom">
-                        <label>Địa chỉ Email</label>
+                        <label>Tài khoản hoặc Email</label>
                         <div class="position-relative">
-                            <i class="fas fa-envelope position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
-                            <input type="email" name="email" class="input-custom ps-5" placeholder="hovaten@gmail.com"
-                                required value="{{ old('email') }}">
+                            <i class="fas fa-user position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+                            <input type="text" name="login" class="input-custom ps-5"
+                                placeholder="VD: FE01-01 hoặc email giáo viên" required value="{{ old('login') }}"
+                                autocomplete="username">
                         </div>
                     </div>
 
@@ -198,7 +199,7 @@
                         <div class="position-relative">
                             <i class="fas fa-lock position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
                             <input type="password" name="password" id="passwordInput" class="input-custom ps-5 pe-5"
-                                placeholder="••••••••" required>
+                                placeholder="••••••••" required autocomplete="current-password">
                             <button type="button" id="togglePassword"
                                 class="btn position-absolute top-50 end-0 translate-middle-y me-2 text-muted border-0 shadow-none">
                                 <i class="fas fa-eye-slash" id="eyeIcon"></i>

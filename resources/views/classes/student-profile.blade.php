@@ -546,6 +546,9 @@
                     </nav>
                     <h1 class="lms-profile-name">{{ $student->name }}</h1>
                     <div class="lms-profile-meta">
+                        @if ($student->username)
+                            <span><i class="fas fa-id-badge"></i> {{ $student->username }}</span>
+                        @endif
                         <span><i class="fas fa-envelope"></i> {{ $student->email }}</span>
                         <span><i class="fas fa-chalkboard-teacher"></i> {{ $classroom->teacher->name }}</span>
                     </div>
