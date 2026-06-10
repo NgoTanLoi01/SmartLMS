@@ -14,6 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'username',
+        'student_code',
         'email',
         'password',
         'role', // Đảm bảo có role nếu bạn dùng ở bước trước

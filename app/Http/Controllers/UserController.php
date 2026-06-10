@@ -16,7 +16,8 @@ class UserController extends Controller
         $users = User::when($search, function ($query, $search) {
             return $query->where('name', 'LIKE', "%{$search}%")
                 ->orWhere('email', 'LIKE', "%{$search}%")
-                ->orWhere('username', 'LIKE', "%{$search}%");
+                ->orWhere('username', 'LIKE', "%{$search}%")
+                ->orWhere('student_code', 'LIKE', "%{$search}%");
         })
             ->orderBy('created_at', 'desc')
             ->paginate(20)
@@ -33,6 +34,7 @@ class UserController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'student_code' => 'nullable|string|max:50',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required|in:admin,teacher,student',
@@ -42,13 +44,21 @@ class UserController extends Controller
             return back()->withErrors(['email' => 'Email là bắt buộc với tài khoản quản trị viên và giáo viên.'])->withInput();
         }
 
+        $studentCode = $request->role === 'student'
+            ? StudentLoginCode::normalizeStudentCode($request->student_code)
+            : null;
+        if ($studentCode && User::where('student_code', $studentCode)->exists()) {
+            return back()->withErrors(['student_code' => 'Mã học sinh này đã tồn tại.'])->withInput();
+        }
+
         $username = $request->role === 'student'
-            ? StudentLoginCode::generate('HS', User::where('role', 'student')->count() + 1)
+            ? StudentLoginCode::generateFromName($request->name, $studentCode)
             : null;
 
         User::create([
             'name' => $request->name,
             'username' => $username,
+            'student_code' => $studentCode,
             'email' => $request->filled('email') ? $request->email : StudentLoginCode::emailFromUsername($username),
             'password' => Hash::make($request->password),
             'role' => $request->role,
@@ -56,7 +66,7 @@ class UserController extends Controller
 
         $message = 'Đã tạo tài khoản ' . strtoupper($request->role) . ' thành công!';
         if ($username) {
-            $message .= ' Mã đăng nhập: ' . $username;
+            $message .= ' Tên đăng nhập: ' . $username;
         }
 
         return back()->with('success', $message);

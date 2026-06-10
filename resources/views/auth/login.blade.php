@@ -185,11 +185,11 @@
                 <form action="{{ route('login.post') }}" method="POST">
                     @csrf
                     <div class="form-group-custom">
-                        <label>Tài khoản hoặc Email</label>
+                        <label>Tên đăng nhập hoặc Email</label>
                         <div class="position-relative">
                             <i class="fas fa-user position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
                             <input type="text" name="login" class="input-custom ps-5"
-                                placeholder="VD: FE01-01 hoặc email giáo viên" required value="{{ old('login') }}"
+                                placeholder="VD: nguyenvana hoặc email giáo viên" required value="{{ old('login') }}"
                                 autocomplete="username">
                         </div>
                     </div>

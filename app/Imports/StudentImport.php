@@ -43,26 +43,34 @@ class StudentImport implements ToCollection, WithStartRow
             $ten = trim($row[5]);
             $fullName = $ho . ' ' . $ten;
 
-            $studentCode = Str::slug($maHs, '');
+            $studentCode = StudentLoginCode::normalizeStudentCode($maHs);
             $emailPrefix = $studentCode ?: Str::slug($fullName, '');
             $email = $emailPrefix . '@student.smartlms.local';
-            $legacyEmail = Str::slug($fullName, '') . '@gmail.com';
 
-            $user = User::whereIn('email', [$email, $legacyEmail])->first();
+            $userQuery = User::where('email', $email);
+            if ($studentCode) {
+                $userQuery->orWhere('student_code', $studentCode);
+            }
+
+            $user = $userQuery->first();
 
             if (!$user) {
-                $username = StudentLoginCode::generateForClass($classroom);
+                $username = StudentLoginCode::generateFromName($fullName, $studentCode);
                 $user = User::create([
                     'name' => $fullName,
                     'username' => $username,
+                    'student_code' => $studentCode,
                     'email' => $email,
                     'password' => Hash::make('123456'), // Mặc định pass là 123456
                     'role' => 'student',
                 ]);
             } elseif (!$user->username) {
                 $user->update([
-                    'username' => StudentLoginCode::generateForClass($classroom),
+                    'username' => StudentLoginCode::generateFromName($fullName, $studentCode),
+                    'student_code' => $user->student_code ?: $studentCode,
                 ]);
+            } elseif (!$user->student_code && $studentCode) {
+                $user->update(['student_code' => $studentCode]);
             }
 
             $classroom->students()->syncWithoutDetaching([$user->id]);

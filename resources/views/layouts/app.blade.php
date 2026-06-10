@@ -576,8 +576,14 @@
                             </div>
                             @if (Auth::user()->username)
                                 <div class="col-12">
-                                    <label class="form-label">Mã đăng nhập</label>
+                                    <label class="form-label">Tên đăng nhập</label>
                                     <input type="text" class="form-control" value="{{ Auth::user()->username }}" readonly>
+                                </div>
+                            @endif
+                            @if (Auth::user()->student_code)
+                                <div class="col-12">
+                                    <label class="form-label">Mã học sinh</label>
+                                    <input type="text" class="form-control" value="{{ Auth::user()->student_code }}" readonly>
                                 </div>
                             @endif
                         </div>

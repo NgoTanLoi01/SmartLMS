@@ -1075,6 +1075,9 @@
                                     @if ($student->username)
                                         <div class="lms-student-email"><i class="fas fa-id-badge"></i> {{ $student->username }}</div>
                                     @endif
+                                    @if ($student->student_code)
+                                        <div class="lms-student-email"><i class="fas fa-hashtag"></i> {{ $student->student_code }}</div>
+                                    @endif
                                     <div class="lms-student-email">{{ $student->email }}</div>
                                 </td>
                                 <td>

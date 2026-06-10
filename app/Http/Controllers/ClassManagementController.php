@@ -33,15 +33,22 @@ class ClassManagementController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'student_code' => 'nullable|string|max:50',
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|min:6',
         ]);
 
-        $username = StudentLoginCode::generateForClass($classroom);
+        $studentCode = StudentLoginCode::normalizeStudentCode($request->student_code);
+        if ($studentCode && User::where('student_code', $studentCode)->exists()) {
+            return back()->withErrors(['student_code' => 'Mã học sinh này đã tồn tại.'])->withInput();
+        }
+
+        $username = StudentLoginCode::generateFromName($request->name, $studentCode);
 
         $student = User::create([
             'name' => $request->name,
             'username' => $username,
+            'student_code' => $studentCode,
             'email' => $request->filled('email') ? $request->email : StudentLoginCode::emailFromUsername($username),
             'password' => Hash::make($request->password),
             'role' => 'student',
@@ -49,7 +56,7 @@ class ClassManagementController extends Controller
 
         $classroom->students()->attach($student->id);
 
-        return back()->with('success', "Đã tạo học sinh và gán vào lớp thành công! Mã đăng nhập: {$username}");
+        return back()->with('success', "Đã tạo học sinh và gán vào lớp thành công! Tên đăng nhập: {$username}");
     }
 
     public function getStudentsByClass($classId)
@@ -75,7 +82,8 @@ class ClassManagementController extends Controller
             $students = $students->filter(function ($student) use ($keyword) {
                 return str_contains(mb_strtolower($student->name), $keyword)
                     || str_contains(mb_strtolower($student->email), $keyword)
-                    || str_contains(mb_strtolower($student->username ?? ''), $keyword);
+                    || str_contains(mb_strtolower($student->username ?? ''), $keyword)
+                    || str_contains(mb_strtolower($student->student_code ?? ''), $keyword);
             });
         }
 

@@ -549,6 +549,9 @@
                         @if ($student->username)
                             <span><i class="fas fa-id-badge"></i> {{ $student->username }}</span>
                         @endif
+                        @if ($student->student_code)
+                            <span><i class="fas fa-hashtag"></i> {{ $student->student_code }}</span>
+                        @endif
                         <span><i class="fas fa-envelope"></i> {{ $student->email }}</span>
                         <span><i class="fas fa-chalkboard-teacher"></i> {{ $classroom->teacher->name }}</span>
                     </div>

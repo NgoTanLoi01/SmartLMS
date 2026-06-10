@@ -19,6 +19,7 @@ class AuthController extends Controller
 
         $login = trim($request->input('login'));
         $user = User::where('username', $login)
+            ->orWhere('username', Str::lower($login))
             ->orWhere('username', Str::upper($login))
             ->orWhere('email', $login)
             ->first();

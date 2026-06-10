@@ -128,7 +128,7 @@
                     style="background: white; border: 1px solid #dee2e6;">
                     <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fas fa-search"></i></span>
                     <input type="text" name="search" class="form-control border-0 shadow-none px-2"
-                        placeholder="Tìm tên, mã đăng nhập hoặc email..." value="{{ request('search') }}"
+                        placeholder="Tìm tên, tên đăng nhập, mã HS hoặc email..." value="{{ request('search') }}"
                         style="width: 220px; font-size: 0.9rem;">
                     @if (request('search'))
                         <a href="{{ route('users.index') }}" class="btn bg-white border-0 text-muted"><i
@@ -150,7 +150,7 @@
                         <thead class="bg-light text-muted small text-uppercase">
                             <tr>
                                 <th class="px-4 py-3 border-0">Người dùng</th>
-                                <th class="px-4 py-3 border-0">Mã đăng nhập</th>
+                                <th class="px-4 py-3 border-0">Tên đăng nhập</th>
                                 <th class="px-4 py-3 border-0">Liên hệ (Email)</th>
                                 <th class="px-4 py-3 border-0">Vai trò</th>
                                 <th class="px-4 py-3 border-0">Ngày tạo</th>
@@ -173,6 +173,9 @@
                                             <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3">
                                                 {{ $user->username }}
                                             </span>
+                                            @if ($user->student_code)
+                                                <div class="text-muted small mt-1">Mã HS: {{ $user->student_code }}</div>
+                                            @endif
                                         @else
                                             <span class="text-muted small">Dùng email</span>
                                         @endif
@@ -255,7 +258,13 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Email</label>
                         <input type="email" name="email" class="form-control bg-light border-0 py-2">
-                        <div class="form-text">Bắt buộc với giáo viên/admin. Học viên có thể để trống, hệ thống sẽ tạo mã đăng nhập.</div>
+                        <div class="form-text">Bắt buộc với giáo viên/admin. Học viên có thể để trống, hệ thống sẽ tạo email nội bộ.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Mã học sinh</label>
+                        <input type="text" name="student_code" class="form-control bg-light border-0 py-2"
+                            placeholder="Chỉ cần nhập với học viên nếu có">
+                        <div class="form-text">Nếu học viên trùng họ tên, mã này sẽ giúp tạo tên đăng nhập không trùng.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Mật khẩu</label>
