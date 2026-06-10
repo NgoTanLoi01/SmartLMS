@@ -128,6 +128,54 @@
             font-size: 11px;
         }
 
+        /* ─── Filters ────────────────────────────────────── */
+        .course-filters {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .course-filter-grid {
+            display: grid;
+            grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, 1fr)) auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .course-filter-grid-student {
+            grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(150px, 1fr)) auto;
+        }
+
+        .course-filter-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+
+        .course-filter-control {
+            min-height: 38px;
+            border-radius: 10px;
+            border-color: var(--border);
+            font-size: 13px;
+        }
+
+        .course-filter-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .course-filter-actions .btn {
+            min-height: 38px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+
         /* ─── Section ─────────────────────────────────────── */
         .course-section {
             margin-bottom: 40px;
@@ -605,6 +653,14 @@
                 align-items: flex-start;
                 flex-direction: column;
             }
+
+            .course-filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .course-filter-actions {
+                flex-direction: column;
+            }
         }
     </style>
 
@@ -631,6 +687,70 @@
                 </a>
             @endif
         </div>
+
+        @if (auth()->user()->role !== 'student')
+            <form action="{{ route('courses.index') }}" method="GET" class="course-filters">
+                <div class="course-filter-grid">
+                    <div>
+                        <label class="course-filter-label">Tìm kiếm</label>
+                        <input type="text" name="search" class="form-control course-filter-control"
+                            placeholder="Tên hoặc mô tả khóa học..." value="{{ $filters['search'] ?? '' }}">
+                    </div>
+
+                    <div>
+                        <label class="course-filter-label">Chương trình</label>
+                        <select name="program_id" class="form-select course-filter-control">
+                            <option value="">Tất cả</option>
+                            @foreach ($filterPrograms as $program)
+                                <option value="{{ $program->id }}" @selected(($filters['program_id'] ?? '') == $program->id)>
+                                    {{ $program->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="course-filter-label">Loại khóa</label>
+                        <select name="course_type" class="form-select course-filter-control">
+                            <option value="">Tất cả</option>
+                            <option value="delivery" @selected(($filters['course_type'] ?? '') === 'delivery')>Đang dạy</option>
+                            <option value="template" @selected(($filters['course_type'] ?? '') === 'template')>Khóa mẫu</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="course-filter-label">Trạng thái</label>
+                        <select name="status" class="form-select course-filter-control">
+                            <option value="">Tất cả</option>
+                            <option value="published" @selected(($filters['status'] ?? '') === 'published')>Published</option>
+                            <option value="draft" @selected(($filters['status'] ?? '') === 'draft')>Draft</option>
+                            <option value="hidden" @selected(($filters['status'] ?? '') === 'hidden')>Hidden</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="course-filter-label">Lớp</label>
+                        <select name="class_id" class="form-select course-filter-control">
+                            <option value="">Tất cả</option>
+                            @foreach ($filterClasses as $classroom)
+                                <option value="{{ $classroom->id }}" @selected(($filters['class_id'] ?? '') == $classroom->id)>
+                                    {{ $classroom->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="course-filter-actions">
+                        <button type="submit" class="btn btn-primary px-3">
+                            <i class="fas fa-filter me-1"></i>Lọc
+                        </button>
+                        <a href="{{ route('courses.index') }}" class="btn btn-light px-3">
+                            <i class="fas fa-rotate-left"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        @endif
 
         {{-- Content --}}
         @if ($courses->isEmpty())

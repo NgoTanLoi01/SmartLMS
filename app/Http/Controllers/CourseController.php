@@ -23,6 +23,13 @@ class CourseController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $filters = [
+            'search' => trim(request('search', '')),
+            'program_id' => request('program_id'),
+            'course_type' => request('course_type'),
+            'status' => request('status'),
+            'class_id' => request('class_id'),
+        ];
 
         // Khởi tạo query cơ bản kèm đếm số lượng bài học (lessons)
         $query = Course::with(['teacher', 'classes', 'learningProgram'])
@@ -33,6 +40,32 @@ class CourseController extends Controller
                     $query->leftJoin('lessons', 'modules.id', '=', 'lessons.module_id')->select(\DB::raw('count(lessons.id)'));
                 },
             ]);
+
+        if ($filters['search'] !== '') {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'LIKE', "%{$search}%")
+                    ->orWhere('description', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($filters['program_id']) {
+            $query->where('learning_program_id', $filters['program_id']);
+        }
+
+        if ($filters['course_type'] && in_array($filters['course_type'], ['delivery', 'template'])) {
+            $query->where('course_type', $filters['course_type']);
+        }
+
+        if ($filters['status'] && in_array($filters['status'], ['draft', 'published', 'hidden'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if ($filters['class_id']) {
+            $query->whereHas('classes', function ($q) use ($filters) {
+                $q->where('classes.id', $filters['class_id']);
+            });
+        }
 
         if ($user->role === 'admin') {
             $courses = $query->latest()->get();
@@ -71,8 +104,10 @@ class CourseController extends Controller
 
         $deliveryCourses = $courses->where('course_type', 'delivery')->values();
         $templateCourses = $courses->where('course_type', 'template')->values();
+        $filterPrograms = $this->availablePrograms();
+        $filterClasses = $this->availableClasses();
 
-        return view('courses.index', compact('courses', 'deliveryCourses', 'templateCourses'));
+        return view('courses.index', compact('courses', 'deliveryCourses', 'templateCourses', 'filters', 'filterPrograms', 'filterClasses'));
     }
 
     public function show($id)
