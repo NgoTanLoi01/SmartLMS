@@ -61,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     // 2.4. QUẢN LÝ KHÓA HỌC (COURSES)
     // ==========================================
-    Route::resource('programs', LearningProgramController::class)->except(['create', 'show', 'edit']);
+    Route::resource('programs', LearningProgramController::class)->except(['create', 'edit']);
     Route::resource('courses', CourseController::class);
 
     // ==========================================

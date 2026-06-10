@@ -50,7 +50,7 @@
                                 <select name="learning_program_id" id="learning_program_id" class="form-select">
                                     <option value="">Chưa gắn chương trình</option>
                                     @foreach ($programs as $program)
-                                        <option value="{{ $program->id }}" @selected(old('learning_program_id') == $program->id)>
+                                        <option value="{{ $program->id }}" @selected(old('learning_program_id', request('learning_program_id')) == $program->id)>
                                             {{ $program->name }} ({{ $program->code }})
                                         </option>
                                     @endforeach
@@ -61,8 +61,8 @@
                             <div class="mb-4">
                                 <label for="course_type" class="form-label fw-bold">Loại khóa học</label>
                                 <select name="course_type" id="course_type" class="form-select" required>
-                                    <option value="delivery" @selected(old('course_type', 'delivery') === 'delivery')>Khóa đang dạy - triển khai cho lớp thật</option>
-                                    <option value="template" @selected(old('course_type') === 'template')>Khóa mẫu - dùng để nhân bản nội dung</option>
+                                    <option value="delivery" @selected(old('course_type', request('course_type', 'delivery')) === 'delivery')>Khóa đang dạy - triển khai cho lớp thật</option>
+                                    <option value="template" @selected(old('course_type', request('course_type')) === 'template')>Khóa mẫu - dùng để nhân bản nội dung</option>
                                 </select>
                                 <div class="form-text">Khóa mẫu sẽ không hiển thị cho học sinh và không tính tiến độ/học sinh.</div>
                             </div>
@@ -81,6 +81,35 @@
                                     @endforeach
                                 </select>
                                 <div class="form-text">Copy module, bài học, bài tập, quiz và liên kết ngân hàng câu hỏi. Không copy học sinh, tiến độ, bài nộp, điểm danh.</div>
+                            </div>
+
+                            <div class="mb-4" id="classSelectionGroup">
+                                <label class="form-label fw-bold">Lớp áp dụng</label>
+                                @if ($availableClasses->isEmpty())
+                                    <div class="alert alert-light border mb-0">
+                                        Chưa có lớp học nào để gắn khóa học. Bạn vẫn có thể tạo khóa và gắn lớp sau.
+                                    </div>
+                                @else
+                                    <div class="border rounded-3 p-3 bg-light">
+                                        <div class="row g-2">
+                                            @foreach ($availableClasses as $classroom)
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-check mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="class_ids[]"
+                                                            value="{{ $classroom->id }}" @checked(in_array($classroom->id, old('class_ids', [])))>
+                                                        <span class="form-check-label">
+                                                            {{ $classroom->name }}
+                                                            @if (auth()->user()->role === 'admin' && $classroom->teacher)
+                                                                <span class="text-muted small d-block">{{ $classroom->teacher->name }}</span>
+                                                            @endif
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <div class="form-text">Chỉ áp dụng cho khóa đang dạy. Khóa mẫu sẽ không gắn lớp.</div>
+                                @endif
                             </div>
 
                             <div class="row g-3 mb-4">
@@ -112,4 +141,19 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseType = document.getElementById('course_type');
+            const classSelection = document.getElementById('classSelectionGroup');
+
+            function toggleClassSelection() {
+                if (!courseType || !classSelection) return;
+                classSelection.style.display = courseType.value === 'template' ? 'none' : '';
+            }
+
+            toggleClassSelection();
+            courseType?.addEventListener('change', toggleClassSelection);
+        });
+    </script>
 @endsection

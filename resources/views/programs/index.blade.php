@@ -131,6 +131,10 @@
                             @endif
                             <td class="px-4 py-3">
                                 <div class="program-actions">
+                                    <a href="{{ route('programs.show', $program->id) }}"
+                                        class="btn btn-sm btn-outline-secondary rounded-pill">
+                                        <i class="fas fa-eye me-1"></i>Xem
+                                    </a>
                                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill"
                                         data-bs-toggle="modal" data-bs-target="#editProgramModal{{ $program->id }}">
                                         <i class="fas fa-edit me-1"></i>Sửa

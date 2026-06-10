@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
+use App\Models\Classroom;
 use App\Models\LearningProgram;
 use App\Models\Lesson;
 use App\Models\Module;
@@ -152,8 +153,9 @@ class CourseController extends Controller
 
         $programs = $this->availablePrograms();
         $templateCourses = $this->availableTemplateCourses(request('template_course_id'));
+        $availableClasses = $this->availableClasses();
 
-        return view('courses.create', compact('programs', 'templateCourses'));
+        return view('courses.create', compact('programs', 'templateCourses', 'availableClasses'));
     }
 
     public function store(Request $request)
@@ -166,16 +168,21 @@ class CourseController extends Controller
             'learning_program_id' => 'nullable|exists:learning_programs,id',
             'course_type' => 'required|in:delivery,template',
             'template_course_id' => 'nullable|exists:courses,id',
+            'class_ids' => 'nullable|array',
+            'class_ids.*' => 'exists:classes,id',
             'status' => 'nullable|in:draft,published,hidden',
             'available_from' => 'nullable|date',
         ]);
 
         $this->authorizeProgramSelection($request->input('learning_program_id'));
+        $this->authorizeClassSelection($request->input('class_ids', []));
         $templateCourse = $request->filled('template_course_id')
             ? $this->authorizedTemplateCourse($request->template_course_id)
             : null;
 
-        DB::transaction(function () use ($request, $templateCourse) {
+        $attachedClassCount = 0;
+
+        DB::transaction(function () use ($request, $templateCourse, &$attachedClassCount) {
             $course = Course::create([
                 'title' => $request->title,
                 'description' => $request->description,
@@ -190,11 +197,19 @@ class CourseController extends Controller
             if ($templateCourse) {
                 $this->cloneCourseContent($templateCourse, $course);
             }
+
+            if ($request->course_type === 'delivery' && $request->filled('class_ids')) {
+                $course->classes()->syncWithoutDetaching($request->class_ids);
+                $attachedClassCount = count($request->class_ids);
+            }
         });
 
         $message = $templateCourse
             ? 'Tạo khóa học từ mẫu thành công!'
             : 'Tạo khóa học thành công!';
+        if ($attachedClassCount > 0) {
+            $message .= " Đã gắn {$attachedClassCount} lớp.";
+        }
 
         return redirect()->route('courses.index')->with('success', $message);
     }
@@ -338,6 +353,34 @@ class CourseController extends Controller
         }
 
         return $query->findOrFail($courseId);
+    }
+
+    private function availableClasses()
+    {
+        $query = Classroom::with('teacher')->orderBy('name');
+
+        if (auth()->user()->role === 'teacher') {
+            $query->where('teacher_id', auth()->id());
+        }
+
+        return $query->get();
+    }
+
+    private function authorizeClassSelection(array $classIds): void
+    {
+        $classIds = collect($classIds)->filter()->map(fn ($id) => (int) $id)->unique();
+
+        if ($classIds->isEmpty() || auth()->user()->role === 'admin') {
+            return;
+        }
+
+        $allowedCount = Classroom::whereIn('id', $classIds)
+            ->where('teacher_id', auth()->id())
+            ->count();
+
+        if ($allowedCount !== $classIds->count()) {
+            abort(403, 'Bạn không có quyền gắn khóa học vào một hoặc nhiều lớp đã chọn.');
+        }
     }
 
     private function authorizeProgramSelection($programId, ?Course $course = null): void

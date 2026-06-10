@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LearningProgram;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class LearningProgramController extends Controller
 {
@@ -22,6 +23,57 @@ class LearningProgramController extends Controller
         $programs = $query->get();
 
         return view('programs.index', compact('programs'));
+    }
+
+    public function show(LearningProgram $program)
+    {
+        $this->authorizeProgramOwner($program);
+
+        $program->load([
+            'teacher',
+            'courses' => function ($query) {
+                $query->with(['teacher', 'classes'])
+                    ->withCount('modules')
+                    ->withCount([
+                        'modules as lessons_count' => function ($query) {
+                            $query->leftJoin('lessons', 'modules.id', '=', 'lessons.module_id')
+                                ->select(DB::raw('count(lessons.id)'));
+                        },
+                    ])
+                    ->latest();
+            },
+        ]);
+
+        $templateCourses = $program->courses
+            ->where('course_type', 'template')
+            ->values();
+
+        $deliveryCourses = $program->courses
+            ->where('course_type', 'delivery')
+            ->values();
+
+        foreach ($deliveryCourses as $course) {
+            $course->students_count = DB::table('class_user')
+                ->whereIn('class_id', $course->classes->pluck('id'))
+                ->distinct('user_id')
+                ->count();
+        }
+
+        $classIds = $deliveryCourses
+            ->flatMap(fn ($course) => $course->classes->pluck('id'))
+            ->unique()
+            ->values();
+
+        $stats = [
+            'template_courses' => $templateCourses->count(),
+            'delivery_courses' => $deliveryCourses->count(),
+            'classes' => $classIds->count(),
+            'students' => $classIds->isEmpty()
+                ? 0
+                : DB::table('class_user')->whereIn('class_id', $classIds)->distinct('user_id')->count(),
+        ];
+
+        return view('programs.show', compact('program', 'templateCourses', 'deliveryCourses', 'stats'));
     }
 
     public function store(Request $request)
