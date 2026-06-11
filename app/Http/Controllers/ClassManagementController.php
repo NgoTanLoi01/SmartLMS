@@ -39,8 +39,8 @@ class ClassManagementController extends Controller
         ]);
 
         $studentCode = StudentLoginCode::normalizeStudentCode($request->student_code);
-        if ($studentCode && User::where('student_code', $studentCode)->exists()) {
-            return back()->withErrors(['student_code' => 'Mã học sinh này đã tồn tại.'])->withInput();
+        if ($studentCode && $classroom->students()->where('student_code', $studentCode)->exists()) {
+            return back()->withErrors(['student_code' => 'Mã học sinh này đã tồn tại trong lớp.'])->withInput();
         }
 
         $username = StudentLoginCode::generateFromName($request->name, $studentCode);

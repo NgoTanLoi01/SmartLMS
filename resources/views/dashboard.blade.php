@@ -1573,6 +1573,7 @@
                                             $d = \Carbon\Carbon::parse($slot->schedule_date);
                                             $today = $d->isToday();
                                             $past = $d->isPast() && !$today;
+                                            $isExamSchedule = ($slot->note ?? null) === 'Thi kết thúc môn';
                                         @endphp
 
                                         <tr class="{{ $today ? 'is-today' : ($past ? 'is-past' : '') }}">
@@ -1587,7 +1588,7 @@
 
                                             <td>
                                                 <span
-                                                    style="font-size:.84rem;font-weight:700;color:var(--brand);font-family:var(--font-mono)">
+                                                    style="font-size:.84rem;font-weight:700;color:{{ $isExamSchedule ? 'var(--danger)' : 'var(--brand)' }};font-family:var(--font-mono)">
                                                     {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }}
                                                     –
                                                     {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
@@ -1595,9 +1596,13 @@
                                             </td>
 
                                             <td>
-                                                <div class="fw-bold" style="font-size:.85rem">
+                                                <div class="fw-bold"
+                                                    style="font-size:.85rem;color:{{ $isExamSchedule ? 'var(--danger)' : 'inherit' }}">
                                                     {{ $slot->course_title }}
                                                 </div>
+                                                @if ($isExamSchedule)
+                                                    <span class="bdg bdg--danger mb-1">Thi kết thúc môn</span>
+                                                @endif
                                                 <div style="font-size:.75rem;color:var(--text-muted)">
                                                     Lớp: {{ $slot->class_name }}
                                                 </div>
@@ -1610,7 +1615,7 @@
                                                     <span class="bdg bdg--muted mb-1">Đã dạy</span><br>
                                                 @endif
 
-                                                <span class="bdg bdg--muted">
+                                                <span class="bdg {{ $isExamSchedule ? 'bdg--danger' : 'bdg--muted' }}">
                                                     {{ $slot->room ?? 'Online' }}
                                                 </span>
                                             </td>
@@ -1818,6 +1823,7 @@
                                             $d = \Carbon\Carbon::parse($slot->schedule_date);
                                             $today = $d->isToday();
                                             $past = $d->isPast() && !$today;
+                                            $isExamSchedule = ($slot->note ?? null) === 'Thi kết thúc môn';
                                         @endphp
                                         <tr class="{{ $today ? 'is-today' : ($past ? 'is-past' : '') }}">
                                             <td>
@@ -1828,14 +1834,19 @@
                                             </td>
                                             <td>
                                                 <span
-                                                    style="font-size:.84rem;font-weight:700;color:var(--brand);font-family:var(--font-mono)">
+                                                    style="font-size:.84rem;font-weight:700;color:{{ $isExamSchedule ? 'var(--danger)' : 'var(--brand)' }};font-family:var(--font-mono)">
                                                     {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} –
                                                     {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
                                                 </span>
                                             </td>
                                             <td>
-                                                <div class="fw-bold" style="font-size:.85rem">{{ $slot->course_title }}
+                                                <div class="fw-bold"
+                                                    style="font-size:.85rem;color:{{ $isExamSchedule ? 'var(--danger)' : 'inherit' }}">
+                                                    {{ $slot->course_title }}
                                                 </div>
+                                                @if ($isExamSchedule)
+                                                    <span class="bdg bdg--danger mb-1">Thi kết thúc môn</span>
+                                                @endif
                                                 <div style="font-size:.75rem;color:var(--text-muted)">Lớp:
                                                     {{ $slot->class_name }}</div>
                                             </td>
@@ -1845,7 +1856,8 @@
                                                 @elseif ($past)
                                                     <span class="bdg bdg--muted mb-1">Đã học</span><br>
                                                 @endif
-                                                <span class="bdg bdg--muted">{{ $slot->room ?? 'Online' }}</span>
+                                                <span
+                                                    class="bdg {{ $isExamSchedule ? 'bdg--danger' : 'bdg--muted' }}">{{ $slot->room ?? 'Online' }}</span>
                                             </td>
                                         </tr>
                                     @empty

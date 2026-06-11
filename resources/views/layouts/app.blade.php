@@ -332,7 +332,8 @@
         }
 
         /* ── Alerts ── */
-        .alert-success {
+        .alert-success,
+        .alert-error {
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
             color: #166534;
@@ -343,6 +344,12 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
         }
 
         /* ── Mobile ── */
@@ -632,6 +639,11 @@
                 @if (session('success'))
                     <div class="alert-success">
                         <i class="fas fa-check-circle"></i> {{ session('success') }}
+                    </div>
+                @endif
+                @if (session('error'))
+                    <div class="alert-error">
+                        <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
                     </div>
                 @endif
                 @yield('content')

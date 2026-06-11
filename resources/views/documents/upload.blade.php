@@ -718,12 +718,6 @@
                     Tải lên tài liệu mới
                 </div>
 
-                @if (session('success'))
-                    <div class="alert-success-custom">
-                        <i class="fas fa-check-circle"></i> {{ session('success') }}
-                    </div>
-                @endif
-
                 @if ($errors->any())
                     <div class="alert-danger-custom">
                         <ul>

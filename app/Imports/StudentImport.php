@@ -22,7 +22,7 @@ class StudentImport implements ToCollection, WithStartRow
 
     public function startRow(): int
     {
-        return 5;
+        return 2;
     }
 
     public function collection(Collection $rows)
@@ -32,27 +32,33 @@ class StudentImport implements ToCollection, WithStartRow
             return;
         }
 
-        foreach ($rows as $row) {
-            // Nếu cột Mã HS Nghề (index 3) bị rỗng thì bỏ qua
-            if (!isset($row[3])) {
+        $importedUserIds = [];
+
+        foreach ($rows as $index => $row) {
+            $maHs = trim((string) ($row[3] ?? ''));
+            $ho = trim((string) ($row[4] ?? ''));
+            $ten = trim((string) ($row[5] ?? ''));
+            $fullName = $ho . ' ' . $ten;
+            $fullName = trim(preg_replace('/\s+/', ' ', $fullName));
+
+            if ($fullName === '' || $this->isHeaderRow($ho, $ten, $maHs)) {
                 continue;
             }
 
-            $maHs = trim($row[3]);
-            $ho = trim($row[4]);
-            $ten = trim($row[5]);
-            $fullName = $ho . ' ' . $ten;
-
             $studentCode = StudentLoginCode::normalizeStudentCode($maHs);
-            $emailPrefix = $studentCode ?: Str::slug($fullName, '');
-            $email = $emailPrefix . '@student.smartlms.local';
+            $rowNumber = $index + $this->startRow();
+            $email = $this->importEmail($classroom, $studentCode, $fullName, $rowNumber);
 
             $userQuery = User::where('email', $email);
             if ($studentCode) {
-                $userQuery->orWhere('student_code', $studentCode);
+                $user = $classroom->students()
+                    ->where('student_code', $studentCode)
+                    ->first();
+            } else {
+                $user = null;
             }
 
-            $user = $userQuery->first();
+            $user = $user ?: $userQuery->first();
 
             if (!$user) {
                 $username = StudentLoginCode::generateFromName($fullName, $studentCode);
@@ -73,7 +79,29 @@ class StudentImport implements ToCollection, WithStartRow
                 $user->update(['student_code' => $studentCode]);
             }
 
-            $classroom->students()->syncWithoutDetaching([$user->id]);
+            $importedUserIds[] = $user->id;
         }
+
+        $importedUserIds = collect($importedUserIds)->unique()->values()->all();
+        if (!empty($importedUserIds)) {
+            $classroom->students()->sync($importedUserIds);
+        }
+    }
+
+    private function importEmail(Classroom $classroom, ?string $studentCode, string $fullName, int $rowNumber): string
+    {
+        $classCode = StudentLoginCode::normalizeStudentCode($classroom->code) ?: 'class' . $classroom->id;
+        $studentKey = $studentCode ?: 'row' . $rowNumber . Str::slug($fullName, '');
+
+        return $classCode . '.' . $studentKey . '@student.smartlms.local';
+    }
+
+    private function isHeaderRow(string $ho, string $ten, string $studentCode): bool
+    {
+        $headerText = Str::lower(Str::slug($ho . ' ' . $ten . ' ' . $studentCode, ''));
+
+        return str_contains($headerText, 'ho')
+            && str_contains($headerText, 'ten')
+            && str_contains($headerText, 'mahs');
     }
 }

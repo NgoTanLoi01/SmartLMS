@@ -809,21 +809,7 @@
 @section('content')
     <div class="lms-page">
 
-        {{-- Flash messages --}}
-        @if (session('success'))
-            <div class="lms-flash success" role="alert">
-                <i class="fas fa-check-circle"></i>
-                <span>{{ session('success') }}</span>
-                <button class="lms-flash-close" onclick="this.closest('.lms-flash').remove()">×</button>
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="lms-flash error" role="alert">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>{{ session('error') }}</span>
-                <button class="lms-flash-close" onclick="this.closest('.lms-flash').remove()">×</button>
-            </div>
-        @endif
+        {{-- Form validation messages --}}
         @if ($errors->any())
             <div class="lms-flash error" role="alert">
                 <i class="fas fa-exclamation-circle"></i>
@@ -1160,7 +1146,7 @@
                         <strong style="font-size:13.5px;"><i class="fas fa-circle-info"
                                 style="margin-right:5px;"></i>Hướng dẫn & Quy chuẩn</strong>
                         <ul>
-                            <li>Hệ thống đọc từ <strong>Dòng số 5</strong></li>
+                            <li>Hệ thống đọc từ <strong>Dòng số 2</strong></li>
                             <li>Cột: <strong>D</strong> (Mã HS) · <strong>E</strong> (Họ) · <strong>F</strong> (Tên)</li>
                             <li>Tên đăng nhập tự sinh từ họ tên, ví dụ <code>nguyenvana</code></li>
                             <li>Nếu trùng họ tên, hệ thống ghép thêm Mã HS hoặc số thứ tự</li>

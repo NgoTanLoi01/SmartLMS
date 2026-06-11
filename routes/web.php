@@ -141,6 +141,8 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
     Route::get('/schedules/get-courses/{class_id}', [ScheduleController::class, 'getCoursesByClass']);
+    Route::post('/schedules/copy-day', [ScheduleController::class, 'copyDay'])->name('schedules.copyDay');
+    Route::post('/schedules/import', [ScheduleController::class, 'importExcel'])->name('schedules.import');
     Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');
     Route::put('/schedules/{id}', [ScheduleController::class, 'update'])->name('schedules.update');
     Route::delete('/schedules/{id}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
