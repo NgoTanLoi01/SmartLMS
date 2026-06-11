@@ -250,7 +250,7 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius-card);
-            overflow: hidden;
+            overflow: visible;
             display: flex;
             flex-direction: column;
             box-shadow: var(--shadow-card);
@@ -278,11 +278,12 @@
         .card-thumb {
             height: 112px;
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 60%, #e0e7ff 100%);
+            border-radius: var(--radius-card) var(--radius-card) 0 0;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .card-thumb::before {

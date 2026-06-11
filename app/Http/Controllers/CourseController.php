@@ -296,8 +296,72 @@ class CourseController extends Controller
         // Cần kiểm tra quyền trước khi xóa (giống hàm edit) để bảo mật
         $this->authorizeCourseOwner($course);
 
-        $course->delete();
-        return redirect()->route('courses.index')->with('success', 'Đã xóa khóa học.');
+        try {
+            DB::transaction(function () use ($course) {
+                $this->deleteCourseContent($course);
+                $course->delete();
+            });
+
+            return redirect()->route('courses.index')->with('success', 'Đã xóa khóa học.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Không thể xóa khóa học: ' . $e->getMessage());
+        }
+    }
+
+    private function deleteCourseContent(Course $course): void
+    {
+        $moduleIds = DB::table('modules')->where('course_id', $course->id)->pluck('id');
+        $lessonIds = DB::table('lessons')->whereIn('module_id', $moduleIds)->pluck('id');
+        $assignmentIds = DB::table('assignments')
+            ->where('course_id', $course->id)
+            ->orWhereIn('lesson_id', $lessonIds)
+            ->pluck('id');
+        $quizIds = DB::table('quizzes')->where('course_id', $course->id)->pluck('id');
+        $questionIds = DB::table('questions')->where('course_id', $course->id)->pluck('id');
+        $attendanceColumnIds = DB::table('attendance_columns')->where('course_id', $course->id)->pluck('id');
+
+        DB::table('class_course')->where('course_id', $course->id)->delete();
+        DB::table('course_question_bank')->where('course_id', $course->id)->delete();
+        DB::table('schedules')->where('course_id', $course->id)->delete();
+
+        if ($attendanceColumnIds->isNotEmpty()) {
+            DB::table('attendance_data')->whereIn('attendance_column_id', $attendanceColumnIds)->delete();
+        }
+        DB::table('attendance_columns')->where('course_id', $course->id)->delete();
+
+        if ($assignmentIds->isNotEmpty()) {
+            DB::table('assignment_submissions')->whereIn('assignment_id', $assignmentIds)->delete();
+        }
+        DB::table('assignments')
+            ->where('course_id', $course->id)
+            ->orWhereIn('lesson_id', $lessonIds)
+            ->delete();
+
+        if ($lessonIds->isNotEmpty()) {
+            DB::table('lesson_user')->whereIn('lesson_id', $lessonIds)->delete();
+            DB::table('lessons')->whereIn('id', $lessonIds)->delete();
+        }
+
+        if ($questionIds->isNotEmpty()) {
+            DB::table('options')->whereIn('question_id', $questionIds)->delete();
+        }
+        if ($quizIds->isNotEmpty()) {
+            DB::table('quiz_attempts')->whereIn('quiz_id', $quizIds)->delete();
+        }
+        DB::table('questions')
+            ->where('course_id', $course->id)
+            ->delete();
+        DB::table('quizzes')->where('course_id', $course->id)->delete();
+
+        if ($moduleIds->isNotEmpty()) {
+            DB::table('modules')->whereIn('id', $moduleIds)->delete();
+        }
+
+        try {
+            DB::connection('pgsql')->table('document_chunks')->where('course_id', $course->id)->delete();
+        } catch (\Throwable) {
+            // Vector/RAG storage may run on a separate service; it should not block course deletion.
+        }
     }
 
     private function authorizeCourseAccess(Course $course): void
