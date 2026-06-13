@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Services\DeepSeekService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AssignmentController extends Controller
 {
@@ -178,7 +179,7 @@ class AssignmentController extends Controller
             default => 'Nộp file',
         };
 
-        $fileUrl = $submission->file_path ? asset('storage/' . $submission->file_path) : null;
+        $fileUrl = $this->submissionFileUrl($submission);
 
         return view('assignments.submission_review', compact(
             'submission',
@@ -206,7 +207,7 @@ class AssignmentController extends Controller
                 'student_name' => $student->name,
                 'student_email' => $student->email,
                 'submitted_at' => $submission ? $submission->submitted_at->format('d/m/Y H:i') : null,
-                'file_url' => $submission && $submission->file_path ? asset('storage/' . $submission->file_path) : null,
+                'file_url' => $submission ? $this->submissionFileUrl($submission) : null,
                 'text_answer' => $submission ? $submission->text_answer : null,
                 'grade' => $submission ? $submission->grade : null,
                 'submission_id' => $submission ? $submission->id : null,
@@ -261,17 +262,32 @@ class AssignmentController extends Controller
 
         // 3. Nếu đã có bài nộp cũ, thực hiện xóa file cũ trước khi lưu file mới
         if ($request->hasFile('file') && $oldSubmission && $oldSubmission->file_path) {
-            if (Storage::disk('public')->exists($oldSubmission->file_path)) {
-                Storage::disk('public')->delete($oldSubmission->file_path);
-            }
+            $this->deleteSubmissionFile($oldSubmission);
         }
 
         // 4. Lưu file mới vào folder assignments
         $filePath = $oldSubmission?->file_path;
+        $fileDisk = $oldSubmission?->file_disk ?: 'public';
+        $originalFilename = $oldSubmission?->original_filename;
+        $mimeType = $oldSubmission?->mime_type;
+        $fileSize = $oldSubmission?->file_size;
+
         if ($request->hasFile('file')) {
-            $filePath = $request->file('file')->store('assignments', 'public');
+            $file = $request->file('file');
+            $fileDisk = config('filesystems.submission_disk', env('SUBMISSION_FILESYSTEM_DISK', 'public'));
+            $originalFilename = $file->getClientOriginalName();
+            $mimeType = $file->getClientMimeType();
+            $fileSize = $file->getSize();
+            $extension = $file->getClientOriginalExtension();
+            $safeName = Str::slug(pathinfo($originalFilename, PATHINFO_FILENAME)) ?: 'submission';
+            $storedName = $safeName . '-' . now()->format('YmdHis') . '-' . Str::random(8) . ($extension ? '.' . $extension : '');
+            $filePath = $file->storeAs("assignments/{$assignment->id}/students/{$user->id}", $storedName, $fileDisk);
         } elseif ($assignment->type === 'essay') {
             $filePath = null;
+            $fileDisk = 'public';
+            $originalFilename = null;
+            $mimeType = null;
+            $fileSize = null;
         }
 
         // 5. Cập nhật hoặc tạo mới record trong Database
@@ -279,6 +295,10 @@ class AssignmentController extends Controller
             ['assignment_id' => $id, 'user_id' => $user->id],
             [
                 'file_path' => $filePath,
+                'file_disk' => $filePath ? $fileDisk : 'public',
+                'original_filename' => $originalFilename,
+                'mime_type' => $mimeType,
+                'file_size' => $fileSize,
                 'text_answer' => $request->input('text_answer'),
                 'submitted_at' => now(),
             ],
@@ -300,9 +320,7 @@ class AssignmentController extends Controller
         }
 
         // Xóa file vật lý trong storage
-        if ($submission->file_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($submission->file_path)) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($submission->file_path);
-        }
+        $this->deleteSubmissionFile($submission);
 
         // Xóa record trong DB
         $submission->delete();
@@ -353,5 +371,70 @@ class AssignmentController extends Controller
         $user = auth()->user();
 
         return $user->role === 'admin' || ($user->role === 'teacher' && $course->teacher_id === $user->id);
+    }
+
+    public function downloadSubmissionFile($id)
+    {
+        $submission = AssignmentSubmission::with(['assignment.course', 'user'])->findOrFail($id);
+
+        if (!$this->canViewSubmission($submission)) {
+            abort(403, 'Bạn không có quyền tải bài nộp này.');
+        }
+
+        if (!$submission->file_path) {
+            abort(404, 'Bài nộp không có file đính kèm.');
+        }
+
+        $diskName = $this->submissionDisk($submission);
+        $disk = Storage::disk($diskName);
+
+        if (!$disk->exists($submission->file_path)) {
+            abort(404, 'Không tìm thấy file bài nộp.');
+        }
+
+        return $disk->download(
+            $submission->file_path,
+            $submission->original_filename ?: basename($submission->file_path)
+        );
+    }
+
+    private function submissionFileUrl(?AssignmentSubmission $submission): ?string
+    {
+        return $submission && $submission->file_path
+            ? route('assignments.submissions.file', $submission->id)
+            : null;
+    }
+
+    private function submissionDisk(AssignmentSubmission $submission): string
+    {
+        return $submission->file_disk ?: 'public';
+    }
+
+    private function deleteSubmissionFile(AssignmentSubmission $submission): void
+    {
+        if (!$submission->file_path) {
+            return;
+        }
+
+        $disk = Storage::disk($this->submissionDisk($submission));
+        if ($disk->exists($submission->file_path)) {
+            $disk->delete($submission->file_path);
+        }
+    }
+
+    private function canViewSubmission(AssignmentSubmission $submission): bool
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->role === 'admin' || $submission->user_id === $user->id) {
+            return true;
+        }
+
+        return $user->role === 'teacher'
+            && $submission->assignment?->course?->teacher_id === $user->id;
     }
 }

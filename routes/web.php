@@ -87,6 +87,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/assignments/{id}/submit', [AssignmentController::class, 'submit'])->name('assignments.submit');
     Route::get('/assignments/{id}/submissions-list', [AssignmentController::class, 'listSubmissions'])->name('assignments.submissions.list');
     Route::get('/submissions/{id}/review', [AssignmentController::class, 'reviewSubmission'])->name('assignments.submissions.review');
+    Route::get('/submissions/{id}/file', [AssignmentController::class, 'downloadSubmissionFile'])->name('assignments.submissions.file');
     Route::post('/submissions/{id}/ai-analysis', [AssignmentController::class, 'analyzeSubmissionWithAi'])->name('assignments.submissions.ai-analysis');
     Route::post('/submissions/{id}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
     Route::delete('/submissions/{id}/delete', [AssignmentController::class, 'deleteSubmission'])->name('assignments.submissions.delete');

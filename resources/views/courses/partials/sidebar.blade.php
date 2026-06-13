@@ -162,7 +162,7 @@
                                         data-feedback="{{ $submission->feedback ?? '' }}"
                                         data-sub-id="{{ $submission ? $submission->id : '' }}"
                                         data-sub-time="{{ $submission ? $submission->submitted_at->format('H:i - d/m/Y') : '' }}"
-                                        data-sub-file="{{ $submission && $submission->file_path ? asset('storage/' . $submission->file_path) : '' }}"
+                                        data-sub-file="{{ $submission && $submission->file_path ? route('assignments.submissions.file', $submission->id) : '' }}"
                                         data-text-answer='@json($submission?->text_answer ?? "")'>
                                         <i
                                             class="{{ $submission ? 'fas fa-check-circle lesson-icon-done' : 'fas fa-file-signature lesson-icon-assign' }} flex-shrink-0"></i>
