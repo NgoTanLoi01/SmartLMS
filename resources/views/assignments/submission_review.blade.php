@@ -331,6 +331,71 @@
             margin-top: .1rem;
         }
 
+        .file-preview {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .file-preview__head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            padding: .7rem .9rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-2);
+            font-size: .78rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+
+        .file-preview__title {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            font-weight: 800;
+            color: var(--text-2);
+            min-width: 0;
+        }
+
+        .file-preview__name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: min(420px, 72vw);
+        }
+
+        .file-preview__frame {
+            width: 100%;
+            height: 560px;
+            border: 0;
+            display: block;
+            background: #fff;
+        }
+
+        .file-preview__image {
+            display: block;
+            max-width: 100%;
+            max-height: 620px;
+            margin: 0 auto;
+            object-fit: contain;
+            background: #fff;
+        }
+
+        .file-preview-empty {
+            border: 1.5px dashed var(--border-strong);
+            border-radius: var(--radius-sm);
+            background: var(--surface-2);
+            padding: 1rem;
+            color: var(--text-muted);
+            font-size: .82rem;
+            display: flex;
+            gap: .6rem;
+            align-items: flex-start;
+        }
+
         /* ── GRADING SIDEBAR ───────────────────────── */
         .grading-card {
             position: sticky;
@@ -639,6 +704,10 @@
                 grid-template-columns: 1fr;
                 gap: .2rem;
             }
+
+            .file-preview__frame {
+                height: 420px;
+            }
         }
     </style>
 @endpush
@@ -744,10 +813,44 @@
                                 <div class="file-card mb-3">
                                     <div class="file-card__icon"><i class="fas fa-paperclip"></i></div>
                                     <div>
-                                        <div class="file-card__name">File bài làm đã đính kèm</div>
-                                        <div class="file-card__hint">Nhấn "Tải file" để xem nội dung.</div>
+                                        <div class="file-card__name">{{ $fileName ?? 'File bài làm đã đính kèm' }}</div>
+                                        <div class="file-card__hint">
+                                            @if ($filePreviewUrl)
+                                                Có thể xem trước bên dưới hoặc tải file về máy.
+                                            @else
+                                                Định dạng này chưa hỗ trợ xem trước. Vui lòng tải file để kiểm tra.
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
+
+                                @if ($filePreviewUrl)
+                                    <div class="file-preview mb-3">
+                                        <div class="file-preview__head">
+                                            <div class="file-preview__title">
+                                                <i class="fas fa-eye"></i>
+                                                <span>Xem trước bài nộp</span>
+                                                <span class="file-preview__name">{{ $fileName }}</span>
+                                            </div>
+                                            <span class="bdg bdg--muted">{{ strtoupper($filePreviewType) }}</span>
+                                        </div>
+                                        @if ($filePreviewType === 'image')
+                                            <img src="{{ $filePreviewUrl }}" alt="Xem trước bài nộp"
+                                                class="file-preview__image">
+                                        @else
+                                            <iframe src="{{ $filePreviewUrl }}" class="file-preview__frame"
+                                                sandbox="allow-same-origin"></iframe>
+                                        @endif
+                                    </div>
+                                @else
+                                    <div class="file-preview-empty mb-3">
+                                        <i class="fas fa-circle-info"></i>
+                                        <div>
+                                            Hệ thống hiện xem trước trực tiếp cho PDF, ảnh và HTML. Với Word/ZIP, giáo viên
+                                            cần tải file để kiểm tra.
+                                        </div>
+                                    </div>
+                                @endif
                             @endif
 
                             @if (trim((string) $submission->text_answer))

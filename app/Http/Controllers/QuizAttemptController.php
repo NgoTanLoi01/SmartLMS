@@ -212,8 +212,10 @@ class QuizAttemptController extends Controller
 
         $hasCourseAccess = DB::table('class_user')
             ->join('class_course', 'class_user.class_id', '=', 'class_course.class_id')
+            ->join('classes', 'class_user.class_id', '=', 'classes.id')
             ->where('class_user.user_id', auth()->id())
             ->where('class_course.course_id', $quiz->course_id)
+            ->where('classes.status', 'active')
             ->exists();
 
         if (!$hasCourseAccess) {

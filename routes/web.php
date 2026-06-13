@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -32,6 +32,8 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::get('/system/storage', [StorageHealthController::class, 'index'])->name('system.storage.index');
+    Route::post('/system/storage/test', [StorageHealthController::class, 'test'])->name('system.storage.test');
 
     // ==========================================
     // 2.2. QUẢN LÝ NGƯỜI DÙNG TỔNG (ADMIN)
@@ -88,6 +90,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/assignments/{id}/submissions-list', [AssignmentController::class, 'listSubmissions'])->name('assignments.submissions.list');
     Route::get('/submissions/{id}/review', [AssignmentController::class, 'reviewSubmission'])->name('assignments.submissions.review');
     Route::get('/submissions/{id}/file', [AssignmentController::class, 'downloadSubmissionFile'])->name('assignments.submissions.file');
+    Route::get('/submissions/{id}/preview', [AssignmentController::class, 'previewSubmissionFile'])->name('assignments.submissions.preview');
     Route::post('/submissions/{id}/ai-analysis', [AssignmentController::class, 'analyzeSubmissionWithAi'])->name('assignments.submissions.ai-analysis');
     Route::post('/submissions/{id}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
     Route::delete('/submissions/{id}/delete', [AssignmentController::class, 'deleteSubmission'])->name('assignments.submissions.delete');

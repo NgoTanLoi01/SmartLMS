@@ -547,6 +547,12 @@
                                 <i class="fas fa-user-cog"></i> Quản lý người dùng
                             </a>
                         </li>
+                        <li>
+                            <a class="nav-link {{ request()->is('system/storage*') ? 'active' : '' }}"
+                                href="{{ route('system.storage.index') }}">
+                                <i class="fas fa-cloud"></i> Kiểm tra lưu trữ
+                            </a>
+                        </li>
                     @endif
                 @endif
             </ul>

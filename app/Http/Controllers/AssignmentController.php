@@ -18,16 +18,20 @@ class AssignmentController extends Controller
         $user = auth()->user();
 
         if ($user->role === 'admin') {
-            $assignments = Assignments::with('course')->latest()->get();
+            $assignments = Assignments::with('course')
+                ->notArchived()
+                ->whereHas('course', fn ($query) => $query->notArchived())
+                ->latest()
+                ->get();
         } elseif ($user->role === 'teacher') {
-            $courseIds = Course::where('teacher_id', $user->id)->pluck('id');
-            $assignments = Assignments::with('course')->whereIn('course_id', $courseIds)->latest()->get();
+            $courseIds = Course::where('teacher_id', $user->id)->notArchived()->pluck('id');
+            $assignments = Assignments::with('course')->notArchived()->whereIn('course_id', $courseIds)->latest()->get();
         } else {
             // Học sinh: Chỉ lấy bài tập trạng thái 'published' và thuộc lớp đang học
-            $classIds = $user->classes()->pluck('classes.id');
+            $classIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
             $courseIds = Course::visibleToStudents()
                 ->whereHas('classes', function ($q) use ($classIds) {
-                    $q->whereIn('classes.id', $classIds);
+                    $q->where('classes.status', 'active')->whereIn('classes.id', $classIds);
                 })
                 ->pluck('id');
 
@@ -44,9 +48,9 @@ class AssignmentController extends Controller
         }
 
         if ($user->role === 'teacher') {
-            $courses = Course::with('modules.lessons')->where('teacher_id', $user->id)->get();
+            $courses = Course::with('modules.lessons')->where('teacher_id', $user->id)->notArchived()->get();
         } else {
-            $courses = Course::with('modules.lessons')->get();
+            $courses = Course::with('modules.lessons')->notArchived()->get();
         }
 
         return view('assignments.index', compact('assignments', 'courses'));
@@ -66,7 +70,7 @@ class AssignmentController extends Controller
             'due_date' => 'required|date',
             'allowed_extensions' => 'nullable|string',
             'max_file_size' => 'nullable|integer',
-            'status' => 'required|in:draft,published,hidden',
+            'status' => 'required|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
 
@@ -180,6 +184,9 @@ class AssignmentController extends Controller
         };
 
         $fileUrl = $this->submissionFileUrl($submission);
+        $filePreviewUrl = $this->submissionFilePreviewUrl($submission);
+        $filePreviewType = $this->submissionPreviewType($submission);
+        $fileName = $submission->original_filename ?: ($submission->file_path ? basename($submission->file_path) : null);
 
         return view('assignments.submission_review', compact(
             'submission',
@@ -187,12 +194,15 @@ class AssignmentController extends Controller
             'course',
             'assignmentTypeLabel',
             'fileUrl',
+            'filePreviewUrl',
+            'filePreviewType',
+            'fileName',
         ));
     }
     // 1. Hàm lấy danh sách bài nộp cho Giáo viên (Dùng AJAX để load vào Modal)
     public function listSubmissions($id)
     {
-        $assignment = Assignments::with('course.classes.students')->findOrFail($id);
+        $assignment = Assignments::with('course.classes.students')->notArchived()->findOrFail($id);
 
         // Lấy danh sách ID học sinh thuộc các lớp có gán khóa học này
         $students = $assignment->course->classes->flatMap->students->unique('id');
@@ -223,11 +233,12 @@ class AssignmentController extends Controller
 
     public function submit(Request $request, $id)
     {
-        $assignment = Assignments::with('course.classes')->findOrFail($id);
+        $assignment = Assignments::with('course.classes')->notArchived()->findOrFail($id);
         $user = auth()->user();
 
-        $studentClassIds = $user->classes()->pluck('classes.id');
+        $studentClassIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
         $hasAccess = $assignment->course->classes
+            ->where('status', 'active')
             ->pluck('id')
             ->intersect($studentClassIds)
             ->isNotEmpty();
@@ -240,7 +251,7 @@ class AssignmentController extends Controller
         $oldSubmission = AssignmentSubmission::where('assignment_id', $id)->where('user_id', $user->id)->first();
 
         // 2. Validate nội dung theo loại bài tập
-        $allowed = $assignment->allowed_extensions ?? 'pdf,docx,zip,png,jpg,jpeg';
+        $allowed = $assignment->allowed_extensions ?? 'pdf,docx,zip,png,jpg,jpeg,html,htm';
         $maxSize = $assignment->max_file_size ?? 10240;
         $rules = [];
 
@@ -339,7 +350,7 @@ class AssignmentController extends Controller
             'due_date' => 'required|date',
             'lesson_id' => 'required|exists:lessons,id',
             'type' => 'nullable|in:file,essay,mixed',
-            'status' => 'nullable|in:draft,published,hidden',
+            'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
 
@@ -359,11 +370,14 @@ class AssignmentController extends Controller
     // Hàm xử lý xóa bài tập (Xóa)
     public function destroy($id)
     {
-        $assignment = \App\Models\Assignments::findOrFail($id);
+        $assignment = Assignments::findOrFail($id);
 
-        $assignment->delete();
+        $assignment->update([
+            'status' => Assignments::STATUS_ARCHIVED,
+            'published_at' => null,
+        ]);
 
-        return back()->with('success', 'Đã xóa bài tập thành công!');
+        return back()->with('success', 'Đã lưu trữ bài tập. Bài nộp và điểm số vẫn được giữ lại.');
     }
 
     private function canManageAssignmentCourse(Course $course): bool
@@ -398,11 +412,91 @@ class AssignmentController extends Controller
         );
     }
 
+    public function previewSubmissionFile($id)
+    {
+        $submission = AssignmentSubmission::with(['assignment.course', 'user'])->findOrFail($id);
+
+        if (!$this->canViewSubmission($submission)) {
+            abort(403, 'Bạn không có quyền xem bài nộp này.');
+        }
+
+        if (!$submission->file_path || !$this->submissionPreviewType($submission)) {
+            abort(404, 'File này không hỗ trợ xem trước.');
+        }
+
+        $disk = Storage::disk($this->submissionDisk($submission));
+        if (!$disk->exists($submission->file_path)) {
+            abort(404, 'Không tìm thấy file bài nộp.');
+        }
+
+        $stream = $disk->readStream($submission->file_path);
+        if ($stream === false) {
+            abort(404, 'Không thể đọc file bài nộp.');
+        }
+
+        $fileName = str_replace(["\r", "\n", '"'], ['', '', "'"], $submission->original_filename ?: basename($submission->file_path));
+
+        return response()->stream(function () use ($stream) {
+            fpassthru($stream);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }, 200, [
+            'Content-Type' => $this->previewContentType($submission),
+            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     private function submissionFileUrl(?AssignmentSubmission $submission): ?string
     {
         return $submission && $submission->file_path
             ? route('assignments.submissions.file', $submission->id)
             : null;
+    }
+
+    private function submissionFilePreviewUrl(?AssignmentSubmission $submission): ?string
+    {
+        return $submission && $submission->file_path && $this->submissionPreviewType($submission)
+            ? route('assignments.submissions.preview', $submission->id)
+            : null;
+    }
+
+    private function submissionPreviewType(?AssignmentSubmission $submission): ?string
+    {
+        if (!$submission || !$submission->file_path) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo($submission->original_filename ?: $submission->file_path, PATHINFO_EXTENSION));
+        $mimeType = strtolower((string) $submission->mime_type);
+
+        return match (true) {
+            $extension === 'pdf' || $mimeType === 'application/pdf' => 'pdf',
+            in_array($extension, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true) || str_starts_with($mimeType, 'image/') => 'image',
+            in_array($extension, ['html', 'htm'], true) || in_array($mimeType, ['text/html', 'application/xhtml+xml'], true) => 'html',
+            default => null,
+        };
+    }
+
+    private function previewContentType(AssignmentSubmission $submission): string
+    {
+        return match ($this->submissionPreviewType($submission)) {
+            'pdf' => 'application/pdf',
+            'image' => $submission->mime_type ?: $this->imageContentTypeFromExtension($submission),
+            'html' => 'text/html; charset=UTF-8',
+            default => 'application/octet-stream',
+        };
+    }
+
+    private function imageContentTypeFromExtension(AssignmentSubmission $submission): string
+    {
+        return match (strtolower(pathinfo($submission->original_filename ?: $submission->file_path, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => 'image/png',
+        };
     }
 
     private function submissionDisk(AssignmentSubmission $submission): string

@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Assignments extends Model
 {
     use SoftDeletes; // Kích hoạt tính năng Xóa mềm (SoftDeletes)
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PUBLISHED = 'published';
+    public const STATUS_HIDDEN = 'hidden';
+    public const STATUS_ARCHIVED = 'archived';
 
     // Khai báo rõ tên bảng vì tên Model đang là số nhiều
     protected $table = 'assignments';
@@ -24,16 +28,21 @@ class Assignments extends Model
 
     public function scopeVisibleToStudents($query)
     {
-        return $query->where('status', 'published')
+        return $query->where('status', self::STATUS_PUBLISHED)
             ->where(function ($q) {
                 $q->whereNull('available_from')
                     ->orWhere('available_from', '<=', now());
             });
     }
 
+    public function scopeNotArchived($query)
+    {
+        return $query->where('status', '!=', self::STATUS_ARCHIVED);
+    }
+
     public function isVisibleToStudents(): bool
     {
-        return $this->status === 'published'
+        return $this->status === self::STATUS_PUBLISHED
             && (!$this->available_from || $this->available_from->lte(now()));
     }
 

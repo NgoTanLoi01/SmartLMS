@@ -24,11 +24,11 @@
                     </li>
                     <li>
                         <form action="{{ route('courses.destroy', $course->id) }}" method="POST"
-                            onsubmit="return confirm('Bạn có chắc chắn muốn xóa khóa học này?')">
+                            onsubmit="return confirm('Lưu trữ khóa học này? Học sinh sẽ không còn thấy khóa học nhưng dữ liệu vẫn được giữ lại.')">
                             @csrf @method('DELETE')
                             <button type="submit" class="dropdown-item text-danger"
                                 style="background:none; border:none; width:100%; text-align:left;">
-                                <i class="fas fa-trash-alt"></i> Xóa khóa học
+                                <i class="fas fa-archive"></i> Lưu trữ khóa học
                             </button>
                         </form>
                     </li>
@@ -57,7 +57,16 @@
         @endif
 
         @if (auth()->user()->role !== 'student')
-            <div class="card-badge" style="background:{{ $course->status === 'published' ? '#ecfdf5' : ($course->status === 'hidden' ? '#f1f5f9' : '#fffbeb') }};color:{{ $course->status === 'published' ? '#047857' : ($course->status === 'hidden' ? '#475569' : '#92400e') }};">
+            @php
+                $statusStyles = [
+                    'published' => ['bg' => '#ecfdf5', 'color' => '#047857'],
+                    'hidden' => ['bg' => '#f1f5f9', 'color' => '#475569'],
+                    'archived' => ['bg' => '#fef2f2', 'color' => '#b91c1c'],
+                    'draft' => ['bg' => '#fffbeb', 'color' => '#92400e'],
+                ];
+                $courseStatusStyle = $statusStyles[$course->status ?? 'published'] ?? $statusStyles['draft'];
+            @endphp
+            <div class="card-badge" style="background:{{ $courseStatusStyle['bg'] }};color:{{ $courseStatusStyle['color'] }};">
                 <i class="fas fa-eye" style="font-size:10px;"></i>
                 {{ strtoupper($course->status ?? 'published') }}
                 @if ($course->available_from)

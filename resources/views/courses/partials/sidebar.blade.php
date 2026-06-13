@@ -180,7 +180,7 @@
                                             </div>
                                             @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
                                                 <div class="lesson-dur-text">
-                                                    <span class="badge bg-{{ $assignment->status === 'published' ? 'success' : ($assignment->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
+                                                    <span class="badge bg-{{ $assignment->status === 'published' ? 'success' : ($assignment->status === 'hidden' ? 'secondary' : ($assignment->status === 'archived' ? 'danger' : 'warning text-dark')) }}">
                                                         {{ strtoupper($assignment->status ?? 'published') }}
                                                     </span>
                                                     @if ($assignment->available_from)
@@ -212,8 +212,8 @@
                                                 @csrf @method('DELETE')
                                                 <button type="submit"
                                                     class="btn-action btn-delete border-0 bg-transparent"
-                                                    onclick="return confirm('Xóa bài tập này?')">
-                                                    <i class="fas fa-trash"></i>
+                                                    onclick="return confirm('Lưu trữ bài tập này? Bài nộp và điểm số vẫn được giữ lại.')">
+                                                    <i class="fas fa-archive"></i>
                                                 </button>
                                             </form>
                                             <a href="javascript:void(0)"

@@ -22,7 +22,13 @@ class ScheduleController extends Controller
 
         if ($request->ajax() || $request->wantsJson() || $request->has('start')) {
             // SỬ DỤNG DB JOIN ĐỂ TRÁNH LỖI MODEL RELATIONSHIP
-            $query = DB::table('schedules')->join('courses', 'schedules.course_id', '=', 'courses.id')->join('classes', 'schedules.class_id', '=', 'classes.id')->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name');
+            $query = DB::table('schedules')
+                ->join('courses', 'schedules.course_id', '=', 'courses.id')
+                ->join('classes', 'schedules.class_id', '=', 'classes.id')
+                ->where('schedules.status', 'active')
+                ->where('classes.status', '!=', 'archived')
+                ->where('courses.status', '!=', 'archived')
+                ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name');
 
             // Nếu là giáo viên, chỉ lấy lịch của họ
             if ($user->role === 'teacher') {
@@ -59,9 +65,9 @@ class ScheduleController extends Controller
 
         // CHỈ LOAD DANH SÁCH LỚP HỌC (Khóa học sẽ load sau bằng AJAX)
         if ($user->role === 'teacher') {
-            $classes = DB::table('classes')->where('teacher_id', $user->id)->get();
+            $classes = DB::table('classes')->where('teacher_id', $user->id)->where('status', '!=', 'archived')->get();
         } else {
-            $classes = DB::table('classes')->get();
+            $classes = DB::table('classes')->where('status', '!=', 'archived')->get();
         }
 
         return view('schedules.index', compact('classes'));
@@ -70,7 +76,12 @@ class ScheduleController extends Controller
     // HÀM MỚI: Lấy danh sách khóa học thuộc về 1 lớp cụ thể
     public function getCoursesByClass($class_id)
     {
-        $courses = DB::table('class_course')->join('courses', 'class_course.course_id', '=', 'courses.id')->where('class_course.class_id', $class_id)->select('courses.id', 'courses.title')->get();
+        $courses = DB::table('class_course')
+            ->join('courses', 'class_course.course_id', '=', 'courses.id')
+            ->where('class_course.class_id', $class_id)
+            ->where('courses.status', '!=', 'archived')
+            ->select('courses.id', 'courses.title')
+            ->get();
 
         return response()->json($courses);
     }
@@ -88,7 +99,7 @@ class ScheduleController extends Controller
 
         $this->clearCourseExamNoteIfNeeded($request);
 
-        Schedule::create($request->all());
+        Schedule::create(array_merge($request->all(), ['status' => Schedule::STATUS_ACTIVE]));
         return response()->json(['status' => 'success', 'message' => 'Đã thêm lịch học!']);
     }
 
@@ -105,6 +116,8 @@ class ScheduleController extends Controller
         $sourceQuery = DB::table('schedules')
             ->join('classes', 'schedules.class_id', '=', 'classes.id')
             ->whereDate('schedules.schedule_date', $validated['source_date'])
+            ->where('schedules.status', Schedule::STATUS_ACTIVE)
+            ->where('classes.status', '!=', Classroom::STATUS_ARCHIVED)
             ->select('schedules.*');
 
         if ($user->role === 'teacher') {
@@ -127,6 +140,7 @@ class ScheduleController extends Controller
                 $isDuplicate = DB::table('schedules')
                     ->where('class_id', $schedule->class_id)
                     ->where('course_id', $schedule->course_id)
+                    ->where('status', Schedule::STATUS_ACTIVE)
                     ->whereDate('schedule_date', $validated['target_date'])
                     ->where('start_time', $schedule->start_time)
                     ->where('end_time', $schedule->end_time)
@@ -152,6 +166,7 @@ class ScheduleController extends Controller
                     'end_time' => $schedule->end_time,
                     'room' => $schedule->room,
                     'note' => null,
+                    'status' => Schedule::STATUS_ACTIVE,
                 ]);
 
                 $copied++;
@@ -247,18 +262,21 @@ class ScheduleController extends Controller
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
             'note' => 'nullable|string|max:255',
+            'status' => 'nullable|in:active,hidden,archived',
         ]);
 
         $schedule = Schedule::findOrFail($id);
         $this->clearCourseExamNoteIfNeeded($request, $schedule->id);
-        $schedule->update($request->all());
+        $schedule->update(array_merge($request->all(), [
+            'status' => $request->input('status', $schedule->status ?? Schedule::STATUS_ACTIVE),
+        ]));
         return response()->json(['status' => 'success', 'message' => 'Đã cập nhật lịch!']);
     }
 
     public function destroy($id)
     {
-        Schedule::findOrFail($id)->delete();
-        return response()->json(['status' => 'success', 'message' => 'Đã xóa lịch!']);
+        Schedule::findOrFail($id)->update(['status' => Schedule::STATUS_ARCHIVED]);
+        return response()->json(['status' => 'success', 'message' => 'Đã lưu trữ lịch học!']);
     }
 
     private function clearCourseExamNoteIfNeeded(Request $request, ?int $exceptScheduleId = null): void
@@ -270,6 +288,7 @@ class ScheduleController extends Controller
         Schedule::query()
             ->where('class_id', $request->input('class_id'))
             ->where('course_id', $request->input('course_id'))
+            ->notArchived()
             ->when($exceptScheduleId, fn ($query) => $query->where('id', '!=', $exceptScheduleId))
             ->where('note', 'Thi kết thúc môn')
             ->update(['note' => null]);

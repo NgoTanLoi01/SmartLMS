@@ -6,8 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Classroom extends Model
 {
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_HIDDEN = 'hidden';
+    public const STATUS_ARCHIVED = 'archived';
+
     protected $table = 'classes';
-    protected $fillable = ['name', 'code', 'teacher_id'];
+    protected $fillable = ['name', 'code', 'teacher_id', 'status'];
+
+    public function scopeNotArchived($query)
+    {
+        return $query->where('status', '!=', self::STATUS_ARCHIVED);
+    }
+
+    public function scopeVisible($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
+    }
 
     // Một lớp thuộc về một giáo viên
     public function teacher()

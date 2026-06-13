@@ -79,8 +79,9 @@ class LessonController extends Controller
         $lesson = Lesson::with('module.course.classes')->findOrFail($id);
 
         if ($user->role === 'student') {
-            $studentClassIds = $user->classes()->pluck('classes.id');
+            $studentClassIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
             $hasAccess = $lesson->module->course->classes
+                ->where('status', 'active')
                 ->pluck('id')
                 ->intersect($studentClassIds)
                 ->isNotEmpty();

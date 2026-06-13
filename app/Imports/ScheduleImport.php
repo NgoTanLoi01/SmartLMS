@@ -26,7 +26,8 @@ class ScheduleImport implements ToCollection
         private readonly ?int $defaultCourseId = null,
         private readonly array $allowedClassIds = []
     ) {
-        $query = Classroom::with('courses');
+        $query = Classroom::with(['courses' => fn ($query) => $query->notArchived()])
+            ->notArchived();
 
         if (!empty($this->allowedClassIds)) {
             $query->whereIn('id', $this->allowedClassIds);
@@ -85,6 +86,7 @@ class ScheduleImport implements ToCollection
                 }
 
                 $existingSchedule = Schedule::query()
+                    ->notArchived()
                     ->where('class_id', $classroom->id)
                     ->where('course_id', $courseId)
                     ->whereDate('schedule_date', $scheduleDate)
@@ -117,6 +119,7 @@ class ScheduleImport implements ToCollection
                     'end_time' => $timeRange['end'],
                     'room' => $room,
                     'note' => $note,
+                    'status' => Schedule::STATUS_ACTIVE,
                 ]);
 
                 $this->importedCount++;

@@ -105,6 +105,32 @@
             font-size: 11px;
         }
 
+        .class-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .class-status-active {
+            background: #ecfdf5;
+            color: #047857;
+        }
+
+        .class-status-hidden {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .class-status-archived {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
         /* 3-dot menu */
         .menu-btn {
             width: 30px;
@@ -426,6 +452,25 @@
         @endif
     </div>
 
+    <form action="{{ route('classes.index') }}" method="GET"
+        class="d-flex align-items-end gap-2 flex-wrap bg-white border rounded-3 p-3 mb-4">
+        <div>
+            <label class="form-label-sm">Trạng thái</label>
+            <select name="status" class="form-ctrl" style="min-width:180px;">
+                <option value="">Đang hoạt động + đã ẩn</option>
+                <option value="active" @selected(($filters['status'] ?? '') === 'active')>Đang hoạt động</option>
+                <option value="hidden" @selected(($filters['status'] ?? '') === 'hidden')>Đã ẩn</option>
+                <option value="archived" @selected(($filters['status'] ?? '') === 'archived')>Đã lưu trữ</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-create" style="padding:9px 16px;">
+            <i class="fas fa-filter"></i> Lọc
+        </button>
+        <a href="{{ route('classes.index') }}" class="btn btn-light border rounded-3" style="padding:9px 14px;">
+            <i class="fas fa-rotate-left"></i>
+        </a>
+    </form>
+
     {{-- Grid --}}
     @if ($classes->isEmpty())
         <div class="empty-state">
@@ -438,7 +483,20 @@
                 <div class="class-card">
                     {{-- Top row --}}
                     <div class="card-top">
-                        <span class="class-code">{{ $class->code }}</span>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="class-code">{{ $class->code }}</span>
+                            @php
+                                $classStatus = $class->status ?? 'active';
+                                $classStatusLabel = [
+                                    'active' => 'Đang hoạt động',
+                                    'hidden' => 'Đã ẩn',
+                                    'archived' => 'Đã lưu trữ',
+                                ][$classStatus] ?? 'Đang hoạt động';
+                            @endphp
+                            <span class="class-status-badge class-status-{{ $classStatus }}">
+                                <i class="fas fa-circle" style="font-size:6px;"></i>{{ $classStatusLabel }}
+                            </span>
+                        </div>
                         <div class="card-meta">
                             <span class="student-count">
                                 <i class="fas fa-users"></i> {{ $class->students_count }} HS
@@ -462,6 +520,7 @@
                                         <a class="dropdown-item edit-class-btn" href="#" data-id="{{ $class->id }}"
                                             data-name="{{ $class->name }}" data-code="{{ $class->code }}"
                                             data-teacher="{{ $class->teacher_id }}"
+                                            data-status="{{ $class->status ?? 'active' }}"
                                             data-courses="{{ $class->courses->pluck('id') }}" data-bs-toggle="modal"
                                             data-bs-target="#editClassModal">
                                             <i class="fas fa-edit" style="color:#f59e0b;"></i> Sửa lớp học
@@ -475,8 +534,8 @@
                                             @csrf @method('DELETE')
                                             <button type="submit" class="dropdown-item text-danger"
                                                 style="background:none; border:none; width:100%; text-align:left;"
-                                                onclick="return confirm('Toàn bộ học sinh sẽ bị gỡ khỏi lớp. Bạn có chắc muốn xóa lớp này?')">
-                                                <i class="fas fa-trash-alt"></i> Xóa lớp học
+                                                onclick="return confirm('Lưu trữ lớp học này? Học sinh, khóa học và tiến độ vẫn được giữ lại.')">
+                                                <i class="fas fa-archive"></i> Lưu trữ lớp học
                                             </button>
                                         </form>
                                     </li>
@@ -534,6 +593,15 @@
                                 </select>
                             </div>
                         @endif
+
+                        <div class="form-group">
+                            <label class="form-label-sm">Trạng thái</label>
+                            <select name="status" class="form-ctrl">
+                                <option value="active">Đang hoạt động</option>
+                                <option value="hidden">Đã ẩn</option>
+                                <option value="archived">Đã lưu trữ</option>
+                            </select>
+                        </div>
 
                         <div class="form-group" style="margin-bottom:0;">
                             <label class="form-label-sm">
@@ -596,6 +664,15 @@
                         </div>
                     @endif
 
+                    <div class="form-group">
+                        <label class="form-label-sm">Trạng thái</label>
+                        <select name="status" id="edit_status" class="form-ctrl">
+                            <option value="active">Đang hoạt động</option>
+                            <option value="hidden">Đã ẩn</option>
+                            <option value="archived">Đã lưu trữ</option>
+                        </select>
+                    </div>
+
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label-sm">
                             Phân bổ khóa học
@@ -636,6 +713,7 @@
                     document.getElementById('editClassForm').action = `/classes/${classId}`;
                     document.getElementById('edit_name').value = this.getAttribute('data-name');
                     document.getElementById('edit_code').value = this.getAttribute('data-code');
+                    document.getElementById('edit_status').value = this.getAttribute('data-status') || 'active';
 
                     const teacherSel = document.getElementById('edit_teacher');
                     if (teacherSel) teacherSel.value = this.getAttribute('data-teacher');

@@ -218,25 +218,35 @@ class ClassManagementController extends Controller
     {
         $user = auth()->user();
         $teachers = User::where('role', 'teacher')->get();
+        $filters = [
+            'status' => request('status'),
+        ];
 
         if ($user->role === 'admin') {
             // Admin: Thấy tất cả lớp và tất cả khóa học
-            $classes = Classroom::withCount('students')
-                ->with(['teacher', 'courses'])
-                ->get();
-            $courses = Course::where('course_type', 'delivery')->get();
+            $classQuery = Classroom::withCount('students')->with(['teacher', 'courses']);
+            $courses = Course::where('course_type', 'delivery')->notArchived()->get();
         } else {
             // Giáo viên: Chỉ thấy lớp mình dạy và khóa học mình tạo
-            $classes = Classroom::where('teacher_id', $user->id)->withCount('students')->with('courses')->get();
+            $classQuery = Classroom::where('teacher_id', $user->id)->withCount('students')->with('courses');
 
             // GIẢ SỬ: Bảng courses của thầy có cột 'teacher_id'
             // để xác định ai là người tạo khóa học đó
             $courses = Course::where('teacher_id', $user->id)
                 ->where('course_type', 'delivery')
+                ->notArchived()
                 ->get();
         }
 
-        return view('classes.index', compact('classes', 'teachers', 'courses'));
+        if ($filters['status'] && in_array($filters['status'], ['active', 'hidden', 'archived'], true)) {
+            $classQuery->where('status', $filters['status']);
+        } else {
+            $classQuery->notArchived();
+        }
+
+        $classes = $classQuery->latest()->get();
+
+        return view('classes.index', compact('classes', 'teachers', 'courses', 'filters'));
     }
 
     public function store(Request $request)
@@ -250,6 +260,7 @@ class ClassManagementController extends Controller
             'code' => 'required|string|unique:classes,code',
             'course_ids' => 'nullable|array',
             'course_ids.*' => 'exists:courses,id',
+            'status' => 'nullable|in:active,hidden,archived',
         ];
 
         // Nếu là admin thì mới bắt buộc chọn teacher_id từ request
@@ -263,6 +274,7 @@ class ClassManagementController extends Controller
         $classroom = Classroom::create([
             'name' => $request->name,
             'code' => $request->code,
+            'status' => $request->input('status', Classroom::STATUS_ACTIVE),
             // Gán teacher_id từ form nếu là admin, gán ID hiện tại nếu là giáo viên
             'teacher_id' => auth()->user()->role === 'admin' ? $request->teacher_id : auth()->id(),
         ]);
@@ -287,6 +299,7 @@ class ClassManagementController extends Controller
             'code' => 'required|string|unique:classes,code,' . $id,
             'course_ids' => 'nullable|array',
             'course_ids.*' => 'exists:courses,id',
+            'status' => 'nullable|in:active,hidden,archived',
         ];
 
         if (auth()->user()->role === 'admin') {
@@ -297,6 +310,7 @@ class ClassManagementController extends Controller
 
         $classroom->name = $request->name;
         $classroom->code = $request->code;
+        $classroom->status = $request->input('status', $classroom->status ?? Classroom::STATUS_ACTIVE);
         if (auth()->user()->role === 'admin') {
             $classroom->teacher_id = $request->teacher_id;
         }
@@ -312,7 +326,7 @@ class ClassManagementController extends Controller
         return back()->with('success', 'Đã cập nhật thông tin lớp học.');
     }
 
-    // Xóa lớp học
+    // Lưu trữ lớp học
     public function destroy($id)
     {
         $classroom = Classroom::findOrFail($id);
@@ -322,9 +336,9 @@ class ClassManagementController extends Controller
             return back()->with('error', 'Bạn không có quyền xóa lớp này.');
         }
 
-        $classroom->delete();
+        $classroom->update(['status' => Classroom::STATUS_ARCHIVED]);
 
-        return back()->with('success', 'Đã xóa lớp học thành công.');
+        return back()->with('success', 'Đã lưu trữ lớp học. Học sinh, khóa học và tiến độ vẫn được giữ lại.');
     }
 
     // Xóa học sinh khỏi lớp (Chỉ gỡ liên kết trong bảng class_user)

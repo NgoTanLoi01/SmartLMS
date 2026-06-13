@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Course extends Model
 {
     protected $connection = 'mysql';
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PUBLISHED = 'published';
+    public const STATUS_HIDDEN = 'hidden';
+    public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = ['title', 'description', 'teacher_id', 'learning_program_id', 'course_type', 'status', 'published_at', 'available_from'];
 
@@ -18,17 +22,22 @@ class Course extends Model
     public function scopeVisibleToStudents($query)
     {
         return $query->where('course_type', 'delivery')
-            ->where('status', 'published')
+            ->where('status', self::STATUS_PUBLISHED)
             ->where(function ($q) {
                 $q->whereNull('available_from')
                     ->orWhere('available_from', '<=', now());
             });
     }
 
+    public function scopeNotArchived($query)
+    {
+        return $query->where('status', '!=', self::STATUS_ARCHIVED);
+    }
+
     public function isVisibleToStudents(): bool
     {
         return $this->course_type === 'delivery'
-            && $this->status === 'published'
+            && $this->status === self::STATUS_PUBLISHED
             && (!$this->available_from || $this->available_from->lte(now()));
     }
 

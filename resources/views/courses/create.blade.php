@@ -119,6 +119,7 @@
                                         <option value="published" @selected(old('status', 'published') === 'published')>Published - Học sinh có thể thấy</option>
                                         <option value="draft" @selected(old('status') === 'draft')>Draft - Bản nháp</option>
                                         <option value="hidden" @selected(old('status') === 'hidden')>Hidden - Ẩn khỏi học sinh</option>
+                                        <option value="archived" @selected(old('status') === 'archived')>Archived - Lưu trữ</option>
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-6">

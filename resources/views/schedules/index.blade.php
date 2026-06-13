@@ -609,7 +609,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="sch-btn sch-btn-danger d-none" id="btnDelete">
-                        <i class="fas fa-trash"></i> Xóa lịch
+                        <i class="fas fa-archive"></i> Lưu trữ lịch
                     </button>
                     <div class="footer-r">
                         <button type="button" class="sch-btn sch-btn-ghost" data-bs-dismiss="modal">Hủy</button>
@@ -799,7 +799,7 @@
 
             /* ── Xóa ── */
             document.getElementById('btnDelete').addEventListener('click', function() {
-                if (!confirm('Bạn có chắc chắn muốn xóa lịch này?')) return;
+                if (!confirm('Lưu trữ lịch học này? Lịch sẽ không còn hiển thị nhưng dữ liệu vẫn được giữ lại.')) return;
                 const id = document.getElementById('schedule_id').value;
 
                 fetch(`/schedules/${id}`, {

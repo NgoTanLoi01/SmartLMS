@@ -57,8 +57,10 @@ class CourseController extends Controller
             $query->where('course_type', $filters['course_type']);
         }
 
-        if ($filters['status'] && in_array($filters['status'], ['draft', 'published', 'hidden'])) {
+        if ($filters['status'] && in_array($filters['status'], ['draft', 'published', 'hidden', 'archived'])) {
             $query->where('status', $filters['status']);
+        } else {
+            $query->notArchived();
         }
 
         if ($filters['class_id']) {
@@ -73,7 +75,7 @@ class CourseController extends Controller
             $courses = $query->where('teacher_id', $user->id)->latest()->get();
         } else {
             // Học sinh
-            $classIds = $user->classes()->pluck('classes.id');
+            $classIds = $user->classes()->where('classes.status', Classroom::STATUS_ACTIVE)->pluck('classes.id');
             $courses = $query
                 ->whereHas('classes', function ($q) use ($classIds) {
                     $q->whereIn('classes.id', $classIds);
@@ -113,7 +115,12 @@ class CourseController extends Controller
     public function show($id)
     {
         // Load khóa học cùng giáo viên, bài học và bài tập của từng bài học
-        $course = Course::with(['teacher', 'classes', 'modules.lessons.assignments', 'quizzes'])->findOrFail($id);
+        $course = Course::with([
+            'teacher',
+            'classes',
+            'modules.lessons.assignments',
+            'quizzes',
+        ])->findOrFail($id);
         $this->authorizeCourseAccess($course);
 
         if (auth()->user()->role === 'student') {
@@ -166,7 +173,7 @@ class CourseController extends Controller
             $progress = $totalLessons > 0 ? round(($completedCount / $totalLessons) * 100) : 0;
 
             // 2. Lấy dữ liệu bài nộp (Assignments)
-            $assignmentIds = Assignments::where('course_id', $id)->pluck('id')->toArray();
+            $assignmentIds = Assignments::where('course_id', $id)->notArchived()->pluck('id')->toArray();
             $userSubmissions = AssignmentSubmission::where('user_id', $user->id)->whereIn('assignment_id', $assignmentIds)->get()->keyBy('assignment_id'); // Key hóa theo ID bài tập để View check cực nhanh
             $studentTodoItems = $this->buildStudentCourseTodos($course, $user, $completedLessonIds, $userSubmissions);
             $studentNextAction = $studentTodoItems->first();
@@ -205,7 +212,7 @@ class CourseController extends Controller
             'template_course_id' => 'nullable|exists:courses,id',
             'class_ids' => 'nullable|array',
             'class_ids.*' => 'exists:classes,id',
-            'status' => 'nullable|in:draft,published,hidden',
+            'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
 
@@ -270,7 +277,7 @@ class CourseController extends Controller
             'description' => 'required',
             'learning_program_id' => 'nullable|exists:learning_programs,id',
             'course_type' => 'required|in:delivery,template',
-            'status' => 'nullable|in:draft,published,hidden',
+            'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
 
@@ -296,72 +303,12 @@ class CourseController extends Controller
         // Cần kiểm tra quyền trước khi xóa (giống hàm edit) để bảo mật
         $this->authorizeCourseOwner($course);
 
-        try {
-            DB::transaction(function () use ($course) {
-                $this->deleteCourseContent($course);
-                $course->delete();
-            });
+        $course->update([
+            'status' => Course::STATUS_ARCHIVED,
+            'published_at' => null,
+        ]);
 
-            return redirect()->route('courses.index')->with('success', 'Đã xóa khóa học.');
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Không thể xóa khóa học: ' . $e->getMessage());
-        }
-    }
-
-    private function deleteCourseContent(Course $course): void
-    {
-        $moduleIds = DB::table('modules')->where('course_id', $course->id)->pluck('id');
-        $lessonIds = DB::table('lessons')->whereIn('module_id', $moduleIds)->pluck('id');
-        $assignmentIds = DB::table('assignments')
-            ->where('course_id', $course->id)
-            ->orWhereIn('lesson_id', $lessonIds)
-            ->pluck('id');
-        $quizIds = DB::table('quizzes')->where('course_id', $course->id)->pluck('id');
-        $questionIds = DB::table('questions')->where('course_id', $course->id)->pluck('id');
-        $attendanceColumnIds = DB::table('attendance_columns')->where('course_id', $course->id)->pluck('id');
-
-        DB::table('class_course')->where('course_id', $course->id)->delete();
-        DB::table('course_question_bank')->where('course_id', $course->id)->delete();
-        DB::table('schedules')->where('course_id', $course->id)->delete();
-
-        if ($attendanceColumnIds->isNotEmpty()) {
-            DB::table('attendance_data')->whereIn('attendance_column_id', $attendanceColumnIds)->delete();
-        }
-        DB::table('attendance_columns')->where('course_id', $course->id)->delete();
-
-        if ($assignmentIds->isNotEmpty()) {
-            DB::table('assignment_submissions')->whereIn('assignment_id', $assignmentIds)->delete();
-        }
-        DB::table('assignments')
-            ->where('course_id', $course->id)
-            ->orWhereIn('lesson_id', $lessonIds)
-            ->delete();
-
-        if ($lessonIds->isNotEmpty()) {
-            DB::table('lesson_user')->whereIn('lesson_id', $lessonIds)->delete();
-            DB::table('lessons')->whereIn('id', $lessonIds)->delete();
-        }
-
-        if ($questionIds->isNotEmpty()) {
-            DB::table('options')->whereIn('question_id', $questionIds)->delete();
-        }
-        if ($quizIds->isNotEmpty()) {
-            DB::table('quiz_attempts')->whereIn('quiz_id', $quizIds)->delete();
-        }
-        DB::table('questions')
-            ->where('course_id', $course->id)
-            ->delete();
-        DB::table('quizzes')->where('course_id', $course->id)->delete();
-
-        if ($moduleIds->isNotEmpty()) {
-            DB::table('modules')->whereIn('id', $moduleIds)->delete();
-        }
-
-        try {
-            DB::connection('pgsql')->table('document_chunks')->where('course_id', $course->id)->delete();
-        } catch (\Throwable) {
-            // Vector/RAG storage may run on a separate service; it should not block course deletion.
-        }
+        return redirect()->route('courses.index')->with('success', 'Đã lưu trữ khóa học. Dữ liệu học tập vẫn được giữ lại.');
     }
 
     private function authorizeCourseAccess(Course $course): void
@@ -377,8 +324,11 @@ class CourseController extends Controller
                 abort(403, 'Khóa học này chưa được xuất bản.');
             }
 
-            $studentClassIds = $user->classes()->pluck('classes.id');
-            $hasAccess = $course->classes()->whereIn('classes.id', $studentClassIds)->exists();
+            $studentClassIds = $user->classes()->where('classes.status', Classroom::STATUS_ACTIVE)->pluck('classes.id');
+            $hasAccess = $course->classes()
+                ->where('classes.status', Classroom::STATUS_ACTIVE)
+                ->whereIn('classes.id', $studentClassIds)
+                ->exists();
 
             if ($hasAccess) {
                 return;
@@ -423,6 +373,7 @@ class CourseController extends Controller
     {
         $query = Course::with('learningProgram')
             ->where('course_type', 'template')
+            ->notArchived()
             ->orderBy('title');
 
         if (auth()->user()->role === 'teacher') {
@@ -457,6 +408,7 @@ class CourseController extends Controller
     private function availableClasses()
     {
         $query = Classroom::with('teacher')->orderBy('name');
+        $query->notArchived();
 
         if (auth()->user()->role === 'teacher') {
             $query->where('teacher_id', auth()->id());
@@ -616,7 +568,7 @@ class CourseController extends Controller
             ->distinct()
             ->pluck('user_id');
         $lessonIds = $course->modules->flatMap->lessons->pluck('id');
-        $assignmentIds = Assignments::where('course_id', $course->id)->pluck('id');
+        $assignmentIds = Assignments::where('course_id', $course->id)->notArchived()->pluck('id');
         $quizIds = $course->quizzes->pluck('id');
 
         $lessonTotal = $lessonIds->count() * $studentIds->count();
@@ -675,6 +627,7 @@ class CourseController extends Controller
             ->values());
 
         $assignmentTodos = collect(Assignments::where('course_id', $course->id)
+            ->notArchived()
             ->visibleToStudents()
             ->orderByRaw('due_date IS NULL')
             ->orderBy('due_date')

@@ -25,8 +25,8 @@ class DashboardController extends Controller
         if ($user->role === 'admin') {
             $data['total_students'] = User::where('role', 'student')->count();
             $data['total_teachers'] = User::where('role', 'teacher')->count();
-            $data['total_classes'] = DB::table('classes')->count();
-            $data['total_courses'] = Course::where('course_type', 'delivery')->count();
+            $data['total_classes'] = DB::table('classes')->where('status', '!=', 'archived')->count();
+            $data['total_courses'] = Course::where('course_type', 'delivery')->notArchived()->count();
             $data['recent_users'] = User::orderBy('created_at', 'desc')->take(7)->get();
             $data['chart_role_labels'] = ['Học sinh', 'Giáo viên', 'Admin'];
             $data['chart_role_data'] = [$data['total_students'], $data['total_teachers'], User::where('role', 'admin')->count()];
@@ -34,17 +34,21 @@ class DashboardController extends Controller
             $data['today_schedules'] = DB::table('schedules')
                 ->join('courses', 'schedules.course_id', '=', 'courses.id')
                 ->join('classes', 'schedules.class_id', '=', 'classes.id')
+                ->where('schedules.status', 'active')
+                ->where('classes.status', '!=', 'archived')
+                ->where('courses.status', '!=', 'archived')
                 ->whereDate('schedules.schedule_date', now()->toDateString())
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
                 ->orderBy('schedules.start_time')
                 ->take(6)
                 ->get();
             $data['class_overview'] = Classroom::withCount('students')
+                ->notArchived()
                 ->with(['teacher', 'courses'])
                 ->orderByDesc('students_count')
                 ->take(5)
                 ->get();
-            $data['recent_courses'] = Course::with('teacher')->where('course_type', 'delivery')->latest()->take(5)->get();
+            $data['recent_courses'] = Course::with('teacher')->where('course_type', 'delivery')->notArchived()->latest()->take(5)->get();
         }
 
         // ==========================================
@@ -53,10 +57,12 @@ class DashboardController extends Controller
         elseif ($user->role === 'teacher') {
             $courseIds = Course::where('teacher_id', $user->id)
                 ->where('course_type', 'delivery')
+                ->notArchived()
                 ->pluck('id');
 
             $data['total_courses'] = $courseIds->count();
             $data['teacher_classes'] = Classroom::where('teacher_id', $user->id)
+                ->notArchived()
                 ->withCount('students')
                 ->with('courses')
                 ->latest()
@@ -70,7 +76,7 @@ class DashboardController extends Controller
             $gradedCount = DB::table('assignment_submissions')->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')->whereIn('assignments.course_id', $courseIds)->whereNotNull('assignment_submissions.grade')->count();
 
             // Tổng học sinh
-            $data['total_students'] = DB::table('class_user')->join('classes', 'class_user.class_id', '=', 'classes.id')->where('classes.teacher_id', $user->id)->distinct('class_user.user_id')->count();
+            $data['total_students'] = DB::table('class_user')->join('classes', 'class_user.class_id', '=', 'classes.id')->where('classes.teacher_id', $user->id)->where('classes.status', '!=', 'archived')->distinct('class_user.user_id')->count();
 
             $data['chart_submission_labels'] = ['Đã chấm', 'Chờ chấm'];
             $data['chart_submission_data'] = [$gradedCount, $data['pending_grades']];
@@ -83,6 +89,9 @@ class DashboardController extends Controller
                 ->join('courses', 'schedules.course_id', '=', 'courses.id')
                 ->join('classes', 'schedules.class_id', '=', 'classes.id')
                 ->where('classes.teacher_id', $user->id)
+                ->where('schedules.status', 'active')
+                ->where('classes.status', '!=', 'archived')
+                ->where('courses.status', '!=', 'archived')
                 ->whereDate('schedules.schedule_date', '>=', $startOfWeek)
                 ->whereDate('schedules.schedule_date', '<=', $endOfWeek)
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
@@ -103,6 +112,7 @@ class DashboardController extends Controller
                     $join->on('grade_summary.user_id', '=', 'users.id');
                 })
                 ->where('classes.teacher_id', $user->id)
+                ->where('classes.status', '!=', 'archived')
                 ->where('users.role', 'student')
                 ->select('users.id', 'users.name', 'users.email', 'classes.id as class_id', 'classes.name as class_name', 'grade_summary.avg_grade')
                 ->orderByRaw('grade_summary.avg_grade IS NULL DESC')
@@ -121,7 +131,8 @@ class DashboardController extends Controller
 
             $courseIds = Course::visibleToStudents()
                 ->whereHas('classes', function ($q) use ($user) {
-                    $q->whereIn('classes.id', $user->classes()->pluck('classes.id'));
+                    $q->where('classes.status', 'active')
+                        ->whereIn('classes.id', $user->classes()->where('classes.status', 'active')->pluck('classes.id'));
                 })
                 ->pluck('id');
 
@@ -280,6 +291,9 @@ class DashboardController extends Controller
                 ->join('class_user', 'classes.id', '=', 'class_user.class_id')
 
                 ->where('class_user.user_id', $user->id)
+                ->where('schedules.status', 'active')
+                ->where('classes.status', 'active')
+                ->where('courses.status', '!=', 'archived')
 
                 ->whereDate('schedules.schedule_date', '>=', $startOfWeek)
 

@@ -726,6 +726,7 @@
                             <option value="published" @selected(($filters['status'] ?? '') === 'published')>Published</option>
                             <option value="draft" @selected(($filters['status'] ?? '') === 'draft')>Draft</option>
                             <option value="hidden" @selected(($filters['status'] ?? '') === 'hidden')>Hidden</option>
+                            <option value="archived" @selected(($filters['status'] ?? '') === 'archived')>Archived</option>
                         </select>
                     </div>
 
