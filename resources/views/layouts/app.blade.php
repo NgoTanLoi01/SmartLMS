@@ -453,6 +453,12 @@
                 </li>
                 @if (Auth::user()->role === 'student')
                     <li>
+                        <a class="nav-link {{ request()->routeIs('students.schedule') ? 'active' : '' }}"
+                            href="{{ route('students.schedule') }}">
+                            <i class="fas fa-calendar-days"></i> Lịch học cá nhân
+                        </a>
+                    </li>
+                    <li>
                         <a class="nav-link {{ request()->routeIs('students.grades') ? 'active' : '' }}"
                             href="{{ route('students.grades') }}">
                             <i class="fas fa-chart-line"></i> Điểm & nhận xét

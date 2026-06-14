@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -35,6 +35,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/system/storage', [StorageHealthController::class, 'index'])->name('system.storage.index');
     Route::post('/system/storage/test', [StorageHealthController::class, 'test'])->name('system.storage.test');
     Route::get('/my-grades', [StudentGradesController::class, 'index'])->name('students.grades');
+    Route::get('/my-schedule', [StudentScheduleController::class, 'index'])->name('students.schedule');
 
     // ==========================================
     // 2.2. QUẢN LÝ NGƯỜI DÙNG TỔNG (ADMIN)
