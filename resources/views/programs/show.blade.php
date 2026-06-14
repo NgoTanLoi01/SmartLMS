@@ -171,14 +171,7 @@
 
     <div class="program-detail-header">
         <div>
-            <nav aria-label="breadcrumb" class="mb-3">
-                <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item">
-                        <a href="{{ route('programs.index') }}" class="text-decoration-none">Chương trình học</a>
-                    </li>
-                    <li class="breadcrumb-item active">{{ $program->name }}</li>
-                </ol>
-            </nav>
+
             <h1 class="program-detail-title">{{ $program->name }}</h1>
             <div class="program-detail-meta">
                 <span class="program-chip"><i class="fas fa-hashtag"></i>{{ $program->code }}</span>

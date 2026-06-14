@@ -451,6 +451,14 @@
                         <i class="fas fa-graduation-cap"></i> Khóa học của tôi
                     </a>
                 </li>
+                @if (Auth::user()->role === 'student')
+                    <li>
+                        <a class="nav-link {{ request()->routeIs('students.grades') ? 'active' : '' }}"
+                            href="{{ route('students.grades') }}">
+                            <i class="fas fa-chart-line"></i> Điểm & nhận xét
+                        </a>
+                    </li>
+                @endif
 
                 {{-- Công cụ hỗ trợ --}}
                 <li>
