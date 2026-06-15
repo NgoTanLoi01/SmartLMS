@@ -25,7 +25,7 @@ class DashboardController extends Controller
         if ($user->role === 'admin') {
             $data['total_students'] = User::where('role', 'student')->count();
             $data['total_teachers'] = User::where('role', 'teacher')->count();
-            $data['total_classes'] = DB::table('classes')->where('status', '!=', 'archived')->count();
+            $data['total_classes'] = DB::table('classes')->where($this->notArchivedColumn('status'))->count();
             $data['total_courses'] = Course::where('course_type', 'delivery')->notArchived()->count();
             $data['recent_users'] = User::orderBy('created_at', 'desc')->take(7)->get();
             $data['chart_role_labels'] = ['Học sinh', 'Giáo viên', 'Admin'];
@@ -34,9 +34,9 @@ class DashboardController extends Controller
             $data['today_schedules'] = DB::table('schedules')
                 ->join('courses', 'schedules.course_id', '=', 'courses.id')
                 ->join('classes', 'schedules.class_id', '=', 'classes.id')
-                ->where('schedules.status', 'active')
-                ->where('classes.status', '!=', 'archived')
-                ->where('courses.status', '!=', 'archived')
+                ->where($this->activeOrLegacyColumn('schedules.status'))
+                ->where($this->notArchivedColumn('classes.status'))
+                ->where($this->notArchivedColumn('courses.status'))
                 ->whereDate('schedules.schedule_date', now()->toDateString())
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
                 ->orderBy('schedules.start_time')
@@ -76,7 +76,12 @@ class DashboardController extends Controller
             $gradedCount = DB::table('assignment_submissions')->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')->whereIn('assignments.course_id', $courseIds)->whereNotNull('assignment_submissions.grade')->count();
 
             // Tổng học sinh
-            $data['total_students'] = DB::table('class_user')->join('classes', 'class_user.class_id', '=', 'classes.id')->where('classes.teacher_id', $user->id)->where('classes.status', '!=', 'archived')->distinct('class_user.user_id')->count();
+            $data['total_students'] = DB::table('class_user')
+                ->join('classes', 'class_user.class_id', '=', 'classes.id')
+                ->where('classes.teacher_id', $user->id)
+                ->where($this->notArchivedColumn('classes.status'))
+                ->distinct('class_user.user_id')
+                ->count();
 
             $data['chart_submission_labels'] = ['Đã chấm', 'Chờ chấm'];
             $data['chart_submission_data'] = [$gradedCount, $data['pending_grades']];
@@ -89,9 +94,9 @@ class DashboardController extends Controller
                 ->join('courses', 'schedules.course_id', '=', 'courses.id')
                 ->join('classes', 'schedules.class_id', '=', 'classes.id')
                 ->where('classes.teacher_id', $user->id)
-                ->where('schedules.status', 'active')
-                ->where('classes.status', '!=', 'archived')
-                ->where('courses.status', '!=', 'archived')
+                ->where($this->activeOrLegacyColumn('schedules.status'))
+                ->where($this->notArchivedColumn('classes.status'))
+                ->where($this->notArchivedColumn('courses.status'))
                 ->whereDate('schedules.schedule_date', '>=', $startOfWeek)
                 ->whereDate('schedules.schedule_date', '<=', $endOfWeek)
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
@@ -112,7 +117,7 @@ class DashboardController extends Controller
                     $join->on('grade_summary.user_id', '=', 'users.id');
                 })
                 ->where('classes.teacher_id', $user->id)
-                ->where('classes.status', '!=', 'archived')
+                ->where($this->notArchivedColumn('classes.status'))
                 ->where('users.role', 'student')
                 ->select('users.id', 'users.name', 'users.email', 'classes.id as class_id', 'classes.name as class_name', 'grade_summary.avg_grade')
                 ->orderByRaw('grade_summary.avg_grade IS NULL DESC')
@@ -291,9 +296,9 @@ class DashboardController extends Controller
                 ->join('class_user', 'classes.id', '=', 'class_user.class_id')
 
                 ->where('class_user.user_id', $user->id)
-                ->where('schedules.status', 'active')
+                ->where($this->activeOrLegacyColumn('schedules.status'))
                 ->where('classes.status', 'active')
-                ->where('courses.status', '!=', 'archived')
+                ->where($this->notArchivedColumn('courses.status'))
 
                 ->whereDate('schedules.schedule_date', '>=', $startOfWeek)
 
@@ -308,5 +313,21 @@ class DashboardController extends Controller
                 ->get();
         }
         return view('dashboard', compact('data'));
+    }
+
+    private function notArchivedColumn(string $column): \Closure
+    {
+        return function ($query) use ($column) {
+            $query->whereNull($column)
+                ->orWhere($column, '!=', 'archived');
+        };
+    }
+
+    private function activeOrLegacyColumn(string $column): \Closure
+    {
+        return function ($query) use ($column) {
+            $query->whereNull($column)
+                ->orWhere($column, 'active');
+        };
     }
 }

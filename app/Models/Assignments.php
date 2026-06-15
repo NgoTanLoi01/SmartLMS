@@ -37,7 +37,10 @@ class Assignments extends Model
 
     public function scopeNotArchived($query)
     {
-        return $query->where('status', '!=', self::STATUS_ARCHIVED);
+        return $query->where(function ($q) {
+            $q->whereNull('status')
+                ->orWhere('status', '!=', self::STATUS_ARCHIVED);
+        });
     }
 
     public function isVisibleToStudents(): bool

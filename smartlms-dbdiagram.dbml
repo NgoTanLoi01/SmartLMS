@@ -1,0 +1,392 @@
+Project SmartLMS {
+database_type: "MySQL + PostgreSQL(pgvector)"
+Note: "Sơ đồ được tổng hợp từ Laravel migrations. Bảng submissions là legacy; luồng hiện tại dùng
+assignment_submissions."
+}
+
+Enum user_role {
+admin
+teacher
+student
+}
+
+Enum publish_status {
+draft
+published
+hidden
+archived
+}
+
+Enum active_status {
+active
+hidden
+archived
+}
+
+Enum course_type {
+delivery
+template
+}
+
+Enum assignment_type {
+file
+essay
+mixed
+}
+
+Enum attendance_column_type {
+attendance
+grade
+note
+}
+
+Enum question_difficulty {
+easy
+medium
+hard
+}
+
+Table users {
+id bigint [pk, increment]
+name varchar
+username varchar [unique, null]
+student_code varchar [null]
+email varchar [unique]
+password varchar
+role user_role [default: "student"]
+is_active boolean [default: true]
+remember_token varchar [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+last_login_at timestamp [null]
+
+Indexes {
+student_code
+}
+}
+
+Table learning_programs {
+id bigint [pk, increment]
+teacher_id bigint [not null]
+name varchar
+code varchar [unique]
+description text [null]
+status varchar [default: "draft"]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table courses {
+id bigint [pk, increment]
+status publish_status [default: "published"]
+published_at timestamp [null]
+available_from timestamp [null]
+title varchar
+description text
+teacher_id bigint [not null]
+learning_program_id bigint [null]
+course_type course_type [default: "delivery"]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table classes {
+id bigint [pk, increment]
+status active_status [default: "active"]
+name varchar
+code varchar [unique]
+teacher_id bigint [not null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table class_user {
+id bigint [pk, increment]
+class_id bigint [not null]
+user_id bigint [not null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table class_course {
+id bigint [pk, increment]
+class_id bigint [not null]
+course_id bigint [not null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table modules {
+id bigint [pk, increment]
+course_id bigint [not null]
+title varchar
+order int [default: 0]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table lessons {
+id bigint [pk, increment]
+status publish_status [default: "published"]
+published_at timestamp [null]
+available_from timestamp [null]
+module_id bigint [not null]
+title varchar
+content text [null]
+video_url varchar [null]
+attachment varchar [null]
+attachment_path varchar [null]
+order int [default: 0]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table lesson_user {
+id bigint [pk, increment]
+user_id bigint [not null]
+lesson_id bigint [not null]
+completed_at timestamp [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+
+Indexes {
+(user_id, lesson_id) [unique]
+}
+}
+
+Table assignments {
+id bigint [pk, increment]
+course_id bigint [not null]
+lesson_id bigint [null]
+type assignment_type [default: "file"]
+title varchar
+instructions text
+grading_rubric longtext [null]
+grading_scale tinyint [default: 10]
+ai_grading_enabled boolean [default: true]
+due_date datetime
+allowed_extensions varchar [default: "pdf,docx,zip,png,jpg,jpeg,html,htm"]
+max_file_size int [default: 5120]
+status publish_status [default: "published"]
+published_at timestamp [null]
+available_from timestamp [null]
+deleted_at timestamp [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table assignment_submissions {
+id bigint [pk, increment]
+assignment_id bigint [not null]
+user_id bigint [not null]
+file_path varchar [null]
+file_disk varchar [default: "public"]
+original_filename varchar [null]
+mime_type varchar [null]
+file_size bigint [null]
+text_answer longtext [null]
+grade decimal(5,2) [null]
+feedback text [null]
+ai_suggested_score decimal(5,2) [null]
+ai_feedback longtext [null]
+ai_rubric_breakdown json [null]
+ai_grading_notes longtext [null]
+ai_analyzed_at timestamp [null]
+submitted_at timestamp [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table submissions {
+id bigint [pk, increment]
+assignment_id bigint [not null]
+student_id bigint [not null]
+file_path varchar
+submitted_at timestamp [null]
+is_final boolean [default: true]
+grade float [null]
+feedback text [null]
+deleted_at timestamp [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+
+Note: "Legacy API/table cũ. Luồng nộp bài hiện tại dùng assignment_submissions."
+
+Indexes {
+(assignment_id, student_id)
+}
+}
+
+Table quizzes {
+id bigint [pk, increment]
+status publish_status [default: "published"]
+published_at timestamp [null]
+available_from timestamp [null]
+course_id bigint [not null]
+title varchar
+time_limit int [default: 30]
+is_random boolean [default: true]
+easy_count int [default: 0]
+medium_count int [default: 0]
+hard_count int [default: 0]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table questions {
+id bigint [pk, increment]
+course_id bigint [null]
+question_bank_id bigint [null]
+question_text text
+difficulty question_difficulty [default: "medium"]
+created_at timestamp [null]
+updated_at timestamp [null]
+
+Note: "questions.quiz_id đã được bỏ để chuyển sang ngân hàng câu hỏi/course."
+}
+
+Table options {
+id bigint [pk, increment]
+question_id bigint [not null]
+option_text text
+is_correct boolean [default: false]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table quiz_attempts {
+id bigint [pk, increment]
+quiz_id bigint [not null]
+user_id bigint [not null]
+score float [null]
+student_answers json [null]
+started_at timestamp [null]
+completed_at timestamp [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table question_banks {
+id bigint [pk, increment]
+name varchar
+description text [null]
+teacher_id bigint [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table course_question_bank {
+id bigint [pk, increment]
+course_id bigint [not null]
+question_bank_id bigint [not null]
+created_at timestamp [null]
+updated_at timestamp [null]
+
+Indexes {
+(course_id, question_bank_id) [unique]
+}
+}
+
+Table attendance_columns {
+id bigint [pk, increment]
+course_id bigint [not null]
+name varchar
+type attendance_column_type
+order int [default: 0]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table attendance_data {
+id bigint [pk, increment]
+attendance_column_id bigint [not null]
+user_id bigint [not null]
+value varchar [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table schedules {
+id bigint [pk, increment]
+status active_status [default: "active"]
+class_id bigint [not null]
+course_id bigint [not null]
+schedule_date date
+start_time time
+end_time time
+room varchar [null]
+note varchar [null]
+created_at timestamp [null]
+updated_at timestamp [null]
+}
+
+Table document_chunks {
+id bigint [pk, increment]
+course_id bigint [null]
+document_name varchar
+content text
+embedding vector [null, note: "PostgreSQL pgvector vector(3072)"]
+created_at timestamp [null]
+updated_at timestamp [null]
+
+Note: "Bảng nằm trên kết nối PostgreSQL, dùng cho RAG/AI."
+}
+
+
+Table sessions {
+id varchar [pk]
+user_id bigint [null]
+ip_address varchar(45) [null]
+user_agent text [null]
+payload longtext
+last_activity int
+
+Indexes {
+user_id
+last_activity
+}
+}
+
+
+
+
+Ref: learning_programs.teacher_id > users.id [delete: cascade]
+Ref: courses.teacher_id > users.id [delete: cascade]
+Ref: courses.learning_program_id > learning_programs.id [delete: set null]
+
+Ref: classes.teacher_id > users.id [delete: cascade]
+Ref: class_user.class_id > classes.id [delete: cascade]
+Ref: class_user.user_id > users.id [delete: cascade]
+Ref: class_course.class_id > classes.id [delete: cascade]
+Ref: class_course.course_id > courses.id [delete: cascade]
+
+Ref: modules.course_id > courses.id [delete: cascade]
+Ref: lessons.module_id > modules.id [delete: cascade]
+Ref: lesson_user.user_id > users.id [delete: cascade]
+Ref: lesson_user.lesson_id > lessons.id [delete: cascade]
+
+Ref: assignments.course_id > courses.id [delete: cascade]
+Ref: assignments.lesson_id > lessons.id [delete: cascade]
+Ref: assignment_submissions.assignment_id > assignments.id [delete: cascade]
+Ref: assignment_submissions.user_id > users.id [delete: cascade]
+Ref: submissions.assignment_id > assignments.id
+Ref: submissions.student_id > users.id
+
+Ref: quizzes.course_id > courses.id [delete: cascade]
+Ref: questions.course_id > courses.id [delete: cascade]
+Ref: questions.question_bank_id > question_banks.id [delete: set null]
+Ref: options.question_id > questions.id [delete: cascade]
+Ref: quiz_attempts.quiz_id > quizzes.id [delete: cascade]
+Ref: quiz_attempts.user_id > users.id [delete: cascade]
+Ref: question_banks.teacher_id > users.id [delete: set null]
+Ref: course_question_bank.course_id > courses.id [delete: cascade]
+Ref: course_question_bank.question_bank_id > question_banks.id [delete: cascade]
+
+Ref: attendance_columns.course_id > courses.id [delete: cascade]
+Ref: attendance_data.attendance_column_id > attendance_columns.id [delete: cascade]
+Ref: attendance_data.user_id > users.id [delete: cascade]
+
+Ref: schedules.class_id > classes.id [delete: cascade]
+Ref: schedules.course_id > courses.id [delete: cascade]
+Ref: document_chunks.course_id > courses.id
+Ref: sessions.user_id > users.id
