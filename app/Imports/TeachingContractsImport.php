@@ -46,8 +46,9 @@ class TeachingContractsImport implements ToCollection
             $status = $this->normalizeStatus($this->cell($row, 'status'));
             $contractLabel = $this->cell($row, 'contract_label');
             $note = $this->cell($row, 'note');
+            $evidenceUrl = $this->extractUrl($contractLabel);
 
-            if ($contractLabel !== '') {
+            if ($contractLabel !== '' && !$evidenceUrl) {
                 $note = trim($note . "\nHợp đồng: " . $contractLabel);
             }
 
@@ -59,6 +60,7 @@ class TeachingContractsImport implements ToCollection
                 'received_amount' => $status === TeachingContract::STATUS_RECEIVED ? $totalAmount : 0,
                 'status' => $status,
                 'received_date' => $this->parseDate($row[$this->headers['received_date']] ?? null),
+                'evidence_url' => $evidenceUrl,
                 'note' => $note !== '' ? $note : null,
             ];
 
@@ -193,5 +195,14 @@ class TeachingContractsImport implements ToCollection
             str_contains($normalized, 'huy') => TeachingContract::STATUS_CANCELLED,
             default => TeachingContract::STATUS_UNPAID,
         };
+    }
+
+    private function extractUrl(string $value): ?string
+    {
+        if (preg_match('/https?:\/\/[^\s\)]+/i', $value, $matches)) {
+            return $matches[0];
+        }
+
+        return filter_var($value, FILTER_VALIDATE_URL) ? $value : null;
     }
 }

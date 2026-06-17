@@ -19,6 +19,7 @@ class TeachingContract extends Model
         'received_amount',
         'status',
         'received_date',
+        'evidence_url',
         'note',
     ];
 

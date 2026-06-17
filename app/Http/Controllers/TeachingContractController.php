@@ -31,6 +31,7 @@ class TeachingContractController extends Controller
             ->when($filters['search'], function ($q, $keyword) {
                 $q->where(function ($sub) use ($keyword) {
                     $sub->where('contract_number', 'like', "%{$keyword}%")
+                        ->orWhere('evidence_url', 'like', "%{$keyword}%")
                         ->orWhere('note', 'like', "%{$keyword}%")
                         ->orWhereHas('teachingRecords', function ($recordQuery) use ($keyword) {
                             $recordQuery->where('subject_name', 'like', "%{$keyword}%")
@@ -171,6 +172,7 @@ class TeachingContractController extends Controller
             'received_amount' => 'nullable|numeric|min:0|max:999999999999|lte:total_amount',
             'status' => 'required|in:' . implode(',', array_keys(TeachingContract::statuses())),
             'received_date' => 'nullable|date',
+            'evidence_url' => 'nullable|url|max:2000',
             'teaching_record_ids' => 'nullable|array',
             'teaching_record_ids.*' => 'exists:teaching_records,id',
             'note' => 'nullable|string|max:2000',
