@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Lesson;
+use Illuminate\Support\Str;
+
 class LessonController extends Controller
 {
     // 1. Cập nhật hàm store (Thêm mới)
@@ -23,7 +25,7 @@ class LessonController extends Controller
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
 
         if ($request->hasFile('attachment')) {
-            $data['attachment'] = $request->file('attachment')->store('lessons/attachments', 'public');
+            $data = array_merge($data, $this->storeAttachment($request));
         }
 
         Lesson::create($data);
@@ -48,11 +50,8 @@ class LessonController extends Controller
         $data['published_at'] = $data['status'] === 'published' ? ($lesson->published_at ?? now()) : null;
 
         if ($request->hasFile('attachment')) {
-            // Xóa file cũ nếu có
-            if ($lesson->attachment) {
-                Storage::disk('public')->delete($lesson->attachment);
-            }
-            $data['attachment'] = $request->file('attachment')->store('lessons/attachments', 'public');
+            $this->deleteAttachment($lesson);
+            $data = array_merge($data, $this->storeAttachment($request));
         } else {
             // ✅ Quan trọng: Không có file mới thì giữ nguyên file cũ
             unset($data['attachment']);
@@ -66,11 +65,28 @@ class LessonController extends Controller
     public function destroy($id)
     {
         $lesson = Lesson::findOrFail($id);
-        if ($lesson->attachment) {
-            Storage::disk('public')->delete($lesson->attachment);
-        }
+        $this->deleteAttachment($lesson);
         $lesson->delete();
         return back()->with('success', 'Đã xóa bài học.');
+    }
+
+    public function downloadAttachment($id)
+    {
+        $lesson = Lesson::with('module.course.classes')->findOrFail($id);
+
+        if (!$lesson->attachment || !$this->canViewLesson($lesson)) {
+            abort(404);
+        }
+
+        $disk = Storage::disk($lesson->attachment_disk ?: 'public');
+        if (!$disk->exists($lesson->attachment)) {
+            abort(404, 'Không tìm thấy file bài giảng.');
+        }
+
+        return $disk->download(
+            $lesson->attachment,
+            $lesson->attachment_original_name ?: basename($lesson->attachment)
+        );
     }
 
     public function toggleComplete($id)
@@ -97,5 +113,62 @@ class LessonController extends Controller
         ]);
 
         return response()->json(['message' => 'Đã đánh dấu hoàn thành bài học!']);
+    }
+
+    private function storeAttachment(Request $request): array
+    {
+        $file = $request->file('attachment');
+        $disk = config('filesystems.lesson_attachment_disk', 'public');
+        $originalName = $file->getClientOriginalName();
+        $extension = $file->getClientOriginalExtension();
+        $safeName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) ?: 'lesson-attachment';
+        $storedName = $safeName . '-' . now()->format('YmdHis') . '-' . Str::random(8) . ($extension ? '.' . $extension : '');
+
+        return [
+            'attachment' => $file->storeAs('lessons/attachments', $storedName, $disk),
+            'attachment_disk' => $disk,
+            'attachment_original_name' => $originalName,
+            'attachment_mime_type' => $file->getClientMimeType(),
+            'attachment_size' => $file->getSize(),
+        ];
+    }
+
+    private function deleteAttachment(Lesson $lesson): void
+    {
+        if ($lesson->attachment) {
+            Storage::disk($lesson->attachment_disk ?: 'public')->delete($lesson->attachment);
+        }
+    }
+
+    private function canViewLesson(Lesson $lesson): bool
+    {
+        $user = auth()->user();
+        $course = $lesson->module?->course;
+
+        if (!$user || !$course) {
+            return false;
+        }
+
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if ($user->role === 'teacher') {
+            return (int) $course->teacher_id === (int) $user->id;
+        }
+
+        if ($user->role === 'student') {
+            $studentClassIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
+
+            return $course->isVisibleToStudents()
+                && $lesson->isVisibleToStudents()
+                && $course->classes
+                    ->where('status', 'active')
+                    ->pluck('id')
+                    ->intersect($studentClassIds)
+                    ->isNotEmpty();
+        }
+
+        return false;
     }
 }

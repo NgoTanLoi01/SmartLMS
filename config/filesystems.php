@@ -17,6 +17,8 @@ return [
 
     'submission_disk' => env('SUBMISSION_FILESYSTEM_DISK', 'public'),
 
+    'lesson_attachment_disk' => env('LESSON_ATTACHMENT_FILESYSTEM_DISK', env('SUBMISSION_FILESYSTEM_DISK', 'public')),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks

@@ -465,13 +465,18 @@ class CourseController extends Controller
             ]);
 
             foreach ($sourceModule->lessons as $sourceLesson) {
+                $copiedAttachment = $this->copyLessonAttachment($sourceLesson);
                 $targetLesson = Lesson::create([
                     'module_id' => $targetModule->id,
                     'title' => $sourceLesson->title,
                     'content' => $sourceLesson->content,
                     'video_url' => $sourceLesson->video_url,
-                    'attachment_path' => $this->copyLessonAttachment($sourceLesson->attachment_path),
-                    'attachment' => $this->copyLessonAttachment($sourceLesson->attachment),
+                    'attachment_path' => $sourceLesson->attachment_path,
+                    'attachment' => $copiedAttachment['attachment'],
+                    'attachment_disk' => $copiedAttachment['attachment_disk'],
+                    'attachment_original_name' => $sourceLesson->attachment_original_name,
+                    'attachment_mime_type' => $sourceLesson->attachment_mime_type,
+                    'attachment_size' => $sourceLesson->attachment_size,
                     'order' => $sourceLesson->order,
                     'status' => $sourceLesson->status,
                     'published_at' => $sourceLesson->published_at,
@@ -546,19 +551,32 @@ class CourseController extends Controller
             });
     }
 
-    private function copyLessonAttachment(?string $path): ?string
+    private function copyLessonAttachment(Lesson $lesson): array
     {
-        if (!$path || !Storage::disk('public')->exists($path)) {
-            return $path;
+        $path = $lesson->attachment;
+        $sourceDisk = $lesson->attachment_disk ?: 'public';
+        $targetDisk = config('filesystems.lesson_attachment_disk', $sourceDisk);
+
+        $result = [
+            'attachment' => $path,
+            'attachment_disk' => $sourceDisk,
+        ];
+
+        if (!$path || !Storage::disk($sourceDisk)->exists($path)) {
+            return $result;
         }
 
         $extension = pathinfo($path, PATHINFO_EXTENSION);
         $filename = Str::uuid() . ($extension ? '.' . $extension : '');
         $targetPath = 'lessons/attachments/' . $filename;
 
-        Storage::disk('public')->copy($path, $targetPath);
+        $contents = Storage::disk($sourceDisk)->get($path);
+        Storage::disk($targetDisk)->put($targetPath, $contents);
 
-        return $targetPath;
+        return [
+            'attachment' => $targetPath,
+            'attachment_disk' => $targetDisk,
+        ];
     }
 
     private function buildCourseDashboard(Course $course): array

@@ -79,8 +79,8 @@
                                     style="min-width:0;" data-id="{{ $lesson->id }}"
                                     data-content="{{ $lesson->content }}" data-title="{{ $lesson->title }}"
                                     data-video="{{ $lesson->video_url }}" data-module="{{ $module->id }}"
-                                    data-attachment="{{ $lesson->attachment ? asset('storage/' . $lesson->attachment) : '' }}"
-                                    data-attachment-name="{{ $lesson->attachment ? basename($lesson->attachment) : '' }}">
+                                    data-attachment="{{ $lesson->attachment ? route('lessons.attachment', $lesson->id) : '' }}"
+                                    data-attachment-name="{{ $lesson->attachment_original_name ?: ($lesson->attachment ? basename($lesson->attachment) : '') }}">
 
                                     {{-- Icon trạng thái --}}
                                     @if ($isCompleted)
