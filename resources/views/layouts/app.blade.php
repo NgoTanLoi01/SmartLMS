@@ -554,6 +554,18 @@
                             <i class="fas fa-calendar-alt"></i> Quản lý lịch học
                         </a>
                     </li>
+                    <li>
+                        <a class="nav-link {{ request()->is('teaching*') ? 'active' : '' }}"
+                            href="{{ route('teaching.index') }}">
+                            <i class="fas fa-briefcase"></i> Giảng dạy
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link {{ request()->is('payments*') ? 'active' : '' }}"
+                            href="{{ route('payments.index') }}">
+                            <i class="fas fa-file-invoice-dollar"></i> Thanh toán
+                        </a>
+                    </li>
                     @if (Auth::user()->role === 'admin')
                         <li>
                             <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
