@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalReportController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -150,6 +150,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('teaching', TeachingRecordController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::post('/payments/import', [TeachingContractController::class, 'import'])->name('payments.import');
     Route::resource('payments', TeachingContractController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('/reports/operations', [OperationalReportController::class, 'index'])->name('reports.operations');
+    Route::get('/reports/operations/export', [OperationalReportController::class, 'exportExcel'])->name('reports.operations.export');
+    Route::get('/reports/operations/print', [OperationalReportController::class, 'print'])->name('reports.operations.print');
 
     Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
     Route::get('/schedules/get-courses/{class_id}', [ScheduleController::class, 'getCoursesByClass']);
