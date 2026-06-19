@@ -29,8 +29,8 @@ class ChatbotController extends Controller
                 return response()->json(['reply' => 'Dữ liệu tin nhắn không hợp lệ.'], 400);
             }
 
-            // GỌI ĐÚNG BIẾN $this->deepseekService
-            $reply = $this->deepseekService->sendMessage($messages);
+            // Chatbot tìm ngữ cảnh theo quyền truy cập khóa học của người dùng hiện tại.
+            $reply = $this->deepseekService->sendMessage($messages, $request->user());
 
             return response()->json([
                 'reply' => $reply,

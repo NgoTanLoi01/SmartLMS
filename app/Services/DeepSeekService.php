@@ -2,24 +2,21 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class DeepSeekService
 {
-    public function sendMessage(array $messages): string
+    public function __construct(private LocalCourseContextSearchService $contextSearch)
+    {
+    }
+
+    public function sendMessage(array $messages, ?User $user = null): string
     {
         try {
-            // Lấy nội dung câu hỏi cuối cùng của học sinh để đi tìm tài liệu liên quan
-            $lastUserMessage = end($messages)['content'];
-
-            $queryVector = $this->getGeminiEmbedding($lastUserMessage);
-            $context = '';
-
-            if ($queryVector) {
-                $context = $this->findSimilarChunks($queryVector);
-            }
+            $lastUserMessage = (string) (end($messages)['content'] ?? '');
+            $context = $this->contextSearch->search($lastUserMessage, $user);
 
             return $this->askDeepSeek($messages, $context);
         } catch (\Exception $e) {
@@ -226,37 +223,17 @@ PROMPT;
         }
     }
 
-    private function getGeminiEmbedding(string $text): ?array
-    {
-        try {
-            $apiKey = env('GOOGLE_API_KEY');
-            $response = Http::timeout(30)
-                ->withoutVerifying()
-                ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$apiKey}", [
-                    'model' => 'models/gemini-embedding-001',
-                    'content' => ['parts' => [['text' => $text]]],
-                ]);
-            return $response->successful() ? $response->json('embedding.values') : null;
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
-
-    private function findSimilarChunks(array $queryVector, int $limit = 3): string
-    {
-        $vectorString = '[' . implode(',', $queryVector) . ']';
-        $results = DB::connection('pgsql')->select('SELECT content FROM document_chunks ORDER BY embedding <=> ?::vector LIMIT ?', [$vectorString, $limit]);
-        return collect($results)->pluck('content')->implode("\n\n---\n\n");
-    }
-
     private function askDeepSeek(array $historyMessages, string $context): string
     {
         $apiKey = config('services.deepseek.key');
         $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
 
-        $systemContent = "Bạn là trợ lý AI học tập của hệ thống SmartLMS. Hãy trả lời thân thiện.\n\n";
+        $systemContent = "Bạn là trợ lý AI học tập của hệ thống SmartLMS. Hãy trả lời bằng tiếng Việt, rõ ràng, thân thiện và ưu tiên nội dung trong khóa học của người dùng.\n";
         if (!empty($context)) {
-            $systemContent .= "Dựa vào dữ liệu của hệ thống SmartLMS để trả lời:\n" . $context;
+            $systemContent .= "Dữ liệu tìm thấy từ bài học và file bài giảng trong SmartLMS:\n" . $context . "\n\n";
+            $systemContent .= "Quy tắc: chỉ dùng dữ liệu trên làm nguồn chính; nếu cần suy luận thêm, hãy nói rõ đó là phần giải thích thêm.";
+        } else {
+            $systemContent .= "Hiện không tìm thấy nội dung liên quan trong khóa học/bài giảng của người dùng. Nếu câu hỏi cần dữ liệu khóa học, hãy nói rằng chưa tìm thấy tài liệu phù hợp và gợi ý người dùng hỏi rõ hơn hoặc kiểm tra bài học liên quan.";
         }
 
         // Tạo danh sách tin nhắn cho API DeepSeek
