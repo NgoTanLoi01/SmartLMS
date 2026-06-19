@@ -301,7 +301,7 @@
                                         <div class="text-muted small">{{ $assignment?->due_date ? 'Hạn: ' . $assignment->due_date->format('d/m/Y H:i') : 'Không có hạn nộp' }}</div>
                                     </td>
                                     <td>{{ $assignment?->course?->title ?? '—' }}</td>
-                                    <td>{{ $submission->submitted_at?->format('d/m/Y H:i') ?? '—' }}</td>
+                                    <td>{{ $submission->formatSubmittedAt('d/m/Y H:i:s') ?? '—' }}</td>
                                     <td>
                                         @if ($submission->grade !== null)
                                             <span class="score-pill">{{ rtrim(rtrim(number_format((float) $submission->grade, 1), '0'), '.') }}<span>/{{ $scale }}</span></span>

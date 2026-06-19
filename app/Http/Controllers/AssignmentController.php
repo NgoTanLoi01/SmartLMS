@@ -140,7 +140,7 @@ class AssignmentController extends Controller
             'student' => [
                 'name' => $submission->user?->name,
                 'email' => $submission->user?->email,
-                'submitted_at' => $submission->submitted_at?->format('d/m/Y H:i'),
+                'submitted_at' => $submission->formatSubmittedAt('d/m/Y H:i:s'),
             ],
             'submission' => [
                 'text_answer' => $submission->text_answer,
@@ -216,7 +216,7 @@ class AssignmentController extends Controller
             return [
                 'student_name' => $student->name,
                 'student_email' => $student->email,
-                'submitted_at' => $submission ? $submission->submitted_at->format('d/m/Y H:i') : null,
+                'submitted_at' => $submission ? $submission->formatSubmittedAt('d/m/Y H:i:s') : null,
                 'file_url' => $submission ? $this->submissionFileUrl($submission) : null,
                 'text_answer' => $submission ? $submission->text_answer : null,
                 'grade' => $submission ? $submission->grade : null,

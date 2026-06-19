@@ -663,7 +663,7 @@ class ClassManagementController extends Controller
                     'title' => $assignment?->title ?? 'Bài tập',
                     'course' => $courses->get($assignment?->course_id)?->title ?? 'Chưa rõ khóa học',
                     'score' => round((float) $submission->grade, 1),
-                    'date' => optional($submission->submitted_at)->format('Y-m-d H:i'),
+                    'date' => $submission->formatSubmittedAt('Y-m-d H:i:s'),
                 ];
             })
             ->values();

@@ -161,7 +161,7 @@
                                         data-grade="{{ $submission->grade ?? '' }}"
                                         data-feedback="{{ $submission->feedback ?? '' }}"
                                         data-sub-id="{{ $submission ? $submission->id : '' }}"
-                                        data-sub-time="{{ $submission ? $submission->submitted_at->format('H:i - d/m/Y') : '' }}"
+                                        data-sub-time="{{ $submission ? $submission->formatSubmittedAt('H:i:s - d/m/Y') : '' }}"
                                         data-sub-file="{{ $submission && $submission->file_path ? route('assignments.submissions.file', $submission->id) : '' }}"
                                         data-text-answer='@json($submission?->text_answer ?? "")'>
                                         <i

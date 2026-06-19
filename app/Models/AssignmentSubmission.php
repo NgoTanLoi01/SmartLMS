@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class AssignmentSubmission extends Model
 {
+    private const DISPLAY_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
     protected $fillable = ['assignment_id', 'user_id', 'file_path', 'file_disk', 'original_filename', 'mime_type', 'file_size', 'text_answer', 'grade', 'feedback', 'ai_suggested_score', 'ai_feedback', 'ai_rubric_breakdown', 'ai_grading_notes', 'ai_analyzed_at', 'submitted_at'];
 
     protected $casts = [
@@ -18,6 +20,16 @@ class AssignmentSubmission extends Model
     public function assignment()
     {
         return $this->belongsTo(Assignments::class, 'assignment_id');
+    }
+
+    public function submittedAtLocal()
+    {
+        return $this->submitted_at?->copy()->timezone(self::DISPLAY_TIMEZONE);
+    }
+
+    public function formatSubmittedAt(string $format = 'd/m/Y H:i:s'): ?string
+    {
+        return $this->submittedAtLocal()?->format($format);
     }
 
     public function user()

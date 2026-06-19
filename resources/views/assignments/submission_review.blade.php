@@ -798,7 +798,7 @@
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <div class="submit-meta">
                                     <i class="fas fa-clock"></i>
-                                    Nộp lúc {{ $submission->submitted_at?->format('H:i · d/m/Y') ?? '---' }}
+                                    Nộp lúc {{ $submission->formatSubmittedAt('H:i:s · d/m/Y') ?? '---' }}
                                 </div>
                                 @if ($fileUrl)
                                     <a href="{{ $fileUrl }}" target="_blank" class="bdg bdg--primary"
