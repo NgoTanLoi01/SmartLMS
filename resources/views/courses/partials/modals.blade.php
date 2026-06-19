@@ -497,6 +497,7 @@
                             <option value="published">Published - mở cho học sinh</option>
                             <option value="draft">Draft - bản nháp</option>
                             <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                            <option value="archived">Archived - lưu trữ</option>
                         </select>
                     </div>
                     <div class="cm-field">
@@ -573,6 +574,7 @@
                             <option value="published">Published - mở cho học sinh</option>
                             <option value="draft">Draft - bản nháp</option>
                             <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                            <option value="archived">Archived - lưu trữ</option>
                         </select>
                     </div>
                     <div class="cm-field">
@@ -654,6 +656,7 @@
                             <option value="published">Published - mở cho học sinh</option>
                             <option value="draft">Draft - bản nháp</option>
                             <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                            <option value="archived">Archived - lưu trữ</option>
                             <option value="archived">Archived - lưu trữ</option>
                         </select>
                     </div>

@@ -39,7 +39,11 @@ class TeachingRecordController extends Controller
             })
             ->when($filters['center_name'], fn ($q, $center) => $q->where('center_name', $center))
             ->when($filters['term_code'], fn ($q, $term) => $q->where('term_code', $term))
-            ->when($filters['status'], fn ($q, $status) => $q->where('status', $status))
+            ->when(
+                $filters['status'],
+                fn ($q, $status) => $q->where('status', $status),
+                fn ($q) => $q->notArchived()
+            )
             ->when($filters['from_date'], fn ($q, $date) => $q->whereDate('start_date', '>=', $date))
             ->when($filters['to_date'], fn ($q, $date) => $q->whereDate('start_date', '<=', $date));
 
@@ -49,7 +53,8 @@ class TeachingRecordController extends Controller
             ->withQueryString();
 
         $scopeQuery = TeachingRecord::query()
-            ->when($user->role === 'teacher', fn ($q) => $q->where('teacher_id', $user->id));
+            ->when($user->role === 'teacher', fn ($q) => $q->where('teacher_id', $user->id))
+            ->notArchived();
 
         $stats = [
             'total_subjects' => (clone $scopeQuery)->count(),
@@ -133,9 +138,9 @@ class TeachingRecordController extends Controller
     public function destroy(TeachingRecord $teaching)
     {
         $this->authorizeRecord($teaching);
-        $teaching->delete();
+        $teaching->update(['status' => TeachingRecord::STATUS_ARCHIVED]);
 
-        return back()->with('success', 'Đã xóa dòng giảng dạy.');
+        return back()->with('success', 'Đã lưu trữ dòng giảng dạy. Dữ liệu liên kết vẫn được giữ lại.');
     }
 
     public function import(Request $request)

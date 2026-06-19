@@ -437,6 +437,7 @@ class CourseController extends Controller
                 'course_id' => $targetCourse->id,
                 'title' => $sourceModule->title,
                 'order' => $sourceModule->order,
+                'status' => $sourceModule->status ?? Module::STATUS_PUBLISHED,
             ]);
 
             foreach ($sourceModule->lessons as $sourceLesson) {
@@ -506,6 +507,7 @@ class CourseController extends Controller
     private function cloneCourseSpecificQuestions(Course $sourceCourse, Course $targetCourse): void
     {
         Question::with('options')
+            ->notArchived()
             ->where('course_id', $sourceCourse->id)
             ->whereNull('question_bank_id')
             ->get()
@@ -515,6 +517,7 @@ class CourseController extends Controller
                     'question_bank_id' => null,
                     'question_text' => $sourceQuestion->question_text,
                     'difficulty' => $sourceQuestion->difficulty,
+                    'status' => $sourceQuestion->status ?? Question::STATUS_PUBLISHED,
                 ]);
 
                 foreach ($sourceQuestion->options as $sourceOption) {

@@ -48,6 +48,7 @@ class QuestionImport implements ToCollection, WithStartRow
                 'question_bank_id' => $this->questionBankId,
                 'difficulty' => $difficulty,
                 'question_text' => $questionText,
+                'status' => Question::STATUS_PUBLISHED,
             ]);
 
             // Cột 2, 3, 4, 5: Đáp án A, B, C, D (Nếu trống thì gán mặc định)

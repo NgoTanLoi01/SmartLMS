@@ -67,7 +67,7 @@ class OperationalReportController extends Controller
             ->get();
 
         $contractQuery = TeachingContract::with(['teacher', 'teachingRecords'])
-            ->where('status', '!=', TeachingContract::STATUS_CANCELLED)
+            ->notArchived()
             ->when($teacherId, fn ($q) => $q->where('teacher_id', $teacherId))
             ->when($filters['center_name'], function ($q, $center) {
                 $q->whereHas('teachingRecords', fn ($recordQuery) => $recordQuery->where('center_name', $center));

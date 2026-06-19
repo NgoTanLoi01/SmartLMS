@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Module;
+use App\Models\Assignments;
+use App\Models\Lesson;
 use Illuminate\Http\Request;
 
 class ModuleController extends Controller
@@ -17,7 +19,8 @@ class ModuleController extends Controller
         Module::create([
             'course_id' => $request->course_id,
             'title' => $request->title,
-            'order' => Module::where('course_id', $request->course_id)->count() + 1,
+            'order' => Module::where('course_id', $request->course_id)->notArchived()->count() + 1,
+            'status' => Module::STATUS_PUBLISHED,
         ]);
 
         return back()->with('success', 'Đã thêm chương mới thành công!');
@@ -31,7 +34,19 @@ class ModuleController extends Controller
 
     public function destroy($id)
     {
-        Module::findOrFail($id)->delete();
-        return back()->with('success', 'Đã xóa chương và các bài học liên quan!');
+        $module = Module::with('lessons')->findOrFail($id);
+        $lessonIds = Lesson::where('module_id', $module->id)->pluck('id');
+
+        $module->update(['status' => Module::STATUS_ARCHIVED]);
+        Lesson::whereIn('id', $lessonIds)->update([
+            'status' => Lesson::STATUS_ARCHIVED,
+            'published_at' => null,
+        ]);
+        Assignments::whereIn('lesson_id', $lessonIds)->update([
+            'status' => Assignments::STATUS_ARCHIVED,
+            'published_at' => null,
+        ]);
+
+        return back()->with('success', 'Đã lưu trữ chương. Bài học và bài tập liên quan vẫn được giữ lại.');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Assignments;
 use App\Models\Lesson;
 use Illuminate\Support\Str;
 
@@ -18,7 +19,7 @@ class LessonController extends Controller
             'video_url' => 'nullable|url',
             'module_id' => 'required|exists:modules,id',
             'attachment' => 'nullable|file|max:20480', // Max 20MB
-            'status' => 'nullable|in:draft,published,hidden',
+            'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
         $data['status'] = $data['status'] ?? 'published';
@@ -43,7 +44,7 @@ class LessonController extends Controller
             'video_url' => 'nullable|url',
             'module_id' => 'required|exists:modules,id',
             'attachment' => 'nullable|file|max:20480',
-            'status' => 'nullable|in:draft,published,hidden',
+            'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
         $data['status'] = $data['status'] ?? $lesson->status;
@@ -61,13 +62,19 @@ class LessonController extends Controller
         return back()->with('success', 'Đã cập nhật bài học.');
     }
 
-    // 3. (Tùy chọn) Cập nhật hàm destroy để xóa file khi xóa bài học
     public function destroy($id)
     {
         $lesson = Lesson::findOrFail($id);
-        $this->deleteAttachment($lesson);
-        $lesson->delete();
-        return back()->with('success', 'Đã xóa bài học.');
+        $lesson->update([
+            'status' => Lesson::STATUS_ARCHIVED,
+            'published_at' => null,
+        ]);
+        Assignments::where('lesson_id', $lesson->id)->update([
+            'status' => Assignments::STATUS_ARCHIVED,
+            'published_at' => null,
+        ]);
+
+        return back()->with('success', 'Đã lưu trữ bài học. File bài giảng, bài tập và dữ liệu học tập vẫn được giữ lại.');
     }
 
     public function downloadAttachment($id)

@@ -28,18 +28,22 @@ class Assignments extends Model
 
     public function scopeVisibleToStudents($query)
     {
-        return $query->where('status', self::STATUS_PUBLISHED)
-            ->where(function ($q) {
-                $q->whereNull('available_from')
-                    ->orWhere('available_from', '<=', now());
+        $table = $query->getModel()->getTable();
+
+        return $query->where("{$table}.status", self::STATUS_PUBLISHED)
+            ->where(function ($q) use ($table) {
+                $q->whereNull("{$table}.available_from")
+                    ->orWhere("{$table}.available_from", '<=', now());
             });
     }
 
     public function scopeNotArchived($query)
     {
-        return $query->where(function ($q) {
-            $q->whereNull('status')
-                ->orWhere('status', '!=', self::STATUS_ARCHIVED);
+        $statusColumn = $query->getModel()->getTable() . '.status';
+
+        return $query->where(function ($q) use ($statusColumn) {
+            $q->whereNull($statusColumn)
+                ->orWhere($statusColumn, '!=', self::STATUS_ARCHIVED);
         });
     }
 

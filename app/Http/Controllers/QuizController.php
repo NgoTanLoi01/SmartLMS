@@ -17,7 +17,7 @@ class QuizController extends Controller
             'easy_count' => 'required|integer|min:0',
             'medium_count' => 'required|integer|min:0',
             'hard_count' => 'required|integer|min:0',
-            'status' => 'nullable|in:draft,published,hidden',
+            'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
 
@@ -50,6 +50,7 @@ class QuizController extends Controller
         if ($quiz->is_random) {
             $bankIds = $quiz->course->questionBanks()->pluck('question_banks.id');
             $pick = fn ($difficulty, $limit) => Question::with('options')
+                ->notArchived()
                 ->where(function ($q) use ($quiz, $bankIds) {
                     if ($bankIds->isNotEmpty()) {
                         $q->whereIn('question_bank_id', $bankIds);
@@ -88,8 +89,12 @@ class QuizController extends Controller
 
     public function destroy($id)
     {
-        Quiz::findOrFail($id)->delete();
-        return back()->with('success', 'Đã xóa bài kiểm tra thành công!');
+        Quiz::findOrFail($id)->update([
+            'status' => Quiz::STATUS_ARCHIVED,
+            'published_at' => null,
+        ]);
+
+        return back()->with('success', 'Đã lưu trữ bài kiểm tra. Lịch sử làm bài và điểm số vẫn được giữ lại.');
     }
 
     public function submissions($id)

@@ -10,6 +10,7 @@ class TeachingContract extends Model
     public const STATUS_PARTIAL = 'partial';
     public const STATUS_RECEIVED = 'received';
     public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
         'teacher_id',
@@ -37,7 +38,18 @@ class TeachingContract extends Model
             self::STATUS_PARTIAL => 'Nhận một phần',
             self::STATUS_RECEIVED => 'Đã nhận',
             self::STATUS_CANCELLED => 'Đã hủy',
+            self::STATUS_ARCHIVED => 'Đã lưu trữ',
         ];
+    }
+
+    public function scopeNotArchived($query)
+    {
+        $statusColumn = $query->getModel()->getTable() . '.status';
+
+        return $query->where(function ($q) use ($statusColumn) {
+            $q->whereNull($statusColumn)
+                ->orWhereNotIn($statusColumn, [self::STATUS_CANCELLED, self::STATUS_ARCHIVED]);
+        });
     }
 
     public function teacher()

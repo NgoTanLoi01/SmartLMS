@@ -40,7 +40,11 @@ class TeachingContractController extends Controller
                         });
                 });
             })
-            ->when($filters['status'], fn ($q, $status) => $q->where('status', $status))
+            ->when(
+                $filters['status'],
+                fn ($q, $status) => $q->where('status', $status),
+                fn ($q) => $q->notArchived()
+            )
             ->when($filters['from_date'], fn ($q, $date) => $q->whereDate('signed_date', '>=', $date))
             ->when($filters['to_date'], fn ($q, $date) => $q->whereDate('signed_date', '<=', $date));
 
@@ -51,7 +55,7 @@ class TeachingContractController extends Controller
 
         $scopeQuery = TeachingContract::query()
             ->when($user->role === 'teacher', fn ($q) => $q->where('teacher_id', $user->id))
-            ->where('status', '!=', TeachingContract::STATUS_CANCELLED);
+            ->notArchived();
 
         $totalAmount = (float) (clone $scopeQuery)->sum('total_amount');
         $receivedAmount = (float) (clone $scopeQuery)->sum('received_amount');
@@ -119,9 +123,9 @@ class TeachingContractController extends Controller
     public function destroy(TeachingContract $payment)
     {
         $this->authorizeContract($payment);
-        $payment->delete();
+        $payment->update(['status' => TeachingContract::STATUS_ARCHIVED]);
 
-        return back()->with('success', 'Đã xóa hợp đồng thanh toán.');
+        return back()->with('success', 'Đã lưu trữ hợp đồng thanh toán. Dữ liệu liên kết vẫn được giữ lại.');
     }
 
     public function import(Request $request)

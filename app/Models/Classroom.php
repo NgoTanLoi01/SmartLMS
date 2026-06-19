@@ -15,15 +15,17 @@ class Classroom extends Model
 
     public function scopeNotArchived($query)
     {
-        return $query->where(function ($q) {
-            $q->whereNull('status')
-                ->orWhere('status', '!=', self::STATUS_ARCHIVED);
+        $statusColumn = $query->getModel()->getTable() . '.status';
+
+        return $query->where(function ($q) use ($statusColumn) {
+            $q->whereNull($statusColumn)
+                ->orWhere($statusColumn, '!=', self::STATUS_ARCHIVED);
         });
     }
 
     public function scopeVisible($query)
     {
-        return $query->where('status', self::STATUS_ACTIVE);
+        return $query->where($query->getModel()->getTable() . '.status', self::STATUS_ACTIVE);
     }
 
     // Một lớp thuộc về một giáo viên

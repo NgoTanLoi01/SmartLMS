@@ -35,14 +35,14 @@ class OperationalDashboardController extends Controller
 
         $teachingBaseQuery = TeachingRecord::query()
             ->when($teacherId, fn ($q) => $q->where('teacher_id', $teacherId))
-            ->where('status', '!=', TeachingRecord::STATUS_CANCELLED);
+            ->notArchived();
 
         $teachingMonthQuery = (clone $teachingBaseQuery)
             ->whereBetween('start_date', [$periodStart->toDateString(), $periodEnd->toDateString()]);
 
         $contractBaseQuery = TeachingContract::query()
             ->when($teacherId, fn ($q) => $q->where('teacher_id', $teacherId))
-            ->where('status', '!=', TeachingContract::STATUS_CANCELLED);
+            ->notArchived();
 
         $receivedMonthQuery = (clone $contractBaseQuery)
             ->whereIn('status', [TeachingContract::STATUS_RECEIVED, TeachingContract::STATUS_PARTIAL])

@@ -10,6 +10,7 @@ class TeachingRecord extends Model
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_PAUSED = 'paused';
     public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
         'teacher_id',
@@ -39,7 +40,18 @@ class TeachingRecord extends Model
             self::STATUS_COMPLETED => 'Đã hoàn thành',
             self::STATUS_PAUSED => 'Tạm hoãn',
             self::STATUS_CANCELLED => 'Đã hủy',
+            self::STATUS_ARCHIVED => 'Đã lưu trữ',
         ];
+    }
+
+    public function scopeNotArchived($query)
+    {
+        $statusColumn = $query->getModel()->getTable() . '.status';
+
+        return $query->where(function ($q) use ($statusColumn) {
+            $q->whereNull($statusColumn)
+                ->orWhereNotIn($statusColumn, [self::STATUS_CANCELLED, self::STATUS_ARCHIVED]);
+        });
     }
 
     public function teacher()

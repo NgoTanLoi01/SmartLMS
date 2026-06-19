@@ -21,19 +21,23 @@ class Course extends Model
 
     public function scopeVisibleToStudents($query)
     {
-        return $query->where('course_type', 'delivery')
-            ->where('status', self::STATUS_PUBLISHED)
-            ->where(function ($q) {
-                $q->whereNull('available_from')
-                    ->orWhere('available_from', '<=', now());
+        $table = $query->getModel()->getTable();
+
+        return $query->where("{$table}.course_type", 'delivery')
+            ->where("{$table}.status", self::STATUS_PUBLISHED)
+            ->where(function ($q) use ($table) {
+                $q->whereNull("{$table}.available_from")
+                    ->orWhere("{$table}.available_from", '<=', now());
             });
     }
 
     public function scopeNotArchived($query)
     {
-        return $query->where(function ($q) {
-            $q->whereNull('status')
-                ->orWhere('status', '!=', self::STATUS_ARCHIVED);
+        $statusColumn = $query->getModel()->getTable() . '.status';
+
+        return $query->where(function ($q) use ($statusColumn) {
+            $q->whereNull($statusColumn)
+                ->orWhere($statusColumn, '!=', self::STATUS_ARCHIVED);
         });
     }
 
@@ -51,12 +55,12 @@ class Course extends Model
 
     public function modules()
     {
-        return $this->hasMany(Module::class)->orderBy('order');
+        return $this->hasMany(Module::class)->notArchived()->orderBy('order');
     }
 
     public function assignments()
     {
-        return $this->hasMany(Assignments::class);
+        return $this->hasMany(Assignments::class)->notArchived();
     }
 
     public function teacher()
@@ -75,7 +79,7 @@ class Course extends Model
     }
     public function quizzes()
     {
-        return $this->hasMany(Quiz::class);
+        return $this->hasMany(Quiz::class)->notArchived();
     }
 
     public function questionBanks()

@@ -715,7 +715,7 @@
                                         style="display:inline;">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="action-btn danger"
-                                            onclick="return confirm('Xóa câu hỏi này ra khỏi ngân hàng?')" title="Xóa">
+                                            onclick="return confirm('Lưu trữ câu hỏi này? Đáp án và dữ liệu liên quan vẫn được giữ lại.')" title="Lưu trữ">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>

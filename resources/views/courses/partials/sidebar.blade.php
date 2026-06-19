@@ -40,7 +40,7 @@
                         <form action="{{ route('modules.destroy', $module->id) }}" method="POST" class="d-inline mb-0">
                             @csrf @method('DELETE')
                             <button type="submit" class="btn-action btn-delete border-0 bg-transparent"
-                                onclick="return confirm('Xóa chương này?')">
+                                onclick="return confirm('Lưu trữ chương này? Bài học và bài tập liên quan sẽ được ẩn nhưng dữ liệu vẫn được giữ lại.')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>
@@ -131,7 +131,7 @@
                                             class="d-inline mb-0">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn-action btn-delete border-0 bg-transparent"
-                                                onclick="return confirm('Xóa bài này?')">
+                                                onclick="return confirm('Lưu trữ bài học này? File bài giảng, bài tập và dữ liệu học tập vẫn được giữ lại.')">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </form>
@@ -310,7 +310,7 @@
                                             @csrf @method('DELETE')
                                             <button type="submit"
                                                 class="btn-action btn-delete border-0 bg-transparent"
-                                                onclick="return confirm('Xóa bài kiểm tra này?')">
+                                                onclick="return confirm('Lưu trữ bài kiểm tra này? Lịch sử làm bài và điểm số vẫn được giữ lại.')">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

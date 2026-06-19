@@ -24,7 +24,8 @@ class QuestionController extends Controller
         if ($user->role === 'admin') {
             $courses = Course::with('questionBanks')->get();
             $questionBanks = QuestionBank::with(['teacher', 'courses'])->latest()->get();
-            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options']);
+            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options'])
+                ->notArchived();
         } else {
             $courses = Course::with('questionBanks')->where('teacher_id', $user->id)->get();
             $courseIds = $courses->pluck('id');
@@ -36,6 +37,7 @@ class QuestionController extends Controller
                 ->latest()
                 ->get();
             $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options'])
+                ->notArchived()
                 ->whereIn('question_bank_id', $questionBanks->pluck('id'));
         }
 
@@ -126,6 +128,7 @@ class QuestionController extends Controller
             'question_bank_id' => $bank->id,
             'difficulty' => $request->difficulty,
             'question_text' => $request->question_text,
+            'status' => Question::STATUS_PUBLISHED,
         ]);
 
         foreach ($request->options as $index => $optionText) {
@@ -196,9 +199,9 @@ class QuestionController extends Controller
 
         $this->authorizeQuestionAccess($question);
 
-        $question->delete();
+        $question->update(['status' => Question::STATUS_ARCHIVED]);
 
-        return back()->with('success', 'Đã xóa câu hỏi khỏi Ngân hàng!');
+        return back()->with('success', 'Đã lưu trữ câu hỏi. Đáp án và dữ liệu liên quan vẫn được giữ lại!');
     }
     // ==========================================
     // 5. IMPORT CÂU HỎI TỪ FILE EXCEL
@@ -380,6 +383,7 @@ class QuestionController extends Controller
                 'question_bank_id' => $bank->id,
                 'difficulty' => $dbDifficulty,
                 'question_text' => $q['question'],
+                'status' => Question::STATUS_PUBLISHED,
             ]);
 
             foreach ($q['options'] as $index => $optionText) {
