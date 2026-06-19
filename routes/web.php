@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -35,6 +35,9 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/system/storage', [StorageHealthController::class, 'index'])->name('system.storage.index');
         Route::post('/system/storage/test', [StorageHealthController::class, 'test'])->name('system.storage.test');
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::delete('/audit-logs', [AuditLogController::class, 'bulkDestroy'])->name('audit-logs.bulk-destroy');
+        Route::delete('/audit-logs/{auditLog}', [AuditLogController::class, 'destroy'])->name('audit-logs.destroy');
     });
     Route::middleware('role:student')->group(function () {
         Route::get('/my-grades', [StudentGradesController::class, 'index'])->name('students.grades');

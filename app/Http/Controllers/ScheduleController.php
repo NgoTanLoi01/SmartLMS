@@ -7,6 +7,7 @@ use App\Models\Schedule;
 use App\Models\Course;
 use App\Models\Classroom;
 use App\Imports\ScheduleImport;
+use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -173,6 +174,21 @@ class ScheduleController extends Controller
             }
         });
 
+        AuditLogger::log(
+            AuditLogger::SCHEDULE_COPIED,
+            null,
+            null,
+            [
+                'copied_count' => $copied,
+                'skipped_count' => $skipped,
+            ],
+            [
+                'source_date' => $validated['source_date'],
+                'target_date' => $validated['target_date'],
+            ],
+            'Sao chép lịch học sang ngày mới.'
+        );
+
         if ($copied === 0) {
             return back()->with('error', "Tất cả lịch trong ngày đích đã tồn tại, không có buổi học mới được sao chép.");
         }
@@ -247,6 +263,25 @@ class ScheduleController extends Controller
                 $message .= ' Môn chưa khớp: ' . $unmatchedSubjects->implode(', ') . '.';
             }
 
+            AuditLogger::log(
+                AuditLogger::SCHEDULE_IMPORTED,
+                null,
+                null,
+                [
+                    'imported_count' => $import->importedCount,
+                    'duplicate_count' => $import->duplicateCount,
+                    'invalid_count' => $import->invalidCount,
+                    'unmatched_classes' => collect($import->unmatchedClasses)->unique()->values()->all(),
+                    'unmatched_subjects' => collect($import->unmatchedSubjects)->unique()->values()->all(),
+                ],
+                [
+                    'file_name' => $request->file('file')->getClientOriginalName(),
+                    'import_class_id' => $validated['import_class_id'] ?? null,
+                    'default_course_id' => $validated['default_course_id'] ?? null,
+                ],
+                'Import lịch học từ Excel.'
+            );
+
             return back()->with($import->importedCount > 0 ? 'success' : 'error', $message);
         } catch (\Exception $e) {
             return back()->with('error', 'Có lỗi khi nhập lịch: ' . $e->getMessage());
@@ -266,16 +301,45 @@ class ScheduleController extends Controller
         ]);
 
         $schedule = Schedule::findOrFail($id);
+        $oldValues = AuditLogger::snapshot($schedule);
         $this->clearCourseExamNoteIfNeeded($request, $schedule->id);
         $schedule->update(array_merge($request->all(), [
             'status' => $request->input('status', $schedule->status ?? Schedule::STATUS_ACTIVE),
         ]));
+
+        AuditLogger::log(
+            AuditLogger::SCHEDULE_UPDATED,
+            $schedule,
+            $oldValues,
+            AuditLogger::snapshot($schedule->fresh()),
+            [
+                'class_id' => $schedule->class_id,
+                'course_id' => $schedule->course_id,
+            ],
+            'Cập nhật lịch học.'
+        );
+
         return response()->json(['status' => 'success', 'message' => 'Đã cập nhật lịch!']);
     }
 
     public function destroy($id)
     {
-        Schedule::findOrFail($id)->update(['status' => Schedule::STATUS_ARCHIVED]);
+        $schedule = Schedule::findOrFail($id);
+        $oldValues = AuditLogger::snapshot($schedule);
+        $schedule->update(['status' => Schedule::STATUS_ARCHIVED]);
+
+        AuditLogger::log(
+            AuditLogger::SCHEDULE_ARCHIVED,
+            $schedule,
+            $oldValues,
+            AuditLogger::snapshot($schedule->fresh()),
+            [
+                'class_id' => $schedule->class_id,
+                'course_id' => $schedule->course_id,
+            ],
+            'Lưu trữ lịch học.'
+        );
+
         return response()->json(['status' => 'success', 'message' => 'Đã lưu trữ lịch học!']);
     }
 

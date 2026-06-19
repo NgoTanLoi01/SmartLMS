@@ -591,6 +591,12 @@
                                 <i class="fas fa-cloud"></i> Kiểm tra lưu trữ
                             </a>
                         </li>
+                        <li>
+                            <a class="nav-link {{ request()->is('audit-logs*') ? 'active' : '' }}"
+                                href="{{ route('audit-logs.index') }}">
+                                <i class="fas fa-shield-halved"></i> Audit log
+                            </a>
+                        </li>
                     @endif
                 @endif
             </ul>

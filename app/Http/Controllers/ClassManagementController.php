@@ -13,6 +13,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
+use App\Services\AuditLogger;
 use App\Services\DeepSeekService;
 use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
@@ -209,6 +210,25 @@ class ClassManagementController extends Controller
 
         $result = $deepSeekService->analyzeLearning($payload);
 
+        AuditLogger::log(
+            AuditLogger::AI_LEARNING_ANALYZED,
+            $classroom,
+            null,
+            [
+                'success' => (bool) ($result['success'] ?? false),
+                'scope' => $payload['scope'],
+                'students_count' => count($payload['students']),
+                'courses_count' => count($payload['courses']),
+            ],
+            [
+                'class_id' => $classroom->id,
+                'class_name' => $classroom->name,
+                'course_ids' => $courseIds,
+                'student_id' => $request->input('student_id'),
+            ],
+            'AI phân tích tình hình học tập.'
+        );
+
         return response()->json($result, $result['success'] ? 200 : 422);
     }
 
@@ -352,8 +372,28 @@ class ClassManagementController extends Controller
         ]);
 
         try {
+            $import = new StudentImport($classId);
             // Gọi thư viện Excel để đọc file và chạy file StudentImport
-            Excel::import(new StudentImport($classId), $request->file('file'));
+            Excel::import($import, $request->file('file'));
+
+            AuditLogger::log(
+                AuditLogger::STUDENTS_IMPORTED,
+                $classroom,
+                null,
+                [
+                    'rows_processed' => $import->processedCount,
+                    'created_users' => $import->createdCount,
+                    'updated_users' => $import->updatedCount,
+                    'synced_students' => $import->syncedCount,
+                    'skipped_rows' => $import->skippedCount,
+                ],
+                [
+                    'class_id' => $classroom->id,
+                    'class_name' => $classroom->name,
+                    'file_name' => $request->file('file')->getClientOriginalName(),
+                ],
+                'Import danh sách học viên từ Excel.'
+            );
 
             return back()->with('success', 'Đã nhập danh sách học viên từ file Excel thành công!');
         } catch (\Exception $e) {

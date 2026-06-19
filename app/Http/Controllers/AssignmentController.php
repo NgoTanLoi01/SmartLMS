@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Services\AuditLogger;
 use App\Services\DeepSeekService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -88,6 +89,7 @@ class AssignmentController extends Controller
     {
         $submission = AssignmentSubmission::with('assignment')->findOrFail($submissionId);
         $scale = $submission->assignment?->grading_scale ?? 10;
+        $oldValues = AuditLogger::snapshot($submission, ['grade', 'feedback']);
 
         $request->validate([
             'grade' => 'required|numeric|min:0|max:' . $scale,
@@ -98,6 +100,19 @@ class AssignmentController extends Controller
             'grade' => $request->grade,
             'feedback' => $request->feedback,
         ]);
+
+        AuditLogger::log(
+            AuditLogger::GRADE_UPDATED,
+            $submission,
+            $oldValues,
+            AuditLogger::snapshot($submission->fresh(), ['grade', 'feedback']),
+            [
+                'assignment_id' => $submission->assignment_id,
+                'assignment_title' => $submission->assignment?->title,
+                'student_id' => $submission->user_id,
+            ],
+            'Giáo viên cập nhật điểm và nhận xét bài nộp.'
+        );
 
         return back()->with('success', 'Đã lưu điểm và nhận xét!');
     }
@@ -154,6 +169,13 @@ class AssignmentController extends Controller
 
         if ($result['success']) {
             $analysis = $result['analysis'] ?? [];
+            $oldValues = AuditLogger::snapshot($submission, [
+                'ai_suggested_score',
+                'ai_feedback',
+                'ai_rubric_breakdown',
+                'ai_grading_notes',
+                'ai_analyzed_at',
+            ]);
 
             $submission->update([
                 'ai_suggested_score' => $analysis['suggested_score'] ?? null,
@@ -162,6 +184,27 @@ class AssignmentController extends Controller
                 'ai_grading_notes' => $analysis['grading_notes'] ?? null,
                 'ai_analyzed_at' => now(),
             ]);
+
+            AuditLogger::log(
+                AuditLogger::AI_ASSIGNMENT_ANALYZED,
+                $submission,
+                $oldValues,
+                AuditLogger::snapshot($submission->fresh(), [
+                    'ai_suggested_score',
+                    'ai_feedback',
+                    'ai_rubric_breakdown',
+                    'ai_grading_notes',
+                    'ai_analyzed_at',
+                ]),
+                [
+                    'assignment_id' => $assignment->id,
+                    'assignment_title' => $assignment->title,
+                    'course_id' => $course->id,
+                    'course_title' => $course->title,
+                    'student_id' => $submission->user_id,
+                ],
+                'AI phân tích bài nộp tự luận.'
+            );
         }
 
         return response()->json($result, $result['success'] ? 200 : 500);

@@ -14,6 +14,11 @@ use Maatwebsite\Excel\Concerns\WithStartRow;
 class StudentImport implements ToCollection, WithStartRow
 {
     protected $classId;
+    public int $processedCount = 0;
+    public int $createdCount = 0;
+    public int $updatedCount = 0;
+    public int $syncedCount = 0;
+    public int $skippedCount = 0;
 
     public function __construct($classId)
     {
@@ -42,9 +47,11 @@ class StudentImport implements ToCollection, WithStartRow
             $fullName = trim(preg_replace('/\s+/', ' ', $fullName));
 
             if ($fullName === '' || $this->isHeaderRow($ho, $ten, $maHs)) {
+                $this->skippedCount++;
                 continue;
             }
 
+            $this->processedCount++;
             $studentCode = StudentLoginCode::normalizeStudentCode($maHs);
             $rowNumber = $index + $this->startRow();
             $email = $this->importEmail($classroom, $studentCode, $fullName, $rowNumber);
@@ -70,13 +77,16 @@ class StudentImport implements ToCollection, WithStartRow
                     'password' => Hash::make('123456'), // Mặc định pass là 123456
                     'role' => 'student',
                 ]);
+                $this->createdCount++;
             } elseif (!$user->username) {
                 $user->update([
                     'username' => StudentLoginCode::generateFromName($fullName, $studentCode),
                     'student_code' => $user->student_code ?: $studentCode,
                 ]);
+                $this->updatedCount++;
             } elseif (!$user->student_code && $studentCode) {
                 $user->update(['student_code' => $studentCode]);
+                $this->updatedCount++;
             }
 
             $importedUserIds[] = $user->id;
@@ -85,6 +95,7 @@ class StudentImport implements ToCollection, WithStartRow
         $importedUserIds = collect($importedUserIds)->unique()->values()->all();
         if (!empty($importedUserIds)) {
             $classroom->students()->sync($importedUserIds);
+            $this->syncedCount = count($importedUserIds);
         }
     }
 

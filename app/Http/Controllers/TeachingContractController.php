@@ -6,6 +6,7 @@ use App\Imports\TeachingContractsImport;
 use App\Models\TeachingContract;
 use App\Models\TeachingRecord;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -93,10 +94,20 @@ class TeachingContractController extends Controller
 
         $recordIds = $this->allowedRecordIds($request, $data['teacher_id']);
 
-        DB::transaction(function () use ($data, $recordIds) {
+        $contract = null;
+        DB::transaction(function () use ($data, $recordIds, &$contract) {
             $contract = TeachingContract::create($this->normalizeAmounts($data));
             $contract->teachingRecords()->sync($recordIds);
         });
+
+        AuditLogger::log(
+            AuditLogger::CONTRACT_CREATED,
+            $contract,
+            null,
+            AuditLogger::snapshot($contract),
+            ['teaching_record_ids' => $recordIds],
+            'Tạo hợp đồng thanh toán.'
+        );
 
         return back()->with('success', 'Đã thêm hợp đồng thanh toán.');
     }
@@ -111,11 +122,22 @@ class TeachingContractController extends Controller
             : $payment->teacher_id;
 
         $recordIds = $this->allowedRecordIds($request, $data['teacher_id']);
+        $oldValues = AuditLogger::snapshot($payment);
+        $oldRecordIds = $payment->teachingRecords()->pluck('teaching_records.id')->all();
 
         DB::transaction(function () use ($payment, $data, $recordIds) {
             $payment->update($this->normalizeAmounts($data));
             $payment->teachingRecords()->sync($recordIds);
         });
+
+        AuditLogger::log(
+            AuditLogger::CONTRACT_UPDATED,
+            $payment,
+            array_merge($oldValues, ['teaching_record_ids' => $oldRecordIds]),
+            array_merge(AuditLogger::snapshot($payment->fresh()), ['teaching_record_ids' => $recordIds]),
+            [],
+            'Cập nhật hợp đồng thanh toán.'
+        );
 
         return back()->with('success', 'Đã cập nhật hợp đồng thanh toán.');
     }
@@ -123,7 +145,17 @@ class TeachingContractController extends Controller
     public function destroy(TeachingContract $payment)
     {
         $this->authorizeContract($payment);
+        $oldValues = AuditLogger::snapshot($payment);
         $payment->update(['status' => TeachingContract::STATUS_ARCHIVED]);
+
+        AuditLogger::log(
+            AuditLogger::CONTRACT_ARCHIVED,
+            $payment,
+            $oldValues,
+            AuditLogger::snapshot($payment->fresh()),
+            [],
+            'Lưu trữ hợp đồng thanh toán.'
+        );
 
         return back()->with('success', 'Đã lưu trữ hợp đồng thanh toán. Dữ liệu liên kết vẫn được giữ lại.');
     }
@@ -155,6 +187,22 @@ class TeachingContractController extends Controller
         if ($import->invalidCount > 0) {
             $message .= " Bỏ qua {$import->invalidCount} dòng không hợp lệ.";
         }
+
+        AuditLogger::log(
+            AuditLogger::CONTRACT_IMPORTED,
+            null,
+            null,
+            [
+                'imported_count' => $import->importedCount,
+                'updated_count' => $import->updatedCount,
+                'invalid_count' => $import->invalidCount,
+            ],
+            [
+                'teacher_id' => $teacherId,
+                'file_name' => $request->file('file')->getClientOriginalName(),
+            ],
+            'Import hợp đồng thanh toán từ Excel/CSV.'
+        );
 
         return back()->with($import->importedCount > 0 || $import->updatedCount > 0 ? 'success' : 'error', $message);
     }
