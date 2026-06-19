@@ -13,14 +13,20 @@ class RoleMiddleware
      *
      * @param  Closure(Request): (Response)  $next
      */
-        public function handle($request, \Closure $next, ...$roles) {
-            // Kiểm tra xem user đã đăng nhập chưa và role có nằm trong danh sách cho phép không
-            if (!$request->user() || !in_array($request->user()->role, $roles)) {
+    public function handle(Request $request, Closure $next, ...$roles): Response
+    {
+        $user = $request->user();
+
+        if (!$user || !in_array($user->role, $roles, true)) {
+            if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'Bạn không có quyền thực hiện hành động này.'
+                    'message' => 'Bạn không có quyền thực hiện hành động này.',
                 ], 403);
             }
 
-            return $next($request);
+            abort(403, 'Bạn không có quyền thực hiện hành động này.');
         }
+
+        return $next($request);
+    }
 }

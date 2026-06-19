@@ -11,6 +11,10 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable; // <--- DÒNG 2: Sử dụng trait này
 
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_TEACHER = 'teacher';
+    public const ROLE_STUDENT = 'student';
+
     protected $fillable = [
         'name',
         'username',
@@ -21,6 +25,26 @@ class User extends Authenticatable
     ];
 
     protected $hidden = ['password', 'remember_token'];
+
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(self::ROLE_ADMIN);
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->hasRole(self::ROLE_TEACHER);
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->hasRole(self::ROLE_STUDENT);
+    }
 
     public function submissions()
     {

@@ -14,6 +14,7 @@ use App\Models\QuizAttempt;
 use App\Models\Quiz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -313,43 +314,17 @@ class CourseController extends Controller
 
     private function authorizeCourseAccess(Course $course): void
     {
-        $user = auth()->user();
-
-        if ($user->role === 'admin' || $user->id === $course->teacher_id) {
-            return;
-        }
-
-        if ($user->role === 'student') {
-            if (!$course->isVisibleToStudents()) {
-                abort(403, 'Khóa học này chưa được xuất bản.');
-            }
-
-            $studentClassIds = $user->classes()->where('classes.status', Classroom::STATUS_ACTIVE)->pluck('classes.id');
-            $hasAccess = $course->classes()
-                ->where('classes.status', Classroom::STATUS_ACTIVE)
-                ->whereIn('classes.id', $studentClassIds)
-                ->exists();
-
-            if ($hasAccess) {
-                return;
-            }
-        }
-
-        abort(403, 'Bạn không có quyền xem khóa học này.');
+        Gate::authorize('view', $course);
     }
 
     private function authorizeCourseOwner(Course $course): void
     {
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $course->teacher_id) {
-            abort(403, 'Bạn không có quyền thao tác khóa học này.');
-        }
+        Gate::authorize('update', $course);
     }
 
     private function authorizeCourseCreation(): void
     {
-        if (!in_array(auth()->user()->role, ['admin', 'teacher'])) {
-            abort(403, 'Bạn không có quyền tạo khóa học.');
-        }
+        Gate::authorize('create', Course::class);
     }
 
     private function availablePrograms(?Course $course = null)

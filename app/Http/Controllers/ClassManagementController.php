@@ -18,6 +18,7 @@ use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -26,10 +27,7 @@ class ClassManagementController extends Controller
     public function storeStudent(Request $request, $classId)
     {
         $classroom = Classroom::findOrFail($classId);
-
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $classroom->teacher_id) {
-            return response()->json(['message' => 'Không có quyền'], 403);
-        }
+        Gate::authorize('manageStudents', $classroom);
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -251,9 +249,7 @@ class ClassManagementController extends Controller
 
     public function store(Request $request)
     {
-        if (!in_array(auth()->user()->role, ['admin', 'teacher'])) {
-            return back()->with('error', 'Bạn không có quyền tạo lớp học.');
-        }
+        Gate::authorize('create', Classroom::class);
 
         $rules = [
             'name' => 'required|string|max:255',
@@ -289,10 +285,7 @@ class ClassManagementController extends Controller
     public function update(Request $request, $id)
     {
         $classroom = Classroom::findOrFail($id);
-
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $classroom->teacher_id) {
-            return back()->with('error', 'Bạn không có quyền sửa lớp này.');
-        }
+        Gate::authorize('update', $classroom);
 
         $rules = [
             'name' => 'required|string|max:255',
@@ -330,11 +323,7 @@ class ClassManagementController extends Controller
     public function destroy($id)
     {
         $classroom = Classroom::findOrFail($id);
-
-        // Phân quyền
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $classroom->teacher_id) {
-            return back()->with('error', 'Bạn không có quyền xóa lớp này.');
-        }
+        Gate::authorize('delete', $classroom);
 
         $classroom->update(['status' => Classroom::STATUS_ARCHIVED]);
 
@@ -345,11 +334,7 @@ class ClassManagementController extends Controller
     public function removeStudent($classId, $studentId)
     {
         $classroom = Classroom::findOrFail($classId);
-
-        // Phân quyền
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $classroom->teacher_id) {
-            return back()->with('error', 'Bạn không có quyền thực hiện thao tác này.');
-        }
+        Gate::authorize('manageStudents', $classroom);
 
         // detach() sẽ gỡ kết nối học sinh khỏi lớp mà không xóa tài khoản
         $classroom->students()->detach($studentId);
@@ -359,6 +344,9 @@ class ClassManagementController extends Controller
 
     public function importStudents(Request $request, $classId)
     {
+        $classroom = Classroom::findOrFail($classId);
+        Gate::authorize('manageStudents', $classroom);
+
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv|max:5120', // Tối đa 5MB
         ]);
@@ -375,9 +363,7 @@ class ClassManagementController extends Controller
 
     private function authorizeClassroomAccess(Classroom $classroom): void
     {
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $classroom->teacher_id) {
-            abort(403, 'Bạn không có quyền xem lớp này.');
-        }
+        Gate::authorize('view', $classroom);
     }
 
     private function matchesStudentStatus(array $summary, string $status): bool
