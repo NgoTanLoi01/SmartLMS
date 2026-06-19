@@ -567,6 +567,12 @@
                         </a>
                     </li>
                     <li>
+                        <a class="nav-link {{ request()->is('operations/dashboard*') ? 'active' : '' }}"
+                            href="{{ route('operations.dashboard') }}">
+                            <i class="fas fa-chart-pie"></i> Dashboard vận hành
+                        </a>
+                    </li>
+                    <li>
                         <a class="nav-link {{ request()->is('reports/operations*') ? 'active' : '' }}"
                             href="{{ route('reports.operations') }}">
                             <i class="fas fa-chart-column"></i> Báo cáo vận hành
