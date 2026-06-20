@@ -4,7 +4,7 @@
 
 @section('content')
     @php
-        $money = fn ($value) => number_format((float) $value, 0, ',', '.') . ' đ';
+        $money = fn($value) => number_format((float) $value, 0, ',', '.') . ' đ';
         $query = request()->query();
         $monthOptions = [
             1 => 'Tháng 1',
@@ -29,14 +29,15 @@
             align-items: flex-end;
             gap: 16px;
             flex-wrap: wrap;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
 
         .report-title {
             margin: 0 0 4px;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 800;
             color: #0f172a;
+            letter-spacing: -0.02em;
         }
 
         .report-subtitle {
@@ -57,11 +58,20 @@
         .report-stat {
             height: 100%;
             padding: 16px;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .report-stat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.07);
         }
 
         .report-stat__label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             color: #64748b;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: .04em;
@@ -93,20 +103,37 @@
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 2;
         }
 
         .report-card__title {
             margin: 0;
             font-size: 15px;
             font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .report-table th {
+        .report-table {
+            margin-bottom: 0;
+        }
+
+        .report-table thead th {
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
             color: #64748b;
-            font-size: 11.5px;
+            font-size: 11px;
+            font-weight: 800;
             letter-spacing: .04em;
             text-transform: uppercase;
             white-space: nowrap;
+            border-bottom: 1px solid #e2e8f0;
+            z-index: 1;
         }
 
         .report-table td {
@@ -114,10 +141,42 @@
             vertical-align: middle;
         }
 
+        .report-table tbody tr {
+            transition: background-color .12s ease;
+        }
+
+        .report-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .report-table-scroll {
+            max-height: 480px;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 48px 16px;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 28px;
+            opacity: .6;
+        }
+
         @media (max-width: 767.98px) {
+
             .report-header .btn,
             .report-filter .btn {
                 width: 100%;
+            }
+
+            .report-title {
+                font-size: 20px;
             }
         }
     </style>
@@ -189,7 +248,7 @@
                 <button type="submit" class="btn btn-primary flex-fill">
                     <i class="fas fa-filter me-1"></i>Lọc
                 </button>
-                <a href="{{ route('reports.operations') }}" class="btn btn-light border">
+                <a href="{{ route('reports.operations') }}" class="btn btn-light border" title="Đặt lại bộ lọc">
                     <i class="fas fa-rotate-left"></i>
                 </a>
             </div>
@@ -199,53 +258,62 @@
     <div class="row g-3 mb-3">
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label">Môn đã dạy</div>
+                <div class="report-stat__label"><i class="fas fa-chalkboard-teacher"></i>Môn đã dạy</div>
                 <div class="report-stat__value text-primary">{{ $summary['completed_subjects_count'] }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label">Tổng môn</div>
+                <div class="report-stat__label"><i class="fas fa-book"></i>Tổng môn</div>
                 <div class="report-stat__value">{{ $summary['subjects_count'] }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label">Số buổi</div>
+                <div class="report-stat__label"><i class="fas fa-calendar-check"></i>Số buổi</div>
                 <div class="report-stat__value text-success">{{ $summary['total_sessions'] }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label">Tổng tiền</div>
+                <div class="report-stat__label"><i class="fas fa-coins"></i>Tổng tiền</div>
                 <div class="report-stat__value">{{ $money($summary['total_contract_amount']) }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label">Đã nhận</div>
+                <div class="report-stat__label"><i class="fas fa-circle-check"></i>Đã nhận</div>
                 <div class="report-stat__value text-success">{{ $money($summary['received_amount']) }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label">Chưa nhận</div>
+                <div class="report-stat__label"><i class="fas fa-circle-exclamation"></i>Chưa nhận</div>
                 <div class="report-stat__value text-danger">{{ $money($summary['remaining_amount']) }}</div>
             </div>
         </div>
     </div>
 
-    @include('reports.partials.group-table', ['title' => 'Theo trung tâm', 'label' => 'Trung tâm', 'rows' => $byCenter])
-    @include('reports.partials.group-table', ['title' => 'Theo khóa', 'label' => 'Khóa', 'rows' => $byTerm])
+    @include('reports.partials.group-table', [
+        'title' => 'Theo trung tâm',
+        'label' => 'Trung tâm',
+        'rows' => $byCenter,
+    ])
+    @include('reports.partials.group-table', [
+        'title' => 'Theo khóa',
+        'label' => 'Khóa',
+        'rows' => $byTerm,
+    ])
 
     <div class="report-card">
         <div class="report-card__head">
-            <h2 class="report-card__title">Chi tiết giảng dạy</h2>
-            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">{{ $teachingRecords->count() }} dòng</span>
+            <h2 class="report-card__title"><i class="fas fa-chalkboard text-primary"></i>Chi tiết giảng dạy</h2>
+            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">{{ $teachingRecords->count() }}
+                dòng</span>
         </div>
-        <div class="table-responsive">
+        <div class="table-responsive report-table-scroll">
             <table class="table report-table align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th class="px-4 py-3">Môn học</th>
                         <th class="px-4 py-3">Lớp</th>
@@ -270,7 +338,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">Không có dữ liệu giảng dạy.</td>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <span>Không có dữ liệu giảng dạy.</span>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -280,12 +353,13 @@
 
     <div class="report-card">
         <div class="report-card__head">
-            <h2 class="report-card__title">Chi tiết thanh toán</h2>
-            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">{{ $contracts->count() }} hợp đồng</span>
+            <h2 class="report-card__title"><i class="fas fa-file-invoice-dollar text-success"></i>Chi tiết thanh toán</h2>
+            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">{{ $contracts->count() }} hợp
+                đồng</span>
         </div>
-        <div class="table-responsive">
+        <div class="table-responsive report-table-scroll">
             <table class="table report-table align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th class="px-4 py-3">Hợp đồng</th>
                         <th class="px-4 py-3">Ngày ký</th>
@@ -307,7 +381,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">Không có dữ liệu thanh toán.</td>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <span>Không có dữ liệu thanh toán.</span>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

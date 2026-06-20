@@ -16,6 +16,7 @@
             text-align: center;
             font-size: 22px;
             margin: 0 0 6px;
+            letter-spacing: -0.02em;
         }
 
         .meta {
@@ -35,6 +36,7 @@
             border: 1px solid #d1d5db;
             border-radius: 8px;
             padding: 10px;
+            background: #fafafa;
         }
 
         .label {
@@ -48,6 +50,14 @@
             font-size: 16px;
             font-weight: 800;
             margin-top: 4px;
+        }
+
+        .value.positive {
+            color: #15803d;
+        }
+
+        .value.negative {
+            color: #b91c1c;
         }
 
         table {
@@ -68,13 +78,32 @@
             font-weight: 800;
         }
 
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
         h2 {
             font-size: 15px;
             margin: 18px 0 8px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 4px;
+        }
+
+        .print-btn {
+            position: fixed;
+            right: 24px;
+            top: 18px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
         }
 
         @media print {
-            button {
+            .print-btn {
                 display: none;
             }
         }
@@ -83,10 +112,10 @@
 
 <body>
     @php
-        $money = fn ($value) => number_format((float) $value, 0, ',', '.') . ' đ';
+        $money = fn($value) => number_format((float) $value, 0, ',', '.') . ' đ';
     @endphp
 
-    <button onclick="window.print()" style="position:fixed;right:24px;top:18px;padding:8px 14px">In / Lưu PDF</button>
+    <button class="print-btn" onclick="window.print()">In / Lưu PDF</button>
 
     <h1>Báo cáo giảng dạy & thanh toán</h1>
     <div class="meta">Ngày xuất: {{ now()->format('d/m/Y H:i') }}</div>
@@ -106,11 +135,11 @@
         </div>
         <div class="stat">
             <div class="label">Đã nhận</div>
-            <div class="value">{{ $money($summary['received_amount']) }}</div>
+            <div class="value positive">{{ $money($summary['received_amount']) }}</div>
         </div>
         <div class="stat">
             <div class="label">Chưa nhận</div>
-            <div class="value">{{ $money($summary['remaining_amount']) }}</div>
+            <div class="value negative">{{ $money($summary['remaining_amount']) }}</div>
         </div>
         <div class="stat">
             <div class="label">Tổng môn</div>
@@ -118,8 +147,16 @@
         </div>
     </div>
 
-    @include('reports.partials.print-group-table', ['title' => 'Theo trung tâm', 'label' => 'Trung tâm', 'rows' => $byCenter])
-    @include('reports.partials.print-group-table', ['title' => 'Theo khóa', 'label' => 'Khóa', 'rows' => $byTerm])
+    @include('reports.partials.print-group-table', [
+        'title' => 'Theo trung tâm',
+        'label' => 'Trung tâm',
+        'rows' => $byCenter,
+    ])
+    @include('reports.partials.print-group-table', [
+        'title' => 'Theo khóa',
+        'label' => 'Khóa',
+        'rows' => $byTerm,
+    ])
 
     <script>
         window.addEventListener('load', () => setTimeout(() => window.print(), 250));
