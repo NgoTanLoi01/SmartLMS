@@ -168,6 +168,20 @@
             opacity: .6;
         }
 
+        .report-time-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            margin: 0 0 16px;
+            border: 1px solid #fde68a;
+            background: #fffbeb;
+            color: #92400e;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
         @media (max-width: 767.98px) {
 
             .report-header .btn,
@@ -254,6 +268,15 @@
             </div>
         </div>
     </form>
+
+    <div class="report-time-note">
+        <i class="fas fa-clock mt-1"></i>
+        <div>
+            <strong>Tiêu chí thời gian:</strong>
+            giảng dạy lọc theo ngày bắt đầu môn học. Thanh toán đã nhận lọc theo ngày nhận tiền;
+            hợp đồng chưa nhận lọc theo ngày ký để vẫn theo dõi được khoản chờ.
+        </div>
+    </div>
 
     <div class="row g-3 mb-3">
         <div class="col-6 col-xl-2">
@@ -366,7 +389,7 @@
                         <th class="px-4 py-3">Tổng tiền</th>
                         <th class="px-4 py-3">Đã nhận</th>
                         <th class="px-4 py-3">Chưa nhận</th>
-                        <th class="px-4 py-3">Ngày nhận</th>
+                        <th class="px-4 py-3">Ngày nhận / ký</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -377,7 +400,9 @@
                             <td class="px-4 py-3">{{ $money($contract->total_amount) }}</td>
                             <td class="px-4 py-3 text-success fw-bold">{{ $money($contract->received_amount) }}</td>
                             <td class="px-4 py-3 text-danger fw-bold">{{ $money($contract->remaining_amount) }}</td>
-                            <td class="px-4 py-3">{{ $contract->received_date?->format('d/m/Y') ?: '--' }}</td>
+                            <td class="px-4 py-3">
+                                {{ $contract->received_date?->format('d/m/Y') ?: ($contract->signed_date?->format('d/m/Y') ?: '--') }}
+                            </td>
                         </tr>
                     @empty
                         <tr>
