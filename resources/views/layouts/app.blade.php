@@ -592,6 +592,12 @@
                             </a>
                         </li>
                         <li>
+                            <a class="nav-link {{ request()->is('system/backups*') ? 'active' : '' }}"
+                                href="{{ route('system.backups.index') }}">
+                                <i class="fas fa-database"></i> Backup dữ liệu
+                            </a>
+                        </li>
+                        <li>
                             <a class="nav-link {{ request()->is('audit-logs*') ? 'active' : '' }}"
                                 href="{{ route('audit-logs.index') }}">
                                 <i class="fas fa-shield-halved"></i> Audit log
