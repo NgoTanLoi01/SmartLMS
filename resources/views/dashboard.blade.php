@@ -1543,7 +1543,7 @@
                                 <span class="icon-dot idot--blue"><i class="fas fa-calendar-alt"></i></span>
                                 Lịch dạy tuần này
                             </h6>
-                            <span class="bdg bdg--primary">Tuần này</span>
+                            <span class="bdg bdg--primary">Tuần này · {{ $data['dashboard_week_label'] ?? '' }}</span>
                         </div>
                         <div class="table-responsive">
                             @php
@@ -1805,7 +1805,7 @@
                                 <span class="icon-dot idot--green"><i class="fas fa-calendar-check"></i></span>
                                 Lịch học tuần này
                             </h6>
-                            <span class="bdg bdg--success">Tuần này</span>
+                            <span class="bdg bdg--success">Tuần này · {{ $data['dashboard_week_label'] ?? '' }}</span>
                         </div>
                         <div class="table-responsive">
                             <table class="tbl">

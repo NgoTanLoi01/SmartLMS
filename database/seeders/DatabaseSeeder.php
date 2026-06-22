@@ -18,14 +18,14 @@ class DatabaseSeeder extends Seeder
         \App\Models\User::create([
             'name' => 'System Admin',
             'email' => 'ngotanloi2424@gmail.com',
-            'password' => bcrypt('Icandoit112'),
+            'password' => bcrypt('12345678'),
             'role' => 'admin',
         ]);
 
         \App\Models\User::create([
             'name' => 'Ngô Tấn Lợi',
             'email' => 'ngotanloi123321@gmail.com',
-            'password' => bcrypt('Icandoit112'),
+            'password' => bcrypt('12345678'),
             'role' => 'teacher',
         ]);
     }

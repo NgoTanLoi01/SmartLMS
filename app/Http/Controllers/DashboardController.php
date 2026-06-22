@@ -11,14 +11,22 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    private const DASHBOARD_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
     public function index()
     {
         $user = auth()->user();
         $data = [];
 
         // Thiết lập khoảng thời gian tuần hiện tại (Thứ 2 đến Chủ nhật)
-        $startOfWeek = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $endOfWeek = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
+        $now = Carbon::now(self::DASHBOARD_TIMEZONE);
+        $startOfWeek = $now->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $endOfWeek = $now->copy()->endOfWeek(Carbon::SUNDAY)->toDateString();
+        $todayDate = $now->toDateString();
+
+        $data['dashboard_timezone'] = self::DASHBOARD_TIMEZONE;
+        $data['dashboard_today'] = $todayDate;
+        $data['dashboard_week_label'] = Carbon::parse($startOfWeek)->format('d/m') . ' - ' . Carbon::parse($endOfWeek)->format('d/m/Y');
         // ==========================================
         // 1. DỮ LIỆU CHO ADMIN
         // ==========================================
@@ -37,7 +45,7 @@ class DashboardController extends Controller
                 ->where($this->activeOrLegacyColumn('schedules.status'))
                 ->where($this->notArchivedColumn('classes.status'))
                 ->where($this->notArchivedColumn('courses.status'))
-                ->whereDate('schedules.schedule_date', now()->toDateString())
+                ->whereDate('schedules.schedule_date', $todayDate)
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
                 ->orderBy('schedules.start_time')
                 ->take(6)
@@ -144,14 +152,14 @@ class DashboardController extends Controller
             $data['total_courses'] = $courseIds->count();
             $data['course_progress'] = Course::whereIn('id', $courseIds)
                 ->get()
-                ->map(function ($course) use ($user) {
+                ->map(function ($course) use ($user, $now) {
                     $lessonIds = DB::table('lessons')
                         ->join('modules', 'lessons.module_id', '=', 'modules.id')
                         ->where('modules.course_id', $course->id)
                         ->where('lessons.status', 'published')
-                        ->where(function ($q) {
+                        ->where(function ($q) use ($now) {
                             $q->whereNull('lessons.available_from')
-                                ->orWhere('lessons.available_from', '<=', now());
+                                ->orWhere('lessons.available_from', '<=', $now);
                         })
                         ->pluck('lessons.id');
                     $completed = DB::table('lesson_user')
@@ -179,15 +187,15 @@ class DashboardController extends Controller
 
                 ->whereIn('assignments.course_id', $courseIds)
                 ->where('assignments.status', 'published')
-                ->where(function ($q) {
+                ->where(function ($q) use ($now) {
                     $q->whereNull('assignments.available_from')
-                        ->orWhere('assignments.available_from', '<=', now());
+                        ->orWhere('assignments.available_from', '<=', $now);
                 })
 
                 // FIX SOFT DELETE
                 ->whereNull('assignments.deleted_at')
 
-                ->where('assignments.due_date', '>=', now())
+                ->where('assignments.due_date', '>=', $now)
 
                 ->select('assignments.*', 'courses.title as course_title', 'courses.id as course_id')
 
@@ -202,9 +210,9 @@ class DashboardController extends Controller
             $data['missing_assignments_count'] = DB::table('assignments')
                 ->whereIn('course_id', $courseIds)
                 ->where('status', 'published')
-                ->where(function ($q) {
+                ->where(function ($q) use ($now) {
                     $q->whereNull('available_from')
-                        ->orWhere('available_from', '<=', now());
+                        ->orWhere('available_from', '<=', $now);
                 })
                 ->whereNull('deleted_at')
                 ->whereNotIn('id', $submittedAssignmentIds)
@@ -226,9 +234,9 @@ class DashboardController extends Controller
 
                 ->whereIn('quizzes.course_id', $courseIds)
                 ->where('quizzes.status', 'published')
-                ->where(function ($q) {
+                ->where(function ($q) use ($now) {
                     $q->whereNull('quizzes.available_from')
-                        ->orWhere('quizzes.available_from', '<=', now());
+                        ->orWhere('quizzes.available_from', '<=', $now);
                 })
 
                 ->whereNotIn('quizzes.id', $attemptedQuizIds)
@@ -243,9 +251,9 @@ class DashboardController extends Controller
             $data['pending_quizzes_count'] = DB::table('quizzes')
                 ->whereIn('course_id', $courseIds)
                 ->where('status', 'published')
-                ->where(function ($q) {
+                ->where(function ($q) use ($now) {
                     $q->whereNull('available_from')
-                        ->orWhere('available_from', '<=', now());
+                        ->orWhere('available_from', '<=', $now);
                 })
                 ->whereNotIn('id', $attemptedQuizIds)
                 ->count();
