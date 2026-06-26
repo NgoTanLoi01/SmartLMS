@@ -822,6 +822,51 @@
             margin-top: 1px;
         }
 
+        .sidebar-status-row {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .sidebar-status-pill {
+            align-items: center;
+            border-radius: 99px;
+            display: inline-flex;
+            font-size: 10px;
+            font-weight: 800;
+            gap: 4px;
+            line-height: 1;
+            padding: 4px 7px;
+            white-space: nowrap;
+        }
+
+        .sidebar-status-pill.done {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .sidebar-status-pill.pending {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .sidebar-status-pill.assignment {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .sidebar-status-pill.quiz {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        .sidebar-status-pill.overdue {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
         /* Bài học — trắng, viền trái xanh khi hover/active */
         .lesson-item-wrapper {
             background: var(--color-background-primary);
@@ -1017,28 +1062,134 @@
         }
 
         .course-action-header {
-            align-items: center;
+            align-items: stretch;
             border-bottom: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
             gap: 12px;
-            padding: 14px 16px;
+            padding: 16px;
+            background: #f8fafc;
         }
 
         .course-action-body {
             padding: 16px;
         }
 
+        .next-action-main {
+            align-items: flex-start;
+            display: flex;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .next-action-icon {
+            align-items: center;
+            background: #dbeafe;
+            border-radius: 12px;
+            color: #1d4ed8;
+            display: inline-flex;
+            flex-shrink: 0;
+            height: 42px;
+            justify-content: center;
+            width: 42px;
+        }
+
+        .next-action-eyebrow {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .04em;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .next-action-title {
+            color: #0f172a;
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.35;
+            margin: 0;
+        }
+
+        .next-action-meta {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .course-next-btn {
+            align-items: center;
+            align-self: center;
+            border-radius: 10px;
+            display: inline-flex;
+            font-weight: 800;
+            gap: 7px;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 16px;
+            white-space: nowrap;
+        }
+
         .course-todo-list {
             display: grid;
             gap: 10px;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .course-todo-item {
             border: 1px solid #e5e7eb;
             border-radius: 10px;
             padding: 12px;
+            background: #fff;
+            min-width: 0;
+        }
+
+        .course-todo-item .fw-bold {
+            line-height: 1.35;
+        }
+
+        .course-empty-state {
+            align-items: center;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 14px;
+            color: #475569;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            padding: 18px;
+            text-align: left;
+        }
+
+        .welcome-guide {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 18px;
+        }
+
+        .welcome-guide-grid {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-top: 14px;
+        }
+
+        .welcome-guide-item {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .welcome-guide-item i {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 991.98px) {
+            .welcome-guide-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 991.98px) {
@@ -1126,45 +1277,72 @@
         </div>
 
         @if (auth()->user()->role === 'student')
-            {{-- <div class="course-action-panel">
+            <div class="course-action-panel">
                 <div class="course-action-header">
-                    <div>
-                        <h6 class="fw-bold mb-1"><i class="fas fa-route me-2 text-primary"></i>Lộ trình học của bạn</h6>
-                        <div class="text-muted small">{{ $studentTodoItems->count() }} việc còn cần xử lý trong khóa học này</div>
-                    </div>
                     @if ($studentNextAction)
-                        <button type="button" class="btn btn-primary fw-bold course-jump-btn"
+                        @php
+                            $nextIcon = match ($studentNextAction['type']) {
+                                'assignment' => 'fas fa-file-signature',
+                                'quiz' => 'fas fa-stopwatch',
+                                default => 'fas fa-play',
+                            };
+                        @endphp
+                        <div class="next-action-main">
+                            <div class="next-action-icon">
+                                <i class="{{ $nextIcon }}"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="next-action-eyebrow">Việc nên làm tiếp theo</div>
+                                <h2 class="next-action-title">{{ $studentNextAction['title'] }}</h2>
+                                <div class="next-action-meta">{{ $studentNextAction['label'] }} · {{ $studentNextAction['meta'] }}</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary course-next-btn course-jump-btn"
                             data-target-type="{{ $studentNextAction['type'] }}"
                             data-target-id="{{ $studentNextAction['target_id'] }}">
-                            <i class="fas fa-play me-1"></i>Tiếp tục học
+                            <i class="fas fa-arrow-right"></i> Mở ngay
                         </button>
+                    @else
+                        <div class="course-empty-state w-100">
+                            <i class="fas fa-check-circle text-success fs-4"></i>
+                            <div>
+                                <div class="fw-bold">Bạn đã xử lý xong các việc chính trong khóa học này.</div>
+                                <div class="small">Có thể xem lại bài học hoặc kiểm tra phần nhận xét/điểm số khi giáo viên cập nhật.</div>
+                            </div>
+                        </div>
                     @endif
                 </div>
                 <div class="course-action-body">
                     @if ($studentTodoItems->isNotEmpty())
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+                            <div>
+                                <h6 class="fw-bold mb-1"><i class="fas fa-list-check me-2 text-primary"></i>Các mục còn lại</h6>
+                                <div class="text-muted small">{{ $studentTodoItems->count() }} việc cần xử lý trong khóa học này</div>
+                            </div>
+                        </div>
                         <div class="course-todo-list">
-                            @foreach ($studentTodoItems->take(6) as $todo)
+                            @foreach ($studentTodoItems->take(4) as $todo)
                                 <div class="course-todo-item">
                                     <span class="badge {{ $todo['type'] === 'assignment' ? 'bg-warning text-dark' : ($todo['type'] === 'quiz' ? 'bg-primary' : 'bg-success') }} mb-2">
                                         {{ $todo['label'] }}
                                     </span>
-                                    <div class="fw-bold">{{ $todo['title'] }}</div>
-                                    <div class="text-muted small mb-3">{{ $todo['meta'] }}</div>
+                                    <div class="fw-bold text-truncate-custom">{{ $todo['title'] }}</div>
+                                    <div class="text-muted small mb-3 text-truncate-custom">{{ $todo['meta'] }}</div>
                                     <button type="button" class="btn btn-sm btn-outline-primary course-jump-btn"
                                         data-target-type="{{ $todo['type'] }}"
                                         data-target-id="{{ $todo['target_id'] }}">
-                                        Mở ngay
+                                        Mở mục này
                                     </button>
                                 </div>
                             @endforeach
                         </div>
                     @else
-                        <div class="text-center text-muted py-3">
-                            <i class="fas fa-check-circle text-success me-1"></i>Bạn đã hoàn thành các việc cần làm trong khóa học này.
+                        <div class="text-center text-muted py-2">
+                            <i class="fas fa-check-circle text-success me-1"></i>Không còn bài học, bài tập hoặc quiz đang chờ xử lý.
                         </div>
                     @endif
                 </div>
-            </div> --}}
+            </div>
         @else
             <div class="course-dashboard-grid">
                 <div class="course-dashboard-card">
@@ -1239,6 +1417,32 @@
                         <div id="lesson-body" class="lesson-body">
                             <div class="course-intro-card">
                                 <div class="course-description">{!! nl2br(e($course->description)) !!}</div>
+                            </div>
+                            <div id="welcome-placeholder" class="welcome-guide mt-4">
+                                @if (auth()->user()->role === 'student')
+                                    <h6 class="fw-bold mb-2"><i class="fas fa-compass me-2 text-primary"></i>Bắt đầu học ở đâu?</h6>
+                                    <div class="text-muted small">Bạn có thể bấm "Mở ngay" ở khối phía trên, hoặc chọn một mục trong danh sách nội dung. Các mục đã hoàn thành sẽ có dấu tích màu xanh.</div>
+                                    <div class="welcome-guide-grid">
+                                        <div class="welcome-guide-item">
+                                            <i class="fas fa-play-circle text-primary d-block"></i>
+                                            <div class="fw-bold small">Bài học</div>
+                                            <div class="text-muted small">Đọc nội dung, xem video rồi đánh dấu hoàn thành.</div>
+                                        </div>
+                                        <div class="welcome-guide-item">
+                                            <i class="fas fa-file-signature text-warning d-block"></i>
+                                            <div class="fw-bold small">Bài tập</div>
+                                            <div class="text-muted small">Xem yêu cầu, nộp file hoặc nhập bài tự luận.</div>
+                                        </div>
+                                        <div class="welcome-guide-item">
+                                            <i class="fas fa-stopwatch text-purple d-block" style="color:#7c3aed;"></i>
+                                            <div class="fw-bold small">Quiz</div>
+                                            <div class="text-muted small">Bấm bắt đầu khi đã sẵn sàng vì hệ thống sẽ tính giờ.</div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <h6 class="fw-bold mb-2"><i class="fas fa-pen-to-square me-2 text-primary"></i>Quản lý nội dung khóa học</h6>
+                                    <div class="text-muted small">Chọn bài học, bài tập hoặc quiz ở danh sách bên trái để xem nhanh. Các nút thêm nội dung nằm ở thanh công cụ phía trên.</div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -1530,7 +1734,20 @@
             if (mobileContent) {
                 mobileContent.addEventListener('click', function(e) {
                     var target = e.target.closest('.lesson-item, .assignment-item, .quiz-item');
-                    if (target) closeDrawer();
+                    if (!target) return;
+
+                    e.preventDefault();
+                    var type = target.classList.contains('assignment-item') ? 'assignment' :
+                        (target.classList.contains('quiz-item') ? 'quiz' : 'lesson');
+                    var id = target.getAttribute('data-id');
+                    var selector = type === 'assignment'
+                        ? `.sidebar-scroll .assignment-item[data-id="${id}"]`
+                        : (type === 'quiz'
+                            ? `.sidebar-scroll .quiz-item[data-id="${id}"]`
+                            : `.sidebar-scroll .lesson-item[data-id="${id}"]`);
+                    var desktopTarget = document.querySelector(selector);
+                    if (desktopTarget) desktopTarget.click();
+                    closeDrawer();
                 });
             }
         })();

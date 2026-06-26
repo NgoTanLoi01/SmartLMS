@@ -349,6 +349,15 @@
                     const icon = document.getElementById('icon-lesson-' + currentLessonId);
                     if (icon && !icon.classList.contains('fa-check-circle')) {
                         icon.className = 'fas fa-check-circle text-success me-2 flex-shrink-0 lesson-icon';
+                        const lessonLink = document.querySelector(`.sidebar-scroll .lesson-item[data-id="${currentLessonId}"]`);
+                        const statusRow = lessonLink ? lessonLink.querySelector('.sidebar-status-row') : null;
+                        if (statusRow) {
+                            const firstPill = statusRow.querySelector('.sidebar-status-pill');
+                            if (firstPill) {
+                                firstPill.className = 'sidebar-status-pill done';
+                                firstPill.innerHTML = '<i class="fas fa-check"></i>Đã xong';
+                            }
+                        }
                         currentCompletedCount++;
                         let newProgress = Math.round((currentCompletedCount / totalLessonsCount) * 100);
                         const progressText = document.getElementById('progress-text');

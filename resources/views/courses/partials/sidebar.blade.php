@@ -55,12 +55,19 @@
                     <div class="list-group list-group-flush">
 
                         @forelse ($module->lessons as $lessonIndex => $lesson)
-                            @php
-                                $isCompleted = in_array($lesson->id, $completedLessonIds ?? []);
-                                $isVideo = !empty($lesson->video_url);
-                                $durSec = $lesson->duration_seconds ?? 0;
-                                $durLabel =
-                                    $durSec > 0
+                                @php
+                                    $isCompleted = in_array($lesson->id, $completedLessonIds ?? []);
+                                    $isVideo = !empty($lesson->video_url);
+                                    $lessonAssignments = $lesson->assignments ?? collect();
+                                    $pendingAssignmentCount =
+                                        auth()->user()->role === 'student'
+                                            ? $lessonAssignments
+                                                ->filter(fn($assignment) => !isset($userSubmissions[$assignment->id]))
+                                                ->count()
+                                            : $lessonAssignments->count();
+                                    $durSec = $lesson->duration_seconds ?? 0;
+                                    $durLabel =
+                                        $durSec > 0
                                         ? ($durSec >= 3600
                                             ? sprintf(
                                                 '%d:%02d:%02d',
@@ -95,12 +102,26 @@
                                     @endif
 
                                     <div style="min-width:0; flex:1;">
-                                        <div class="lesson-name-text">
-                                            {{ $moduleIndex + 1 }}.{{ $lessonIndex + 1 }} {{ $lesson->title }}
-                                        </div>
-                                        @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                                            <div class="lesson-dur-text">
-                                                <span class="badge bg-{{ $lesson->status === 'published' ? 'success' : ($lesson->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
+                                            <div class="lesson-name-text">
+                                                {{ $moduleIndex + 1 }}.{{ $lessonIndex + 1 }} {{ $lesson->title }}
+                                            </div>
+                                            @if (auth()->user()->role === 'student')
+                                                <div class="sidebar-status-row">
+                                                    @if ($isCompleted)
+                                                        <span class="sidebar-status-pill done"><i class="fas fa-check"></i>Đã xong</span>
+                                                    @else
+                                                        <span class="sidebar-status-pill pending"><i class="far fa-circle"></i>Chưa học</span>
+                                                    @endif
+                                                    @if ($pendingAssignmentCount > 0)
+                                                        <span class="sidebar-status-pill assignment">
+                                                            <i class="fas fa-file-signature"></i>{{ $pendingAssignmentCount }} bài tập
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                                <div class="lesson-dur-text">
+                                                    <span class="badge bg-{{ $lesson->status === 'published' ? 'success' : ($lesson->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
                                                     {{ strtoupper($lesson->status ?? 'published') }}
                                                 </span>
                                                 @if ($lesson->available_from)
@@ -142,13 +163,14 @@
                             {{-- Bài tập --}}
                             @foreach ($lesson->assignments as $assignment)
                                 @php
-                                    $submission =
-                                        auth()->user()->role === 'student' && isset($userSubmissions[$assignment->id])
-                                            ? $userSubmissions[$assignment->id]
-                                            : null;
-                                @endphp
-                                <div class="list-group-item border-0 px-0 py-0 assignment-item-wrapper d-flex align-items-center justify-content-between shadow-none bg-light"
-                                    style="min-width:0;">
+                                        $submission =
+                                            auth()->user()->role === 'student' && isset($userSubmissions[$assignment->id])
+                                                ? $userSubmissions[$assignment->id]
+                                                : null;
+                                        $assignmentOverdue = $assignment->due_date && $assignment->due_date->isPast() && !$submission;
+                                    @endphp
+                                    <div class="list-group-item border-0 px-0 py-0 assignment-item-wrapper {{ $submission ? 'submitted' : '' }} d-flex align-items-center justify-content-between shadow-none bg-light"
+                                        style="min-width:0;">
                                     <a href="javascript:void(0)"
                                         class="assignment-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 px-3 ps-5 py-2"
                                         style="min-width:0;" data-id="{{ $assignment->id }}"
@@ -168,16 +190,29 @@
                                             class="{{ $submission ? 'fas fa-check-circle lesson-icon-done' : 'fas fa-file-signature lesson-icon-assign' }} flex-shrink-0"></i>
                                         <div style="min-width:0;">
                                             <div class="lesson-name-text fw-medium">{{ $assignment->title }}</div>
-                                            <div class="lesson-dur-text">
-                                                @php
-                                                    $assignmentTypeLabel = match ($assignment->type ?? 'file') {
+                                                <div class="lesson-dur-text">
+                                                    @php
+                                                        $assignmentTypeLabel = match ($assignment->type ?? 'file') {
                                                         'essay' => 'Tự luận',
                                                         'mixed' => 'File + tự luận',
                                                         default => 'Nộp file',
                                                     };
-                                                @endphp
-                                                <span class="badge bg-info text-dark">{{ $assignmentTypeLabel }}</span>
-                                            </div>
+                                                    @endphp
+                                                    @if (auth()->user()->role === 'student')
+                                                        <div class="sidebar-status-row">
+                                                            @if ($submission)
+                                                                <span class="sidebar-status-pill done"><i class="fas fa-check"></i>Đã nộp</span>
+                                                            @elseif ($assignmentOverdue)
+                                                                <span class="sidebar-status-pill overdue"><i class="fas fa-lock"></i>Quá hạn</span>
+                                                            @else
+                                                                <span class="sidebar-status-pill assignment"><i class="fas fa-paper-plane"></i>Cần nộp</span>
+                                                            @endif
+                                                            <span class="sidebar-status-pill pending">{{ $assignmentTypeLabel }}</span>
+                                                        </div>
+                                                    @else
+                                                        <span class="badge bg-info text-dark">{{ $assignmentTypeLabel }}</span>
+                                                    @endif
+                                                </div>
                                             @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
                                                 <div class="lesson-dur-text">
                                                     <span class="badge bg-{{ $assignment->status === 'published' ? 'success' : ($assignment->status === 'hidden' ? 'secondary' : ($assignment->status === 'archived' ? 'danger' : 'warning text-dark')) }}">
@@ -257,14 +292,14 @@
                 <div class="accordion-body p-0">
                     <div class="list-group list-group-flush">
                         @foreach ($course->quizzes as $quiz)
-                            @php
-                                $attempt =
-                                    auth()->user()->role === 'student' && isset($userQuizAttempts[$quiz->id])
-                                        ? $userQuizAttempts[$quiz->id]
-                                        : null;
-                            @endphp
-                            <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper d-flex align-items-center justify-content-between shadow-none bg-white"
-                                style="min-width:0;">
+                                @php
+                                    $attempt =
+                                        auth()->user()->role === 'student' && isset($userQuizAttempts[$quiz->id])
+                                            ? $userQuizAttempts[$quiz->id]
+                                            : null;
+                                @endphp
+                                <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper {{ $attempt ? 'completed' : '' }} d-flex align-items-center justify-content-between shadow-none bg-white"
+                                    style="min-width:0;">
                                 <a href="javascript:void(0)"
                                     class="quiz-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 px-3 ps-4 py-2"
                                     style="min-width:0;" data-id="{{ $quiz->id }}"
@@ -275,11 +310,22 @@
                                     <i class="{{ $attempt ? 'fas fa-check-circle lesson-icon-done' : 'fas fa-stopwatch' }} flex-shrink-0"
                                         style="{{ $attempt ? '' : 'color:#6f42c1;' }}"></i>
                                     <div style="min-width:0;">
-                                        <div class="lesson-name-text"
-                                            style="{{ $attempt ? 'color:#198754;' : 'color:#6f42c1;' }}">
-                                            {{ $quiz->title }}
-                                        </div>
-                                        @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                            <div class="lesson-name-text"
+                                                style="{{ $attempt ? 'color:#198754;' : 'color:#6f42c1;' }}">
+                                                {{ $quiz->title }}
+                                            </div>
+                                            @if (auth()->user()->role === 'student')
+                                                <div class="sidebar-status-row">
+                                                    @if ($attempt)
+                                                        <span class="sidebar-status-pill done"><i class="fas fa-check"></i>Đã làm</span>
+                                                        <span class="sidebar-status-pill pending">{{ $attempt->score }}/10 điểm</span>
+                                                    @else
+                                                        <span class="sidebar-status-pill quiz"><i class="fas fa-stopwatch"></i>Cần làm</span>
+                                                        <span class="sidebar-status-pill pending">{{ $quiz->time_limit }} phút</span>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
                                             <div class="lesson-dur-text">
                                                 <span class="badge bg-{{ $quiz->status === 'published' ? 'success' : ($quiz->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
                                                     {{ strtoupper($quiz->status ?? 'published') }}
