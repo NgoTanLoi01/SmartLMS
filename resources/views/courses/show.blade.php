@@ -4,10 +4,66 @@
 
 @section('content')
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
-        * {
+        *,
+        *::before,
+        *::after {
             box-sizing: border-box;
+        }
+
+        :root {
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --blue-900: #1e3a8a;
+
+            --amber-50: #fffbeb;
+            --amber-100: #fef3c7;
+            --amber-400: #fbbf24;
+            --amber-500: #f59e0b;
+            --amber-600: #d97706;
+            --amber-800: #92400e;
+
+            --purple-50: #f5f3ff;
+            --purple-100: #ede9fe;
+            --purple-500: #8b5cf6;
+            --purple-600: #7c3aed;
+            --purple-800: #5b21b6;
+
+            --green-50: #f0fdf4;
+            --green-100: #dcfce7;
+            --green-500: #22c55e;
+            --green-600: #16a34a;
+            --green-800: #166534;
+            --green-900: #14532d;
+
+            --red-50: #fef2f2;
+            --red-100: #fee2e2;
+            --red-700: #b91c1c;
+            --red-800: #991b1b;
+
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
+
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, .06), 0 1px 4px rgba(0, 0, 0, .04);
+            --shadow-lg: 0 10px 32px rgba(0, 0, 0, .10), 0 2px 8px rgba(0, 0, 0, .05);
         }
 
         body,
@@ -16,31 +72,57 @@
             font-family: 'Be Vietnam Pro', sans-serif;
         }
 
-        /* ── LAYOUT ── */
+        /* ── PAGE WRAPPER ── */
         .page-wrapper {
-            background: #f0f2f5;
+            background: #f0f4f8;
             min-height: 100vh;
-            padding: 16px 12px;
+            padding: 14px 12px;
         }
 
         @media (min-width: 768px) {
             .page-wrapper {
-                padding: 24px 20px;
+                padding: 20px 18px;
             }
         }
 
-        /* ── HEADER CARD ── */
+        /* ── TOP HEADER CARD ── */
         .header-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 16px 18px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+            border-radius: var(--radius-xl);
+            padding: 18px 20px;
             margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .04);
+            box-shadow: 0 8px 32px rgba(37, 99, 235, .28);
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-card::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .06);
+            pointer-events: none;
+        }
+
+        .header-card::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            left: 40%;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .04);
+            pointer-events: none;
         }
 
         @media (min-width: 992px) {
             .header-card {
-                border-radius: 20px;
                 padding: 22px 28px;
                 margin-bottom: 20px;
                 display: flex;
@@ -54,7 +136,7 @@
         .header-course-title {
             font-size: 1.05rem;
             font-weight: 800;
-            color: #111827;
+            color: #fff;
             margin: 0 0 4px;
             line-height: 1.3;
         }
@@ -67,56 +149,61 @@
 
         @media (min-width: 992px) {
             .header-course-title {
-                font-size: 1.3rem;
+                font-size: 1.35rem;
             }
         }
 
         .header-teacher {
             font-size: 13px;
-            color: #6b7280;
+            color: rgba(255, 255, 255, .78);
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         /* Progress */
         .progress-wrap {
-            margin-top: 10px;
+            margin-top: 12px;
         }
 
         .progress-label {
             display: flex;
             justify-content: space-between;
             font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #6b7280;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, .8);
         }
 
         .progress-label span:last-child {
-            color: #2563eb;
+            color: #fff;
         }
 
         .progress-track {
-            height: 7px;
-            background: #e5e7eb;
-            border-radius: 99px;
+            height: 8px;
+            background: rgba(255, 255, 255, .22);
+            border-radius: var(--radius-full);
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            border-radius: 99px;
-            background: linear-gradient(90deg, #60a5fa, #2563eb);
-            transition: width .6s ease;
+            border-radius: var(--radius-full);
+            background: linear-gradient(90deg, #86efac, #22c55e);
+            transition: width .7s cubic-bezier(.4, 0, .2, 1);
+            box-shadow: 0 0 8px rgba(34, 197, 94, .5);
         }
 
-        /* ── TOOLBAR ── */
+        /* ── TOOLBAR (teacher) ── */
         .toolbar {
             display: flex;
             align-items: center;
             gap: 5px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, .14);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, .22);
+            border-radius: var(--radius-md);
             padding: 6px;
             flex-wrap: wrap;
             margin-top: 12px;
@@ -134,9 +221,9 @@
             align-items: center;
             gap: 5px;
             font-size: 12px;
-            font-weight: 600;
-            padding: 6px 10px;
-            border-radius: 8px;
+            font-weight: 700;
+            padding: 7px 11px;
+            border-radius: var(--radius-sm);
             border: none;
             cursor: pointer;
             transition: all .18s;
@@ -150,52 +237,52 @@
         }
 
         .tool-btn.blue {
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: rgba(255, 255, 255, .9);
+            color: var(--blue-700);
         }
 
         .tool-btn.blue:hover {
-            background: #dbeafe;
+            background: #fff;
         }
 
         .tool-btn.amber {
-            background: #fffbeb;
-            color: #92400e;
+            background: var(--amber-100);
+            color: var(--amber-800);
         }
 
         .tool-btn.amber:hover {
-            background: #fef3c7;
+            background: var(--amber-400);
+            color: #fff;
         }
 
         .tool-btn.purple {
-            background: #f5f3ff;
-            color: #5b21b6;
+            background: var(--purple-100);
+            color: var(--purple-800);
         }
 
         .tool-btn.purple:hover {
-            background: #ede9fe;
+            background: var(--purple-500);
+            color: #fff;
         }
 
         .tool-btn.teal {
-            background: #ecfdf5;
-            color: #065f46;
+            background: var(--green-100);
+            color: var(--green-800);
         }
 
         .tool-btn.teal:hover {
-            background: #d1fae5;
+            background: var(--green-500);
+            color: #fff;
         }
 
-        /* ── MOBILE SIDEBAR OVERLAY + DRAWER ── */
-        /* The sidebar col stays in normal flow on desktop.
-                                   On mobile we use a separate off-canvas panel + overlay. */
-
+        /* ── MOBILE SIDEBAR ── */
         #mobile-sidebar-overlay {
             display: none;
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, .5);
             z-index: 1099;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(3px);
         }
 
         #mobile-sidebar-overlay.active {
@@ -206,16 +293,15 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: min(85vw, 320px);
+            width: min(88vw, 340px);
             height: 100%;
             background: #fff;
             z-index: 1100;
             transform: translateX(-110%);
             transition: transform .28s cubic-bezier(.4, 0, .2, 1);
             overflow-y: auto;
-            padding: 0;
-            border-radius: 0 16px 16px 0;
-            box-shadow: 4px 0 24px rgba(0, 0, 0, .15);
+            border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+            box-shadow: var(--shadow-lg);
         }
 
         #mobile-sidebar-drawer.open {
@@ -227,27 +313,27 @@
             align-items: center;
             justify-content: space-between;
             padding: 14px 16px;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid var(--gray-100);
             background: #fff;
             position: sticky;
             top: 0;
             z-index: 2;
         }
 
-        /* FAB to open drawer */
+        /* FAB */
         #btn-open-sidebar {
             position: fixed;
             bottom: 20px;
             left: 16px;
             z-index: 1050;
-            width: 46px;
-            height: 46px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: #2563eb;
+            background: var(--blue-600);
             color: #fff;
             border: none;
-            box-shadow: 0 4px 20px rgba(37, 99, 235, .4);
-            font-size: 16px;
+            box-shadow: 0 6px 24px rgba(37, 99, 235, .42);
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -256,7 +342,7 @@
         }
 
         #btn-open-sidebar:hover {
-            background: #1d4ed8;
+            background: var(--blue-700);
             transform: scale(1.06);
         }
 
@@ -266,7 +352,7 @@
             }
         }
 
-        /* ── DESKTOP SIDEBAR (normal flow, sticky) ── */
+        /* ── DESKTOP SIDEBAR ── */
         .desktop-sidebar-wrap {
             display: none;
         }
@@ -281,9 +367,9 @@
 
         .sidebar-inner-card {
             background: #fff;
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .04);
+            box-shadow: var(--shadow-md);
         }
 
         .sidebar-scroll {
@@ -292,7 +378,7 @@
         }
 
         .sidebar-scroll::-webkit-scrollbar {
-            width: 1px;
+            width: 3px;
         }
 
         .sidebar-scroll::-webkit-scrollbar-track {
@@ -300,38 +386,240 @@
         }
 
         .sidebar-scroll::-webkit-scrollbar-thumb {
-            background: #d1d5db;
+            background: var(--gray-200);
             border-radius: 99px;
         }
 
-        /* Shared sidebar list styles */
-        .lesson-item-wrapper,
-        .assignment-item-wrapper,
-        .quiz-item-wrapper {
-            transition: all 0.15s ease;
+        /* ── SIDEBAR HEADER ── */
+        .sidebar-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .sidebar-head-title {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--gray-500);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sidebar-head-count {
+            font-size: 11px;
+            font-weight: 700;
+            background: var(--blue-50);
+            color: var(--blue-700);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+
+        /* ── ACCORDION ── */
+        .accordion-button {
+            padding: 0;
+            font-weight: 700;
+            font-size: 14px;
+            background: #fff;
+            box-shadow: none !important;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background: var(--blue-50) !important;
+            color: var(--blue-700);
+        }
+
+        .accordion-button:hover {
+            background: var(--gray-50) !important;
+        }
+
+        .accordion-button:focus {
+            box-shadow: none !important;
+        }
+
+        .accordion-item {
+            border: none;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .accordion-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Module header wrapper */
+        .module-header-wrapper {
+            display: flex;
+            align-items: center;
+            position: relative;
+            transition: background .15s;
+        }
+
+        .module-header-wrapper:hover {
+            background: var(--gray-50);
+        }
+
+        .module-title-block {
+            padding: 12px 14px 12px 16px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .module-title-text {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1.4;
+        }
+
+        .module-meta {
+            font-size: 11px;
+            color: var(--blue-500);
+            display: block;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* ── LESSON ITEM ── */
+        .lesson-item-wrapper {
+            background: #fff;
+            border-bottom: 1px solid var(--gray-100);
             border-left: 3px solid transparent;
+            transition: all .15s;
             cursor: pointer;
         }
 
-        .lesson-item-wrapper:hover,
-        .assignment-item-wrapper:hover,
+        .lesson-item-wrapper:hover {
+            background: var(--blue-50) !important;
+            border-left-color: var(--blue-500);
+        }
+
+        .lesson-item-wrapper.active {
+            background: var(--blue-50) !important;
+            border-left-color: var(--blue-600);
+        }
+
+        /* ── ASSIGNMENT ITEM ── */
+        .assignment-item-wrapper {
+            background: var(--amber-50) !important;
+            border-bottom: 1px solid #fde68a;
+            border-left: 3px solid var(--amber-400);
+            transition: all .15s;
+            cursor: pointer;
+        }
+
+        .assignment-item-wrapper:hover {
+            background: var(--amber-100) !important;
+            border-left-color: var(--amber-600);
+        }
+
+        .assignment-item-wrapper.active {
+            background: var(--amber-100) !important;
+            border-left-color: var(--amber-600);
+        }
+
+        .assignment-item-wrapper.submitted {
+            background: var(--green-50) !important;
+            border-left-color: var(--green-600);
+            border-bottom-color: #bbf7d0;
+        }
+
+        /* ── QUIZ ITEM ── */
+        .quiz-item-wrapper {
+            background: var(--purple-50);
+            border-bottom: 1px solid var(--purple-100);
+            border-left: 3px solid transparent;
+            transition: all .15s;
+            cursor: pointer;
+        }
+
         .quiz-item-wrapper:hover {
-            background: #f9fafb !important;
-            border-left-color: #2563eb;
+            background: var(--purple-100) !important;
+            border-left-color: var(--purple-500);
         }
 
-        .lesson-item-wrapper.active,
-        .assignment-item-wrapper.active,
         .quiz-item-wrapper.active {
-            background: #eff6ff !important;
-            border-left-color: #2563eb;
+            background: var(--purple-100) !important;
+            border-left-color: var(--purple-600);
         }
 
+        .quiz-item-wrapper.completed {
+            background: var(--green-50) !important;
+            border-left-color: var(--green-600);
+            border-bottom-color: #bbf7d0;
+        }
+
+        /* Shared item text */
+        .lesson-name-text {
+            font-size: 13.5px;
+            color: var(--gray-900);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .lesson-dur-text {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+
+        /* Status pills */
+        .sidebar-status-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .sidebar-status-pill {
+            align-items: center;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            font-size: 10px;
+            font-weight: 800;
+            gap: 3px;
+            line-height: 1;
+            padding: 3px 7px;
+            white-space: nowrap;
+        }
+
+        .sidebar-status-pill.done {
+            background: var(--green-100);
+            color: var(--green-800);
+        }
+
+        .sidebar-status-pill.pending {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .sidebar-status-pill.assignment {
+            background: var(--amber-100);
+            color: var(--amber-800);
+        }
+
+        .sidebar-status-pill.quiz {
+            background: var(--purple-100);
+            color: var(--purple-800);
+        }
+
+        .sidebar-status-pill.overdue {
+            background: var(--red-100);
+            color: var(--red-800);
+        }
+
+        /* Action buttons */
         .action-buttons {
             opacity: 0;
-            transition: opacity 0.15s;
+            transition: opacity .15s;
             flex-shrink: 0;
-            padding-left: 4px;
+            padding-right: 6px;
         }
 
         @media (hover: none) {
@@ -348,23 +636,23 @@
         }
 
         .btn-action {
-            width: 26px;
-            height: 26px;
+            width: 28px;
+            height: 28px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             font-size: 12px;
             transition: all .15s;
             text-decoration: none;
         }
 
         .btn-edit {
-            color: #f59e0b;
+            color: var(--amber-500);
         }
 
         .btn-edit:hover {
-            background: #fef3c7;
+            background: var(--amber-100);
         }
 
         .btn-delete {
@@ -372,96 +660,63 @@
         }
 
         .btn-delete:hover {
-            background: #fee2e2;
-        }
-
-        .text-truncate-custom {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-            min-width: 0;
-        }
-
-        .accordion-button:not(.collapsed) {
-            background: #fff;
-            color: #2563eb;
-            box-shadow: none;
-        }
-
-        .accordion-button:focus {
-            box-shadow: none;
-        }
-
-        .accordion-button {
-            padding-right: 3rem;
-            font-weight: 700;
-            font-size: 15px;
-        }
-
-        .accordion-item {
-            border: none;
-            border-bottom: 1px solid #f3f4f6;
-        }
-
-        .accordion-item:last-child {
-            border-bottom: none;
+            background: var(--red-100);
         }
 
         /* ── CONTENT CARD ── */
         .content-card {
             background: #fff;
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .04);
+            box-shadow: var(--shadow-md);
             display: flex;
             flex-direction: column;
         }
 
         #video-container iframe {
-            border-radius: 16px 16px 0 0;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         }
 
         #external-link-container {
-            background: linear-gradient(135deg, #eff6ff, #f0fdf4);
-            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, var(--blue-50), #f0fdf4);
+            border-bottom: 1px solid var(--gray-200);
         }
 
-        /* ── LESSON ── */
+        /* ── LESSON AREA ── */
         #lesson-content-area {
             padding: 20px 18px;
         }
 
         @media (min-width: 768px) {
             #lesson-content-area {
-                padding: 36px 40px;
+                padding: 32px 36px;
             }
         }
 
         .lesson-header-title {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 800;
-            color: #111827;
-            margin-bottom: 14px;
+            color: var(--gray-900);
+            margin-bottom: 12px;
         }
 
         @media (min-width: 768px) {
             .lesson-header-title {
-                font-size: 1.4rem;
-                margin-bottom: 18px;
+                font-size: 1.35rem;
+                margin-bottom: 16px;
             }
         }
 
         .lesson-divider {
             border: none;
-            border-top: 2px solid #f3f4f6;
+            border-top: 2px solid var(--gray-100);
             margin-bottom: 20px;
         }
 
         .lesson-body {
-            font-size: 14px;
+            font-size: 14.5px;
             line-height: 1.85;
-            color: #374151;
+            color: var(--gray-700);
         }
 
         @media (min-width: 768px) {
@@ -473,22 +728,64 @@
         .course-intro-card {
             background: linear-gradient(135deg, #fafbff, #f0f9ff);
             border: 1px solid #e0eaff;
-            border-radius: 14px;
+            border-radius: var(--radius-md);
             padding: 20px;
         }
 
         @media (min-width: 768px) {
             .course-intro-card {
-                padding: 32px 36px;
+                padding: 28px 32px;
             }
         }
 
-        /* Attachment */
+        /* Welcome guide */
+        .welcome-guide {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+        }
+
+        .welcome-guide-grid {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-top: 14px;
+        }
+
+        @media (max-width: 991.98px) {
+            .welcome-guide-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .welcome-guide-item {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 14px 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .welcome-guide-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 15px;
+        }
+
+        /* ── ATTACHMENT ── */
         .attachment-box {
             margin: 0 18px 20px;
-            background: #fafafa;
-            border: 1.5px dashed #d1d5db;
-            border-radius: 12px;
+            background: var(--gray-50);
+            border: 1.5px dashed var(--gray-300);
+            border-radius: var(--radius-md);
             padding: 14px 16px;
             display: flex;
             align-items: center;
@@ -500,17 +797,78 @@
 
         @media (min-width: 768px) {
             .attachment-box {
-                margin: 0 40px 28px;
+                margin: 0 36px 24px;
                 flex-wrap: nowrap;
             }
         }
 
         .attachment-box:hover {
-            border-color: #2563eb;
-            background: #eff6ff;
+            border-color: var(--blue-500);
+            background: var(--blue-50);
         }
 
-        /* ── ASSIGNMENT ── */
+        /* ── NEXT STEP PANEL ── */
+        .lesson-next-step-panel {
+            margin: 0 18px 20px;
+            background: var(--blue-50);
+            border: 1px solid var(--blue-100);
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .lesson-next-step-panel {
+                margin: 0 36px 24px;
+                padding: 18px 20px;
+            }
+        }
+
+        .lesson-next-step-panel.is-complete {
+            background: var(--green-50);
+            border-color: #bbf7d0;
+        }
+
+        .lesson-next-step-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .lesson-next-step-copy {
+            min-width: 0;
+        }
+
+        .lesson-next-step-eyebrow {
+            color: var(--blue-600);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .06em;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        .lesson-next-step-title {
+            color: #0f172a;
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.35;
+            margin: 0;
+        }
+
+        .lesson-next-step-meta {
+            color: var(--gray-500);
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .lesson-next-step-actions {
+            display: flex;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+
+        /* ── ASSIGNMENT AREA ── */
         #assignment-content-area {
             padding: 20px 18px;
             background: #fffdf5;
@@ -518,19 +876,19 @@
 
         @media (min-width: 768px) {
             #assignment-content-area {
-                padding: 36px 40px;
+                padding: 32px 36px;
             }
         }
 
         .assignment-title {
             font-size: 1.1rem;
             font-weight: 800;
-            color: #111827;
+            color: var(--gray-900);
         }
 
         @media (min-width: 768px) {
             .assignment-title {
-                font-size: 1.35rem;
+                font-size: 1.3rem;
             }
         }
 
@@ -538,48 +896,48 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            background: #fef2f2;
-            color: #b91c1c;
+            background: var(--red-50);
+            color: var(--red-700);
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
             padding: 5px 12px;
-            border-radius: 99px;
+            border-radius: var(--radius-full);
             border: 1px solid #fecaca;
         }
 
         .instructions-box {
             background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
             padding: 18px 20px;
             line-height: 1.8;
-            color: #374151;
+            color: var(--gray-700);
             font-size: 14px;
         }
 
         @media (min-width: 768px) {
             .instructions-box {
-                padding: 24px 28px;
+                padding: 22px 26px;
             }
         }
 
         .submission-dropzone {
-            border: 2px dashed #fbbf24;
-            background: #fffbeb;
-            border-radius: 14px;
+            border: 2px dashed var(--amber-400);
+            background: var(--amber-50);
+            border-radius: var(--radius-md);
             padding: 20px 16px;
             transition: all .3s;
         }
 
         .submission-dropzone:hover {
-            border-color: #f59e0b;
-            background: #fef3c7;
+            border-color: var(--amber-500);
+            background: var(--amber-100);
         }
 
         .submitted-file-card {
             background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
             padding: 16px 18px;
             display: flex;
             align-items: center;
@@ -595,13 +953,13 @@
         }
 
         .grading-result-box {
-            border-radius: 12px;
-            background: #f0fdf4;
+            border-radius: var(--radius-md);
+            background: var(--green-50);
             border: 1px solid #bbf7d0;
             padding: 16px 18px;
         }
 
-        /* ── QUIZ ── */
+        /* ── QUIZ AREA ── */
         #quiz-content-area {
             padding: 24px 18px;
             background: #faf8ff;
@@ -616,7 +974,7 @@
         .quiz-display-title {
             font-size: 1.15rem;
             font-weight: 800;
-            color: #111827;
+            color: var(--gray-900);
             margin-bottom: 20px;
         }
 
@@ -629,18 +987,18 @@
 
         .quiz-stat-card {
             background: #fff;
-            border-radius: 14px;
+            border-radius: var(--radius-md);
             padding: 14px 16px;
             text-align: center;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
             flex: 1;
             min-width: 100px;
         }
 
         @media (min-width: 768px) {
             .quiz-stat-card {
-                padding: 20px 24px;
+                padding: 18px 22px;
                 min-width: 130px;
             }
         }
@@ -650,14 +1008,14 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: .06em;
-            color: #9ca3af;
+            color: var(--gray-400);
             margin-bottom: 6px;
         }
 
         .quiz-stat-value {
             font-size: 1.4rem;
             font-weight: 800;
-            color: #7c3aed;
+            color: var(--purple-600);
         }
 
         @media (min-width: 768px) {
@@ -667,12 +1025,12 @@
         }
 
         .btn-quiz-start {
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            background: linear-gradient(135deg, var(--purple-600), var(--purple-500));
             border: none;
             padding: 13px 28px;
             font-size: 14px;
             font-weight: 700;
-            border-radius: 99px;
+            border-radius: var(--radius-full);
             box-shadow: 0 6px 24px rgba(124, 58, 237, .28);
             transition: all .3s;
             color: #fff;
@@ -692,9 +1050,9 @@
         }
 
         .quiz-notice {
-            background: #fffbeb;
+            background: var(--amber-50);
             border: 1px solid #fde68a;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             padding: 16px 18px;
             text-align: left;
             max-width: 480px;
@@ -704,7 +1062,7 @@
         /* ── FOOTER NAV ── */
         .footer-nav {
             background: #fff;
-            border-top: 1px solid #f3f4f6;
+            border-top: 1px solid var(--gray-100);
             padding: 12px 16px;
             display: flex;
             justify-content: space-between;
@@ -719,20 +1077,23 @@
         }
 
         .btn-footer-nav {
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             font-weight: 600;
             font-size: 13px;
             padding: 8px 14px;
-            border: 1.5px solid #e5e7eb;
+            border: 1.5px solid var(--gray-200);
             background: #fff;
-            color: #374151;
+            color: var(--gray-700);
             transition: all .18s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .btn-footer-nav:hover:not(:disabled) {
-            border-color: #2563eb;
-            color: #2563eb;
-            background: #eff6ff;
+            border-color: var(--blue-500);
+            color: var(--blue-600);
+            background: var(--blue-50);
         }
 
         .btn-footer-nav:disabled {
@@ -743,13 +1104,16 @@
         .btn-complete-lesson {
             background: linear-gradient(135deg, #22c55e, #16a34a);
             border: none;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             font-weight: 700;
             font-size: 13px;
-            padding: 8px 16px;
+            padding: 8px 18px;
             color: #fff;
             box-shadow: 0 4px 14px rgba(34, 197, 94, .28);
             transition: all .3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .btn-complete-lesson:hover {
@@ -758,390 +1122,24 @@
             color: #fff;
         }
 
-        .modal-backdrop {
-            z-index: 1050 !important;
+        .btn-complete-lesson.completed-state {
+            background: var(--green-50);
+            color: var(--green-800);
+            box-shadow: none;
+            border: 1.5px solid #bbf7d0;
         }
 
-        .modal {
-            z-index: 1060 !important;
-        }
-
-        /* Drawer không ảnh hưởng desktop */
-        @media (min-width: 768px) {
-
-            #mobile-sidebar-drawer,
-            #mobile-sidebar-overlay {
-                display: none !important;
-            }
-        }
-
-        /* Ngăn sidebar tràn ngang trên desktop */
-        .col-md-4.col-lg-3 {
-            min-width: 0;
-        }
-
-        .desktop-sidebar-wrap {
-            min-width: 0;
-            max-width: 100%;
-        }
-
-        .sidebar-inner-card {
-            min-width: 0;
-            overflow: hidden;
-        }
-
-        .accordion-button:not(.collapsed) {
-            background: #DBEAFE !important;
-            color: #1E40AF;
-            border-left-color: #1D4ED8 !important;
+        .btn-complete-lesson.completed-state:hover {
+            transform: none;
             box-shadow: none;
         }
 
-        .accordion-button:hover {
-            background: #DBEAFE !important;
-        }
-
-        .accordion-button:focus {
-            box-shadow: none;
-        }
-
-        .accordion-item {
-            border: none;
-            border-bottom: 1px solid #E5E7EB;
-        }
-
-        .accordion-item:last-child {
-            border-bottom: none;
-        }
-
-        .module-meta {
-            font-size: 11px;
-            color: #3B82F6;
-            display: block;
-            font-weight: 400;
-            margin-top: 1px;
-        }
-
-        .sidebar-status-row {
-            align-items: center;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 5px;
-        }
-
-        .sidebar-status-pill {
-            align-items: center;
-            border-radius: 99px;
-            display: inline-flex;
-            font-size: 10px;
-            font-weight: 800;
-            gap: 4px;
-            line-height: 1;
-            padding: 4px 7px;
-            white-space: nowrap;
-        }
-
-        .sidebar-status-pill.done {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .sidebar-status-pill.pending {
-            background: #f3f4f6;
-            color: #4b5563;
-        }
-
-        .sidebar-status-pill.assignment {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .sidebar-status-pill.quiz {
-            background: #ede9fe;
-            color: #5b21b6;
-        }
-
-        .sidebar-status-pill.overdue {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Bài học — trắng, viền trái xanh khi hover/active */
-        .lesson-item-wrapper {
-            background: var(--color-background-primary);
-            border-bottom: 0.5px solid #F3F4F6;
-            border-left: 3px solid transparent;
-            transition: all 0.15s;
-            cursor: pointer;
-        }
-
-        .lesson-item-wrapper:hover {
-            background: #F8FAFF !important;
-            border-left-color: #93C5FD;
-        }
-
-        .lesson-item-wrapper.active {
-            background: #EFF6FF !important;
-            border-left-color: #2563EB;
-        }
-
-        .lesson-icon-video {
-            color: #2563EB;
-            font-size: 14px;
-        }
-
-        .lesson-icon-done {
-            color: #16A34A;
-            font-size: 14px;
-        }
-
-        .lesson-icon-doc {
-            color: #6B7280;
-            font-size: 14px;
-        }
-
-        /* Bài tập — vàng amber */
-        .assignment-item-wrapper {
-            background: #FFFBEB !important;
-            border-bottom: 0.5px solid #FDE68A;
-            border-left: 3px solid #F59E0B;
-            transition: all 0.15s;
-            cursor: pointer;
-        }
-
-        .assignment-item-wrapper:hover {
-            background: #FEF3C7 !important;
-            border-left-color: #D97706;
-        }
-
-        .assignment-item-wrapper.active {
-            background: #FEF3C7 !important;
-            border-left-color: #D97706;
-        }
-
-        .lesson-name-text {
-            font-size: 14px;
-            color: #111827;
-        }
-
-        .assignment-item .lesson-name-text {
-            color: #92400E;
-            font-weight: 600;
-        }
-
-        .assignment-item .lesson-dur-text {
-            color: #B45309;
-        }
-
-        .lesson-icon-assign {
-            color: #D97706;
-            font-size: 14px;
-        }
-
-        /* Bài tập đã nộp — xanh lá nhạt */
-        .assignment-item-wrapper.submitted {
-            background: #F0FFF4 !important;
-            border-left-color: #16A34A;
-            border-bottom-color: #BBF7D0;
-        }
-
-        .assignment-item-wrapper.submitted .lesson-name-text {
-            color: #14532D;
-        }
-
-        .assignment-item-wrapper.submitted .lesson-dur-text {
-            color: #15803D;
-        }
-
-        /* Bài kiểm tra — tím */
-        .quiz-item-wrapper {
-            background: #FAFAFA;
-            border-bottom: 0.5px solid #EDE9FE;
-            border-left: 3px solid transparent;
-            transition: all 0.15s;
-            cursor: pointer;
-        }
-
-        .quiz-item-wrapper:hover {
-            background: #F5F3FF !important;
-            border-left-color: #C4B5FD;
-        }
-
-        .quiz-item-wrapper.active {
-            background: #F5F3FF !important;
-            border-left-color: #7C3AED;
-        }
-
-        .quiz-item-wrapper .lesson-name-text {
-            color: #5B21B6;
-            font-weight: 600;
-        }
-
-        .quiz-item-wrapper .lesson-dur-text {
-            color: #7C3AED;
-        }
-
-        .lesson-icon-quiz {
-            color: #7C3AED;
-            font-size: 14px;
-        }
-
-        /* Header section Quiz — tím đậm hơn */
-        .quiz-section-header .accordion-button {
-            background: #F5F3FF !important;
-            border-left-color: #7C3AED !important;
-            color: #5B21B6;
-        }
-
-        .quiz-section-header .accordion-button:not(.collapsed),
-        .quiz-section-header .accordion-button:hover {
-            background: #EDE9FE !important;
-            color: #4C1D95;
-        }
-
-        /* Đã hoàn thành (quiz completed) */
-        .quiz-item-wrapper.completed {
-            background: #F0FDF4 !important;
-            border-left-color: #16A34A;
-            border-bottom-color: #BBF7D0;
-        }
-
-        .quiz-item-wrapper.completed .lesson-name-text {
-            color: #14532D;
-        }
-
-        .quiz-item-wrapper.completed .lesson-dur-text {
-            color: #16A34A;
-        }
-
-        .course-dashboard-grid {
-            display: grid;
-            gap: 14px;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            margin-bottom: 16px;
-        }
-
-        .course-dashboard-card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
-        }
-
-        .course-dashboard-label {
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: .04em;
-            text-transform: uppercase;
-        }
-
-        .course-dashboard-value {
-            color: #0f172a;
-            font-size: 26px;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-top: 6px;
-        }
-
-        .course-dashboard-sub {
-            color: #64748b;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
-        .welcome-guide {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 18px;
-        }
-
-        .welcome-guide-grid {
-            display: grid;
-            gap: 10px;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            margin-top: 14px;
-        }
-
-        .welcome-guide-item {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 12px;
-        }
-
-        .welcome-guide-item i {
-            margin-bottom: 8px;
-        }
-
-        .lesson-next-step-panel {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 14px;
-            margin: 0 18px 20px;
-            padding: 16px;
-        }
-
-        @media (min-width: 768px) {
-            .lesson-next-step-panel {
-                margin: 0 40px 28px;
-                padding: 18px 20px;
-            }
-        }
-
-        .lesson-next-step-panel.is-complete {
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-        }
-
-        .lesson-next-step-content {
-            align-items: center;
-            display: flex;
-            gap: 12px;
-            justify-content: space-between;
-        }
-
-        .lesson-next-step-copy {
-            min-width: 0;
-        }
-
-        .lesson-next-step-eyebrow {
-            color: #2563eb;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .04em;
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-
-        .lesson-next-step-title {
-            color: #0f172a;
-            font-size: 15px;
-            font-weight: 800;
-            line-height: 1.35;
-            margin: 0;
-        }
-
-        .lesson-next-step-meta {
-            color: #64748b;
-            font-size: 12px;
-            margin-top: 3px;
-        }
-
-        .lesson-next-step-actions {
-            display: flex;
-            flex-shrink: 0;
-            gap: 8px;
-        }
-
+        /* ── TEACHER PANEL ── */
         .teacher-mode-panel {
             background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
             margin-bottom: 16px;
             padding: 14px 16px;
         }
@@ -1161,34 +1159,34 @@
         }
 
         .teacher-mode-subtitle {
-            color: #64748b;
+            color: var(--gray-500);
             font-size: 12px;
             margin-top: 3px;
         }
 
         .teacher-mode-toggle {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            background: var(--gray-100);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
             display: inline-flex;
-            gap: 4px;
-            padding: 4px;
+            gap: 3px;
+            padding: 3px;
         }
 
         .teacher-mode-btn {
             background: transparent;
             border: 0;
-            border-radius: 8px;
-            color: #475569;
+            border-radius: 6px;
+            color: var(--gray-500);
             font-size: 12px;
-            font-weight: 800;
+            font-weight: 700;
             padding: 7px 10px;
         }
 
         .teacher-mode-btn.active {
             background: #fff;
-            box-shadow: 0 1px 4px rgba(15, 23, 42, .12);
-            color: #1d4ed8;
+            box-shadow: var(--shadow-sm);
+            color: var(--blue-700);
         }
 
         .teacher-quick-actions {
@@ -1199,14 +1197,20 @@
         }
 
         .teacher-quick-actions .tool-btn {
-            margin-top: 0;
+            background: var(--gray-50);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+        }
+
+        .teacher-quick-actions .tool-btn:hover {
+            background: var(--gray-100);
         }
 
         .teacher-preview-banner {
             align-items: center;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 10px;
+            background: var(--blue-50);
+            border: 1px solid var(--blue-100);
+            border-radius: var(--radius-sm);
             color: #1e40af;
             display: none;
             font-size: 13px;
@@ -1216,48 +1220,12 @@
             padding: 10px 12px;
         }
 
-        .drag-handle {
-            color: #94a3b8;
-            cursor: grab;
-            font-size: 13px;
-            padding-left: 8px;
-        }
-
-        .sortable-ghost {
-            opacity: .45;
-        }
-
-        .reorder-toast {
-            background: #ecfdf5;
-            border: 1px solid #bbf7d0;
-            border-radius: 10px;
-            color: #166534;
-            display: none;
-            font-size: 12px;
-            font-weight: 800;
-            margin: 0 0 10px;
-            padding: 9px 11px;
-        }
-
-        .reorder-toast.show {
-            display: block;
-        }
-
-        .preview-student-mode .toolbar,
-        .preview-student-mode .teacher-quick-actions,
-        .preview-student-mode .course-dashboard-grid,
-        .preview-student-mode .action-buttons {
-            display: none !important;
-        }
-
-        .preview-student-mode .teacher-preview-banner {
-            display: flex;
-        }
-
-        @media (max-width: 991.98px) {
-            .welcome-guide-grid {
-                grid-template-columns: 1fr;
-            }
+        /* ── DASHBOARD GRID ── */
+        .course-dashboard-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-bottom: 16px;
         }
 
         @media (max-width: 991.98px) {
@@ -1270,10 +1238,117 @@
             .course-dashboard-grid {
                 grid-template-columns: 1fr;
             }
+        }
 
-            .lesson-next-step-actions .btn {
-                width: 100%;
+        .course-dashboard-card {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .course-dashboard-label {
+            color: var(--gray-500);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+
+        .course-dashboard-value {
+            color: #0f172a;
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-top: 6px;
+        }
+
+        .course-dashboard-sub {
+            color: var(--gray-500);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* ── SORTABLE ── */
+        .drag-handle {
+            color: var(--gray-300);
+            cursor: grab;
+            font-size: 13px;
+            padding-left: 8px;
+            transition: color .15s;
+        }
+
+        .drag-handle:hover {
+            color: var(--gray-500);
+        }
+
+        .sortable-ghost {
+            opacity: .45;
+        }
+
+        .reorder-toast {
+            background: var(--green-50);
+            border: 1px solid #bbf7d0;
+            border-radius: var(--radius-sm);
+            color: var(--green-800);
+            display: none;
+            font-size: 12px;
+            font-weight: 800;
+            margin: 0 0 10px;
+            padding: 9px 11px;
+        }
+
+        .reorder-toast.show {
+            display: block;
+        }
+
+        /* ── PREVIEW MODE ── */
+        .preview-student-mode .toolbar,
+        .preview-student-mode .teacher-quick-actions,
+        .preview-student-mode .course-dashboard-grid,
+        .preview-student-mode .action-buttons {
+            display: none !important;
+        }
+
+        .preview-student-mode .teacher-preview-banner {
+            display: flex;
+        }
+
+        /* ── MISC ── */
+        .text-truncate-custom {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            min-width: 0;
+        }
+
+        .col-md-4.col-lg-3,
+        .desktop-sidebar-wrap,
+        .sidebar-inner-card {
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
+
+        .modal {
+            z-index: 1060 !important;
+        }
+
+        @media (min-width: 768px) {
+
+            #mobile-sidebar-drawer,
+            #mobile-sidebar-overlay {
+                display: none !important;
             }
+        }
+
+        @media (max-width: 767.98px) {
 
             .lesson-next-step-content,
             .teacher-mode-row {
@@ -1296,14 +1371,13 @@
     <div id="mobile-sidebar-overlay"></div>
     <div id="mobile-sidebar-drawer">
         <div class="mobile-drawer-header">
-            <h6 class="mb-0 fw-bold small text-uppercase text-muted ms-3">
-                <i class="fas fa-list-ol me-2"></i>Nội dung học tập
+            <h6 class="mb-0 fw-bold small text-uppercase text-muted" style="font-size:11px;letter-spacing:.05em;">
+                <i class="fas fa-list-ol me-2 text-primary"></i>Nội dung học tập
             </h6>
             <button id="btn-close-sidebar" class="btn btn-sm btn-light border" type="button">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        {{-- Sidebar content injected by JS --}}
         <div id="mobile-sidebar-content"></div>
     </div>
 
@@ -1311,17 +1385,23 @@
 
         {{-- ── HEADER ── --}}
         <div class="header-card">
-            <div class="flex-grow-1 min-w-0">
+            <div class="flex-grow-1 min-w-0" style="position:relative;z-index:1;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span
+                        style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.05em;text-transform:uppercase;">
+                        Khóa học
+                    </span>
+                </div>
                 <h1 class="header-course-title">{{ $course->title }}</h1>
                 <p class="header-teacher">
-                    <i class="fas fa-chalkboard-teacher me-1"></i> Giáo viên: {{ $course->teacher->name }}
+                    <i class="fas fa-chalkboard-teacher"></i> {{ $course->teacher->name }}
                 </p>
                 @if (auth()->user()->role === 'student')
                     <div class="progress-wrap">
                         <div class="progress-label">
-                            <span>Tiến độ học tập</span>
-                            <span id="progress-text">{{ $completedCount }}/{{ $totalLessons }} bài
-                                &nbsp;({{ $progress }}%)</span>
+                            <span>Tiến độ</span>
+                            <span id="progress-text">{{ $completedCount }}/{{ $totalLessons }} bài &nbsp;·&nbsp;
+                                {{ $progress }}%</span>
                         </div>
                         <div class="progress-track">
                             <div id="progress-bar" class="progress-fill" style="width: {{ $progress }}%;"></div>
@@ -1331,7 +1411,7 @@
             </div>
 
             @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                <div class="toolbar">
+                <div class="toolbar" style="position:relative;z-index:1;">
                     <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addModuleModal">
                         <i class="fas fa-folder-plus"></i> Thêm chương
                     </button>
@@ -1355,10 +1435,11 @@
             <div class="teacher-mode-panel" id="teacher-mode-panel">
                 <div class="teacher-mode-row">
                     <div>
-                        <h6 class="teacher-mode-title"><i class="fas fa-layer-group me-2 text-primary"></i>Chế độ giáo viên</h6>
-                        <div class="teacher-mode-subtitle">Quản lý nội dung, theo dõi tiến độ và thao tác nhanh trên khóa học.</div>
+                        <h6 class="teacher-mode-title"><i class="fas fa-layer-group me-2 text-primary"></i>Chế độ giáo viên
+                        </h6>
+                        <div class="teacher-mode-subtitle">Quản lý nội dung, theo dõi tiến độ và thao tác nhanh.</div>
                     </div>
-                    <div class="teacher-mode-toggle" role="group" aria-label="Chọn chế độ xem khóa học">
+                    <div class="teacher-mode-toggle" role="group">
                         <button type="button" class="teacher-mode-btn active" data-course-mode="manage">
                             <i class="fas fa-pen-to-square me-1"></i>Quản lý
                         </button>
@@ -1369,7 +1450,7 @@
                 </div>
                 <div class="teacher-preview-banner">
                     <i class="fas fa-eye"></i>
-                    <span>Bạn đang xem ở chế độ học sinh. Các nút sửa/xóa/tạo mới đang được ẩn tạm thời.</span>
+                    <span>Đang xem ở chế độ học sinh. Nút sửa/xóa đang ẩn.</span>
                 </div>
                 <div class="teacher-quick-actions">
                     <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addLessonModal">
@@ -1394,24 +1475,28 @@
         @if (auth()->user()->role !== 'student')
             <div class="course-dashboard-grid">
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label">Học sinh</div>
+                    <div class="course-dashboard-label"><i class="fas fa-users me-1 text-blue-500"></i> Học sinh</div>
                     <div class="course-dashboard-value">{{ $courseDashboard['students_count'] }}</div>
-                    <div class="course-dashboard-sub">{{ $courseDashboard['modules_count'] }} chương · {{ $courseDashboard['lessons_count'] }} bài học</div>
+                    <div class="course-dashboard-sub">{{ $courseDashboard['modules_count'] }} chương ·
+                        {{ $courseDashboard['lessons_count'] }} bài</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label">Hoàn thành bài học</div>
+                    <div class="course-dashboard-label"><i class="fas fa-graduation-cap me-1"></i> Hoàn thành bài học</div>
                     <div class="course-dashboard-value">{{ $courseDashboard['lesson_completion_rate'] }}%</div>
-                    <div class="course-dashboard-sub">Tỷ lệ hoàn thành toàn khóa</div>
+                    <div class="course-dashboard-sub">Tỷ lệ toàn khóa</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label">Nộp bài tập</div>
+                    <div class="course-dashboard-label"><i class="fas fa-file-signature me-1 text-warning"></i> Nộp bài tập
+                    </div>
                     <div class="course-dashboard-value">{{ $courseDashboard['assignment_submission_rate'] }}%</div>
-                    <div class="course-dashboard-sub">{{ $courseDashboard['pending_grades'] }} bài đang chờ chấm</div>
+                    <div class="course-dashboard-sub">{{ $courseDashboard['pending_grades'] }} bài chờ chấm</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label">Quiz</div>
+                    <div class="course-dashboard-label"><i class="fas fa-stopwatch me-1 text-purple"></i> Quiz</div>
                     <div class="course-dashboard-value">{{ $courseDashboard['quiz_completion_rate'] }}%</div>
-                    <div class="course-dashboard-sub">Điểm TB: {{ $courseDashboard['average_score'] !== null ? round($courseDashboard['average_score'], 1) : 'N/A' }}</div>
+                    <div class="course-dashboard-sub">Điểm TB:
+                        {{ $courseDashboard['average_score'] !== null ? round($courseDashboard['average_score'], 1) : 'N/A' }}
+                    </div>
                 </div>
             </div>
         @endif
@@ -1419,23 +1504,26 @@
         {{-- ── MAIN GRID ── --}}
         <div class="row g-3 align-items-start">
 
-            {{-- DESKTOP SIDEBAR (hidden on mobile, shown md+) --}}
+            {{-- DESKTOP SIDEBAR --}}
             <div class="col-md-4 col-lg-3 d-none d-md-block">
                 <div class="desktop-sidebar-wrap">
                     <div class="sidebar-inner-card">
-	                        <div class="card-header bg-white py-3 border-bottom">
-	                            <h6 class="mb-0 fw-bold small text-uppercase text-muted ms-3">
-	                                <i class="fas fa-list-ol me-2"></i>Nội dung học tập
-	                            </h6>
-	                        </div>
-                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
-                                <div id="reorder-toast" class="reorder-toast mx-3 mt-3">
-                                    <i class="fas fa-check me-1"></i>Đã lưu thứ tự nội dung
-                                </div>
+                        <div class="sidebar-head">
+                            <h6 class="sidebar-head-title">
+                                <i class="fas fa-list-ol text-primary"></i>Nội dung học tập
+                            </h6>
+                            @if (auth()->user()->role === 'student')
+                                <span class="sidebar-head-count">{{ $completedCount }}/{{ $totalLessons }}</span>
                             @endif
-	                        <div class="sidebar-scroll">
-	                            @include('courses.partials.sidebar')
-	                        </div>
+                        </div>
+                        @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                            <div id="reorder-toast" class="reorder-toast mx-3 mt-3">
+                                <i class="fas fa-check me-1"></i>Đã lưu thứ tự nội dung
+                            </div>
+                        @endif
+                        <div class="sidebar-scroll">
+                            @include('courses.partials.sidebar')
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1452,7 +1540,7 @@
                     {{-- External link banner --}}
                     <div id="external-link-container" class="p-4 p-md-5 text-center d-none border-bottom">
                         <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle p-3"
-                            style="background:#dbeafe;">
+                            style="background:var(--blue-100);">
                             <i class="fas fa-external-link-alt fa-2x text-primary"></i>
                         </div>
                         <h5 class="fw-bold text-dark mb-1">Tài liệu / Video tham khảo ngoài</h5>
@@ -1473,28 +1561,47 @@
                             </div>
                             <div id="welcome-placeholder" class="welcome-guide mt-4">
                                 @if (auth()->user()->role === 'student')
-                                    <h6 class="fw-bold mb-2"><i class="fas fa-compass me-2 text-primary"></i>Bắt đầu học ở đâu?</h6>
-                                    <div class="text-muted small">Bạn có thể bấm "Mở ngay" ở khối phía trên, hoặc chọn một mục trong danh sách nội dung. Các mục đã hoàn thành sẽ có dấu tích màu xanh.</div>
+                                    <h6 class="fw-bold mb-1" style="font-size:14px;"><i
+                                            class="fas fa-compass me-2 text-primary"></i>Bắt đầu từ đâu?</h6>
+                                    <p class="text-muted small mb-0">Chọn một mục trong danh sách bên trái để bắt đầu. Bài
+                                        đã xong sẽ có dấu tích xanh.</p>
                                     <div class="welcome-guide-grid">
                                         <div class="welcome-guide-item">
-                                            <i class="fas fa-play-circle text-primary d-block"></i>
-                                            <div class="fw-bold small">Bài học</div>
-                                            <div class="text-muted small">Đọc nội dung, xem video rồi đánh dấu hoàn thành.</div>
+                                            <div class="welcome-guide-icon" style="background:var(--blue-50);">
+                                                <i class="fas fa-play-circle" style="color:var(--blue-600);"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold" style="font-size:13px;">Bài học</div>
+                                                <div class="text-muted" style="font-size:12px;line-height:1.5;">Đọc nội
+                                                    dung, xem video rồi đánh dấu hoàn thành.</div>
+                                            </div>
                                         </div>
                                         <div class="welcome-guide-item">
-                                            <i class="fas fa-file-signature text-warning d-block"></i>
-                                            <div class="fw-bold small">Bài tập</div>
-                                            <div class="text-muted small">Xem yêu cầu, nộp file hoặc nhập bài tự luận.</div>
+                                            <div class="welcome-guide-icon" style="background:var(--amber-50);">
+                                                <i class="fas fa-file-signature" style="color:var(--amber-500);"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold" style="font-size:13px;">Bài tập</div>
+                                                <div class="text-muted" style="font-size:12px;line-height:1.5;">Xem yêu
+                                                    cầu, nộp file hoặc viết bài tự luận.</div>
+                                            </div>
                                         </div>
                                         <div class="welcome-guide-item">
-                                            <i class="fas fa-stopwatch text-purple d-block" style="color:#7c3aed;"></i>
-                                            <div class="fw-bold small">Quiz</div>
-                                            <div class="text-muted small">Bấm bắt đầu khi đã sẵn sàng vì hệ thống sẽ tính giờ.</div>
+                                            <div class="welcome-guide-icon" style="background:var(--purple-50);">
+                                                <i class="fas fa-stopwatch" style="color:var(--purple-600);"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold" style="font-size:13px;">Quiz</div>
+                                                <div class="text-muted" style="font-size:12px;line-height:1.5;">Bấm bắt
+                                                    đầu khi sẵn sàng vì hệ thống sẽ tính giờ.</div>
+                                            </div>
                                         </div>
                                     </div>
                                 @else
-                                    <h6 class="fw-bold mb-2"><i class="fas fa-pen-to-square me-2 text-primary"></i>Quản lý nội dung khóa học</h6>
-                                    <div class="text-muted small">Chọn bài học, bài tập hoặc quiz ở danh sách bên trái để xem nhanh. Các nút thêm nội dung nằm ở thanh công cụ phía trên.</div>
+                                    <h6 class="fw-bold mb-2" style="font-size:14px;"><i
+                                            class="fas fa-pen-to-square me-2 text-primary"></i>Quản lý nội dung</h6>
+                                    <div class="text-muted small">Chọn bài học, bài tập hoặc quiz ở danh sách bên trái để
+                                        xem nhanh. Dùng các nút thêm nội dung ở phần trên.</div>
                                 @endif
                             </div>
                         </div>
@@ -1503,11 +1610,12 @@
                     {{-- Attachment --}}
                     <div id="lesson-attachment-container" class="attachment-box d-none">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="bg-primary bg-opacity-10 rounded-3 p-2 p-md-3">
-                                <i class="fas fa-file-pdf fa-lg text-primary"></i>
+                            <div
+                                style="background:var(--blue-50);border-radius:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-file-pdf text-primary"></i>
                             </div>
                             <div>
-                                <span class="fw-bold text-dark d-block" style="font-size:14px;">Tài liệu đính kèm</span>
+                                <span class="fw-bold text-dark d-block" style="font-size:13px;">Tài liệu đính kèm</span>
                                 <span id="lesson-attachment-name" class="text-muted"
                                     style="font-size:12px;">filename.pdf</span>
                             </div>
@@ -1523,12 +1631,13 @@
                             <div class="lesson-next-step-copy">
                                 <div id="lesson-next-step-eyebrow" class="lesson-next-step-eyebrow">Bước tiếp theo</div>
                                 <h3 id="lesson-next-step-title" class="lesson-next-step-title">Tiếp tục học</h3>
-                                <div id="lesson-next-step-meta" class="lesson-next-step-meta">Chọn hành động phù hợp để tiếp tục.</div>
+                                <div id="lesson-next-step-meta" class="lesson-next-step-meta">Chọn hành động phù hợp để
+                                    tiếp tục.</div>
                             </div>
                             <div class="lesson-next-step-actions">
                                 <button type="button" id="lesson-next-step-primary"
-                                    class="btn btn-primary btn-sm fw-bold course-jump-btn"
-                                    data-target-type="" data-target-id="">
+                                    class="btn btn-primary btn-sm fw-bold course-jump-btn" data-target-type=""
+                                    data-target-id="">
                                     Mở ngay
                                 </button>
                                 <button type="button" id="lesson-next-step-secondary"
@@ -1544,7 +1653,7 @@
                     <div id="assignment-content-area" class="d-none flex-column">
                         <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
                             <h2 id="assignment-title" class="assignment-title">
-                                <i class="fas fa-tasks me-2" style="color:#f59e0b;"></i>Tiêu đề bài tập
+                                <i class="fas fa-tasks me-2" style="color:var(--amber-500);"></i>Tiêu đề bài tập
                             </h2>
                             <span id="assignment-badge" class="badge rounded-pill px-3 py-2 fs-6">Trạng thái</span>
                         </div>
@@ -1554,7 +1663,7 @@
                             </span>
                         </div>
                         <hr class="lesson-divider">
-                        <h6 class="fw-700 mb-3" style="font-weight:700;color:#374151;">
+                        <h6 class="fw-bold mb-3" style="color:var(--gray-700);">
                             <i class="fas fa-list-check me-2 text-primary"></i>Yêu cầu bài tập
                         </h6>
                         <div id="assignment-instructions" class="instructions-box mb-4"></div>
@@ -1571,8 +1680,7 @@
                                                 <i class="fas fa-clock me-2 text-success"></i>Thông tin nộp bài
                                             </p>
                                             <p class="mb-0 text-muted" style="font-size:12px;">
-                                                Đã nộp lúc:
-                                                <span id="submitted-time-text" class="fw-medium"></span>
+                                                Đã nộp lúc: <span id="submitted-time-text" class="fw-medium"></span>
                                             </p>
                                         </div>
                                     </div>
@@ -1581,14 +1689,16 @@
                                             <p class="mb-1 fw-bold" style="font-size:14px;">
                                                 <i class="fas fa-file-alt me-2 text-primary"></i>Tài liệu đã tải lên
                                             </p>
-                                            <p class="mb-0 text-muted" style="font-size:12px;">Mở file để xem chi tiết bài làm.</p>
+                                            <p class="mb-0 text-muted" style="font-size:12px;">Mở file để xem chi tiết bài
+                                                làm.</p>
                                         </div>
                                         <a href="#" id="submitted-file-link" target="_blank"
                                             class="btn btn-outline-primary btn-sm rounded-pill px-3 flex-shrink-0">
                                             <i class="fas fa-eye me-1"></i> Xem file
                                         </a>
                                     </div>
-                                    <div id="submitted-text-answer-card" class="submitted-file-card d-none mb-3 align-items-start">
+                                    <div id="submitted-text-answer-card"
+                                        class="submitted-file-card d-none mb-3 align-items-start">
                                         <div class="w-100">
                                             <p class="mb-2 fw-bold" style="font-size:14px;">
                                                 <i class="fas fa-align-left me-2 text-primary"></i>Bài tự luận đã nộp
@@ -1639,14 +1749,14 @@
                                             <label for="essay-answer-input" class="form-label small fw-bold text-muted">
                                                 Nội dung bài tự luận
                                             </label>
-                                            <textarea name="text_answer" id="essay-answer-input" class="form-control bg-white border-0 shadow-sm"
-                                                rows="8" placeholder="Nhập bài làm tự luận của bạn..."></textarea>
+                                            <textarea name="text_answer" id="essay-answer-input" class="form-control bg-white border-0 shadow-sm" rows="8"
+                                                placeholder="Nhập bài làm tự luận của bạn..."></textarea>
                                         </div>
                                         <div class="d-flex flex-column flex-sm-row gap-2">
                                             <div id="file-upload-field" class="flex-grow-1">
                                                 <input type="file" name="file" id="assignment-file-input"
                                                     class="form-control bg-white border-0 shadow-sm">
-                                                <div class="form-text small">Chỉ cần chọn file với bài dạng nộp file hoặc file + tự luận.</div>
+                                                <div class="form-text small">Chỉ cần chọn file với bài dạng nộp file.</div>
                                             </div>
                                             <button class="btn btn-warning text-dark px-4 fw-bold flex-shrink-0"
                                                 type="submit">
@@ -1672,8 +1782,9 @@
                         <div class="w-100" style="max-width:520px;">
                             <div class="text-center mb-4">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                                    style="width:68px;height:68px;background:#f5f3ff;">
-                                    <i id="quiz-main-icon" class="fas fa-stopwatch fa-2x" style="color:#7c3aed;"></i>
+                                    style="width:68px;height:68px;background:var(--purple-50);">
+                                    <i id="quiz-main-icon" class="fas fa-stopwatch fa-2x"
+                                        style="color:var(--purple-600);"></i>
                                 </div>
                                 <h2 id="quiz-display-title" class="quiz-display-title">Tiêu đề bài kiểm tra</h2>
                             </div>
@@ -1682,7 +1793,7 @@
                                     <div class="quiz-stat-label"><i class="fas fa-clock me-1"></i> Thời gian</div>
                                     <div class="quiz-stat-value">
                                         <span id="quiz-display-duration">0</span>
-                                        <small style="font-size:.8rem;font-weight:600;color:#6b7280;">phút</small>
+                                        <small style="font-size:.8rem;font-weight:600;color:var(--gray-500);">phút</small>
                                     </div>
                                 </div>
                                 @if (auth()->user()->role === 'student')
@@ -1692,7 +1803,7 @@
                                                 style="font-size:.95rem;">Chưa làm</span></div>
                                     </div>
                                     <div id="quiz-score-box" class="quiz-stat-card d-none"
-                                        style="background:#f0fdf4;border-color:#bbf7d0;">
+                                        style="background:var(--green-50);border-color:#bbf7d0;">
                                         <div class="quiz-stat-label text-success"><i class="fas fa-star me-1"></i> Điểm số
                                         </div>
                                         <div class="quiz-stat-value text-success"><span id="quiz-score-text">0</span>/10
@@ -1704,12 +1815,12 @@
                             @if (auth()->user()->role === 'student')
                                 <div id="quiz-student-action-area">
                                     <div class="quiz-notice mb-4">
-                                        <h6 class="fw-bold mb-2" style="color:#92400e;font-size:13px;">
+                                        <h6 class="fw-bold mb-2" style="color:var(--amber-800);font-size:13px;">
                                             <i class="fas fa-exclamation-triangle me-2"></i>Lưu ý quan trọng
                                         </h6>
                                         <ul class="mb-0 small text-dark ps-3">
-                                            <li>Đồng hồ sẽ bắt đầu đếm ngược ngay khi bạn bấm nút.</li>
-                                            <li>Hệ thống sẽ tự động nộp bài khi hết thời gian.</li>
+                                            <li>Đồng hồ bắt đầu ngay khi bạn bấm nút.</li>
+                                            <li>Hệ thống tự nộp bài khi hết thời gian.</li>
                                         </ul>
                                     </div>
                                     <a href="#" id="start-quiz-btn" class="btn btn-quiz-start w-100">
@@ -1717,10 +1828,11 @@
                                     </a>
                                 </div>
                                 <div id="quiz-completed-msg" class="d-none">
-                                    <div class="text-center p-4 rounded-4 mb-3" style="background:#dcfce7;color:#14532d;">
+                                    <div class="text-center p-4 rounded-4 mb-3"
+                                        style="background:var(--green-100);color:var(--green-900);">
                                         <i class="fas fa-check-circle fa-2x mb-2 d-block text-success"></i>
                                         <h5 class="fw-bold mb-1">Hoàn thành!</h5>
-                                        <p class="mb-0 small">Bạn đã nộp bài kiểm tra này thành công.</p>
+                                        <p class="mb-0 small">Bài kiểm tra đã được nộp thành công.</p>
                                     </div>
                                     <a href="#" id="review-quiz-btn"
                                         class="btn btn-success rounded-pill w-100 py-3 fw-bold">
@@ -1728,12 +1840,12 @@
                                     </a>
                                 </div>
                             @else
-                                <div class="quiz-notice mb-4" style="background:#eff6ff;border-color:#bfdbfe;">
+                                <div class="quiz-notice mb-4"
+                                    style="background:var(--blue-50);border-color:var(--blue-100);">
                                     <h6 class="fw-bold mb-2 text-primary" style="font-size:13px;">
                                         <i class="fas fa-info-circle me-2"></i>Khu vực Quản lý
                                     </h6>
-                                    <p class="mb-0 small text-dark">Bạn có thể vào trang soạn thảo để thêm / sửa / xóa câu
-                                        hỏi.</p>
+                                    <p class="mb-0 small text-dark">Vào trang soạn thảo để thêm / sửa / xóa câu hỏi.</p>
                                 </div>
                                 <a href="#" id="manage-quiz-btn" class="btn btn-quiz-start w-100">
                                     <i class="fas fa-cog me-2"></i> VÀO TRANG SOẠN CÂU HỎI
@@ -1745,13 +1857,13 @@
                     {{-- ══ FOOTER NAV ══ --}}
                     <div class="footer-nav d-none" id="nav-footer">
                         <button class="btn-footer-nav" id="btn-prev" disabled>
-                            <i class="fas fa-arrow-left me-1"></i>Bài trước
+                            <i class="fas fa-arrow-left"></i>Bài trước
                         </button>
                         <button class="btn btn-complete-lesson d-none" id="btn-complete">
-                            <i class="fas fa-check-circle me-1"></i> Hoàn thành
+                            <i class="fas fa-check-circle"></i> Hoàn thành
                         </button>
                         <button class="btn-footer-nav" id="btn-next" disabled>
-                            Bài tiếp <i class="fas fa-arrow-right ms-1"></i>
+                            Bài tiếp <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
 
@@ -1771,12 +1883,10 @@
 
     <script>
         (function() {
-            // Clone desktop sidebar content into mobile drawer
             var desktopAccordion = document.querySelector('.sidebar-scroll .accordion');
             var mobileContent = document.getElementById('mobile-sidebar-content');
             if (desktopAccordion && mobileContent) {
                 var clone = desktopAccordion.cloneNode(true);
-                // Give the cloned accordion a different id to avoid conflicts
                 clone.id = 'courseAccordionMobile';
                 clone.querySelectorAll('[data-bs-parent]').forEach(function(el) {
                     el.setAttribute('data-bs-parent', '#courseAccordionMobile');
@@ -1805,21 +1915,19 @@
             if (btnClose) btnClose.addEventListener('click', closeDrawer);
             if (overlay) overlay.addEventListener('click', closeDrawer);
 
-            // Close on lesson/assignment/quiz click inside mobile drawer
             if (mobileContent) {
                 mobileContent.addEventListener('click', function(e) {
                     var target = e.target.closest('.lesson-item, .assignment-item, .quiz-item');
                     if (!target) return;
-
                     e.preventDefault();
                     var type = target.classList.contains('assignment-item') ? 'assignment' :
                         (target.classList.contains('quiz-item') ? 'quiz' : 'lesson');
                     var id = target.getAttribute('data-id');
-                    var selector = type === 'assignment'
-                        ? `.sidebar-scroll .assignment-item[data-id="${id}"]`
-                        : (type === 'quiz'
-                            ? `.sidebar-scroll .quiz-item[data-id="${id}"]`
-                            : `.sidebar-scroll .lesson-item[data-id="${id}"]`);
+                    var selector = type === 'assignment' ?
+                        `.sidebar-scroll .assignment-item[data-id="${id}"]` :
+                        (type === 'quiz' ?
+                            `.sidebar-scroll .quiz-item[data-id="${id}"]` :
+                            `.sidebar-scroll .lesson-item[data-id="${id}"]`);
                     var desktopTarget = document.querySelector(selector);
                     if (desktopTarget) desktopTarget.click();
                     closeDrawer();
