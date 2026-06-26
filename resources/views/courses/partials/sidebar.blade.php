@@ -1,4 +1,11 @@
 <div class="accordion accordion-flush" id="courseAccordion">
+    @php
+        $isStudent = auth()->user()->role === 'student';
+        $isManager = auth()->id() === $course->teacher_id || auth()->user()->role === 'admin';
+        $firstPendingQuiz = $isStudent
+            ? $course->quizzes->first(fn($quiz) => !isset($userQuizAttempts[$quiz->id]))
+            : $course->quizzes->first();
+    @endphp
 
     @forelse ($course->modules as $moduleIndex => $module)
         @php
@@ -30,7 +37,7 @@
                     </div>
                 </button>
 
-                @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                @if ($isManager)
                     <div class="action-buttons  d-flex align-items-center">
                         <a href="javascript:void(0)" class="btn-action btn-edit edit-module-btn"
                             data-id="{{ $module->id }}" data-title="{{ $module->title }}" data-bs-toggle="modal"
@@ -56,14 +63,20 @@
 
                         @forelse ($module->lessons as $lessonIndex => $lesson)
                                 @php
-                                    $isCompleted = in_array($lesson->id, $completedLessonIds ?? []);
-                                    $isVideo = !empty($lesson->video_url);
-                                    $lessonAssignments = $lesson->assignments ?? collect();
-                                    $pendingAssignmentCount =
-                                        auth()->user()->role === 'student'
-                                            ? $lessonAssignments
-                                                ->filter(fn($assignment) => !isset($userSubmissions[$assignment->id]))
-                                                ->count()
+                                $isCompleted = in_array($lesson->id, $completedLessonIds ?? []);
+                                $isVideo = !empty($lesson->video_url);
+                                $lessonAssignments = $lesson->assignments ?? collect();
+                                $lessonNextAssignment = $isStudent
+                                    ? $lessonAssignments->first(
+                                        fn($assignment) => !isset($userSubmissions[$assignment->id])
+                                            && !($assignment->due_date && $assignment->due_date->isPast()),
+                                    )
+                                    : $lessonAssignments->first();
+                                $pendingAssignmentCount =
+                                    $isStudent
+                                        ? $lessonAssignments
+                                            ->filter(fn($assignment) => !isset($userSubmissions[$assignment->id]))
+                                            ->count()
                                             : $lessonAssignments->count();
                                     $durSec = $lesson->duration_seconds ?? 0;
                                     $durLabel =
@@ -87,7 +100,11 @@
                                     data-content="{{ $lesson->content }}" data-title="{{ $lesson->title }}"
                                     data-video="{{ $lesson->video_url }}" data-module="{{ $module->id }}"
                                     data-attachment="{{ $lesson->attachment ? route('lessons.attachment', $lesson->id) : '' }}"
-                                    data-attachment-name="{{ $lesson->attachment_original_name ?: ($lesson->attachment ? basename($lesson->attachment) : '') }}">
+                                    data-attachment-name="{{ $lesson->attachment_original_name ?: ($lesson->attachment ? basename($lesson->attachment) : '') }}"
+                                    data-next-assignment-id="{{ $lessonNextAssignment?->id ?? '' }}"
+                                    data-next-assignment-title="{{ $lessonNextAssignment?->title ?? '' }}"
+                                    data-next-quiz-id="{{ $firstPendingQuiz?->id ?? '' }}"
+                                    data-next-quiz-title="{{ $firstPendingQuiz?->title ?? '' }}">
 
                                     {{-- Icon trạng thái --}}
                                     @if ($isCompleted)
@@ -105,7 +122,7 @@
                                             <div class="lesson-name-text">
                                                 {{ $moduleIndex + 1 }}.{{ $lessonIndex + 1 }} {{ $lesson->title }}
                                             </div>
-                                            @if (auth()->user()->role === 'student')
+                                            @if ($isStudent)
                                                 <div class="sidebar-status-row">
                                                     @if ($isCompleted)
                                                         <span class="sidebar-status-pill done"><i class="fas fa-check"></i>Đã xong</span>
@@ -119,7 +136,7 @@
                                                     @endif
                                                 </div>
                                             @endif
-                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                            @if ($isManager)
                                                 <div class="lesson-dur-text">
                                                     <span class="badge bg-{{ $lesson->status === 'published' ? 'success' : ($lesson->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
                                                     {{ strtoupper($lesson->status ?? 'published') }}
@@ -137,7 +154,7 @@
                                     </div>
                                 </a>
 
-                                @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                @if ($isManager)
                                     <div class="action-buttons d-flex me-2">
                                         <a href="javascript:void(0)" class="btn-action btn-edit edit-lesson-btn"
                                             data-id="{{ $lesson->id }}" data-title="{{ $lesson->title }}"
@@ -163,10 +180,10 @@
                             {{-- Bài tập --}}
                             @foreach ($lesson->assignments as $assignment)
                                 @php
-                                        $submission =
-                                            auth()->user()->role === 'student' && isset($userSubmissions[$assignment->id])
-                                                ? $userSubmissions[$assignment->id]
-                                                : null;
+                                    $submission =
+                                        $isStudent && isset($userSubmissions[$assignment->id])
+                                            ? $userSubmissions[$assignment->id]
+                                            : null;
                                         $assignmentOverdue = $assignment->due_date && $assignment->due_date->isPast() && !$submission;
                                     @endphp
                                     <div class="list-group-item border-0 px-0 py-0 assignment-item-wrapper {{ $submission ? 'submitted' : '' }} d-flex align-items-center justify-content-between shadow-none bg-light"
@@ -198,7 +215,7 @@
                                                         default => 'Nộp file',
                                                     };
                                                     @endphp
-                                                    @if (auth()->user()->role === 'student')
+                                                @if ($isStudent)
                                                         <div class="sidebar-status-row">
                                                             @if ($submission)
                                                                 <span class="sidebar-status-pill done"><i class="fas fa-check"></i>Đã nộp</span>
@@ -213,7 +230,7 @@
                                                         <span class="badge bg-info text-dark">{{ $assignmentTypeLabel }}</span>
                                                     @endif
                                                 </div>
-                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                            @if ($isManager)
                                                 <div class="lesson-dur-text">
                                                     <span class="badge bg-{{ $assignment->status === 'published' ? 'success' : ($assignment->status === 'hidden' ? 'secondary' : ($assignment->status === 'archived' ? 'danger' : 'warning text-dark')) }}">
                                                         {{ strtoupper($assignment->status ?? 'published') }}
@@ -226,7 +243,7 @@
                                         </div>
                                     </a>
 
-                                    @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                    @if ($isManager)
                                         <div class="action-buttons d-flex me-2 gap-1">
                                             <a href="javascript:void(0)" class="btn-action btn-edit"
                                                 onclick="openEditAssignmentModal(this)" data-id="{{ $assignment->id }}"
@@ -293,10 +310,10 @@
                     <div class="list-group list-group-flush">
                         @foreach ($course->quizzes as $quiz)
                                 @php
-                                    $attempt =
-                                        auth()->user()->role === 'student' && isset($userQuizAttempts[$quiz->id])
-                                            ? $userQuizAttempts[$quiz->id]
-                                            : null;
+                                $attempt =
+                                    $isStudent && isset($userQuizAttempts[$quiz->id])
+                                        ? $userQuizAttempts[$quiz->id]
+                                        : null;
                                 @endphp
                                 <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper {{ $attempt ? 'completed' : '' }} d-flex align-items-center justify-content-between shadow-none bg-white"
                                     style="min-width:0;">
@@ -314,7 +331,7 @@
                                                 style="{{ $attempt ? 'color:#198754;' : 'color:#6f42c1;' }}">
                                                 {{ $quiz->title }}
                                             </div>
-                                            @if (auth()->user()->role === 'student')
+                                            @if ($isStudent)
                                                 <div class="sidebar-status-row">
                                                     @if ($attempt)
                                                         <span class="sidebar-status-pill done"><i class="fas fa-check"></i>Đã làm</span>
@@ -325,7 +342,7 @@
                                                     @endif
                                                 </div>
                                             @endif
-                                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                            @if ($isManager)
                                             <div class="lesson-dur-text">
                                                 <span class="badge bg-{{ $quiz->status === 'published' ? 'success' : ($quiz->status === 'hidden' ? 'secondary' : 'warning text-dark') }}">
                                                     {{ strtoupper($quiz->status ?? 'published') }}
@@ -340,7 +357,7 @@
                                     </div>
                                 </a>
 
-                                @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                @if ($isManager)
                                     <div class="action-buttons d-flex me-2 gap-1">
                                         <a href="{{ route('quizzes.submissions', $quiz->id) }}"
                                             class="btn-action text-white px-2 d-flex align-items-center"

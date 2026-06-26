@@ -1186,6 +1186,156 @@
             margin-bottom: 8px;
         }
 
+        .lesson-next-step-panel {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 14px;
+            margin: 0 18px 20px;
+            padding: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .lesson-next-step-panel {
+                margin: 0 40px 28px;
+                padding: 18px 20px;
+            }
+        }
+
+        .lesson-next-step-panel.is-complete {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .lesson-next-step-content {
+            align-items: center;
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .lesson-next-step-copy {
+            min-width: 0;
+        }
+
+        .lesson-next-step-eyebrow {
+            color: #2563eb;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .04em;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        .lesson-next-step-title {
+            color: #0f172a;
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.35;
+            margin: 0;
+        }
+
+        .lesson-next-step-meta {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .lesson-next-step-actions {
+            display: flex;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+
+        .teacher-mode-panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+            margin-bottom: 16px;
+            padding: 14px 16px;
+        }
+
+        .teacher-mode-row {
+            align-items: center;
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .teacher-mode-title {
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .teacher-mode-subtitle {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .teacher-mode-toggle {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+        }
+
+        .teacher-mode-btn {
+            background: transparent;
+            border: 0;
+            border-radius: 8px;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 7px 10px;
+        }
+
+        .teacher-mode-btn.active {
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, .12);
+            color: #1d4ed8;
+        }
+
+        .teacher-quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .teacher-quick-actions .tool-btn {
+            margin-top: 0;
+        }
+
+        .teacher-preview-banner {
+            align-items: center;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            color: #1e40af;
+            display: none;
+            font-size: 13px;
+            font-weight: 700;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 10px 12px;
+        }
+
+        .preview-student-mode .toolbar,
+        .preview-student-mode .teacher-quick-actions,
+        .preview-student-mode .course-dashboard-grid,
+        .preview-student-mode .action-buttons {
+            display: none !important;
+        }
+
+        .preview-student-mode .teacher-preview-banner {
+            display: flex;
+        }
+
         @media (max-width: 991.98px) {
             .welcome-guide-grid {
                 grid-template-columns: 1fr;
@@ -1211,8 +1361,24 @@
             }
 
             .course-action-header .btn,
-            .course-todo-item .btn {
+            .course-todo-item .btn,
+            .lesson-next-step-actions .btn {
                 width: 100%;
+            }
+
+            .lesson-next-step-content,
+            .teacher-mode-row {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .lesson-next-step-actions,
+            .teacher-mode-toggle {
+                width: 100%;
+            }
+
+            .teacher-mode-btn {
+                flex: 1;
             }
         }
     </style>
@@ -1232,7 +1398,7 @@
         <div id="mobile-sidebar-content"></div>
     </div>
 
-    <div class="page-wrapper">
+    <div class="page-wrapper" id="course-page-wrapper">
 
         {{-- ── HEADER ── --}}
         <div class="header-card">
@@ -1275,6 +1441,46 @@
                 </div>
             @endif
         </div>
+
+        @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+            <div class="teacher-mode-panel" id="teacher-mode-panel">
+                <div class="teacher-mode-row">
+                    <div>
+                        <h6 class="teacher-mode-title"><i class="fas fa-layer-group me-2 text-primary"></i>Chế độ giáo viên</h6>
+                        <div class="teacher-mode-subtitle">Quản lý nội dung, theo dõi tiến độ và thao tác nhanh trên khóa học.</div>
+                    </div>
+                    <div class="teacher-mode-toggle" role="group" aria-label="Chọn chế độ xem khóa học">
+                        <button type="button" class="teacher-mode-btn active" data-course-mode="manage">
+                            <i class="fas fa-pen-to-square me-1"></i>Quản lý
+                        </button>
+                        <button type="button" class="teacher-mode-btn" data-course-mode="preview">
+                            <i class="fas fa-eye me-1"></i>Xem như học sinh
+                        </button>
+                    </div>
+                </div>
+                <div class="teacher-preview-banner">
+                    <i class="fas fa-eye"></i>
+                    <span>Bạn đang xem ở chế độ học sinh. Các nút sửa/xóa/tạo mới đang được ẩn tạm thời.</span>
+                </div>
+                <div class="teacher-quick-actions">
+                    <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addLessonModal">
+                        <i class="fas fa-plus"></i> Thêm bài học
+                    </button>
+                    <button class="tool-btn amber" data-bs-toggle="modal" data-bs-target="#addCourseAssignmentModal">
+                        <i class="fas fa-file-signature"></i> Giao bài tập
+                    </button>
+                    <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#addQuizModal">
+                        <i class="fas fa-stopwatch"></i> Tạo quiz
+                    </button>
+                    <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
+                        <i class="fas fa-user-check"></i> Điểm danh
+                    </a>
+                    <a href="{{ route('quizzes.ai_generate') }}" class="tool-btn purple">
+                        <i class="fas fa-wand-magic-sparkles"></i> Tạo câu hỏi AI
+                    </a>
+                </div>
+            </div>
+        @endif
 
         @if (auth()->user()->role === 'student')
             <div class="course-action-panel">
@@ -1463,6 +1669,28 @@
                             class="btn btn-primary btn-sm rounded-pill px-3 fw-bold flex-shrink-0">
                             <i class="fas fa-download me-1"></i> Tải về
                         </a>
+                    </div>
+
+                    <div id="lesson-next-step-panel" class="lesson-next-step-panel d-none">
+                        <div class="lesson-next-step-content">
+                            <div class="lesson-next-step-copy">
+                                <div id="lesson-next-step-eyebrow" class="lesson-next-step-eyebrow">Bước tiếp theo</div>
+                                <h3 id="lesson-next-step-title" class="lesson-next-step-title">Tiếp tục học</h3>
+                                <div id="lesson-next-step-meta" class="lesson-next-step-meta">Chọn hành động phù hợp để tiếp tục.</div>
+                            </div>
+                            <div class="lesson-next-step-actions">
+                                <button type="button" id="lesson-next-step-primary"
+                                    class="btn btn-primary btn-sm fw-bold course-jump-btn"
+                                    data-target-type="" data-target-id="">
+                                    Mở ngay
+                                </button>
+                                <button type="button" id="lesson-next-step-secondary"
+                                    class="btn btn-outline-primary btn-sm fw-bold d-none course-jump-btn"
+                                    data-target-type="" data-target-id="">
+                                    Bài tiếp
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- ══ ASSIGNMENT AREA ══ --}}
