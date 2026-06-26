@@ -1,5 +1,6 @@
 @push('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script>
         // Fix lỗi Bootstrap 5 chặn focus (không cho gõ chữ) vào các popup bên trong TinyMCE (như popup chèn link)
         document.addEventListener('focusin', (e) => {
@@ -27,6 +28,8 @@
         let totalLessonsCount = {{ $totalLessons ?? 0 }};
         let currentCompletedCount = {{ $completedCount ?? 0 }};
         const isStudentCourseUser = @json(auth()->user()->role === 'student');
+        const canManageCourseContent = @json(auth()->id() === $course->teacher_id || auth()->user()->role === 'admin');
+        const currentCourseId = {{ $course->id }};
 
         function getYoutubeId(url) {
             const regExp = /^.*(http:\/\/www\.youtube\.com\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -181,6 +184,70 @@
             }
 
             return step;
+        }
+
+        function showReorderToast(message = 'Đã lưu thứ tự nội dung') {
+            const toast = document.getElementById('reorder-toast');
+            if (!toast) return;
+            toast.innerHTML = `<i class="fas fa-check me-1"></i>${message}`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1800);
+        }
+
+        function postReorder(url, payload) {
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify(payload),
+            }).then(response => {
+                if (!response.ok) throw new Error('Không thể lưu thứ tự.');
+                return response.json();
+            });
+        }
+
+        function initCourseReordering() {
+            if (!canManageCourseContent || typeof Sortable === 'undefined') return;
+
+            const moduleList = document.querySelector('.sidebar-scroll #courseAccordion');
+            if (moduleList) {
+                Sortable.create(moduleList, {
+                    handle: '.module-header-wrapper .drag-handle',
+                    draggable: '.module-sortable-item',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function() {
+                        const moduleIds = Array.from(moduleList.querySelectorAll(':scope > .module-sortable-item'))
+                            .map(item => item.dataset.moduleId)
+                            .filter(Boolean);
+                        postReorder('/modules/reorder', {
+                            course_id: currentCourseId,
+                            module_ids: moduleIds,
+                        }).then(() => showReorderToast('Đã lưu thứ tự chương'));
+                    },
+                });
+            }
+
+            document.querySelectorAll('.sidebar-scroll .lesson-sortable-list').forEach(list => {
+                Sortable.create(list, {
+                    handle: '.lesson-item-wrapper .drag-handle',
+                    draggable: '.lesson-item-wrapper',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function() {
+                        const lessonIds = Array.from(list.querySelectorAll(':scope > .lesson-item-wrapper'))
+                            .map(item => item.dataset.lessonId)
+                            .filter(Boolean);
+                        postReorder('/lessons/reorder', {
+                            module_id: list.dataset.moduleId,
+                            lesson_ids: lessonIds,
+                        }).then(() => showReorderToast('Đã lưu thứ tự bài học'));
+                    },
+                });
+            });
         }
 
         // Helper: ẩn tất cả các khu vực nội dung
@@ -717,5 +784,7 @@
                 wrapper.classList.toggle('preview-student-mode', mode === 'preview');
             });
         });
+
+        initCourseReordering();
     </script>
 @endpush

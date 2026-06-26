@@ -25,13 +25,16 @@
                     : null;
         @endphp
 
-        <div class="accordion-item">
+        <div class="accordion-item module-sortable-item" data-module-id="{{ $module->id }}">
             {{-- Module header --}}
             <div class="module-header-wrapper d-flex align-items-center position-relative">
                 <button class="accordion-button {{ $moduleIndex == 0 ? '' : 'collapsed' }} flex-grow-1 shadow-none py-0"
                     type="button" data-bs-toggle="collapse" data-bs-target="#module-{{ $module->id }}">
-                    <div class="module-title-block py-3">
-                        <span class="module-title-text">{{ $moduleIndex + 1 }}. {{ $module->title }}</span>
+	                    <div class="module-title-block py-3">
+                            @if ($isManager)
+                                <i class="fas fa-grip-vertical drag-handle me-2" title="Kéo để sắp xếp chương"></i>
+                            @endif
+	                        <span class="module-title-text">{{ $moduleIndex + 1 }}. {{ $module->title }}</span>
                         <span
                             class="module-meta">{{ $completedInModule }}/{{ $lessonCount }}{{ $durationStr ? ' · ' . $durationStr : '' }}</span>
                     </div>
@@ -59,10 +62,10 @@
                 class="accordion-collapse collapse {{ $moduleIndex == 0 ? 'show' : '' }}"
                 data-bs-parent="#courseAccordion">
                 <div class="accordion-body p-0">
-                    <div class="list-group list-group-flush">
+	                    <div class="list-group list-group-flush lesson-sortable-list" data-module-id="{{ $module->id }}">
 
-                        @forelse ($module->lessons as $lessonIndex => $lesson)
-                                @php
+	                        @forelse ($module->lessons as $lessonIndex => $lesson)
+	                            @php
                                 $isCompleted = in_array($lesson->id, $completedLessonIds ?? []);
                                 $isVideo = !empty($lesson->video_url);
                                 $lessonAssignments = $lesson->assignments ?? collect();
@@ -72,16 +75,16 @@
                                             && !($assignment->due_date && $assignment->due_date->isPast()),
                                     )
                                     : $lessonAssignments->first();
-                                $pendingAssignmentCount =
-                                    $isStudent
-                                        ? $lessonAssignments
-                                            ->filter(fn($assignment) => !isset($userSubmissions[$assignment->id]))
-                                            ->count()
-                                            : $lessonAssignments->count();
-                                    $durSec = $lesson->duration_seconds ?? 0;
-                                    $durLabel =
-                                        $durSec > 0
-                                        ? ($durSec >= 3600
+	                                $pendingAssignmentCount =
+	                                    $isStudent
+	                                        ? $lessonAssignments
+	                                            ->filter(fn($assignment) => !isset($userSubmissions[$assignment->id]))
+	                                            ->count()
+	                                        : $lessonAssignments->count();
+	                                $durSec = $lesson->duration_seconds ?? 0;
+	                                $durLabel =
+	                                    $durSec > 0
+	                                        ? ($durSec >= 3600
                                             ? sprintf(
                                                 '%d:%02d:%02d',
                                                 floor($durSec / 3600),
@@ -92,9 +95,12 @@
                                         : null;
                             @endphp
 
-                            <div class="list-group-item border-0 px-0 py-0 lesson-item-wrapper d-flex align-items-center justify-content-between shadow-none"
-                                style="min-width:0;">
-                                <a href="javascript:void(0)"
+	                            <div class="list-group-item border-0 px-0 py-0 lesson-item-wrapper d-flex align-items-center justify-content-between shadow-none"
+	                                data-lesson-id="{{ $lesson->id }}" style="min-width:0;">
+                                    @if ($isManager)
+                                        <i class="fas fa-grip-vertical drag-handle" title="Kéo để sắp xếp bài học"></i>
+                                    @endif
+	                                <a href="javascript:void(0)"
                                     class="lesson-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 px-3 ps-4 py-2"
                                     style="min-width:0;" data-id="{{ $lesson->id }}"
                                     data-content="{{ $lesson->content }}" data-title="{{ $lesson->title }}"
@@ -118,7 +124,7 @@
                                             id="icon-lesson-{{ $lesson->id }}"></i>
                                     @endif
 
-                                    <div style="min-width:0; flex:1;">
+	                                    <div style="min-width:0; flex:1;">
                                             <div class="lesson-name-text">
                                                 {{ $moduleIndex + 1 }}.{{ $lessonIndex + 1 }} {{ $lesson->title }}
                                             </div>

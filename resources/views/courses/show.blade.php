@@ -1052,115 +1052,6 @@
             margin-top: 5px;
         }
 
-        .course-action-panel {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
-            margin-bottom: 16px;
-            overflow: hidden;
-        }
-
-        .course-action-header {
-            align-items: stretch;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 16px;
-            background: #f8fafc;
-        }
-
-        .course-action-body {
-            padding: 16px;
-        }
-
-        .next-action-main {
-            align-items: flex-start;
-            display: flex;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .next-action-icon {
-            align-items: center;
-            background: #dbeafe;
-            border-radius: 12px;
-            color: #1d4ed8;
-            display: inline-flex;
-            flex-shrink: 0;
-            height: 42px;
-            justify-content: center;
-            width: 42px;
-        }
-
-        .next-action-eyebrow {
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: .04em;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-        }
-
-        .next-action-title {
-            color: #0f172a;
-            font-size: 17px;
-            font-weight: 800;
-            line-height: 1.35;
-            margin: 0;
-        }
-
-        .next-action-meta {
-            color: #64748b;
-            font-size: 13px;
-            margin-top: 4px;
-        }
-
-        .course-next-btn {
-            align-items: center;
-            align-self: center;
-            border-radius: 10px;
-            display: inline-flex;
-            font-weight: 800;
-            gap: 7px;
-            justify-content: center;
-            min-height: 42px;
-            padding: 10px 16px;
-            white-space: nowrap;
-        }
-
-        .course-todo-list {
-            display: grid;
-            gap: 10px;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .course-todo-item {
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 12px;
-            background: #fff;
-            min-width: 0;
-        }
-
-        .course-todo-item .fw-bold {
-            line-height: 1.35;
-        }
-
-        .course-empty-state {
-            align-items: center;
-            background: #f8fafc;
-            border: 1px dashed #cbd5e1;
-            border-radius: 14px;
-            color: #475569;
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            padding: 18px;
-            text-align: left;
-        }
-
         .welcome-guide {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -1325,6 +1216,33 @@
             padding: 10px 12px;
         }
 
+        .drag-handle {
+            color: #94a3b8;
+            cursor: grab;
+            font-size: 13px;
+            padding-left: 8px;
+        }
+
+        .sortable-ghost {
+            opacity: .45;
+        }
+
+        .reorder-toast {
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            color: #166534;
+            display: none;
+            font-size: 12px;
+            font-weight: 800;
+            margin: 0 0 10px;
+            padding: 9px 11px;
+        }
+
+        .reorder-toast.show {
+            display: block;
+        }
+
         .preview-student-mode .toolbar,
         .preview-student-mode .teacher-quick-actions,
         .preview-student-mode .course-dashboard-grid,
@@ -1343,25 +1261,16 @@
         }
 
         @media (max-width: 991.98px) {
-            .course-dashboard-grid,
-            .course-todo-list {
+            .course-dashboard-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
         @media (max-width: 767.98px) {
-            .course-dashboard-grid,
-            .course-todo-list {
+            .course-dashboard-grid {
                 grid-template-columns: 1fr;
             }
 
-            .course-action-header {
-                align-items: stretch;
-                flex-direction: column;
-            }
-
-            .course-action-header .btn,
-            .course-todo-item .btn,
             .lesson-next-step-actions .btn {
                 width: 100%;
             }
@@ -1482,74 +1391,7 @@
             </div>
         @endif
 
-        @if (auth()->user()->role === 'student')
-            <div class="course-action-panel">
-                <div class="course-action-header">
-                    @if ($studentNextAction)
-                        @php
-                            $nextIcon = match ($studentNextAction['type']) {
-                                'assignment' => 'fas fa-file-signature',
-                                'quiz' => 'fas fa-stopwatch',
-                                default => 'fas fa-play',
-                            };
-                        @endphp
-                        <div class="next-action-main">
-                            <div class="next-action-icon">
-                                <i class="{{ $nextIcon }}"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <div class="next-action-eyebrow">Việc nên làm tiếp theo</div>
-                                <h2 class="next-action-title">{{ $studentNextAction['title'] }}</h2>
-                                <div class="next-action-meta">{{ $studentNextAction['label'] }} · {{ $studentNextAction['meta'] }}</div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-primary course-next-btn course-jump-btn"
-                            data-target-type="{{ $studentNextAction['type'] }}"
-                            data-target-id="{{ $studentNextAction['target_id'] }}">
-                            <i class="fas fa-arrow-right"></i> Mở ngay
-                        </button>
-                    @else
-                        <div class="course-empty-state w-100">
-                            <i class="fas fa-check-circle text-success fs-4"></i>
-                            <div>
-                                <div class="fw-bold">Bạn đã xử lý xong các việc chính trong khóa học này.</div>
-                                <div class="small">Có thể xem lại bài học hoặc kiểm tra phần nhận xét/điểm số khi giáo viên cập nhật.</div>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-                <div class="course-action-body">
-                    @if ($studentTodoItems->isNotEmpty())
-                        <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
-                            <div>
-                                <h6 class="fw-bold mb-1"><i class="fas fa-list-check me-2 text-primary"></i>Các mục còn lại</h6>
-                                <div class="text-muted small">{{ $studentTodoItems->count() }} việc cần xử lý trong khóa học này</div>
-                            </div>
-                        </div>
-                        <div class="course-todo-list">
-                            @foreach ($studentTodoItems->take(4) as $todo)
-                                <div class="course-todo-item">
-                                    <span class="badge {{ $todo['type'] === 'assignment' ? 'bg-warning text-dark' : ($todo['type'] === 'quiz' ? 'bg-primary' : 'bg-success') }} mb-2">
-                                        {{ $todo['label'] }}
-                                    </span>
-                                    <div class="fw-bold text-truncate-custom">{{ $todo['title'] }}</div>
-                                    <div class="text-muted small mb-3 text-truncate-custom">{{ $todo['meta'] }}</div>
-                                    <button type="button" class="btn btn-sm btn-outline-primary course-jump-btn"
-                                        data-target-type="{{ $todo['type'] }}"
-                                        data-target-id="{{ $todo['target_id'] }}">
-                                        Mở mục này
-                                    </button>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center text-muted py-2">
-                            <i class="fas fa-check-circle text-success me-1"></i>Không còn bài học, bài tập hoặc quiz đang chờ xử lý.
-                        </div>
-                    @endif
-                </div>
-            </div>
-        @else
+        @if (auth()->user()->role !== 'student')
             <div class="course-dashboard-grid">
                 <div class="course-dashboard-card">
                     <div class="course-dashboard-label">Học sinh</div>
@@ -1581,14 +1423,19 @@
             <div class="col-md-4 col-lg-3 d-none d-md-block">
                 <div class="desktop-sidebar-wrap">
                     <div class="sidebar-inner-card">
-                        <div class="card-header bg-white py-3 border-bottom">
-                            <h6 class="mb-0 fw-bold small text-uppercase text-muted ms-3">
-                                <i class="fas fa-list-ol me-2"></i>Nội dung học tập
-                            </h6>
-                        </div>
-                        <div class="sidebar-scroll">
-                            @include('courses.partials.sidebar')
-                        </div>
+	                        <div class="card-header bg-white py-3 border-bottom">
+	                            <h6 class="mb-0 fw-bold small text-uppercase text-muted ms-3">
+	                                <i class="fas fa-list-ol me-2"></i>Nội dung học tập
+	                            </h6>
+	                        </div>
+                            @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
+                                <div id="reorder-toast" class="reorder-toast mx-3 mt-3">
+                                    <i class="fas fa-check me-1"></i>Đã lưu thứ tự nội dung
+                                </div>
+                            @endif
+	                        <div class="sidebar-scroll">
+	                            @include('courses.partials.sidebar')
+	                        </div>
                     </div>
                 </div>
             </div>

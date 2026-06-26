@@ -158,8 +158,6 @@ class CourseController extends Controller
         $completedCount = 0;
         $userSubmissions = collect();
         $courseDashboard = $this->buildCourseDashboard($course);
-        $studentNextAction = null;
-        $studentTodoItems = collect();
 
         if (auth()->check() && auth()->user()->role === 'student') {
             $user = auth()->user();
@@ -176,8 +174,6 @@ class CourseController extends Controller
             // 2. Lấy dữ liệu bài nộp (Assignments)
             $assignmentIds = Assignments::where('course_id', $id)->notArchived()->pluck('id')->toArray();
             $userSubmissions = AssignmentSubmission::where('user_id', $user->id)->whereIn('assignment_id', $assignmentIds)->get()->keyBy('assignment_id'); // Key hóa theo ID bài tập để View check cực nhanh
-            $studentTodoItems = $this->buildStudentCourseTodos($course, $user, $completedLessonIds, $userSubmissions);
-            $studentNextAction = $studentTodoItems->first();
         }
         $userQuizAttempts = [];
         if (auth()->check() && auth()->user()->role === 'student') {
@@ -187,7 +183,7 @@ class CourseController extends Controller
                 ->keyBy('quiz_id');
         }
 
-        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'courseDashboard', 'studentNextAction', 'studentTodoItems'));
+        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'courseDashboard'));
     }
 
     public function create()
@@ -605,59 +601,4 @@ class CourseController extends Controller
         ];
     }
 
-    private function buildStudentCourseTodos(Course $course, $user, array $completedLessonIds, $userSubmissions)
-    {
-        $lessonTodos = collect($course->modules
-            ->flatMap(function ($module) use ($completedLessonIds) {
-                return $module->lessons
-                    ->filter(fn ($lesson) => !in_array($lesson->id, $completedLessonIds))
-                    ->map(fn ($lesson) => [
-                        'type' => 'lesson',
-                        'priority' => 1,
-                        'label' => 'Tiếp tục học',
-                        'title' => $lesson->title,
-                        'meta' => $module->title,
-                        'target_id' => $lesson->id,
-                    ]);
-            })
-            ->values());
-
-        $assignmentTodos = collect(Assignments::where('course_id', $course->id)
-            ->notArchived()
-            ->visibleToStudents()
-            ->orderByRaw('due_date IS NULL')
-            ->orderBy('due_date')
-            ->get()
-            ->filter(fn ($assignment) => !$userSubmissions->has($assignment->id))
-            ->map(fn ($assignment) => [
-                'type' => 'assignment',
-                'priority' => $assignment->due_date && $assignment->due_date->isPast() ? 0 : 2,
-                'label' => $assignment->due_date && $assignment->due_date->isPast() ? 'Quá hạn' : 'Cần nộp bài',
-                'title' => $assignment->title,
-                'meta' => $assignment->due_date ? 'Hạn: ' . $assignment->due_date->format('d/m/Y H:i') : 'Không có hạn nộp',
-                'target_id' => $assignment->id,
-            ])
-            ->values());
-
-        $attemptedQuizIds = QuizAttempt::where('user_id', $user->id)
-            ->whereIn('quiz_id', $course->quizzes->pluck('id'))
-            ->pluck('quiz_id');
-        $quizTodos = collect($course->quizzes
-            ->whereNotIn('id', $attemptedQuizIds)
-            ->map(fn ($quiz) => [
-                'type' => 'quiz',
-                'priority' => 3,
-                'label' => 'Cần làm quiz',
-                'title' => $quiz->title,
-                'meta' => $quiz->time_limit . ' phút',
-                'target_id' => $quiz->id,
-            ])
-            ->values());
-
-        return collect($assignmentTodos)
-            ->merge($lessonTodos)
-            ->merge($quizTodos)
-            ->sortBy('priority')
-            ->values();
-    }
 }

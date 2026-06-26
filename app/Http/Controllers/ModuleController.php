@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Module;
 use App\Models\Assignments;
 use App\Models\Lesson;
+use App\Models\Course;
 use Illuminate\Http\Request;
 
 class ModuleController extends Controller
@@ -15,6 +16,8 @@ class ModuleController extends Controller
             'course_id' => 'required|exists:courses,id',
             'title' => 'required|max:255',
         ]);
+        $course = Course::findOrFail($request->course_id);
+        $this->authorizeManageCourse($course);
 
         Module::create([
             'course_id' => $request->course_id,
@@ -28,6 +31,7 @@ class ModuleController extends Controller
     public function update(Request $request, $id)
     {
         $module = Module::findOrFail($id);
+        $this->authorizeManageCourse($module->course);
         $module->update($request->validate(['title' => 'required|max:255']));
         return back()->with('success', 'Đã cập nhật chương!');
     }
@@ -35,6 +39,7 @@ class ModuleController extends Controller
     public function destroy($id)
     {
         $module = Module::with('lessons')->findOrFail($id);
+        $this->authorizeManageCourse($module->course);
         $lessonIds = Lesson::where('module_id', $module->id)->pluck('id');
 
         $module->update(['status' => Module::STATUS_ARCHIVED]);
@@ -48,5 +53,44 @@ class ModuleController extends Controller
         ]);
 
         return back()->with('success', 'Đã lưu trữ chương. Bài học và bài tập liên quan vẫn được giữ lại.');
+    }
+
+    public function reorder(Request $request)
+    {
+        $validated = $request->validate([
+            'course_id' => 'required|exists:courses,id',
+            'module_ids' => 'required|array|min:1',
+            'module_ids.*' => 'integer|exists:modules,id',
+        ]);
+
+        $course = Course::findOrFail($validated['course_id']);
+        $this->authorizeManageCourse($course);
+
+        $allowedIds = Module::where('course_id', $course->id)
+            ->whereIn('id', $validated['module_ids'])
+            ->pluck('id')
+            ->all();
+
+        if (count($allowedIds) !== count(array_unique($validated['module_ids']))) {
+            abort(422, 'Danh sách chương không hợp lệ.');
+        }
+
+        foreach (array_values($validated['module_ids']) as $index => $moduleId) {
+            Module::where('course_id', $course->id)
+                ->where('id', $moduleId)
+                ->update(['order' => $index + 1]);
+        }
+
+        return response()->json(['message' => 'Đã cập nhật thứ tự chương.']);
+    }
+
+    private function authorizeManageCourse(Course $course): void
+    {
+        $user = auth()->user();
+
+        abort_unless(
+            $user && ($user->role === 'admin' || ($user->role === 'teacher' && (int) $course->teacher_id === (int) $user->id)),
+            403
+        );
     }
 }

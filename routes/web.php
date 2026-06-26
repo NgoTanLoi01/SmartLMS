@@ -96,10 +96,12 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     Route::middleware('role:admin,teacher')->group(function () {
         Route::post('/modules', [ModuleController::class, 'store'])->name('modules.store');
+        Route::post('/modules/reorder', [ModuleController::class, 'reorder'])->name('modules.reorder');
         Route::put('/modules/{id}', [ModuleController::class, 'update'])->name('modules.update');
         Route::delete('/modules/{id}', [ModuleController::class, 'destroy'])->name('modules.destroy');
 
         Route::post('/lessons', [LessonController::class, 'store'])->name('lessons.store');
+        Route::post('/lessons/reorder', [LessonController::class, 'reorder'])->name('lessons.reorder');
         Route::put('/lessons/{id}', [LessonController::class, 'update'])->name('lessons.update');
         Route::delete('/lessons/{id}', [LessonController::class, 'destroy'])->name('lessons.destroy');
     });

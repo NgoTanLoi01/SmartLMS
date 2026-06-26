@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Assignments;
 use App\Models\Lesson;
+use App\Models\Module;
 use Illuminate\Support\Str;
 
 class LessonController extends Controller
@@ -22,8 +23,11 @@ class LessonController extends Controller
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
+        $module = Module::with('course')->findOrFail($data['module_id']);
+        $this->authorizeManageCourse($module->course);
         $data['status'] = $data['status'] ?? 'published';
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
+        $data['order'] = Lesson::where('module_id', $module->id)->notArchived()->count() + 1;
 
         if ($request->hasFile('attachment')) {
             $data = array_merge($data, $this->storeAttachment($request));
@@ -37,6 +41,7 @@ class LessonController extends Controller
     public function update(Request $request, $id)
     {
         $lesson = Lesson::findOrFail($id);
+        $this->authorizeManageCourse($lesson->module->course);
 
         $data = $request->validate([
             'title' => 'required|string',
@@ -47,6 +52,8 @@ class LessonController extends Controller
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
+        $targetModule = Module::with('course')->findOrFail($data['module_id']);
+        $this->authorizeManageCourse($targetModule->course);
         $data['status'] = $data['status'] ?? $lesson->status;
         $data['published_at'] = $data['status'] === 'published' ? ($lesson->published_at ?? now()) : null;
 
@@ -65,6 +72,7 @@ class LessonController extends Controller
     public function destroy($id)
     {
         $lesson = Lesson::findOrFail($id);
+        $this->authorizeManageCourse($lesson->module->course);
         $lesson->update([
             'status' => Lesson::STATUS_ARCHIVED,
             'published_at' => null,
@@ -122,6 +130,35 @@ class LessonController extends Controller
         return response()->json(['message' => 'Đã đánh dấu hoàn thành bài học!']);
     }
 
+    public function reorder(Request $request)
+    {
+        $validated = $request->validate([
+            'module_id' => 'required|exists:modules,id',
+            'lesson_ids' => 'required|array',
+            'lesson_ids.*' => 'integer|exists:lessons,id',
+        ]);
+
+        $module = Module::with('course')->findOrFail($validated['module_id']);
+        $this->authorizeManageCourse($module->course);
+
+        $lessonIds = array_values(array_unique($validated['lesson_ids']));
+        $allowedCount = Lesson::where('module_id', $module->id)
+            ->whereIn('id', $lessonIds)
+            ->count();
+
+        if ($allowedCount !== count($lessonIds)) {
+            abort(422, 'Danh sách bài học không hợp lệ.');
+        }
+
+        foreach ($lessonIds as $index => $lessonId) {
+            Lesson::where('module_id', $module->id)
+                ->where('id', $lessonId)
+                ->update(['order' => $index + 1]);
+        }
+
+        return response()->json(['message' => 'Đã cập nhật thứ tự bài học.']);
+    }
+
     private function storeAttachment(Request $request): array
     {
         $file = $request->file('attachment');
@@ -177,5 +214,15 @@ class LessonController extends Controller
         }
 
         return false;
+    }
+
+    private function authorizeManageCourse($course): void
+    {
+        $user = auth()->user();
+
+        abort_unless(
+            $course && $user && ($user->role === 'admin' || ($user->role === 'teacher' && (int) $course->teacher_id === (int) $user->id)),
+            403
+        );
     }
 }
