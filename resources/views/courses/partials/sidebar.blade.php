@@ -2,9 +2,6 @@
     @php
         $isStudent = auth()->user()->role === 'student';
         $isManager = auth()->id() === $course->teacher_id || auth()->user()->role === 'admin';
-        $firstPendingQuiz = $isStudent
-            ? $course->quizzes->first(fn($quiz) => !isset($userQuizAttempts[$quiz->id]))
-            : $course->quizzes->first();
         $currentTime = now();
     @endphp
 
@@ -107,12 +104,6 @@
                                 $isCompleted = in_array($lesson->id, $completedLessonIds ?? []);
                                 $isVideo = !empty($lesson->video_url);
                                 $lessonAssignments = $lesson->assignments ?? collect();
-                                $lessonNextAssignment = $isStudent
-                                    ? $lessonAssignments->first(
-                                        fn($a) => !isset($userSubmissions[$a->id]) &&
-                                            !($a->due_date && $a->due_date->isPast()),
-                                    )
-                                    : $lessonAssignments->first();
                                 $pendingAssignmentCount = $isStudent
                                     ? $lessonAssignments->filter(fn($a) => !isset($userSubmissions[$a->id]))->count()
                                     : $lessonAssignments->count();
@@ -145,11 +136,7 @@
                                     data-title="{{ $lesson->title }}" data-video="{{ $lesson->video_url }}"
                                     data-module="{{ $module->id }}"
                                     data-attachment="{{ $lesson->attachment ? route('lessons.attachment', $lesson->id) : '' }}"
-                                    data-attachment-name="{{ $lesson->attachment_original_name ?: ($lesson->attachment ? basename($lesson->attachment) : '') }}"
-                                    data-next-assignment-id="{{ $lessonNextAssignment?->id ?? '' }}"
-                                    data-next-assignment-title="{{ $lessonNextAssignment?->title ?? '' }}"
-                                    data-next-quiz-id="{{ $firstPendingQuiz?->id ?? '' }}"
-                                    data-next-quiz-title="{{ $firstPendingQuiz?->title ?? '' }}">
+                                    data-attachment-name="{{ $lesson->attachment_original_name ?: ($lesson->attachment ? basename($lesson->attachment) : '') }}">
 
                                     {{-- Status icon --}}
                                     <div

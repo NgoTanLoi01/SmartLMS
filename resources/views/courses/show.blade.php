@@ -807,67 +807,6 @@
             background: var(--blue-50);
         }
 
-        /* ── NEXT STEP PANEL ── */
-        .lesson-next-step-panel {
-            margin: 0 18px 20px;
-            background: var(--blue-50);
-            border: 1px solid var(--blue-100);
-            border-radius: var(--radius-md);
-            padding: 16px;
-        }
-
-        @media (min-width: 768px) {
-            .lesson-next-step-panel {
-                margin: 0 36px 24px;
-                padding: 18px 20px;
-            }
-        }
-
-        .lesson-next-step-panel.is-complete {
-            background: var(--green-50);
-            border-color: #bbf7d0;
-        }
-
-        .lesson-next-step-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            justify-content: space-between;
-        }
-
-        .lesson-next-step-copy {
-            min-width: 0;
-        }
-
-        .lesson-next-step-eyebrow {
-            color: var(--blue-600);
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: .06em;
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-
-        .lesson-next-step-title {
-            color: #0f172a;
-            font-size: 15px;
-            font-weight: 800;
-            line-height: 1.35;
-            margin: 0;
-        }
-
-        .lesson-next-step-meta {
-            color: var(--gray-500);
-            font-size: 12px;
-            margin-top: 3px;
-        }
-
-        .lesson-next-step-actions {
-            display: flex;
-            flex-shrink: 0;
-            gap: 8px;
-        }
-
         /* ── ASSIGNMENT AREA ── */
         #assignment-content-area {
             padding: 20px 18px;
@@ -1350,13 +1289,11 @@
 
         @media (max-width: 767.98px) {
 
-            .lesson-next-step-content,
             .teacher-mode-row {
                 align-items: stretch;
                 flex-direction: column;
             }
 
-            .lesson-next-step-actions,
             .teacher-mode-toggle {
                 width: 100%;
             }
@@ -1624,29 +1561,6 @@
                             class="btn btn-primary btn-sm rounded-pill px-3 fw-bold flex-shrink-0">
                             <i class="fas fa-download me-1"></i> Tải về
                         </a>
-                    </div>
-
-                    <div id="lesson-next-step-panel" class="lesson-next-step-panel d-none">
-                        <div class="lesson-next-step-content">
-                            <div class="lesson-next-step-copy">
-                                <div id="lesson-next-step-eyebrow" class="lesson-next-step-eyebrow">Bước tiếp theo</div>
-                                <h3 id="lesson-next-step-title" class="lesson-next-step-title">Tiếp tục học</h3>
-                                <div id="lesson-next-step-meta" class="lesson-next-step-meta">Chọn hành động phù hợp để
-                                    tiếp tục.</div>
-                            </div>
-                            <div class="lesson-next-step-actions">
-                                <button type="button" id="lesson-next-step-primary"
-                                    class="btn btn-primary btn-sm fw-bold course-jump-btn" data-target-type=""
-                                    data-target-id="">
-                                    Mở ngay
-                                </button>
-                                <button type="button" id="lesson-next-step-secondary"
-                                    class="btn btn-outline-primary btn-sm fw-bold d-none course-jump-btn"
-                                    data-target-type="" data-target-id="">
-                                    Bài tiếp
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
                     {{-- ══ ASSIGNMENT AREA ══ --}}

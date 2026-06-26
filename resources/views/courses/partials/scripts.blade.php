@@ -93,99 +93,6 @@
                 : null;
         }
 
-        function getLessonNextStep(completed = false) {
-            const lesson = getCurrentLessonElement();
-            if (!lesson) return null;
-
-            const nextAssignmentId = lesson.getAttribute('data-next-assignment-id');
-            const nextAssignmentTitle = lesson.getAttribute('data-next-assignment-title');
-            const nextLesson = getNextLessonElement();
-            const nextQuizId = lesson.getAttribute('data-next-quiz-id');
-            const nextQuizTitle = lesson.getAttribute('data-next-quiz-title');
-
-            if (nextAssignmentId) {
-                return {
-                    type: 'assignment',
-                    id: nextAssignmentId,
-                    title: nextAssignmentTitle || 'Bài tập của bài học này',
-                    eyebrow: completed ? 'Bài học đã xong' : 'Sau bài học này',
-                    meta: 'Bạn có bài tập cần xử lý trước khi học tiếp.',
-                    label: 'Làm bài tập',
-                    secondary: nextLesson ? {
-                        type: 'lesson',
-                        id: nextLesson.getAttribute('data-id'),
-                        label: 'Bài tiếp'
-                    } : null,
-                };
-            }
-
-            if (nextLesson) {
-                return {
-                    type: 'lesson',
-                    id: nextLesson.getAttribute('data-id'),
-                    title: nextLesson.getAttribute('data-title') || 'Bài học tiếp theo',
-                    eyebrow: completed ? 'Tự chuyển tiếp' : 'Bài tiếp theo',
-                    meta: completed ? 'Hệ thống sẽ mở bài kế tiếp sau vài giây.' : 'Bạn có thể chuyển sang bài tiếp theo khi đã sẵn sàng.',
-                    label: 'Mở bài tiếp',
-                    secondary: nextQuizId ? {
-                        type: 'quiz',
-                        id: nextQuizId,
-                        label: 'Làm quiz'
-                    } : null,
-                };
-            }
-
-            if (nextQuizId) {
-                return {
-                    type: 'quiz',
-                    id: nextQuizId,
-                    title: nextQuizTitle || 'Bài kiểm tra tiếp theo',
-                    eyebrow: completed ? 'Hoàn tất bài học' : 'Bài kiểm tra',
-                    meta: 'Bạn còn quiz cần làm trong khóa học này.',
-                    label: 'Làm quiz',
-                    secondary: null,
-                };
-            }
-
-            return null;
-        }
-
-        function renderLessonNextStep(completed = false) {
-            const panel = document.getElementById('lesson-next-step-panel');
-            if (!panel) return null;
-
-            const step = getLessonNextStep(completed);
-            if (!step) {
-                panel.classList.add('d-none');
-                return null;
-            }
-
-            panel.classList.remove('d-none');
-            panel.classList.toggle('is-complete', completed);
-            document.getElementById('lesson-next-step-eyebrow').innerText = step.eyebrow;
-            document.getElementById('lesson-next-step-title').innerText = step.title;
-            document.getElementById('lesson-next-step-meta').innerText = step.meta;
-
-            const primary = document.getElementById('lesson-next-step-primary');
-            primary.dataset.targetType = step.type;
-            primary.dataset.targetId = step.id;
-            primary.innerHTML = `${step.label} <i class="fas fa-arrow-right ms-1"></i>`;
-
-            const secondary = document.getElementById('lesson-next-step-secondary');
-            if (step.secondary) {
-                secondary.classList.remove('d-none');
-                secondary.dataset.targetType = step.secondary.type;
-                secondary.dataset.targetId = step.secondary.id;
-                secondary.innerHTML = `${step.secondary.label} <i class="fas fa-arrow-right ms-1"></i>`;
-            } else {
-                secondary.classList.add('d-none');
-                secondary.dataset.targetType = '';
-                secondary.dataset.targetId = '';
-            }
-
-            return step;
-        }
-
         function showReorderToast(message = 'Đã lưu thứ tự nội dung') {
             const toast = document.getElementById('reorder-toast');
             if (!toast) return;
@@ -260,9 +167,6 @@
             // ✅ THÊM: Reset attachment container
             const attachCont = document.getElementById('lesson-attachment-container');
             if (attachCont) attachCont.classList.add('d-none');
-            const nextStepPanel = document.getElementById('lesson-next-step-panel');
-            if (nextStepPanel) nextStepPanel.classList.add('d-none');
-
             if (assignmentArea) {
                 assignmentArea.classList.add('d-none');
                 assignmentArea.classList.remove('d-flex');
@@ -329,7 +233,6 @@
                     attachmentBtn.href = '#';
                 }
 
-                renderLessonNextStep(false);
             });
         });
 
@@ -551,8 +454,7 @@
                             `${currentCompletedCount}/${totalLessonsCount} bài (${newProgress}%)`;
                         if (progressBar) progressBar.style.width = newProgress + '%';
                     }
-                    const nextStep = renderLessonNextStep(true);
-                    if (nextStep && nextStep.type === 'lesson') {
+                    if (getNextLessonElement()) {
                         setTimeout(() => document.getElementById('btn-next').click(), 1400);
                     }
                 });
