@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -114,6 +115,46 @@ class LocalCourseContextSearchService
             'Chương: ' . $lesson->module->title,
             'Bài học: ' . $lesson->title,
             'Nội dung bài học: ' . $this->plainText($content),
+        ]), self::CONTEXT_TEXT_LIMIT, '');
+    }
+
+    public function moduleContext(int $moduleId, ?User $user = null): string
+    {
+        if (!$user) {
+            return '';
+        }
+
+        $courseIds = $this->accessibleCourses($user)->pluck('id');
+        if ($courseIds->isEmpty()) {
+            return '';
+        }
+
+        $module = Module::query()
+            ->with(['course', 'lessons' => fn ($query) => $query->notArchived()->orderBy('order')])
+            ->whereKey($moduleId)
+            ->whereIn('course_id', $courseIds)
+            ->first();
+
+        if (!$module || !$module->course) {
+            return '';
+        }
+
+        $lessonTexts = $module->lessons
+            ->map(function (Lesson $lesson) {
+                return trim($this->lessonText($lesson) . "\n" . $this->attachmentText($lesson));
+            })
+            ->filter()
+            ->implode("\n\n");
+
+        if ($lessonTexts === '') {
+            return '';
+        }
+
+        return Str::limit(implode("\n", [
+            'Chương học nguồn',
+            'Khóa học: ' . $module->course->title,
+            'Chương: ' . $module->title,
+            'Nội dung các bài học: ' . $this->plainText($lessonTexts),
         ]), self::CONTEXT_TEXT_LIMIT, '');
     }
 

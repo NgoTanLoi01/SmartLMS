@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController, AiTeachingContentController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -119,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/assignments/{id}/submissions-list', [AssignmentController::class, 'listSubmissions'])->name('assignments.submissions.list');
         Route::post('/submissions/{id}/ai-analysis', [AssignmentController::class, 'analyzeSubmissionWithAi'])->name('assignments.submissions.ai-analysis');
         Route::post('/submissions/{id}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
+        Route::post('/ai/teaching-content/generate', [AiTeachingContentController::class, 'generate'])->name('ai.teaching-content.generate');
     });
 
     Route::post('/assignments/{id}/submit', [AssignmentController::class, 'submit'])->middleware('role:student')->name('assignments.submit');

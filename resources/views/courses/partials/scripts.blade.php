@@ -553,6 +553,7 @@
         document.querySelectorAll('.edit-lesson-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                window.currentEditLessonId = this.getAttribute('data-id');
                 document.getElementById('editLessonForm').action =
                     `/lessons/${this.getAttribute('data-id')}`;
                 document.getElementById('editLessonTitle').value = this.getAttribute('data-title');

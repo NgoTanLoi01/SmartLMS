@@ -297,6 +297,32 @@
                 background: #6D28D9;
             }
 
+            .cm-ai-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 8px;
+            }
+
+            .cm-ai-btn {
+                align-items: center;
+                background: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 8px;
+                color: #1d4ed8;
+                display: inline-flex;
+                font-size: 12px;
+                font-weight: 700;
+                gap: 6px;
+                min-height: 34px;
+                padding: 7px 10px;
+            }
+
+            .cm-ai-btn:disabled {
+                cursor: wait;
+                opacity: .65;
+            }
+
             /* ── Table modal ── */
             .cm-table {
                 width: 100%;
@@ -587,6 +613,11 @@
                 <div class="cm-field">
                     <label class="cm-label">Nội dung chi tiết</label>
                     <textarea name="content" id="editLessonContent" class="cm-ctrl" rows="4"></textarea>
+                    <div class="cm-ai-actions">
+                        <button type="button" class="cm-ai-btn" data-ai-draft="lesson_summary">
+                            <i class="fas fa-wand-magic-sparkles"></i>AI tóm tắt từ tài liệu/bài học
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -617,14 +648,14 @@
             <div class="modal-body">
                 <div class="cm-field">
                     <label class="cm-label">Tiêu đề bài tập</label>
-                    <input type="text" name="title" class="cm-ctrl"
+                    <input type="text" name="title" id="addAssignmentTitle" class="cm-ctrl"
                         placeholder="VD: Bài tập thực hành HTML cơ bản" required>
                 </div>
 
                 <div class="cm-row cols-2">
                     <div class="cm-field">
                         <label class="cm-label">Loại bài tập</label>
-                        <select name="type" class="cm-ctrl" required>
+                        <select name="type" id="addAssignmentType" class="cm-ctrl" required>
                             <option value="file">Nộp file</option>
                             <option value="essay">Tự luận</option>
                             <option value="mixed">File + tự luận</option>
@@ -632,7 +663,7 @@
                     </div>
                     <div class="cm-field">
                         <label class="cm-label">Thuộc bài học</label>
-                        <select name="lesson_id" class="cm-ctrl" required>
+                        <select name="lesson_id" id="addAssignmentLesson" class="cm-ctrl" required>
                             <option value="" disabled selected>-- Chọn bài học --</option>
                             @foreach ($course->modules as $module)
                                 <optgroup label="{{ $module->title }}">
@@ -642,6 +673,11 @@
                                 </optgroup>
                             @endforeach
                         </select>
+                        <div class="cm-ai-actions">
+                            <button type="button" class="cm-ai-btn" data-ai-draft="assignment">
+                                <i class="fas fa-wand-magic-sparkles"></i>AI soạn bài tập
+                            </button>
+                        </div>
                     </div>
                     <div class="cm-field">
                         <label class="cm-label">Hạn nộp (Deadline)</label>
@@ -676,7 +712,7 @@
                 <div class="cm-row cols-2">
                     <div class="cm-field">
                         <label class="cm-label">Thang điểm</label>
-                        <input type="number" name="grading_scale" class="cm-ctrl" value="10" min="1" max="100">
+                        <input type="number" name="grading_scale" id="addAssignmentGradingScale" class="cm-ctrl" value="10" min="1" max="100">
                     </div>
                     <div class="cm-field">
                         <label class="cm-label">AI hỗ trợ chấm</label>
@@ -689,9 +725,14 @@
 
                 <div class="cm-field">
                     <label class="cm-label">Tiêu chí chấm điểm</label>
-                    <textarea name="grading_rubric" class="cm-ctrl" rows="4"
+                    <textarea name="grading_rubric" id="addAssignmentRubric" class="cm-ctrl" rows="4"
                         placeholder="VD: Đúng yêu cầu: 4 điểm&#10;Đầy đủ ý: 3 điểm&#10;Ví dụ minh họa: 2 điểm&#10;Trình bày rõ ràng: 1 điểm"></textarea>
                     <div class="cm-hint">AI sẽ ưu tiên chấm theo tiêu chí này để tránh nhận xét lan man.</div>
+                    <div class="cm-ai-actions">
+                        <button type="button" class="cm-ai-btn" data-ai-draft="rubric" data-ai-target="add">
+                            <i class="fas fa-list-check"></i>AI tạo tiêu chí
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -794,6 +835,11 @@
                     <label class="cm-label">Tiêu chí chấm điểm</label>
                     <textarea name="grading_rubric" id="editAssignmentGradingRubric" class="cm-ctrl" rows="4"></textarea>
                     <div class="cm-hint">AI sẽ ưu tiên chấm theo tiêu chí này.</div>
+                    <div class="cm-ai-actions">
+                        <button type="button" class="cm-ai-btn" data-ai-draft="rubric" data-ai-target="edit">
+                            <i class="fas fa-list-check"></i>AI tạo tiêu chí
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -855,13 +901,33 @@
                 <div class="cm-row cols-2">
                     <div class="cm-field">
                         <label class="cm-label">Tên bài thi</label>
-                        <input type="text" name="title" class="cm-ctrl" placeholder="VD: Kiểm tra giữa kỳ..."
+                        <input type="text" name="title" id="addQuizTitle" class="cm-ctrl" placeholder="VD: Kiểm tra giữa kỳ..."
                             required>
                     </div>
                     <div class="cm-field">
                         <label class="cm-label">Thời gian (phút)</label>
-                        <input type="number" name="time_limit" class="cm-ctrl" value="30" min="1"
+                        <input type="number" name="time_limit" id="addQuizTimeLimit" class="cm-ctrl" value="30" min="1"
                             required>
+                    </div>
+                </div>
+
+                <div class="cm-field">
+                    <label class="cm-label">Nguồn AI gợi ý</label>
+                    <select id="addQuizLessonSource" class="cm-ctrl">
+                        <option value="" disabled selected>-- Chọn bài hoặc chương để AI gợi ý quiz --</option>
+                        @foreach ($course->modules as $module)
+                            <optgroup label="{{ $module->title }}">
+                                <option value="module:{{ $module->id }}">Toàn chương: {{ $module->title }}</option>
+                                @foreach ($module->lessons as $lesson)
+                                    <option value="lesson:{{ $lesson->id }}">{{ $lesson->title }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                    <div class="cm-ai-actions">
+                        <button type="button" class="cm-ai-btn" data-ai-draft="quiz">
+                            <i class="fas fa-wand-magic-sparkles"></i>AI gợi ý quiz
+                        </button>
                     </div>
                 </div>
 
@@ -893,15 +959,15 @@
                 <div class="difficulty-grid">
                     <div class="diff-card">
                         <div class="diff-label diff-easy">Câu dễ</div>
-                        <input type="number" name="easy_count" value="10" min="0" required>
+                        <input type="number" name="easy_count" id="addQuizEasyCount" value="10" min="0" required>
                     </div>
                     <div class="diff-card">
                         <div class="diff-label diff-medium">Trung bình</div>
-                        <input type="number" name="medium_count" value="5" min="0" required>
+                        <input type="number" name="medium_count" id="addQuizMediumCount" value="5" min="0" required>
                     </div>
                     <div class="diff-card">
                         <div class="diff-label diff-hard">Câu khó</div>
-                        <input type="number" name="hard_count" value="5" min="0" required>
+                        <input type="number" name="hard_count" id="addQuizHardCount" value="5" min="0" required>
                     </div>
                 </div>
             </div>
@@ -986,5 +1052,169 @@
 
             new bootstrap.Modal(document.getElementById('editAssignmentModal')).show();
         }
+
+        (function() {
+            const aiDraftUrl = @json(route('ai.teaching-content.generate'));
+            const courseId = @json($course->id);
+
+            function editorContent(id) {
+                return tinymce.get(id)?.getContent() || document.getElementById(id)?.value || '';
+            }
+
+            function setEditorContent(id, value) {
+                const editor = tinymce.get(id);
+                if (editor) {
+                    editor.setContent(value || '');
+                    editor.save();
+                }
+                const el = document.getElementById(id);
+                if (el) el.value = value || '';
+            }
+
+            function selectedValue(id) {
+                return document.getElementById(id)?.value || '';
+            }
+
+            function setValue(id, value) {
+                const el = document.getElementById(id);
+                if (el && value !== undefined && value !== null) {
+                    el.value = value;
+                }
+            }
+
+            function plainText(html) {
+                const box = document.createElement('div');
+                box.innerHTML = html || '';
+                return box.textContent || box.innerText || '';
+            }
+
+            async function requestDraft(button, payload) {
+                const oldText = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>AI đang soạn...';
+
+                try {
+                    const res = await axios.post(aiDraftUrl, payload);
+                    return res.data.draft || {};
+                } catch (error) {
+                    const message = error.response?.data?.message || 'AI chưa soạn được nội dung. Vui lòng thử lại.';
+                    alert(message);
+                    return null;
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = oldText;
+                }
+            }
+
+            function addAssignmentPayload(type) {
+                return {
+                    type,
+                    course_id: courseId,
+                    lesson_id: selectedValue('addAssignmentLesson'),
+                    current_title: selectedValue('addAssignmentTitle'),
+                    current_instructions: plainText(editorContent('addAssignmentInstructions')),
+                };
+            }
+
+            function editAssignmentPayload(type) {
+                return {
+                    type,
+                    course_id: courseId,
+                    lesson_id: selectedValue('editAssignmentLesson'),
+                    current_title: selectedValue('editAssignmentTitle'),
+                    current_instructions: plainText(editorContent('editAssignmentInstructions')),
+                };
+            }
+
+            document.addEventListener('click', async function(e) {
+                const button = e.target.closest('[data-ai-draft]');
+                if (!button) return;
+
+                const type = button.dataset.aiDraft;
+
+                if (type === 'assignment') {
+                    if (!selectedValue('addAssignmentLesson')) {
+                        alert('Bạn chọn bài học trước để AI soạn bài tập nhé.');
+                        return;
+                    }
+
+                    const draft = await requestDraft(button, addAssignmentPayload('assignment'));
+                    if (!draft) return;
+
+                    setValue('addAssignmentTitle', draft.title);
+                    setValue('addAssignmentType', draft.type || 'mixed');
+                    setEditorContent('addAssignmentInstructions', draft.instructions);
+                    setValue('addAssignmentRubric', draft.grading_rubric);
+                    setValue('addAssignmentGradingScale', draft.grading_scale || 10);
+                    return;
+                }
+
+                if (type === 'rubric') {
+                    const target = button.dataset.aiTarget === 'edit' ? 'edit' : 'add';
+                    const payload = target === 'edit' ? editAssignmentPayload('rubric') : addAssignmentPayload('rubric');
+
+                    if (!payload.lesson_id && !payload.current_instructions) {
+                        alert('Bạn chọn bài học hoặc nhập yêu cầu bài tập trước để AI tạo tiêu chí nhé.');
+                        return;
+                    }
+
+                    const draft = await requestDraft(button, payload);
+                    if (!draft) return;
+
+                    if (target === 'edit') {
+                        setValue('editAssignmentGradingRubric', draft.grading_rubric);
+                        setValue('editAssignmentGradingScale', draft.grading_scale || 10);
+                    } else {
+                        setValue('addAssignmentRubric', draft.grading_rubric);
+                        setValue('addAssignmentGradingScale', draft.grading_scale || 10);
+                    }
+                    return;
+                }
+
+                if (type === 'quiz') {
+                    const quizSource = selectedValue('addQuizLessonSource');
+                    if (!quizSource) {
+                        alert('Bạn chọn bài học nguồn trước để AI gợi ý quiz nhé.');
+                        return;
+                    }
+
+                    const [sourceType, sourceId] = quizSource.split(':');
+
+                    const draft = await requestDraft(button, {
+                        type: 'quiz',
+                        course_id: courseId,
+                        lesson_id: sourceType === 'lesson' ? sourceId : null,
+                        module_id: sourceType === 'module' ? sourceId : null,
+                    });
+                    if (!draft) return;
+
+                    setValue('addQuizTitle', draft.title);
+                    setValue('addQuizTimeLimit', draft.time_limit || 20);
+                    setValue('addQuizEasyCount', draft.easy_count ?? 5);
+                    setValue('addQuizMediumCount', draft.medium_count ?? 5);
+                    setValue('addQuizHardCount', draft.hard_count ?? 2);
+                    return;
+                }
+
+                if (type === 'lesson_summary') {
+                    if (!window.currentEditLessonId) {
+                        alert('Bạn mở bài học cần sửa trước để AI tóm tắt nhé.');
+                        return;
+                    }
+
+                    const draft = await requestDraft(button, {
+                        type: 'lesson_summary',
+                        course_id: courseId,
+                        lesson_id: window.currentEditLessonId,
+                        current_title: selectedValue('editLessonTitle'),
+                        source_text: plainText(editorContent('editLessonContent')),
+                    });
+                    if (!draft) return;
+
+                    setValue('editLessonTitle', draft.title);
+                    setEditorContent('editLessonContent', draft.content);
+                }
+            });
+        })();
     </script>
 @endpush

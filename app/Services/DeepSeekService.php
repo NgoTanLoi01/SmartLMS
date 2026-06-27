@@ -230,6 +230,153 @@ PROMPT;
         }
     }
 
+    public function generateTeachingContent(string $type, array $payload, ?User $user = null): array
+    {
+        try {
+            $apiKey = config('services.deepseek.key');
+            $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
+
+            if (!$apiKey) {
+                return [
+                    'success' => false,
+                    'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.',
+                ];
+            }
+
+            $lessonContext = '';
+            if (!empty($payload['lesson_id'])) {
+                $lessonContext = $this->contextSearch->lessonContext((int) $payload['lesson_id'], $user);
+            }
+
+            if ($lessonContext === '' && !empty($payload['module_id'])) {
+                $lessonContext = $this->contextSearch->moduleContext((int) $payload['module_id'], $user);
+            }
+
+            $sourceText = $this->cleanUtf8((string) ($payload['source_text'] ?? ''));
+            $context = trim(implode("\n\n---\n\n", array_filter([$lessonContext, $sourceText])));
+
+            if ($context === '') {
+                return [
+                    'success' => false,
+                    'message' => 'Chưa có đủ nội dung bài học để AI soạn bản nháp.',
+                ];
+            }
+
+            $schema = match ($type) {
+                'assignment' => <<<PROMPT
+{
+  "title": "Tên bài tập ngắn gọn",
+  "type": "essay|file|mixed",
+  "instructions": "Yêu cầu bài tập rõ ràng, có các bước thực hiện",
+  "grading_scale": 10,
+  "grading_rubric": "Tiêu chí chấm điểm theo từng dòng"
+}
+PROMPT,
+                'rubric' => <<<PROMPT
+{
+  "grading_scale": 10,
+  "grading_rubric": "Tiêu chí chấm điểm theo từng dòng, có điểm tối đa cho từng tiêu chí"
+}
+PROMPT,
+                'quiz' => <<<PROMPT
+{
+  "title": "Tên quiz ngắn gọn",
+  "time_limit": 20,
+  "easy_count": 5,
+  "medium_count": 5,
+  "hard_count": 2,
+  "topic": "Chủ đề dùng để sinh câu hỏi trong ngân hàng"
+}
+PROMPT,
+                'lesson_summary' => <<<PROMPT
+{
+  "title": "Tiêu đề bài học nếu cần chỉnh lại",
+  "content": "<p>Nội dung bài học tóm tắt, rõ ý, có thể dùng trong trình soạn thảo</p>"
+}
+PROMPT,
+                default => null,
+            };
+
+            if (!$schema) {
+                return [
+                    'success' => false,
+                    'message' => 'Loại nội dung AI chưa được hỗ trợ.',
+                ];
+            }
+
+            $systemPrompt = <<<PROMPT
+Bạn là trợ lý AI hỗ trợ giáo viên soạn nội dung trong SmartLMS.
+Hãy tạo bản nháp thực tế, ngắn gọn, dễ chỉnh sửa, bằng tiếng Việt.
+Chỉ trả về JSON hợp lệ, không markdown, không bọc ```json.
+
+Schema bắt buộc:
+{$schema}
+
+Quy tắc:
+- Bám sát nội dung bài học/tài liệu được cung cấp, không bịa kiến thức ngoài phạm vi.
+- Giáo viên sẽ duyệt trước khi lưu, vì vậy hãy viết ở dạng bản nháp có thể chỉnh sửa.
+- Tránh quá dài; ưu tiên rõ việc học sinh cần làm, sản phẩm cần nộp và tiêu chí đánh giá.
+- Với rubric, tổng điểm nên khớp grading_scale.
+- Với lesson_summary, content có thể dùng HTML đơn giản: p, ul, ol, li, strong.
+PROMPT;
+
+            $userPayload = json_encode([
+                'type' => $type,
+                'teacher_request' => $payload['teacher_request'] ?? '',
+                'current_title' => $payload['current_title'] ?? '',
+                'current_instructions' => $payload['current_instructions'] ?? '',
+                'context' => $context,
+            ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
+
+            $response = Http::withToken($apiKey)
+                ->timeout(90)
+                ->withoutVerifying()
+                ->post("{$baseUrl}/chat/completions", [
+                    'model' => 'deepseek-v4-flash',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $this->cleanUtf8($systemPrompt)],
+                        ['role' => 'user', 'content' => $this->cleanUtf8($userPayload ?: '{}')],
+                    ],
+                    'temperature' => 0.25,
+                ]);
+
+            if ($response->failed()) {
+                Log::warning('DeepSeek teaching content failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'DeepSeek chưa soạn được nội dung. Vui lòng thử lại.',
+                ];
+            }
+
+            $content = $response->json('choices.0.message.content');
+            $draft = $this->decodeJsonResponse($content);
+
+            if (!$draft) {
+                return [
+                    'success' => false,
+                    'message' => 'AI trả về bản nháp chưa đúng định dạng.',
+                    'raw' => $content,
+                ];
+            }
+
+            return [
+                'success' => true,
+                'draft' => $draft,
+            ];
+        } catch (\Exception $e) {
+            Log::error('DeepSeek teaching content error: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Không thể kết nối đến AI soạn nội dung.',
+            ];
+        }
+    }
+
     private function askDeepSeek(array $historyMessages, string $context, array $options = []): string
     {
         $apiKey = config('services.deepseek.key');
