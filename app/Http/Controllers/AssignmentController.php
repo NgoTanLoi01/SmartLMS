@@ -173,17 +173,38 @@ class AssignmentController extends Controller
                 'ai_suggested_score',
                 'ai_feedback',
                 'ai_rubric_breakdown',
+                'ai_review_flags',
                 'ai_grading_notes',
                 'ai_analyzed_at',
+                'ai_analysis_history',
             ]);
+
+            $history = collect($submission->ai_analysis_history ?? [])
+                ->prepend([
+                    'analyzed_at' => now()->toDateTimeString(),
+                    'suggested_score' => $analysis['suggested_score'] ?? null,
+                    'feedback' => $analysis['feedback'] ?? null,
+                    'rubric_breakdown' => $analysis['rubric_breakdown'] ?? [],
+                    'strengths' => $analysis['strengths'] ?? [],
+                    'improvements' => $analysis['improvements'] ?? [],
+                    'review_flags' => $analysis['review_flags'] ?? [],
+                    'grading_notes' => $analysis['grading_notes'] ?? null,
+                ])
+                ->take(10)
+                ->values()
+                ->all();
 
             $submission->update([
                 'ai_suggested_score' => $analysis['suggested_score'] ?? null,
                 'ai_feedback' => $analysis['feedback'] ?? null,
                 'ai_rubric_breakdown' => $analysis['rubric_breakdown'] ?? null,
+                'ai_review_flags' => $analysis['review_flags'] ?? null,
                 'ai_grading_notes' => $analysis['grading_notes'] ?? null,
                 'ai_analyzed_at' => now(),
+                'ai_analysis_history' => $history,
             ]);
+
+            $result['analysis']['analysis_history_count'] = count($history);
 
             AuditLogger::log(
                 AuditLogger::AI_ASSIGNMENT_ANALYZED,
@@ -193,8 +214,10 @@ class AssignmentController extends Controller
                     'ai_suggested_score',
                     'ai_feedback',
                     'ai_rubric_breakdown',
+                    'ai_review_flags',
                     'ai_grading_notes',
                     'ai_analyzed_at',
+                    'ai_analysis_history',
                 ]),
                 [
                     'assignment_id' => $assignment->id,

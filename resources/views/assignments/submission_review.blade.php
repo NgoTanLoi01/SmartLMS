@@ -546,6 +546,56 @@
             color: var(--text-muted);
         }
 
+        .ai-warning-list {
+            display: grid;
+            gap: .45rem;
+        }
+
+        .ai-warning {
+            border: 1px solid #fed7aa;
+            border-radius: 10px;
+            background: #fff7ed;
+            color: #9a3412;
+            padding: .55rem .65rem;
+        }
+
+        .ai-warning.high {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .ai-warning.low {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            color: var(--text-muted);
+        }
+
+        .ai-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            padding: .8rem .9rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .btn-ai-apply {
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 999px;
+            font-size: .76rem;
+            font-weight: 800;
+            padding: .5rem .75rem;
+        }
+
+        .ai-history {
+            margin-top: .7rem;
+            color: var(--text-muted);
+            font-size: .76rem;
+        }
+
         /* ── GRADING FORM ──────────────────────────── */
         .grading-form {
             padding: 1.1rem 1.35rem 1.35rem;
@@ -886,6 +936,11 @@
 
                             {{-- AI SECTION --}}
                             <div class="ai-section">
+                                @php
+                                    $latestAiHistory = collect($submission->ai_analysis_history ?? [])->first() ?? [];
+                                    $latestAiStrengths = $latestAiHistory['strengths'] ?? [];
+                                    $latestAiImprovements = $latestAiHistory['improvements'] ?? [];
+                                @endphp
                                 @if (!$assignment->ai_grading_enabled)
                                     <div class="ai-notice">
                                         <i class="fas fa-info-circle"></i>
@@ -910,6 +965,32 @@
                                                 <div class="ai-result__row">
                                                     <div class="ai-result__key">Nhận xét</div>
                                                     <div class="ai-result__val">{{ $submission->ai_feedback }}</div>
+                                                </div>
+                                            @endif
+                                            @if (!empty($submission->ai_review_flags))
+                                                <div class="ai-result__row">
+                                                    <div class="ai-result__key">Cảnh báo</div>
+                                                    <div class="ai-result__val">
+                                                        <div class="ai-warning-list">
+                                                            @foreach ($submission->ai_review_flags as $flag)
+                                                                <div class="ai-warning {{ $flag['level'] ?? 'medium' }}">
+                                                                    {{ $flag['message'] ?? 'Cần giáo viên xem kỹ hơn.' }}
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            @if (!empty($latestAiStrengths))
+                                                <div class="ai-result__row">
+                                                    <div class="ai-result__key">Điểm tốt</div>
+                                                    <div class="ai-result__val">{{ implode('; ', $latestAiStrengths) }}</div>
+                                                </div>
+                                            @endif
+                                            @if (!empty($latestAiImprovements))
+                                                <div class="ai-result__row">
+                                                    <div class="ai-result__key">Cần cải thiện</div>
+                                                    <div class="ai-result__val">{{ implode('; ', $latestAiImprovements) }}</div>
                                                 </div>
                                             @endif
                                             @if (!empty($submission->ai_rubric_breakdown))
@@ -938,6 +1019,17 @@
                                                 <div class="ai-result__key">Cập nhật</div>
                                                 <div class="ai-result__val">{{ $submission->ai_analyzed_at->format('H:i · d/m/Y') }}</div>
                                             </div>
+                                            <div class="ai-actions">
+                                                <button type="button" class="btn-ai-apply" id="useAiFeedbackBtn"
+                                                    data-feedback="{{ e($submission->ai_feedback ?? '') }}">
+                                                    <i class="fas fa-comment-dots me-1"></i>Dùng nhận xét AI
+                                                </button>
+                                            </div>
+                                            @if (!empty($submission->ai_analysis_history) && count($submission->ai_analysis_history) > 1)
+                                                <div class="ai-history px-3 pb-3">
+                                                    Đã phân tích {{ count($submission->ai_analysis_history) }} lần. Lần gần nhất đang được hiển thị.
+                                                </div>
+                                            @endif
                                         @endif
                                     </div>
                                 @else
@@ -990,10 +1082,10 @@
             if (!aiBtn) return;
 
             const resultBox = document.getElementById('aiResultBox');
-            const gradeInput = document.getElementById('gradeInput');
             const feedbackInput = document.getElementById('feedbackInput');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             const gradingScale = @json($assignment->grading_scale ?? 10);
+            let latestAiFeedback = @json($submission->ai_feedback ?? '');
 
             const esc = (v) => String(v ?? '')
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1031,9 +1123,8 @@
                         const strengths = Array.isArray(a.strengths) ? a.strengths : [];
                         const improvements = Array.isArray(a.improvements) ? a.improvements : [];
                         const rubricBreakdown = Array.isArray(a.rubric_breakdown) ? a.rubric_breakdown : [];
-
-                        if (a.suggested_score != null) gradeInput.value = a.suggested_score;
-                        if (a.feedback) feedbackInput.value = a.feedback;
+                        const reviewFlags = Array.isArray(a.review_flags) ? a.review_flags : [];
+                        latestAiFeedback = a.feedback || '';
 
                             const rows = [{
                                 key: 'Gợi ý điểm',
@@ -1043,6 +1134,12 @@
                                 key: 'Nhận xét',
                                 val: esc(a.feedback || '---')
                             },
+                            reviewFlags.length ? {
+                                key: 'Cảnh báo',
+                                val: `<div class="ai-warning-list">${reviewFlags.map(flag => `
+                                    <div class="ai-warning ${esc(flag.level || 'medium')}">${esc(flag.message || 'Cần giáo viên xem kỹ hơn.')}</div>
+                                `).join('')}</div>`
+                            } : null,
                             rubricBreakdown.length ? {
                                 key: 'Rubric',
                                 val: rubricBreakdown.map(item => `
@@ -1069,7 +1166,12 @@
 
                         resultBox.innerHTML = rows.map(r =>
                             `<div class="ai-result__row"><div class="ai-result__key">${r.key}</div><div class="ai-result__val">${r.val}</div></div>`
-                        ).join('');
+                        ).join('') + `
+                            <div class="ai-actions">
+                                <button type="button" class="btn-ai-apply" id="useAiFeedbackBtn">
+                                    <i class="fas fa-comment-dots me-1"></i>Dùng nhận xét AI
+                                </button>
+                            </div>`;
                     })
                     .catch(err => {
                         resultBox.innerHTML =
@@ -1079,6 +1181,17 @@
                         aiBtn.disabled = false;
                         aiBtn.innerHTML = orig;
                     });
+            });
+
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('#useAiFeedbackBtn');
+                if (!btn) return;
+
+                const feedback = latestAiFeedback || btn.getAttribute('data-feedback') || '';
+                if (!feedback) return;
+
+                feedbackInput.value = feedback;
+                feedbackInput.focus();
             });
         });
     </script>

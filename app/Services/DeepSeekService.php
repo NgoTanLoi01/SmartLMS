@@ -148,6 +148,9 @@ Schema:
   ],
   "strengths": ["Điểm làm tốt"],
   "improvements": ["Điểm cần cải thiện"],
+  "review_flags": [
+    {"type": "off_topic|too_short|possible_copy|missing_rubric|needs_manual_review|other", "level": "high|medium|low", "message": "Cảnh báo ngắn cho giáo viên"}
+  ],
   "grading_notes": "Ghi chú ngắn cho giáo viên về lý do đề xuất điểm"
 }
 
@@ -157,6 +160,8 @@ Quy tắc:
 - Không cho điểm vượt quá max_score của từng tiêu chí.
 - Không bịa nội dung ngoài yêu cầu và bài làm được cung cấp.
 - Nếu bài làm quá ngắn, thiếu ý hoặc không liên quan, hãy giảm điểm và nêu rõ lý do.
+- Nếu bài làm có dấu hiệu lạc đề, quá ngắn, trả lời chung chung, sao chép mẫu, hoặc cần giáo viên xem thủ công, hãy thêm vào review_flags.
+- Không khẳng định chắc chắn đạo văn/sao chép nếu không có bằng chứng; chỉ ghi "có dấu hiệu" hoặc "cần kiểm tra thêm".
 - Nhận xét phải bằng tiếng Việt, cụ thể, lịch sự, có thể dùng trực tiếp cho học sinh.
 - Ưu tiên nhận xét ngắn, bám tiêu chí; không viết lan man.
 - Đây chỉ là gợi ý; giáo viên là người quyết định cuối cùng.
@@ -168,8 +173,8 @@ PROMPT;
                 ->post("{$baseUrl}/chat/completions", [
                     'model' => 'deepseek-v4-flash',
                     'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => json_encode($payload, JSON_UNESCAPED_UNICODE)],
+                        ['role' => 'system', 'content' => $this->cleanUtf8($systemPrompt)],
+                        ['role' => 'user', 'content' => $this->cleanUtf8(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE) ?: '{}')],
                     ],
                     'temperature' => 0.15,
                 ]);
@@ -213,6 +218,31 @@ PROMPT;
                         'comment' => (string) ($item['comment'] ?? ''),
                     ];
                 })
+                ->values()
+                ->all();
+
+            $analysis['strengths'] = collect($analysis['strengths'] ?? [])
+                ->filter(fn ($item) => is_string($item) && trim($item) !== '')
+                ->map(fn ($item) => trim($item))
+                ->values()
+                ->all();
+
+            $analysis['improvements'] = collect($analysis['improvements'] ?? [])
+                ->filter(fn ($item) => is_string($item) && trim($item) !== '')
+                ->map(fn ($item) => trim($item))
+                ->values()
+                ->all();
+
+            $analysis['review_flags'] = collect($analysis['review_flags'] ?? [])
+                ->filter(fn ($item) => is_array($item))
+                ->map(function ($item) {
+                    return [
+                        'type' => (string) ($item['type'] ?? 'other'),
+                        'level' => in_array(($item['level'] ?? ''), ['high', 'medium', 'low'], true) ? $item['level'] : 'medium',
+                        'message' => (string) ($item['message'] ?? ''),
+                    ];
+                })
+                ->filter(fn ($item) => trim($item['message']) !== '')
                 ->values()
                 ->all();
 
