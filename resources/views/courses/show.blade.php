@@ -1476,6 +1476,10 @@
                     <a href="{{ route('quizzes.ai_generate') }}" class="tool-btn purple">
                         <i class="fas fa-wand-magic-sparkles"></i> Tạo câu hỏi AI
                     </a>
+                    <button type="button" class="tool-btn amber" id="course-quality-check-btn"
+                        data-url="{{ route('courses.quality-check', $course->id) }}">
+                        <i class="fas fa-shield-halved"></i> Kiểm tra chất lượng
+                    </button>
                 </div>
             </div>
         @endif

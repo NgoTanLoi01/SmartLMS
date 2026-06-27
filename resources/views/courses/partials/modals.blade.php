@@ -323,6 +323,76 @@
                 opacity: .65;
             }
 
+            .quality-summary {
+                display: grid;
+                gap: 10px;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                margin-bottom: 14px;
+            }
+
+            .quality-stat {
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                padding: 10px;
+            }
+
+            .quality-stat-label {
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .quality-stat-value {
+                color: #111827;
+                font-size: 22px;
+                font-weight: 900;
+                margin-top: 3px;
+            }
+
+            .quality-issues {
+                display: grid;
+                gap: 8px;
+                max-height: 52vh;
+                overflow-y: auto;
+                padding-right: 4px;
+            }
+
+            .quality-issue {
+                border: 1px solid #e5e7eb;
+                border-left: 4px solid #f59e0b;
+                border-radius: 10px;
+                padding: 10px 12px;
+            }
+
+            .quality-issue.high {
+                border-left-color: #dc2626;
+            }
+
+            .quality-issue.low {
+                border-left-color: #64748b;
+            }
+
+            .quality-issue-title {
+                color: #111827;
+                font-size: 13px;
+                font-weight: 800;
+            }
+
+            .quality-issue-text {
+                color: #4b5563;
+                font-size: 12px;
+                line-height: 1.55;
+                margin-top: 4px;
+            }
+
+            @media (max-width: 767.98px) {
+                .quality-summary {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+
             /* ── Table modal ── */
             .cm-table {
                 width: 100%;
@@ -982,6 +1052,26 @@
 </div>
 
 {{-- ============================================================
+     9. MODAL: KIỂM TRA CHẤT LƯỢNG KHÓA HỌC
+     ============================================================ --}}
+<div class="modal fade cm-modal" id="courseQualityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="cm-header-icon icon-amber"><i class="fas fa-shield-halved"></i></div>
+                <h5 class="modal-title">Kiểm tra chất lượng khóa học</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="course-quality-content" class="text-muted small">
+                    Bấm kiểm tra để hệ thống rà soát nội dung khóa học.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ============================================================
      SCRIPTS
      ============================================================ --}}
 @push('scripts')
@@ -1213,6 +1303,75 @@
 
                     setValue('editLessonTitle', draft.title);
                     setEditorContent('editLessonContent', draft.content);
+                }
+            });
+        })();
+
+        (function() {
+            const checkBtn = document.getElementById('course-quality-check-btn');
+            const content = document.getElementById('course-quality-content');
+            const modalEl = document.getElementById('courseQualityModal');
+            if (!checkBtn || !content || !modalEl) return;
+
+            const esc = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            function severityLabel(level) {
+                return {
+                    high: 'Cần xử lý',
+                    medium: 'Nên cải thiện',
+                    low: 'Gợi ý',
+                }[level] || 'Gợi ý';
+            }
+
+            function renderReport(data) {
+                const summary = data.summary || {};
+                const issues = Array.isArray(data.issues) ? data.issues : [];
+
+                if (!issues.length) {
+                    content.innerHTML = `
+                        <div class="cm-info-banner mb-0">
+                            <i class="fas fa-check-circle"></i>
+                            Chưa phát hiện vấn đề lớn. Khóa học đang khá ổn để vận hành.
+                        </div>`;
+                    return;
+                }
+
+                content.innerHTML = `
+                    <div class="quality-summary">
+                        <div class="quality-stat"><div class="quality-stat-label">Tổng vấn đề</div><div class="quality-stat-value">${esc(summary.total || 0)}</div></div>
+                        <div class="quality-stat"><div class="quality-stat-label">Cần xử lý</div><div class="quality-stat-value">${esc(summary.high || 0)}</div></div>
+                        <div class="quality-stat"><div class="quality-stat-label">Nên cải thiện</div><div class="quality-stat-value">${esc(summary.medium || 0)}</div></div>
+                        <div class="quality-stat"><div class="quality-stat-label">Gợi ý</div><div class="quality-stat-value">${esc(summary.low || 0)}</div></div>
+                    </div>
+                    <div class="quality-issues">
+                        ${issues.map(issue => `
+                            <div class="quality-issue ${esc(issue.severity || 'medium')}">
+                                <div class="quality-issue-title">
+                                    <span class="badge bg-${issue.severity === 'high' ? 'danger' : (issue.severity === 'low' ? 'secondary' : 'warning text-dark')} me-1">${esc(severityLabel(issue.severity))}</span>
+                                    ${esc(issue.title || 'Mục cần kiểm tra')}
+                                </div>
+                                <div class="quality-issue-text">${esc(issue.message || '')}</div>
+                                <div class="quality-issue-text"><strong>Gợi ý:</strong> ${esc(issue.suggestion || '')}</div>
+                            </div>
+                        `).join('')}
+                    </div>`;
+            }
+
+            checkBtn.addEventListener('click', async function() {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+                content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2">Đang kiểm tra nội dung khóa học...</div></div>';
+
+                try {
+                    const res = await axios.post(checkBtn.dataset.url, {});
+                    renderReport(res.data || {});
+                } catch (error) {
+                    content.innerHTML = `<div class="alert alert-danger mb-0">${esc(error.response?.data?.message || 'Không kiểm tra được khóa học lúc này.')}</div>`;
                 }
             });
         })();

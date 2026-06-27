@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController, AiTeachingContentController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController, AiTeachingContentController, CourseQualityController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -86,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/courses/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
         Route::put('/courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::patch('/courses/{course}', [CourseController::class, 'update']);
+        Route::post('/courses/{course}/quality-check', [CourseQualityController::class, 'check'])->name('courses.quality-check');
         Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
     });
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
