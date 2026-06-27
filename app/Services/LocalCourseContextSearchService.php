@@ -77,6 +77,46 @@ class LocalCourseContextSearchService
         return $this->formatContext($matches);
     }
 
+    public function lessonContext(int $lessonId, ?User $user = null): string
+    {
+        if (!$user) {
+            return '';
+        }
+
+        $courseIds = $this->accessibleCourses($user)->pluck('id');
+        if ($courseIds->isEmpty()) {
+            return '';
+        }
+
+        $lesson = Lesson::query()
+            ->with(['module.course'])
+            ->whereKey($lessonId)
+            ->whereHas('module', fn ($query) => $query->whereIn('course_id', $courseIds))
+            ->first();
+
+        if (!$lesson || !$lesson->module?->course) {
+            return '';
+        }
+
+        if ($user->isStudent() && !$lesson->isVisibleToStudents()) {
+            return '';
+        }
+
+        $content = trim($this->lessonText($lesson) . "\n" . $this->attachmentText($lesson));
+
+        if ($content === '') {
+            return '';
+        }
+
+        return Str::limit(implode("\n", [
+            'Bài học hiện tại',
+            'Khóa học: ' . $lesson->module->course->title,
+            'Chương: ' . $lesson->module->title,
+            'Bài học: ' . $lesson->title,
+            'Nội dung bài học: ' . $this->plainText($content),
+        ]), self::CONTEXT_TEXT_LIMIT, '');
+    }
+
     private function accessibleCourses(?User $user): Collection
     {
         $query = Course::query()
@@ -311,6 +351,7 @@ class LocalCourseContextSearchService
 
     private function plainText(string $text): string
     {
+        $text = $this->cleanUtf8($text);
         $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $text = preg_replace('/\s+/u', ' ', $text) ?? '';
 
@@ -323,5 +364,14 @@ class LocalCourseContextSearchService
         $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
 
         return $ascii !== false ? $ascii : $text;
+    }
+
+    private function cleanUtf8(string $text): string
+    {
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            $text = @iconv('UTF-8', 'UTF-8//IGNORE', $text) ?: '';
+        }
+
+        return preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? '';
     }
 }

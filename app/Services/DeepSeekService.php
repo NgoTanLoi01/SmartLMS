@@ -12,13 +12,20 @@ class DeepSeekService
     {
     }
 
-    public function sendMessage(array $messages, ?User $user = null): string
+    public function sendMessage(array $messages, ?User $user = null, array $options = []): string
     {
         try {
             $lastUserMessage = (string) (end($messages)['content'] ?? '');
-            $context = $this->contextSearch->search($lastUserMessage, $user);
+            $lessonContext = '';
 
-            return $this->askDeepSeek($messages, $context);
+            if (!empty($options['lesson_id'])) {
+                $lessonContext = $this->contextSearch->lessonContext((int) $options['lesson_id'], $user);
+            }
+
+            $searchContext = $this->contextSearch->search($lastUserMessage, $user);
+            $context = trim(implode("\n\n---\n\n", array_filter([$lessonContext, $searchContext])));
+
+            return $this->askDeepSeek($messages, $context, $options);
         } catch (\Exception $e) {
             Log::error('Lỗi quy trình Chatbot: ' . $e->getMessage());
             return 'Không thể kết nối đến máy chủ AI.';
@@ -223,12 +230,23 @@ PROMPT;
         }
     }
 
-    private function askDeepSeek(array $historyMessages, string $context): string
+    private function askDeepSeek(array $historyMessages, string $context, array $options = []): string
     {
         $apiKey = config('services.deepseek.key');
         $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
 
-        $systemContent = "Bạn là trợ lý AI học tập của hệ thống SmartLMS. Hãy trả lời bằng tiếng Việt, rõ ràng, thân thiện và ưu tiên nội dung trong khóa học của người dùng.\n";
+        $assistMode = (string) ($options['assist_mode'] ?? '');
+
+        $systemContent = "Bạn là trợ giảng AI học tập của hệ thống SmartLMS. Hãy trả lời bằng tiếng Việt, rõ ràng, thân thiện và ưu tiên nội dung trong khóa học hoặc bài học hiện tại của người dùng.\n";
+        $systemContent .= "Khi đang có ngữ cảnh bài học hiện tại, hãy bám vào bài đó trước; chỉ mở rộng sang nội dung liên quan nếu thật sự cần.\n";
+        $systemContent .= "Nếu học sinh hỏi chưa hiểu, hãy giải thích lại từng bước, dùng ví dụ ngắn, tránh trả lời quá dài.\n";
+        $systemContent .= "Nếu được yêu cầu tóm tắt, hãy tóm tắt theo ý chính và gợi ý 2-3 điểm cần nhớ.\n";
+        $systemContent .= "Nếu được yêu cầu ôn tập, hãy đưa ra câu hỏi tự kiểm tra hoặc việc nên xem lại, không tạo cảm giác quá tải.\n";
+
+        if ($assistMode !== '') {
+            $systemContent .= "Chế độ hỗ trợ hiện tại: {$assistMode}.\n";
+        }
+
         if (!empty($context)) {
             $systemContent .= "Dữ liệu tìm thấy từ bài học và file bài giảng trong SmartLMS:\n" . $context . "\n\n";
             $systemContent .= "Quy tắc: chỉ dùng dữ liệu trên làm nguồn chính; nếu cần suy luận thêm, hãy nói rõ đó là phần giải thích thêm.";
@@ -237,13 +255,13 @@ PROMPT;
         }
 
         // Tạo danh sách tin nhắn cho API DeepSeek
-        $finalMessages = [['role' => 'system', 'content' => $systemContent]];
+        $finalMessages = [['role' => 'system', 'content' => $this->cleanUtf8($systemContent)]];
 
         // Chuyển đổi role 'assistant' (nếu có từ JS) thành 'assistant' chuẩn API
         foreach ($historyMessages as $msg) {
             $finalMessages[] = [
                 'role' => $msg['role'] === 'assistant' ? 'assistant' : $msg['role'],
-                'content' => $msg['content'],
+                'content' => $this->cleanUtf8((string) ($msg['content'] ?? '')),
             ];
         }
 
@@ -282,5 +300,14 @@ PROMPT;
         }
 
         return null;
+    }
+
+    private function cleanUtf8(string $text): string
+    {
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            $text = @iconv('UTF-8', 'UTF-8//IGNORE', $text) ?: '';
+        }
+
+        return preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? '';
     }
 }

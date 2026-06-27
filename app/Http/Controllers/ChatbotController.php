@@ -29,8 +29,15 @@ class ChatbotController extends Controller
                 return response()->json(['reply' => 'Dữ liệu tin nhắn không hợp lệ.'], 400);
             }
 
+            $lessonContext = $request->input('lesson_context', []);
+            $options = [];
+            if (is_array($lessonContext) && !empty($lessonContext['lesson_id'])) {
+                $options['lesson_id'] = (int) $lessonContext['lesson_id'];
+                $options['assist_mode'] = (string) ($lessonContext['assist_mode'] ?? '');
+            }
+
             // Chatbot tìm ngữ cảnh theo quyền truy cập khóa học của người dùng hiện tại.
-            $reply = $this->deepseekService->sendMessage($messages, $request->user());
+            $reply = $this->deepseekService->sendMessage($messages, $request->user(), $options);
 
             return response()->json([
                 'reply' => $reply,

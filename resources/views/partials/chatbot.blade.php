@@ -236,6 +236,26 @@
         background: rgba(255, 255, 255, 0.22);
     }
 
+    .cb-context {
+        align-items: center;
+        background: #eff6ff;
+        border-bottom: 1px solid var(--cb-border);
+        color: var(--cb-text-muted);
+        display: none;
+        font-size: 0.75rem;
+        gap: 8px;
+        padding: 9px 14px;
+    }
+
+    .cb-context.active {
+        display: flex;
+    }
+
+    .cb-context strong {
+        color: var(--cb-text);
+        font-weight: 700;
+    }
+
     /* ── Body ── */
     .cb-body {
         flex: 1;
@@ -547,6 +567,11 @@
         </div>
     </div>
 
+    <div class="cb-context" id="cbContext">
+        <i class="fas fa-book-open text-primary"></i>
+        <span>Đang bám theo: <strong id="cbContextTitle">Bài học</strong></span>
+    </div>
+
     {{-- Messages --}}
     <div class="cb-body" id="cbBody">
         <div class="cb-date-divider" id="cbDateDivider"></div>
@@ -595,9 +620,12 @@
         const body = document.getElementById('cbBody');
         const typing = document.getElementById('cbTyping');
         const badge = document.getElementById('cbBadge');
+        const contextBar = document.getElementById('cbContext');
+        const contextTitle = document.getElementById('cbContextTitle');
 
         let chatHistory = [];
         let isFullscreen = false;
+        let currentLessonContext = null;
 
         // Hiển thị thời gian khởi tạo
         const now = new Date();
@@ -649,11 +677,13 @@
         });
 
         // ── Gửi tin nhắn ──
-        const sendMessage = async () => {
-            const message = input.value.trim();
+        const sendMessage = async (presetMessage = null, presetContext = null) => {
+            const message = (presetMessage ?? input.value).trim();
             if (!message) return;
 
-            input.value = '';
+            if (!presetMessage) {
+                input.value = '';
+            }
             input.style.height = 'auto';
             input.disabled = true;
             sendBtn.disabled = true;
@@ -669,7 +699,8 @@
 
             try {
                 const res = await axios.post('{{ route('chatbot.send') }}', {
-                    messages: chatHistory
+                    messages: chatHistory,
+                    lesson_context: presetContext || currentLessonContext
                 });
                 typing.classList.remove('visible');
 
@@ -699,6 +730,26 @@
                 sendMessage();
             }
         });
+
+        window.SmartLmsAiTutor = {
+            setLessonContext(context) {
+                currentLessonContext = context && context.lesson_id ? context : null;
+                updateContextBar();
+            },
+            clearLessonContext() {
+                currentLessonContext = null;
+                updateContextBar();
+            },
+            openWithPrompt(message, context = null) {
+                if (context && context.lesson_id) {
+                    currentLessonContext = context;
+                    updateContextBar();
+                }
+
+                openChatWindow();
+                sendMessage(message, context || currentLessonContext);
+            }
+        };
 
         // ── Helpers ──
         function appendMessage(text, sender) {
@@ -735,6 +786,34 @@
             requestAnimationFrame(() => {
                 body.scrollTop = body.scrollHeight;
             });
+        }
+
+        function openChatWindow() {
+            const isActive = windowEl.classList.contains('active');
+            if (!isActive) {
+                windowEl.classList.add('active');
+                toggler.classList.add('active');
+                toggler.classList.remove('has-pulse');
+                toggler.setAttribute('aria-expanded', 'true');
+                windowEl.setAttribute('aria-hidden', 'false');
+                badge.style.display = 'none';
+            }
+
+            scrollToBottom();
+            setTimeout(() => input.focus(), 120);
+        }
+
+        function updateContextBar() {
+            if (!contextBar || !contextTitle) return;
+
+            if (!currentLessonContext || !currentLessonContext.lesson_title) {
+                contextBar.classList.remove('active');
+                contextTitle.textContent = 'Bài học';
+                return;
+            }
+
+            contextTitle.textContent = currentLessonContext.lesson_title;
+            contextBar.classList.add('active');
         }
 
         function formatTime(date) {

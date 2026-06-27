@@ -725,6 +725,68 @@
             }
         }
 
+        .lesson-ai-toolbar {
+            align-items: center;
+            background: var(--blue-50);
+            border: 1px solid var(--blue-100);
+            border-radius: var(--radius-md);
+            display: none;
+            gap: 10px;
+            justify-content: space-between;
+            margin: 0 18px 18px;
+            padding: 12px 14px;
+        }
+
+        @media (min-width: 768px) {
+            .lesson-ai-toolbar {
+                margin: 0 36px 22px;
+            }
+        }
+
+        .lesson-ai-toolbar.active {
+            display: flex;
+        }
+
+        .lesson-ai-title {
+            color: var(--gray-900);
+            font-size: 13px;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .lesson-ai-subtitle {
+            color: var(--gray-500);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .lesson-ai-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .lesson-ai-btn {
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--blue-100);
+            border-radius: 8px;
+            color: var(--blue-700);
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 700;
+            gap: 5px;
+            min-height: 34px;
+            padding: 7px 10px;
+        }
+
+        .lesson-ai-btn:hover {
+            background: var(--blue-600);
+            border-color: var(--blue-600);
+            color: #fff;
+        }
+
         .course-intro-card {
             background: linear-gradient(135deg, #fafbff, #f0f9ff);
             border: 1px solid #e0eaff;
@@ -1294,8 +1356,17 @@
                 flex-direction: column;
             }
 
+            .lesson-ai-toolbar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
             .teacher-mode-toggle {
                 width: 100%;
+            }
+
+            .lesson-ai-actions {
+                justify-content: flex-start;
             }
 
             .teacher-mode-btn {
@@ -1541,6 +1612,33 @@
                                         xem nhanh. Dùng các nút thêm nội dung ở phần trên.</div>
                                 @endif
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="lesson-ai-toolbar" class="lesson-ai-toolbar">
+                        <div>
+                            <h6 class="lesson-ai-title">
+                                <i class="fas fa-robot me-2 text-primary"></i>AI trợ giảng bài này
+                            </h6>
+                            <div class="lesson-ai-subtitle">Hỏi nhanh theo đúng nội dung bài học đang mở.</div>
+                        </div>
+                        <div class="lesson-ai-actions">
+                            <button type="button" class="lesson-ai-btn" data-ai-assist-mode="summary"
+                                data-ai-prompt="Tóm tắt bài học này thành các ý chính dễ nhớ.">
+                                <i class="fas fa-align-left"></i>Tóm tắt
+                            </button>
+                            <button type="button" class="lesson-ai-btn" data-ai-assist-mode="explain"
+                                data-ai-prompt="Giải thích lại bài học này theo cách dễ hiểu hơn, từng bước ngắn gọn.">
+                                <i class="fas fa-lightbulb"></i>Dễ hiểu hơn
+                            </button>
+                            <button type="button" class="lesson-ai-btn" data-ai-assist-mode="examples"
+                                data-ai-prompt="Tạo ví dụ minh họa ngắn cho nội dung chính của bài học này.">
+                                <i class="fas fa-shapes"></i>Ví dụ
+                            </button>
+                            <button type="button" class="lesson-ai-btn" data-ai-assist-mode="review"
+                                data-ai-prompt="Gợi ý cách ôn tập sau bài học này và vài câu hỏi tự kiểm tra.">
+                                <i class="fas fa-list-check"></i>Ôn tập
+                            </button>
                         </div>
                     </div>
 

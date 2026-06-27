@@ -30,6 +30,7 @@
         const isStudentCourseUser = @json(auth()->user()->role === 'student');
         const canManageCourseContent = @json(auth()->id() === $course->teacher_id || auth()->user()->role === 'admin');
         const currentCourseId = {{ $course->id }};
+        const currentCourseTitle = @json($course->title);
 
         function getYoutubeId(url) {
             const regExp = /^.*(http:\/\/www\.youtube\.com\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -91,6 +92,25 @@
             return currentLessonIndex >= 0 && currentLessonIndex < lessons.length - 1
                 ? lessons[currentLessonIndex + 1]
                 : null;
+        }
+
+        function setAiLessonContext(lessonEl) {
+            const toolbar = document.getElementById('lesson-ai-toolbar');
+            if (!lessonEl) {
+                if (toolbar) toolbar.classList.remove('active');
+                window.SmartLmsAiTutor?.clearLessonContext?.();
+                return;
+            }
+
+            const context = {
+                course_id: currentCourseId,
+                course_title: currentCourseTitle,
+                lesson_id: lessonEl.getAttribute('data-id'),
+                lesson_title: lessonEl.getAttribute('data-title') || 'Bài học',
+            };
+
+            if (toolbar) toolbar.classList.add('active');
+            window.SmartLmsAiTutor?.setLessonContext?.(context);
         }
 
         function showReorderToast(message = 'Đã lưu thứ tự nội dung') {
@@ -176,6 +196,7 @@
                 quizArea.classList.remove('d-flex');
             }
             navFooter.classList.add('d-none');
+            setAiLessonContext(null);
         }
 
         // ==========================================
@@ -197,6 +218,7 @@
                 currentLessonId = this.getAttribute('data-id');
                 currentLessonIndex = index;
                 updateNavButtons();
+                setAiLessonContext(this);
 
                 document.getElementById('lesson-title').innerText = this.getAttribute('data-title');
                 document.getElementById('lesson-body').innerHTML = this.getAttribute('data-content') ||
@@ -661,6 +683,19 @@
             if (target) {
                 target.click();
             }
+        });
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.lesson-ai-btn');
+            if (!btn || !currentLessonId) return;
+
+            window.SmartLmsAiTutor?.openWithPrompt?.(btn.getAttribute('data-ai-prompt'), {
+                course_id: currentCourseId,
+                course_title: currentCourseTitle,
+                lesson_id: currentLessonId,
+                lesson_title: document.getElementById('lesson-title')?.innerText || 'Bài học',
+                assist_mode: btn.getAttribute('data-ai-assist-mode') || 'lesson_help',
+            });
         });
 
         // ==========================================
