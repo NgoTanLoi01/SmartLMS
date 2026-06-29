@@ -946,12 +946,18 @@
                                         <i class="fas fa-info-circle"></i>
                                         <span>AI hỗ trợ chấm đang tắt cho bài tập này.</span>
                                     </div>
-                                @elseif (trim((string) $submission->text_answer))
+                                @elseif (trim((string) $submission->text_answer) || $submission->file_path)
                                     <button type="button" id="aiAnalyzeBtn" class="btn-ai"
                                         data-submission-id="{{ $submission->id }}">
                                         <span class="ai-icon"><i class="fas fa-robot"></i></span>
                                         {{ $submission->ai_analyzed_at ? 'AI phân tích lại' : 'AI phân tích bài làm' }}
                                     </button>
+                                    @if ($submission->file_path)
+                                        <div class="ai-notice mt-2">
+                                            <i class="fas fa-file-lines"></i>
+                                            <span>AI sẽ thử đọc nội dung file PDF, DOCX, TXT, HTML, CSS, JS, PHP hoặc MD nếu có thể.</span>
+                                        </div>
+                                    @endif
                                     <div id="aiResultBox" class="ai-result"
                                         style="{{ $submission->ai_analyzed_at ? '' : 'display:none' }}">
                                         @if ($submission->ai_analyzed_at)
@@ -1035,8 +1041,7 @@
                                 @else
                                     <div class="ai-notice">
                                         <i class="fas fa-info-circle"></i>
-                                        <span>AI chỉ phân tích được phần tự luận. Bài này cần giáo viên xem file thủ
-                                            công.</span>
+                                        <span>Bài nộp chưa có nội dung tự luận hoặc file để AI phân tích.</span>
                                     </div>
                                 @endif
                             </div>

@@ -7,6 +7,7 @@ use App\Models\AssignmentSubmission;
 use App\Models\Course;
 use App\Services\AuditLogger;
 use App\Services\DeepSeekService;
+use App\Services\SubmissionTextExtractor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -117,7 +118,7 @@ class AssignmentController extends Controller
         return back()->with('success', 'Đã lưu điểm và nhận xét!');
     }
 
-    public function analyzeSubmissionWithAi($submissionId, DeepSeekService $deepSeekService)
+    public function analyzeSubmissionWithAi($submissionId, DeepSeekService $deepSeekService, SubmissionTextExtractor $textExtractor)
     {
         $submission = AssignmentSubmission::with(['assignment.course', 'user'])->findOrFail($submissionId);
         $assignment = $submission->assignment;
@@ -134,12 +135,27 @@ class AssignmentController extends Controller
             ], 422);
         }
 
-        if (!trim((string) $submission->text_answer)) {
+        $fileTextResult = $submission->file_path ? $textExtractor->extract($submission) : [
+            'success' => false,
+            'text' => '',
+            'source' => null,
+            'message' => null,
+        ];
+
+        $textAnswer = trim((string) $submission->text_answer);
+        $fileText = trim((string) ($fileTextResult['text'] ?? ''));
+
+        if ($textAnswer === '' && $fileText === '') {
             return response()->json([
                 'success' => false,
-                'message' => 'AI chỉ phân tích được bài có nội dung tự luận. Với bài chỉ nộp file, giáo viên cần xem file thủ công.',
+                'message' => $fileTextResult['message'] ?: 'AI chưa có nội dung văn bản để phân tích bài nộp này.',
             ], 422);
         }
+
+        $combinedAnswer = trim(implode("\n\n", array_filter([
+            $textAnswer !== '' ? "Nội dung tự luận học sinh nhập:\n{$textAnswer}" : null,
+            $fileText !== '' ? "Nội dung trích xuất từ file {$fileTextResult['source']}:\n{$fileText}" : null,
+        ])));
 
         $payload = [
             'assignment' => [
@@ -158,8 +174,10 @@ class AssignmentController extends Controller
                 'submitted_at' => $submission->formatSubmittedAt('d/m/Y H:i:s'),
             ],
             'submission' => [
-                'text_answer' => $submission->text_answer,
+                'text_answer' => $combinedAnswer,
                 'has_file' => !empty($submission->file_path),
+                'file_text_extracted' => $fileText !== '',
+                'file_text_source' => $fileTextResult['source'] ?? null,
                 'current_grade' => $submission->grade,
                 'current_feedback' => $submission->feedback,
             ],
@@ -317,7 +335,7 @@ class AssignmentController extends Controller
         $oldSubmission = AssignmentSubmission::where('assignment_id', $id)->where('user_id', $user->id)->first();
 
         // 2. Validate nội dung theo loại bài tập
-        $allowed = $assignment->allowed_extensions ?? 'pdf,docx,zip,png,jpg,jpeg,html,htm';
+        $allowed = $assignment->allowed_extensions ?? 'pdf,docx,txt,md,html,htm,css,js,php,png,jpg,jpeg';
         $maxSize = $assignment->max_file_size ?? 10240;
         $rules = [];
 

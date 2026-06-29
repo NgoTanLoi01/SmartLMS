@@ -213,7 +213,7 @@
                             <label class="form-label fw-bold small text-muted">Định dạng cho phép (Cách nhau dấu
                                 phẩy)</label>
                             <input type="text" name="allowed_extensions" class="form-control bg-light border-0 py-2"
-                                value="pdf,docx,zip,png,jpg,jpeg,html,htm">
+                                value="pdf,docx,txt,md,html,htm,css,js,php,png,jpg,jpeg">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-muted">Dung lượng tối đa (KB)</label>
@@ -315,7 +315,7 @@
                     const title = button.getAttribute('data-title');
                     const instructions = button.getAttribute('data-instructions');
                     const extensions = button.getAttribute('data-extensions') ||
-                        'pdf,docx,zip,png,jpg,jpeg,html,htm';
+                        'pdf,docx,txt,md,html,htm,css,js,php,png,jpg,jpeg';
                     const textAnswer = JSON.parse(button.getAttribute('data-text-answer') || '""');
                     currentAssignmentType = button.getAttribute('data-type') || 'file';
                     const needsFile = ['file', 'mixed'].includes(currentAssignmentType);
