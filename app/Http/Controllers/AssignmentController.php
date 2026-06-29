@@ -287,6 +287,9 @@ class AssignmentController extends Controller
     public function listSubmissions($id)
     {
         $assignment = Assignments::with('course.classes.students')->notArchived()->findOrFail($id);
+        if (!$this->canManageAssignmentCourse($assignment->course)) {
+            abort(403, 'Bạn không có quyền xem danh sách bài nộp này.');
+        }
 
         // Lấy danh sách ID học sinh thuộc các lớp có gán khóa học này
         $students = $assignment->course->classes->flatMap->students->unique('id');
@@ -305,12 +308,16 @@ class AssignmentController extends Controller
                 'text_answer' => $submission ? $submission->text_answer : null,
                 'grade' => $submission ? $submission->grade : null,
                 'submission_id' => $submission ? $submission->id : null,
+                'review_url' => $submission ? route('assignments.submissions.review', $submission->id) : null,
                 'feedback' => $submission ? $submission->feedback : null,
             ];
         });
 
         return response()->json([
             'assignment_title' => $assignment->title,
+            'course_title' => $assignment->course->title,
+            'total_students' => $students->count(),
+            'submitted_count' => $data->filter(fn ($row) => !empty($row['submission_id']))->count(),
             'submissions' => $data,
         ]);
     }

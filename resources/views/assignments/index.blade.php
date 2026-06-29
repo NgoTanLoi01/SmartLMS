@@ -8,15 +8,15 @@
     }
 </style>
 @section('content')
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+    <div class="container-fluid py-4 assignments-page">
+        <div class="assignments-header mb-4 px-2">
             <div>
                 <h3 class="fw-bold mb-0 text-dark">Danh sách bài tập</h3>
                 <p class="text-muted mb-0 small">Quản lý các yêu cầu thực hành và nộp bài</p>
             </div>
 
             @if (auth()->user()->role === 'admin' || auth()->user()->role === 'teacher')
-                <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
+                <button class="btn btn-primary rounded-pill px-4 shadow-sm assignments-create-btn" data-bs-toggle="modal"
                     data-bs-target="#addAssignmentModal">
                     <i class="fas fa-plus me-1"></i> Tạo bài tập mới
                 </button>
@@ -33,15 +33,15 @@
                     };
                     $submission = auth()->user()->role === 'student' ? $assignment->submissions->first() : null;
                 @endphp
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm h-100 rounded-3 hover-shadow transition-all">
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-3 hover-shadow transition-all assignment-card">
                         <div class="card-body p-4 d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div class="d-flex flex-column gap-2 align-items-start">
-                                    <div class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-bold small">
+                            <div class="assignment-card-top mb-3">
+                                <div class="assignment-badges">
+                                    <div class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-bold small assignment-badge">
                                         <i class="fas fa-book me-1"></i> {{ $assignment->course->title }}
                                     </div>
-                                    <div class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
+                                    <div class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small assignment-badge">
                                         <i class="fas fa-pen-alt me-1"></i> {{ $assignmentTypeLabel }}
                                     </div>
                                 </div>
@@ -59,7 +59,7 @@
                                 @endif
                             </div>
 
-                            <h5 class="fw-bold text-dark mb-2">{{ $assignment->title }}</h5>
+                            <h5 class="fw-bold text-dark mb-2 assignment-title">{{ $assignment->title }}</h5>
 
                             {{-- Sử dụng strip_tags để loại bỏ thẻ HTML trước khi cắt chuỗi, tránh lỗi hiển thị trên Card --}}
                             <p class="text-muted small mb-3 flex-grow-1">
@@ -73,9 +73,9 @@
                                     <span class="ms-1">{{ $assignment->due_date->format('d/m/Y H:i') }}</span>
                                 </div>
                                 @if (($assignment->type ?? 'file') !== 'essay')
-                                    <div class="d-flex align-items-center small">
+                                    <div class="d-flex align-items-start small">
                                         <i class="fas fa-file-upload text-muted me-2"></i>
-                                        <span class="text-muted">Định dạng: {{ $assignment->allowed_extensions }}</span>
+                                        <span class="text-muted assignment-extensions">Định dạng: {{ $assignment->allowed_extensions }}</span>
                                     </div>
                                 @else
                                     <div class="d-flex align-items-center small">
@@ -107,10 +107,14 @@
                                         </div>
                                     @endif
                                 @else
-                                    <a href="#" class="btn btn-light rounded-pill fw-bold border">
+                                    <button type="button"
+                                        class="btn btn-light rounded-pill fw-bold border view-assignment-submissions-btn"
+                                        data-assignment-id="{{ $assignment->id }}"
+                                        data-assignment-title="{{ $assignment->title }}"
+                                        data-url="{{ route('assignments.submissions.list', $assignment->id) }}">
                                         <i class="fas fa-eye me-1"></i> Xem bài nộp
                                         ({{ $assignment->submissions->count() }})
-                                    </a>
+                                    </button>
                                 @endif
                             </div>
                         </div>
@@ -264,7 +268,73 @@
         </div>
     </div>
 
+    @if (auth()->user()->role === 'admin' || auth()->user()->role === 'teacher')
+        <div class="modal fade" id="assignmentSubmissionsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header border-0 pb-0">
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark" id="assignmentSubmissionsTitle">Bài nộp</h5>
+                            <p class="text-muted small mb-0" id="assignmentSubmissionsMeta">Đang tải dữ liệu...</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body py-4">
+                        <div id="assignmentSubmissionsContent">
+                            <div class="text-center py-5 text-muted">
+                                <div class="spinner-border text-primary mb-3"></div>
+                                <div>Đang tải danh sách bài nộp...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <style>
+        .assignments-header {
+            align-items: center;
+            display: flex;
+            gap: 14px;
+            justify-content: space-between;
+        }
+
+        .assignment-card {
+            min-width: 0;
+        }
+
+        .assignment-card-top {
+            align-items: flex-start;
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            min-width: 0;
+        }
+
+        .assignment-badges {
+            align-items: flex-start;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .assignment-badge {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+            text-align: left;
+            line-height: 1.35;
+        }
+
+        .assignment-title,
+        .assignment-extensions {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
         .hover-shadow:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
@@ -272,6 +342,99 @@
 
         .transition-all {
             transition: all 0.3s ease;
+        }
+
+        .submission-table {
+            min-width: 860px;
+        }
+
+        .submission-mobile-list {
+            display: none;
+        }
+
+        .submission-mobile-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .submission-status {
+            border-radius: 999px;
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 9px;
+        }
+
+        .submission-status.done {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .submission-status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        @media (max-width: 767.98px) {
+            .assignments-page {
+                padding-left: 2px;
+                padding-right: 2px;
+            }
+
+            .assignments-header {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .assignments-create-btn,
+            .assignment-card .btn {
+                width: 100%;
+            }
+
+            .assignment-card .card-body {
+                padding: 18px !important;
+            }
+
+            .assignment-card-top {
+                flex-direction: column;
+            }
+
+            .assignment-badges {
+                width: 100%;
+            }
+
+            .assignment-badge {
+                width: 100%;
+            }
+
+            #addAssignmentModal .modal-dialog,
+            #submitAssignmentModal .modal-dialog,
+            #assignmentSubmissionsModal .modal-dialog {
+                margin: 0;
+                max-width: none;
+                width: 100%;
+            }
+
+            #addAssignmentModal .modal-content,
+            #submitAssignmentModal .modal-content,
+            #assignmentSubmissionsModal .modal-content {
+                border-radius: 0;
+                min-height: 100dvh;
+            }
+
+            #assignmentSubmissionsModal .modal-body {
+                padding: 16px !important;
+            }
+
+            .submission-desktop-table {
+                display: none;
+            }
+
+            .submission-mobile-list {
+                display: grid;
+                gap: 10px;
+            }
         }
     </style>
 @endsection
@@ -410,6 +573,142 @@
             function clearError() {
                 const alert = document.getElementById('submitFileError');
                 if (alert) alert.remove();
+            }
+
+            const submissionsModal = document.getElementById('assignmentSubmissionsModal');
+            const submissionsTitle = document.getElementById('assignmentSubmissionsTitle');
+            const submissionsMeta = document.getElementById('assignmentSubmissionsMeta');
+            const submissionsContent = document.getElementById('assignmentSubmissionsContent');
+
+            const esc = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            document.querySelectorAll('.view-assignment-submissions-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    if (!submissionsModal || !submissionsContent) return;
+
+                    submissionsTitle.textContent = this.dataset.assignmentTitle || 'Bài nộp';
+                    submissionsMeta.textContent = 'Đang tải danh sách bài nộp...';
+                    submissionsContent.innerHTML = `
+                        <div class="text-center py-5 text-muted">
+                            <div class="spinner-border text-primary mb-3"></div>
+                            <div>Đang tải danh sách bài nộp...</div>
+                        </div>`;
+
+                    const modal = new bootstrap.Modal(submissionsModal);
+                    modal.show();
+
+                    try {
+                        const response = await fetch(this.dataset.url, {
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.message || 'Không tải được danh sách bài nộp.');
+                        }
+
+                        renderSubmissions(data);
+                    } catch (error) {
+                        submissionsContent.innerHTML = `
+                            <div class="alert alert-danger mb-0">
+                                <i class="fas fa-exclamation-circle me-1"></i>${esc(error.message)}
+                            </div>`;
+                    }
+                });
+            });
+
+            function renderSubmissions(data) {
+                const rows = Array.isArray(data.submissions) ? data.submissions : [];
+                submissionsTitle.textContent = data.assignment_title ? `Bài tập: ${data.assignment_title}` : 'Bài nộp';
+                submissionsMeta.textContent =
+                    `${data.course_title || 'Khóa học'} · ${data.submitted_count || 0}/${data.total_students || rows.length} học sinh đã nộp`;
+
+                if (!rows.length) {
+                    submissionsContent.innerHTML = `
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-users fa-2x mb-3 opacity-50"></i>
+                            <div>Chưa có học sinh nào trong lớp của khóa học này.</div>
+                        </div>`;
+                    return;
+                }
+
+                submissionsContent.innerHTML = `
+                    <div class="table-responsive submission-desktop-table">
+                        <table class="table align-middle submission-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Học sinh</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thời gian nộp</th>
+                                    <th>Điểm</th>
+                                    <th class="text-end">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows.map(row => `
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">${esc(row.student_name || 'Học sinh')}</div>
+                                            <div class="text-muted small">${esc(row.student_email || '')}</div>
+                                        </td>
+                                        <td>
+                                            ${row.submission_id
+                                                ? '<span class="submission-status done"><i class="fas fa-check me-1"></i>Đã nộp</span>'
+                                                : '<span class="submission-status pending"><i class="fas fa-clock me-1"></i>Chưa nộp</span>'}
+                                        </td>
+                                        <td>${esc(row.submitted_at || '-')}</td>
+                                        <td>${row.grade !== null && row.grade !== undefined ? esc(row.grade) : '-'}</td>
+                                        <td class="text-end">
+                                            ${row.submission_id ? `
+                                                <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                                    ${row.file_url ? `<a href="${esc(row.file_url)}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fas fa-file me-1"></i>File</a>` : ''}
+                                                    <a href="${esc(row.review_url)}" class="btn btn-sm btn-primary rounded-pill">
+                                                        <i class="fas fa-pen-to-square me-1"></i>Chấm bài
+                                                    </a>
+                                                </div>
+                                            ` : '<span class="text-muted small">Chưa có bài làm</span>'}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="submission-mobile-list">
+                        ${rows.map(row => `
+                            <div class="submission-mobile-card">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <div class="min-w-0">
+                                        <div class="fw-bold text-dark">${esc(row.student_name || 'Học sinh')}</div>
+                                        <div class="text-muted small text-break">${esc(row.student_email || '')}</div>
+                                    </div>
+                                    ${row.submission_id
+                                        ? '<span class="submission-status done flex-shrink-0"><i class="fas fa-check me-1"></i>Đã nộp</span>'
+                                        : '<span class="submission-status pending flex-shrink-0"><i class="fas fa-clock me-1"></i>Chưa nộp</span>'}
+                                </div>
+                                <div class="small text-muted mb-1">
+                                    <i class="fas fa-clock me-1"></i>${esc(row.submitted_at || 'Chưa có thời gian nộp')}
+                                </div>
+                                <div class="small text-muted mb-3">
+                                    <i class="fas fa-star me-1"></i>Điểm: ${row.grade !== null && row.grade !== undefined ? esc(row.grade) : '-'}
+                                </div>
+                                ${row.submission_id ? `
+                                    <div class="d-grid gap-2">
+                                        <a href="${esc(row.review_url)}" class="btn btn-sm btn-primary rounded-pill">
+                                            <i class="fas fa-pen-to-square me-1"></i>Chấm bài
+                                        </a>
+                                        ${row.file_url ? `<a href="${esc(row.file_url)}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fas fa-file me-1"></i>Xem file</a>` : ''}
+                                    </div>
+                                ` : '<div class="text-muted small">Chưa có bài làm</div>'}
+                            </div>
+                        `).join('')}
+                    </div>`;
             }
         });
     </script>
