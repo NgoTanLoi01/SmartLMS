@@ -7,9 +7,6 @@
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <style>
-        /* =========================================
-                               CORE VARIABLES
-                            ========================================= */
         :root {
             --brand: #4f7fff;
             --brand-dark: #2952e3;
@@ -63,9 +60,6 @@
             font-family: var(--font);
         }
 
-        /* =========================================
-                               GREETING BANNER
-            ========================================= */
         .greeting-banner {
             position: relative;
             background: var(--text);
@@ -275,8 +269,337 @@
         }
 
         /* =========================================
-                               STAT CARDS
-            ========================================= */
+                               TEACHER FOCUS
+                            ========================================= */
+        .teacher-priority-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-bottom: 1.5rem;
+        }
+
+        .teacher-priority-card {
+            align-items: flex-start;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            color: inherit;
+            display: flex;
+            gap: .9rem;
+            min-height: 128px;
+            padding: 1.1rem;
+            position: relative;
+            text-decoration: none;
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+
+        .teacher-priority-card:hover {
+            border-color: rgba(79, 127, 255, .28);
+            box-shadow: var(--shadow-md);
+            color: inherit;
+            transform: translateY(-2px);
+        }
+
+        .teacher-priority-card__icon {
+            align-items: center;
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-shrink: 0;
+            font-size: 1rem;
+            height: 42px;
+            justify-content: center;
+            width: 42px;
+        }
+
+        .teacher-priority-card__label {
+            color: var(--text-muted);
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            margin-bottom: .3rem;
+            text-transform: uppercase;
+        }
+
+        .teacher-priority-card__value {
+            color: var(--text);
+            font-size: 1.65rem;
+            font-weight: 900;
+            letter-spacing: -.04em;
+            line-height: 1;
+            margin-bottom: .35rem;
+        }
+
+        .teacher-priority-card__hint {
+            color: var(--text-muted);
+            font-size: .76rem;
+            line-height: 1.4;
+        }
+
+        .teacher-priority-card__arrow {
+            bottom: 1rem;
+            color: var(--text-light);
+            font-size: .75rem;
+            position: absolute;
+            right: 1rem;
+        }
+
+        .teacher-priority-card--danger .teacher-priority-card__icon {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .teacher-priority-card--blue .teacher-priority-card__icon {
+            background: var(--brand-light);
+            color: var(--brand);
+        }
+
+        .teacher-priority-card--amber .teacher-priority-card__icon {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .teacher-priority-card--green .teacher-priority-card__icon {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .teacher-action-strip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-wrap: wrap;
+            gap: .65rem;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding: .8rem;
+        }
+
+        .teacher-action-strip .quick-action {
+            box-shadow: none;
+            flex: 1 1 150px;
+            justify-content: center;
+            margin: 0;
+        }
+
+        .teacher-list-scroll {
+            max-height: 360px;
+            overflow-y: auto;
+        }
+
+        .teacher-schedule-list {
+            display: none;
+        }
+
+        .teacher-schedule-card {
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.15rem;
+        }
+
+        .teacher-schedule-card:last-child {
+            border-bottom: none;
+        }
+
+        .teacher-command-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+            margin-bottom: 1.5rem;
+        }
+
+        .teacher-next-class {
+            background: var(--text);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            color: #fff;
+            min-height: 100%;
+            overflow: hidden;
+            padding: 1.25rem;
+            position: relative;
+        }
+
+        .teacher-next-class::before {
+            background:
+                radial-gradient(ellipse 60% 80% at 0% 20%, rgba(79, 127, 255, .45), transparent 60%),
+                radial-gradient(ellipse 50% 70% at 100% 90%, rgba(16, 185, 129, .28), transparent 55%);
+            content: '';
+            inset: 0;
+            position: absolute;
+        }
+
+        .teacher-next-class>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .teacher-next-class__eyebrow,
+        .teacher-ai-panel__eyebrow,
+        .priority-submissions__eyebrow {
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .1em;
+            margin-bottom: .45rem;
+            text-transform: uppercase;
+        }
+
+        .teacher-next-class__eyebrow {
+            color: rgba(255, 255, 255, .58);
+        }
+
+        .teacher-next-class__title {
+            color: #fff;
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: -.03em;
+            line-height: 1.25;
+            margin: 0 0 .55rem;
+        }
+
+        .teacher-next-class__meta {
+            color: rgba(255, 255, 255, .68);
+            display: flex;
+            flex-wrap: wrap;
+            font-size: .8rem;
+            gap: .45rem;
+            margin-bottom: 1rem;
+        }
+
+        .teacher-next-class__meta span {
+            align-items: center;
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 999px;
+            display: inline-flex;
+            gap: .35rem;
+            padding: .32rem .7rem;
+        }
+
+        .teacher-ai-panel,
+        .priority-submissions {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .teacher-ai-panel {
+            padding: 1.15rem;
+        }
+
+        .teacher-ai-panel__eyebrow,
+        .priority-submissions__eyebrow {
+            color: var(--brand);
+        }
+
+        .teacher-ai-panel__title {
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 900;
+            letter-spacing: -.02em;
+            margin: 0 0 .85rem;
+        }
+
+        .teacher-ai-suggestion {
+            align-items: flex-start;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: .75rem;
+            padding: .85rem 0;
+        }
+
+        .teacher-ai-suggestion:first-of-type {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .teacher-ai-suggestion__icon {
+            align-items: center;
+            border-radius: var(--radius-xs);
+            display: inline-flex;
+            flex-shrink: 0;
+            height: 32px;
+            justify-content: center;
+            width: 32px;
+        }
+
+        .teacher-ai-suggestion__title {
+            color: var(--text);
+            font-size: .84rem;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: .18rem;
+        }
+
+        .teacher-ai-suggestion__body {
+            color: var(--text-muted);
+            font-size: .76rem;
+            line-height: 1.45;
+            margin-bottom: .45rem;
+        }
+
+        .teacher-ai-suggestion--danger .teacher-ai-suggestion__icon {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .teacher-ai-suggestion--warning .teacher-ai-suggestion__icon {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .teacher-ai-suggestion--primary .teacher-ai-suggestion__icon,
+        .teacher-ai-suggestion--info .teacher-ai-suggestion__icon {
+            background: var(--brand-light);
+            color: var(--brand);
+        }
+
+        .teacher-ai-suggestion--success .teacher-ai-suggestion__icon {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .teacher-ai-suggestion--muted .teacher-ai-suggestion__icon {
+            background: var(--surface-3);
+            color: var(--text-muted);
+        }
+
+        .priority-submission {
+            align-items: flex-start;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: .85rem;
+            justify-content: space-between;
+            padding: 1rem 1.15rem;
+        }
+
+        .priority-submission:first-of-type {
+            border-top: none;
+        }
+
+        .priority-submission__main {
+            display: flex;
+            gap: .75rem;
+            min-width: 0;
+        }
+
+        .priority-submission__title {
+            color: var(--text);
+            font-size: .85rem;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: .2rem;
+        }
+
+        .priority-submission__meta {
+            color: var(--text-muted);
+            font-size: .75rem;
+            line-height: 1.4;
+        }
+
         .stat-card {
             background: var(--surface);
             border-radius: var(--radius);
@@ -407,9 +730,6 @@
             background: var(--success);
         }
 
-        /* =========================================
-                               PANEL / CARD
-            ========================================= */
         .panel {
             background: var(--surface);
             border-radius: var(--radius);
@@ -449,9 +769,6 @@
             font-size: .8rem;
         }
 
-        /* =========================================
-                               TABLE
-                            ========================================= */
         .tbl {
             width: 100%;
             border-collapse: collapse;
@@ -496,9 +813,6 @@
             opacity: .48;
         }
 
-        /* =========================================
-                               BADGE
-                            ========================================= */
         .bdg {
             display: inline-flex;
             align-items: center;
@@ -552,9 +866,6 @@
             color: #6d28d9;
         }
 
-        /* =========================================
-                               FEED ITEMS
-                            ========================================= */
         .feed-item {
             display: flex;
             justify-content: space-between;
@@ -605,9 +916,6 @@
             margin-bottom: .45rem;
         }
 
-        /* =========================================
-                               TODO ITEMS
-                            ========================================= */
         .todo-item {
             display: flex;
             justify-content: space-between;
@@ -660,9 +968,6 @@
             margin-bottom: .35rem;
         }
 
-        /* =========================================
-                               SCORE HERO
-                            ========================================= */
         .score-hero {
             background: var(--text);
             border-radius: var(--radius);
@@ -746,9 +1051,6 @@
             color: rgba(255, 255, 255, .4);
         }
 
-        /* =========================================
-                               BUTTONS
-                            ========================================= */
         .btn-xs {
             display: inline-flex;
             align-items: center;
@@ -815,9 +1117,6 @@
             color: var(--text);
         }
 
-        /* =========================================
-                               COMPACT CARD
-                            ========================================= */
         .compact-card {
             border-bottom: 1px solid var(--border);
             padding: 1rem 1.35rem;
@@ -832,9 +1131,6 @@
             background: var(--surface-2);
         }
 
-        /* =========================================
-                               PROGRESS BAR
-                            ========================================= */
         .progress-line {
             background: var(--surface-3);
             border-radius: 999px;
@@ -849,10 +1145,6 @@
             background: linear-gradient(90deg, var(--brand), var(--accent));
             transition: width .4s ease;
         }
-
-        /* =========================================
-                               EMPTY STATE
-                            ========================================= */
         .empty-state {
             text-align: center;
             padding: 2.5rem 2rem;
@@ -878,9 +1170,7 @@
             line-height: 1.5;
         }
 
-        /* =========================================
-                               SECTION HEADING
-                            ========================================= */
+
         .section-heading {
             font-size: .7rem;
             font-weight: 800;
@@ -900,16 +1190,10 @@
             background: var(--border);
         }
 
-        /* =========================================
-                               CHART
-                            ========================================= */
         .chart-wrap {
             padding: 1.25rem;
         }
 
-        /* =========================================
-                               USER TABLE AVATAR
-                            ========================================= */
         .user-avatar {
             width: 32px;
             height: 32px;
@@ -926,9 +1210,6 @@
             flex-shrink: 0;
         }
 
-        /* =========================================
-                               ICON DOT COLORS
-                            ========================================= */
         .idot--blue {
             background: var(--brand-light);
             color: var(--brand);
@@ -959,9 +1240,7 @@
             color: var(--accent);
         }
 
-        /* =========================================
-                               RESPONSIVE
-                            ========================================= */
+
         @media (max-width: 767.98px) {
             .dashboard-wrap {
                 padding: .75rem !important;
@@ -1036,9 +1315,81 @@
                 width: 100%;
             }
 
+            .teacher-priority-grid {
+                grid-template-columns: 1fr;
+                gap: .75rem;
+                margin-bottom: 1rem;
+            }
+
+            .teacher-priority-card {
+                min-height: auto;
+                padding: 1rem;
+            }
+
+            .teacher-priority-card__value {
+                font-size: 1.45rem;
+            }
+
+            .teacher-action-strip {
+                align-items: stretch;
+                flex-direction: column;
+                gap: .5rem;
+                margin-bottom: 1rem;
+                padding: .65rem;
+            }
+
+            .teacher-action-strip .quick-action {
+                flex: none;
+                justify-content: flex-start;
+            }
+
+            .teacher-list-scroll {
+                max-height: none;
+                overflow: visible;
+            }
+
+            .teacher-schedule-table {
+                display: none;
+            }
+
+            .teacher-schedule-list {
+                display: block;
+            }
+
+            .teacher-command-grid {
+                grid-template-columns: 1fr;
+                gap: .75rem;
+                margin-bottom: 1rem;
+            }
+
+            .teacher-next-class,
+            .teacher-ai-panel {
+                padding: 1rem;
+            }
+
+            .teacher-next-class__title {
+                font-size: 1.05rem;
+            }
+
+            .priority-submission {
+                flex-direction: column;
+                gap: .7rem;
+                padding: 1rem;
+            }
+
+            .priority-submission .btn-xs {
+                width: 100%;
+            }
+
             .score-hero {
                 padding: 1.5rem;
                 min-height: 200px;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+            .teacher-priority-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
@@ -1048,9 +1399,7 @@
             }
         }
 
-        /* =========================================
-                               ANIMATIONS
-                            ========================================= */
+
         @keyframes fadeUp {
             from {
                 opacity: 0;
@@ -1122,30 +1471,24 @@
 
         @php $role = auth()->user()->role; @endphp
 
-        {{-- QUICK ACTIONS --}}
-        <div class="quick-actions anim-2">
-            @if ($role === 'admin')
-                <a href="{{ route('users.index') }}" class="quick-action"><i class="fas fa-users-cog"></i> Quản lý người
-                    dùng</a>
-                <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-school"></i> Quản lý lớp</a>
-                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Quản lý khóa
-                    học</a>
-                <a href="{{ route('documents.upload') }}" class="quick-action"><i class="fas fa-robot"></i> Huấn luyện
-                    AI</a>
-            @elseif ($role === 'teacher')
-                <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-school"></i> Lớp của tôi</a>
-                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Khóa học của
-                    tôi</a>
-                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-clipboard-check"></i> Chấm
-                    bài</a>
-                <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fas fa-calendar-alt"></i> Lịch
-                    dạy</a>
-            @else
-                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Vào học</a>
-                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-paper-plane"></i> Bài
-                    tập</a>
-            @endif
-        </div>
+        @if ($role !== 'teacher')
+            {{-- QUICK ACTIONS --}}
+            <div class="quick-actions anim-2">
+                @if ($role === 'admin')
+                    <a href="{{ route('users.index') }}" class="quick-action"><i class="fas fa-users-cog"></i> Quản lý người
+                        dùng</a>
+                    <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-school"></i> Quản lý lớp</a>
+                    <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Quản lý khóa
+                        học</a>
+                    <a href="{{ route('documents.upload') }}" class="quick-action"><i class="fas fa-robot"></i> Huấn luyện
+                        AI</a>
+                @else
+                    <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Vào học</a>
+                    <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-paper-plane"></i> Bài
+                        tập</a>
+                @endif
+            </div>
+        @endif
 
         {{-- ══════════════════════════════════════
              ADMIN VIEW
@@ -1355,8 +1698,117 @@
              TEACHER VIEW
         ══════════════════════════════════════ --}}
         @elseif ($role === 'teacher')
+            @php
+                $pendingGrades = $data['pending_grades'] ?? 0;
+                $todaySchedules = $data['today_schedules_count'] ?? 0;
+                $attentionCount = $data['attention_students_count'] ?? 0;
+                $nextSchedule = $data['next_schedule'] ?? null;
+                $prioritySubmissions = $data['priority_submissions'] ?? collect();
+                $aiSuggestions = $data['teacher_ai_suggestions'] ?? [];
+            @endphp
+
+            <div class="teacher-priority-grid anim-3">
+                <a href="{{ route('assignments.index') }}" class="teacher-priority-card teacher-priority-card--danger">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-pen"></i></span>
+                    <span>
+                        <span class="teacher-priority-card__label">Cần chấm</span>
+                        <span class="teacher-priority-card__value">{{ $pendingGrades }}</span>
+                        <span class="teacher-priority-card__hint">Bài nộp đang chờ giáo viên phản hồi.</span>
+                    </span>
+                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                </a>
+                <a href="{{ route('schedules.index') }}" class="teacher-priority-card teacher-priority-card--blue">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-calendar-day"></i></span>
+                    <span>
+                        <span class="teacher-priority-card__label">Lịch hôm nay</span>
+                        <span class="teacher-priority-card__value">{{ $todaySchedules }}</span>
+                        <span class="teacher-priority-card__hint">Ca dạy cần chuẩn bị trong ngày.</span>
+                    </span>
+                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                </a>
+                <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--amber">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-user-clock"></i></span>
+                    <span>
+                        <span class="teacher-priority-card__label">Cần chú ý</span>
+                        <span class="teacher-priority-card__value">{{ $attentionCount }}</span>
+                        <span class="teacher-priority-card__hint">Học sinh nên được theo dõi sát hơn.</span>
+                    </span>
+                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                </a>
+                <a href="{{ route('courses.index') }}" class="teacher-priority-card teacher-priority-card--green">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-book-open"></i></span>
+                    <span>
+                        <span class="teacher-priority-card__label">Khóa học</span>
+                        <span class="teacher-priority-card__value">{{ $data['total_courses'] }}</span>
+                        <span class="teacher-priority-card__hint">Khóa học đang phụ trách và cần cập nhật.</span>
+                    </span>
+                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                </a>
+            </div>
+
+            <div class="teacher-action-strip anim-3">
+                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-plus-circle"></i> Tạo bài tập</a>
+                <a href="{{ route('quizzes.ai_generate') }}" class="quick-action"><i class="fas fa-magic"></i> AI tạo quiz</a>
+                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-robot"></i> AI soạn nội dung</a>
+                <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-users"></i> Xem lớp</a>
+            </div>
+
+            <div class="teacher-command-grid anim-4">
+                <div class="teacher-next-class">
+                    <div class="teacher-next-class__eyebrow">Lớp sắp dạy</div>
+                    @if ($nextSchedule)
+                        @php
+                            $nextStart = \Carbon\Carbon::parse($nextSchedule->schedule_date . ' ' . $nextSchedule->start_time);
+                            $nextEnd = \Carbon\Carbon::parse($nextSchedule->schedule_date . ' ' . $nextSchedule->end_time);
+                        @endphp
+                        <h3 class="teacher-next-class__title">{{ $nextSchedule->course_title }}</h3>
+                        <div class="teacher-next-class__meta">
+                            <span><i class="fas fa-school"></i>{{ $nextSchedule->class_name }}</span>
+                            <span><i class="far fa-calendar"></i>{{ $nextStart->format('d/m/Y') }}</span>
+                            <span><i class="far fa-clock"></i>{{ $nextStart->format('H:i') }} - {{ $nextEnd->format('H:i') }}</span>
+                            <span><i class="fas fa-map-marker-alt"></i>{{ $nextSchedule->room ?? 'Online' }}</span>
+                        </div>
+                        <a href="{{ route('schedules.index') }}" class="btn-xs btn-xs--primary">
+                            <i class="fas fa-calendar-alt"></i> Mở lịch dạy
+                        </a>
+                    @else
+                        <h3 class="teacher-next-class__title">Chưa có ca dạy sắp tới</h3>
+                        <div class="teacher-next-class__meta">
+                            <span><i class="fas fa-check-circle"></i>Không có lịch cần chuẩn bị ngay</span>
+                        </div>
+                        <a href="{{ route('courses.index') }}" class="btn-xs btn-xs--primary">
+                            <i class="fas fa-book-open"></i> Chuẩn bị khóa học
+                        </a>
+                    @endif
+                </div>
+
+                <div class="teacher-ai-panel">
+                    <div class="teacher-ai-panel__eyebrow">AI gợi ý việc cần làm</div>
+                    <h3 class="teacher-ai-panel__title">Ưu tiên dựa trên dữ liệu hiện tại</h3>
+                    @forelse ($aiSuggestions as $suggestion)
+                        <div class="teacher-ai-suggestion teacher-ai-suggestion--{{ $suggestion['type'] ?? 'primary' }}">
+                            <span class="teacher-ai-suggestion__icon">
+                                <i class="{{ $suggestion['icon'] ?? 'fas fa-lightbulb' }}"></i>
+                            </span>
+                            <div>
+                                <div class="teacher-ai-suggestion__title">{{ $suggestion['title'] }}</div>
+                                <div class="teacher-ai-suggestion__body">{{ $suggestion['body'] }}</div>
+                                <a href="{{ $suggestion['action_url'] }}" class="btn-xs btn-xs--ghost">
+                                    {{ $suggestion['action_label'] }} <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="empty-state" style="padding:1.25rem 1rem">
+                            <div class="empty-icon"><i class="fas fa-lightbulb"></i></div>
+                            <p>Chưa có gợi ý mới từ dữ liệu hiện tại.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
             <div class="row g-3 mb-4 anim-3">
-                <div class="col-md-4">
+                <div class="col-12 col-md-4">
                     <div class="stat-card stat-card--red stat-card--stripe">
                         <div class="stat-card__icon"><i class="fas fa-hourglass-half"></i></div>
                         <div class="stat-card__body">
@@ -1365,7 +1817,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-12 col-md-4">
                     <div class="stat-card stat-card--blue stat-card--stripe">
                         <div class="stat-card__icon"><i class="fas fa-book-open"></i></div>
                         <div class="stat-card__body">
@@ -1374,7 +1826,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-12 col-md-4">
                     <div class="stat-card stat-card--green stat-card--stripe">
                         <div class="stat-card__icon"><i class="fas fa-user-graduate"></i></div>
                         <div class="stat-card__body">
@@ -1479,36 +1931,44 @@
 
             <div class="row g-3 mb-4 anim-5">
                 <div class="col-md-8">
-                    <div class="panel">
+                    <div class="priority-submissions">
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <span class="icon-dot idot--red"><i class="fas fa-inbox"></i></span>
-                                Bài vừa nộp — chờ chấm
+                                Bài cần chấm ưu tiên
                             </h6>
+                            <span class="bdg bdg--danger">{{ $prioritySubmissions->count() }} bài</span>
                         </div>
-                        <div style="max-height:340px;overflow-y:auto;">
-                            @forelse ($data['recent_submissions'] as $sub)
-                                <div class="feed-item">
-                                    <div style="display:flex;gap:.85rem;align-items:flex-start;flex:1;min-width:0">
-                                        <span
-                                            class="feed-item__avatar">{{ mb_strtoupper(mb_substr($sub->student_name, 0, 1)) }}</span>
-                                        <div style="min-width:0">
-                                            <div class="feed-item__name">{{ $sub->student_name }}</div>
-                                            <div class="feed-item__meta">{{ $sub->assignment_title ?? 'N/A' }}</div>
-                                            <div class="mt-1">
-                                                <span class="bdg bdg--primary"><i class="fas fa-book"></i>
-                                                    {{ $sub->course_title ?? 'N/A' }}</span>
+                        <div class="teacher-list-scroll">
+                            @forelse ($prioritySubmissions as $sub)
+                                @php
+                                    $dueDate = $sub->due_date ? \Carbon\Carbon::parse($sub->due_date) : null;
+                                    $submittedAt = $sub->submitted_at ? \Carbon\Carbon::parse($sub->submitted_at) : \Carbon\Carbon::parse($sub->created_at);
+                                    $isOverdue = $dueDate && $dueDate->isPast();
+                                @endphp
+                                <div class="priority-submission">
+                                    <div class="priority-submission__main">
+                                        <span class="feed-item__avatar">{{ mb_strtoupper(mb_substr($sub->student_name, 0, 1)) }}</span>
+                                        <div class="min-w-0">
+                                            <div class="priority-submission__title">{{ $sub->assignment_title ?? 'N/A' }}</div>
+                                            <div class="priority-submission__meta">
+                                                {{ $sub->student_name }} · {{ $sub->course_title ?? 'N/A' }}
+                                            </div>
+                                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                                <span class="bdg {{ $isOverdue ? 'bdg--danger' : 'bdg--warning' }}">
+                                                    {{ $isOverdue ? 'Quá hạn' : 'Đến hạn' }}
+                                                    {{ $dueDate ? $dueDate->format('d/m H:i') : 'chưa rõ' }}
+                                                </span>
+                                                <span class="bdg bdg--muted">
+                                                    Nộp {{ $submittedAt->diffForHumans() }}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div style="text-align:right;flex-shrink:0">
-                                        <div class="feed-item__time">
-                                            {{ \Carbon\Carbon::parse($sub->created_at)->diffForHumans() }}</div>
-                                        <a href="{{ route('courses.show', $sub->course_id ?? 0) }}"
-                                            class="btn-xs btn-xs--danger">
-                                            <i class="fas fa-pen"></i> Chấm ngay
-                                        </a>
-                                    </div>
+                                    <a href="{{ route('assignments.submissions.review', $sub->id) }}"
+                                        class="btn-xs btn-xs--danger">
+                                        <i class="fas fa-pen"></i> Chấm ngay
+                                    </a>
                                 </div>
                             @empty
                                 <div class="empty-state">
@@ -1545,7 +2005,7 @@
                             </h6>
                             <span class="bdg bdg--primary">Tuần này · {{ $data['dashboard_week_label'] ?? '' }}</span>
                         </div>
-                        <div class="table-responsive">
+                        <div class="table-responsive teacher-schedule-table">
                             @php
                                 $days = [
                                     'Monday' => 'Thứ Hai',
@@ -1637,6 +2097,58 @@
                                     @endforelse
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="teacher-schedule-list">
+                            @forelse ($data['week_schedule'] ?? [] as $slot)
+                                @php
+                                    $d = \Carbon\Carbon::parse($slot->schedule_date);
+                                    $today = $d->isToday();
+                                    $past = $d->isPast() && !$today;
+                                    $isExamSchedule = ($slot->note ?? null) === 'Thi kết thúc môn';
+                                @endphp
+                                <div class="teacher-schedule-card">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                        <div>
+                                            <div class="fw-bold" style="font-size:.9rem">{{ $slot->course_title }}</div>
+                                            <div class="text-muted" style="font-size:.76rem;margin-top:.15rem">
+                                                {{ $d->format('d/m/Y') }} · {{ $d->translatedFormat('l') }}
+                                            </div>
+                                        </div>
+                                        @if ($today)
+                                            <span class="bdg bdg--success">Hôm nay</span>
+                                        @elseif ($past)
+                                            <span class="bdg bdg--muted">Đã dạy</span>
+                                        @endif
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                                        <span class="bdg {{ $isExamSchedule ? 'bdg--danger' : 'bdg--primary' }}">
+                                            <i class="far fa-clock"></i>
+                                            {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }}
+                                            –
+                                            {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
+                                        </span>
+                                        <span class="bdg bdg--muted">{{ $slot->class_name }}</span>
+                                        <span class="bdg {{ $isExamSchedule ? 'bdg--danger' : 'bdg--muted' }}">
+                                            {{ $slot->room ?? 'Online' }}
+                                        </span>
+                                    </div>
+                                    @if ($isExamSchedule)
+                                        <div class="mt-2">
+                                            <span class="bdg bdg--danger">Thi kết thúc môn</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="empty-state">
+                                    <div class="empty-icon">
+                                        <i class="fas fa-calendar-times"></i>
+                                    </div>
+                                    <p>
+                                        <strong>Chưa có lịch dạy.</strong><br>
+                                        Lịch giảng dạy sẽ hiển thị tại đây.
+                                    </p>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>

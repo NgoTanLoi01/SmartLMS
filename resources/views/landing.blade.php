@@ -99,6 +99,10 @@
                 --blue-light: #eff6ff;
                 --blue-mid: #dbeafe;
                 --indigo: #4f46e5;
+                --cyan: #06b6d4;
+                --emerald: #10b981;
+                --amber: #f59e0b;
+                --rose: #f43f5e;
                 --navy: #0f172a;
                 --slate: #1e293b;
                 --slate-mid: #334155;
@@ -226,13 +230,16 @@
 
             /* ─── HERO ─── */
             .hero {
-                min-height: 100vh;
+                min-height: 92vh;
                 display: flex;
                 align-items: center;
-                padding: 120px 48px 80px;
+                padding: 124px 48px 92px;
                 position: relative;
                 overflow: hidden;
-                background: #fff;
+                background:
+                    linear-gradient(90deg, rgba(248, 250, 252, .98) 0%, rgba(248, 250, 252, .94) 38%, rgba(248, 250, 252, .72) 62%, rgba(248, 250, 252, .86) 100%),
+                    url("/auth-img1.png") no-repeat right 8% bottom 6% / min(46vw, 560px),
+                    #f8fafc;
             }
 
             .hero-bg {
@@ -244,25 +251,11 @@
             }
 
             .hero-bg::before {
-                content: '';
-                position: absolute;
-                top: -20%;
-                right: -10%;
-                width: 800px;
-                height: 800px;
-                border-radius: 50%;
-                background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.08) 0%, transparent 65%);
+                display: none;
             }
 
             .hero-bg::after {
-                content: '';
-                position: absolute;
-                bottom: -15%;
-                left: -10%;
-                width: 600px;
-                height: 600px;
-                border-radius: 50%;
-                background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.06) 0%, transparent 65%);
+                display: none;
             }
 
             .hero-bg-dot {
@@ -281,11 +274,42 @@
                 margin: 0 auto;
                 width: 100%;
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 72px;
+                grid-template-columns: minmax(0, 1fr) minmax(360px, 470px);
+                gap: 56px;
                 align-items: center;
                 position: relative;
                 z-index: 1;
+            }
+
+            .hero-kicker {
+                display: grid;
+                gap: 10px;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                margin-top: 32px;
+                max-width: 640px;
+            }
+
+            .kicker-card {
+                background: rgba(255, 255, 255, .76);
+                border: 1px solid rgba(226, 232, 240, .92);
+                border-radius: 16px;
+                padding: 14px;
+                box-shadow: 0 14px 34px rgba(15, 23, 42, .06);
+            }
+
+            .kicker-value {
+                color: var(--navy);
+                font-size: 22px;
+                font-weight: 800;
+                line-height: 1;
+                margin-bottom: 6px;
+            }
+
+            .kicker-label {
+                color: var(--muted);
+                font-size: 12px;
+                font-weight: 600;
+                line-height: 1.35;
             }
 
             .badge {
@@ -328,10 +352,10 @@
 
             h1 {
                 font-family: 'Be Vietnam Pro', sans-serif;
-                font-size: clamp(36px, 4vw, 56px);
+                font-size: clamp(40px, 5vw, 68px);
                 font-weight: 800;
-                line-height: 1.1;
-                letter-spacing: -2px;
+                line-height: 1.02;
+                letter-spacing: -2.6px;
                 margin-bottom: 24px;
                 color: var(--navy);
             }
@@ -345,12 +369,12 @@
             }
 
             .hero-desc {
-                font-size: 17px;
+                font-size: 18px;
                 color: var(--muted);
                 line-height: 1.75;
-                margin-bottom: 40px;
+                margin-bottom: 34px;
                 font-weight: 400;
-                max-width: 520px;
+                max-width: 620px;
             }
 
             .hero-actions {
@@ -409,8 +433,8 @@
                 display: flex;
                 align-items: center;
                 gap: 24px;
-                padding-top: 32px;
-                border-top: 1px solid var(--border-light);
+                padding-top: 0;
+                border-top: none;
                 flex-wrap: wrap;
             }
 
@@ -443,12 +467,12 @@
             }
 
             .dashboard-card {
-                background: rgba(255, 255, 255, 0.85);
+                background: rgba(255, 255, 255, 0.92);
                 -webkit-backdrop-filter: blur(16px);
-                border-radius: var(--radius-xl);
-                border: 1px solid rgba(255, 255, 255, 0.6);
+                border-radius: 22px;
+                border: 1px solid rgba(226, 232, 240, 0.9);
                 padding: 24px;
-                box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08), var(--shadow-glow);
+                box-shadow: 0 30px 70px rgba(15, 23, 42, 0.13);
                 transition: transform 0.4s ease;
             }
 
@@ -496,6 +520,79 @@
                 transition: all .25s;
             }
 
+            .product-shell {
+                position: relative;
+            }
+
+            .command-top {
+                align-items: center;
+                background: #0f172a;
+                border-radius: 18px 18px 0 0;
+                color: rgba(255, 255, 255, .76);
+                display: flex;
+                gap: 8px;
+                justify-content: space-between;
+                margin: -24px -24px 20px;
+                padding: 14px 18px;
+            }
+
+            .command-dots {
+                display: flex;
+                gap: 6px;
+            }
+
+            .command-dots span {
+                border-radius: 999px;
+                display: block;
+                height: 8px;
+                width: 8px;
+            }
+
+            .command-dots span:nth-child(1) {
+                background: var(--rose);
+            }
+
+            .command-dots span:nth-child(2) {
+                background: var(--amber);
+            }
+
+            .command-dots span:nth-child(3) {
+                background: var(--emerald);
+            }
+
+            .command-label {
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .ai-brief {
+                background: #0f172a;
+                border: 1px solid rgba(255, 255, 255, .08);
+                border-radius: 18px;
+                bottom: -34px;
+                box-shadow: 0 22px 60px rgba(15, 23, 42, .24);
+                color: #fff;
+                left: -38px;
+                max-width: 280px;
+                padding: 16px;
+                position: absolute;
+            }
+
+            .ai-brief__label {
+                color: #67e8f9;
+                font-size: 11px;
+                font-weight: 800;
+                letter-spacing: .1em;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+            }
+
+            .ai-brief__text {
+                color: rgba(255, 255, 255, .78);
+                font-size: 13px;
+                line-height: 1.55;
+            }
+
             .class-item:hover {
                 border-color: var(--blue-mid);
                 background: #fff;
@@ -530,15 +627,16 @@
             }
 
             .class-progress {
-                width: 56px;
+                width: 78px;
                 display: flex;
                 flex-direction: column;
                 align-items: flex-end;
                 gap: 5px;
+                flex-shrink: 0;
             }
 
             .progress-bar {
-                width: 56px;
+                width: 78px;
                 height: 5px;
                 background: var(--border);
                 border-radius: 4px;
@@ -556,6 +654,10 @@
                 font-size: 11px;
                 font-weight: 700;
                 color: var(--blue);
+                max-width: 78px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             .floating-chip {
@@ -624,7 +726,7 @@
 
             /* ─── FEATURES ─── */
             .features {
-                padding: 120px 48px;
+                padding: 112px 48px;
                 background: #fff;
                 position: relative;
             }
@@ -682,13 +784,158 @@
             }
 
             .feature-card {
-                background: var(--bg);
+                background: #fff;
                 border-radius: var(--radius-lg);
-                border: 1px solid var(--border-light);
+                border: 1px solid var(--border);
                 padding: 32px 28px;
                 transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
                 position: relative;
                 overflow: hidden;
+            }
+
+            .ai-layer {
+                background: #0f172a;
+                color: #fff;
+                overflow: hidden;
+                padding: 104px 48px;
+                position: relative;
+            }
+
+            .ai-layer::before {
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, .045) 1px, transparent 1px);
+                background-size: 42px 42px;
+                content: '';
+                inset: 0;
+                opacity: .45;
+                position: absolute;
+            }
+
+            .ai-layer-inner {
+                align-items: center;
+                display: grid;
+                gap: 56px;
+                grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+                margin: 0 auto;
+                max-width: 1140px;
+                position: relative;
+                z-index: 1;
+            }
+
+            .ai-layer h2 {
+                color: #fff;
+                font-size: clamp(30px, 4vw, 48px);
+                font-weight: 800;
+                letter-spacing: -1.6px;
+                line-height: 1.1;
+                margin-bottom: 18px;
+            }
+
+            .ai-layer p {
+                color: rgba(255, 255, 255, .68);
+                font-size: 16px;
+                line-height: 1.8;
+                margin-bottom: 28px;
+            }
+
+            .ai-flow {
+                display: grid;
+                gap: 12px;
+            }
+
+            .ai-flow-card {
+                align-items: center;
+                background: rgba(255, 255, 255, .08);
+                border: 1px solid rgba(255, 255, 255, .12);
+                border-radius: 18px;
+                display: flex;
+                gap: 14px;
+                padding: 16px;
+            }
+
+            .ai-flow-icon {
+                align-items: center;
+                background: rgba(103, 232, 249, .14);
+                border-radius: 14px;
+                color: #67e8f9;
+                display: flex;
+                flex-shrink: 0;
+                font-size: 18px;
+                height: 44px;
+                justify-content: center;
+                width: 44px;
+            }
+
+            .ai-flow-title {
+                color: #fff;
+                font-size: 14px;
+                font-weight: 800;
+                margin-bottom: 4px;
+            }
+
+            .ai-flow-desc {
+                color: rgba(255, 255, 255, .58);
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .ai-console {
+                background: rgba(255, 255, 255, .96);
+                border-radius: 24px;
+                box-shadow: 0 32px 80px rgba(0, 0, 0, .24);
+                color: var(--navy);
+                overflow: hidden;
+            }
+
+            .ai-console-head {
+                align-items: center;
+                background: #f8fafc;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                justify-content: space-between;
+                padding: 16px 18px;
+            }
+
+            .ai-console-title {
+                font-size: 13px;
+                font-weight: 800;
+            }
+
+            .ai-console-body {
+                display: grid;
+                gap: 12px;
+                padding: 18px;
+            }
+
+            .ai-message {
+                border-radius: 16px;
+                font-size: 13px;
+                line-height: 1.6;
+                padding: 14px;
+            }
+
+            .ai-message.user {
+                background: #eef2ff;
+                color: #312e81;
+                margin-left: 44px;
+            }
+
+            .ai-message.system {
+                background: #f8fafc;
+                border: 1px solid var(--border);
+                color: var(--slate-mid);
+                margin-right: 32px;
+            }
+
+            .ai-evidence {
+                background: #ecfdf5;
+                border: 1px solid #bbf7d0;
+                border-radius: 14px;
+                color: #065f46;
+                font-size: 12px;
+                font-weight: 700;
+                padding: 10px 12px;
             }
 
             .feature-card::before {
@@ -1039,6 +1286,22 @@
                     grid-template-columns: repeat(2, 1fr);
                 }
 
+                .hero {
+                    background:
+                        linear-gradient(90deg, rgba(248, 250, 252, .98) 0%, rgba(248, 250, 252, .92) 100%),
+                        url("/auth-img1.png") no-repeat right 4% top 110px / 360px,
+                        #f8fafc;
+                }
+
+                .hero-inner,
+                .ai-layer-inner {
+                    grid-template-columns: 1fr;
+                }
+
+                .ai-brief {
+                    left: 20px;
+                }
+
                 .footer-grid {
                     grid-template-columns: 1fr 1fr;
                     gap: 36px;
@@ -1059,17 +1322,47 @@
                 }
 
                 .hero {
-                    padding: 100px 20px 60px;
+                    background: #f8fafc;
+                    padding: 96px 20px 64px;
                 }
 
                 .hero-inner {
                     grid-template-columns: 1fr;
-                    gap: 40px;
+                    gap: 32px;
+                }
+
+                h1 {
+                    letter-spacing: -1.4px;
                 }
 
                 .hero-visual {
-                    transform: scale(0.9);
+                    transform: none;
                     transform-origin: top center;
+                }
+
+                .hero-kicker {
+                    grid-template-columns: 1fr;
+                }
+
+                .dashboard-card {
+                    padding: 18px;
+                }
+
+                .command-top {
+                    margin: -18px -18px 16px;
+                }
+
+                .class-item {
+                    align-items: flex-start;
+                    gap: 10px;
+                }
+
+                .class-progress {
+                    display: none;
+                }
+
+                .ai-brief {
+                    display: none;
                 }
 
                 .floating-chip {
@@ -1086,6 +1379,21 @@
 
                 .how {
                     padding: 80px 20px;
+                }
+
+                .ai-layer {
+                    padding: 80px 20px;
+                }
+
+                .ai-layer-inner {
+                    grid-template-columns: 1fr;
+                    gap: 32px;
+                }
+
+                .ai-message.user,
+                .ai-message.system {
+                    margin-left: 0;
+                    margin-right: 0;
                 }
 
                 .steps {
@@ -1136,6 +1444,11 @@
         <a class="nav-logo" href="{{ url('/') }}" aria-label="SmartLMS - Trang chủ">
             <img src="{{ asset('smartlms-logo-sharpened.png') }}" alt="SmartLMS Logo">
         </a>
+        <ul class="nav-links">
+            <li><a href="#features">Năng lực</a></li>
+            <li><a href="#ai-layer">AI</a></li>
+            <li><a href="#how">Triển khai</a></li>
+        </ul>
         <div class="nav-right">
             <a class="nav-cta" href="https://smartlms.io.vn/login">Đăng nhập →</a>
         </div>
@@ -1150,94 +1463,116 @@
             <div class="hero-content fade-in">
                 <div class="badge">
                     <span class="badge-dot"></span>
-                    Miễn phí 100% · Không giới hạn
+                    LMS thế hệ mới · Tích hợp AI theo ngữ cảnh
                 </div>
-                <h1>Phần mềm quản lý <span class="accent">trung tâm đào tạo</span> tích hợp AI</h1>
-                <p class="hero-desc">SmartLMS giúp bạn quản lý lớp học, giao bài tập, xây dựng ngân hàng câu hỏi và huấn
-                    luyện AI từ tài liệu của chính mình — hoàn toàn miễn phí.</p>
+                <h1>SmartLMS cho trung tâm đào tạo <span class="accent">vận hành thông minh hơn</span></h1>
+                <p class="hero-desc">Một không gian dạy học hiện đại nơi lớp học, khóa học, bài nộp, quiz và trợ giảng AI
+                    cùng hoạt động trong một luồng thống nhất.</p>
                 <div class="hero-actions">
                     <a class="btn-primary" href="https://smartlms.io.vn/login">
-                        Bắt đầu miễn phí
+                        Vào SmartLMS
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                             stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                         </svg>
                     </a>
-                    <a class="btn-ghost" href="#features">Xem tính năng</a>
+                    <a class="btn-ghost" href="#ai-layer">Khám phá AI</a>
                 </div>
                 <div class="trust-bar">
                     <div class="trust-item">
                         <div class="trust-icon">✓</div>
-                        Không cần cài đặt
+                        Giáo viên thao tác nhanh
                     </div>
                     <div class="trust-item">
                         <div class="trust-icon">✓</div>
-                        Không cần thẻ tín dụng
+                        Học sinh học rõ luồng
                     </div>
                     <div class="trust-item">
                         <div class="trust-icon">✓</div>
-                        Hỗ trợ tiếng Việt
+                        AI hiểu nội dung khóa học
+                    </div>
+                </div>
+                <div class="hero-kicker">
+                    <div class="kicker-card">
+                        <div class="kicker-value">1</div>
+                        <div class="kicker-label">nơi quản lý toàn bộ lớp học</div>
+                    </div>
+                    <div class="kicker-card">
+                        <div class="kicker-value">AI</div>
+                        <div class="kicker-label">hỗ trợ soạn, học và chấm bài</div>
+                    </div>
+                    <div class="kicker-card">
+                        <div class="kicker-value">24/7</div>
+                        <div class="kicker-label">học sinh có trợ giảng theo bài</div>
                     </div>
                 </div>
             </div>
 
             <div class="hero-visual fade-in" style="transition-delay:.2s" aria-hidden="true">
-                <div style="position:relative">
+                <div class="product-shell">
                     <div class="floating-chip chip-1">
-                        <div class="chip-icon" style="background:#f0fdf4">🤖</div>
-                        AI đã sẵn sàng hỗ trợ
+                        <div class="chip-icon" style="background:#ecfeff">AI</div>
+                        Gợi ý việc cần làm
                     </div>
                     <div class="dashboard-card">
+                        <div class="command-top">
+                            <div class="command-dots"><span></span><span></span><span></span></div>
+                            <div class="command-label">Teacher Command Center</div>
+                        </div>
                         <div class="card-header">
-                            <span class="card-title">Lớp học đang hoạt động</span>
-                            <span class="card-badge">● 3 lớp</span>
+                            <span class="card-title">Cần xử lý hôm nay</span>
+                            <span class="card-badge">Live</span>
                         </div>
                         <div class="class-list">
                             <div class="class-item">
-                                <div class="class-icon" style="background:#eff6ff">💻</div>
+                                <div class="class-icon" style="background:#eff6ff">01</div>
                                 <div class="class-info">
-                                    <div class="class-name">Lập trình Web cơ bản</div>
-                                    <div class="class-meta">24 học viên · Buổi 8/12</div>
+                                    <div class="class-name">Lớp sắp dạy</div>
+                                    <div class="class-meta">Web cơ bản · 19:30 hôm nay</div>
                                 </div>
                                 <div class="class-progress">
                                     <div class="progress-bar">
-                                        <div class="progress-fill" style="width:67%"></div>
+                                        <div class="progress-fill" style="width:82%"></div>
                                     </div>
-                                    <span class="progress-text">67%</span>
+                                    <span class="progress-text">Sẵn sàng</span>
                                 </div>
                             </div>
                             <div class="class-item">
-                                <div class="class-icon" style="background:#fef9ec">🎨</div>
+                                <div class="class-icon" style="background:#fff7ed">02</div>
                                 <div class="class-info">
-                                    <div class="class-name">Thiết kế đồ họa</div>
-                                    <div class="class-meta">18 học viên · Buổi 5/10</div>
+                                    <div class="class-name">Bài cần chấm ưu tiên</div>
+                                    <div class="class-meta">5 bài quá hạn · 12 bài mới nộp</div>
                                 </div>
                                 <div class="class-progress">
                                     <div class="progress-bar">
-                                        <div class="progress-fill" style="width:50%"></div>
+                                        <div class="progress-fill" style="width:64%"></div>
                                     </div>
-                                    <span class="progress-text">50%</span>
+                                    <span class="progress-text">Ưu tiên</span>
                                 </div>
                             </div>
                             <div class="class-item">
-                                <div class="class-icon" style="background:#f0fdf4">📊</div>
+                                <div class="class-icon" style="background:#ecfdf5">03</div>
                                 <div class="class-info">
-                                    <div class="class-name">Excel nâng cao</div>
-                                    <div class="class-meta">31 học viên · Buổi 3/8</div>
+                                    <div class="class-name">AI trợ giảng khóa học</div>
+                                    <div class="class-meta">Tóm tắt bài · tạo ví dụ · gợi ý ôn tập</div>
                                 </div>
                                 <div class="class-progress">
                                     <div class="progress-bar">
-                                        <div class="progress-fill" style="width:38%"></div>
+                                        <div class="progress-fill" style="width:92%"></div>
                                     </div>
-                                    <span class="progress-text">38%</span>
+                                    <span class="progress-text">AI</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="floating-chip chip-2">
-                        <div class="chip-icon" style="background:#fef3c7">📝</div>
-                        42 câu hỏi mới từ AI
+                        <div class="chip-icon" style="background:#fef3c7">QA</div>
+                        Quiz tạo nhanh từ bài học
+                    </div>
+                    <div class="ai-brief">
+                        <div class="ai-brief__label">AI Insight</div>
+                        <div class="ai-brief__text">Ưu tiên chấm bài quá hạn trước, sau đó chuẩn bị ví dụ cho lớp Web cơ bản.</div>
                     </div>
                 </div>
             </div>
@@ -1250,47 +1585,95 @@
             <div style="display:flex;justify-content:center">
                 <div class="section-eyebrow">Tính năng</div>
             </div>
-            <h2 class="section-title" id="features-title">Mọi thứ bạn cần để quản lý đào tạo</h2>
-            <p class="section-desc">Được xây dựng riêng cho các trung tâm đào tạo tư nhân tại Việt Nam — đơn giản, thực
-                dụng và đầy đủ.</p>
+            <h2 class="section-title" id="features-title">Nền tảng vận hành đào tạo theo thời gian thực</h2>
+            <p class="section-desc">Tập trung vào những việc giáo viên, học sinh và quản trị viên dùng mỗi ngày — rõ ràng,
+                nhanh và có AI hỗ trợ đúng chỗ.</p>
         </div>
 
         <div class="features-grid">
             <div class="feature-card fade-in">
                 <div class="feature-icon" style="background:#eff6ff">🤖</div>
-                <h3 class="feature-title">Huấn luyện AI từ tài liệu</h3>
-                <p class="feature-desc">Tải lên giáo trình hoặc slide bài giảng — AI sẽ học và tự động hỗ trợ học viên
-                    giải đáp thắc mắc theo đúng nội dung bạn cung cấp.</p>
+                <h3 class="feature-title">AI trợ giảng theo từng bài học</h3>
+                <p class="feature-desc">Học sinh hỏi ngay trong bài đang học, AI trả lời dựa trên nội dung khóa học và
+                    giúp giải thích lại dễ hiểu hơn.</p>
             </div>
             <div class="feature-card fade-in" style="transition-delay:.08s">
                 <div class="feature-icon" style="background:#f0fdf4">📚</div>
-                <h3 class="feature-title">Ngân hàng câu hỏi thông minh</h3>
-                <p class="feature-desc">Tạo và quản lý hàng trăm câu hỏi, phân loại theo chủ đề. AI có thể tự động gợi
-                    ý câu hỏi mới từ tài liệu của bạn.</p>
+                <h3 class="feature-title">Soạn nội dung nhanh hơn</h3>
+                <p class="feature-desc">Giáo viên có thể tạo bài tập, quiz, rubric và gợi ý tiêu chí đánh giá từ nội dung
+                    bài học.</p>
             </div>
             <div class="feature-card fade-in" style="transition-delay:.16s">
                 <div class="feature-icon" style="background:#fef9ec">🏫</div>
-                <h3 class="feature-title">Quản lý lớp học & lịch học</h3>
-                <p class="feature-desc">Theo dõi danh sách học viên, sắp xếp lịch học, ghi nhận điểm danh và tiến độ
-                    học tập một cách trực quan.</p>
+                <h3 class="feature-title">Dashboard thao tác nhanh</h3>
+                <p class="feature-desc">Hiển thị lớp sắp dạy, bài cần chấm ưu tiên và các gợi ý cần làm dựa trên dữ liệu
+                    thật.</p>
             </div>
             <div class="feature-card fade-in" style="transition-delay:.24s">
                 <div class="feature-icon" style="background:#fdf2f8">📋</div>
-                <h3 class="feature-title">Giao bài & quản lý khóa học</h3>
-                <p class="feature-desc">Tạo bài tập, giao cho học viên và theo dõi kết quả nộp bài. Toàn bộ quy trình
-                    tập trung tại một nơi duy nhất.</p>
+                <h3 class="feature-title">Luồng khóa học dễ thao tác</h3>
+                <p class="feature-desc">Học sinh tiếp tục học, làm quiz, nộp bài và xem trạng thái rõ ràng hơn trong cùng
+                    một màn hình.</p>
             </div>
             <div class="feature-card fade-in" style="transition-delay:.32s">
                 <div class="feature-icon" style="background:#f0f4ff">🎮</div>
-                <h3 class="feature-title">Công cụ hỗ trợ học tập</h3>
-                <p class="feature-desc">Tích hợp máy tính điểm, trình soạn thảo code và các tiện ích giúp học viên học
-                    hiệu quả hơn trong từng buổi học.</p>
+                <h3 class="feature-title">AI chấm bài có giáo viên duyệt</h3>
+                <p class="feature-desc">AI phân tích bài nộp, so sánh rubric, chỉ ra điểm mạnh/yếu và đề xuất nhận xét để
+                    giáo viên quyết định.</p>
             </div>
             <div class="feature-card fade-in" style="transition-delay:.4s">
                 <div class="feature-icon" style="background:#f0fdfa">👥</div>
-                <h3 class="feature-title">Phân quyền rõ ràng</h3>
-                <p class="feature-desc">Admin, giáo viên và học viên có giao diện riêng biệt, đảm bảo mỗi người chỉ
-                    thấy và làm việc với đúng thông tin của mình.</p>
+                <h3 class="feature-title">Kiểm tra chất lượng khóa học</h3>
+                <p class="feature-desc">Phát hiện bài học quá ngắn, quiz thiếu câu hỏi, bài tập chưa có rubric hoặc nội
+                    dung chưa đủ để AI trả lời.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI LAYER -->
+    <section class="ai-layer" id="ai-layer" aria-labelledby="ai-layer-title">
+        <div class="ai-layer-inner">
+            <div class="fade-in">
+                <div class="section-eyebrow" style="color:#67e8f9">AI Layer</div>
+                <h2 id="ai-layer-title">AI không đứng riêng, AI nằm trong từng thao tác học tập</h2>
+                <p>SmartLMS đưa AI vào đúng điểm cần hỗ trợ: khi học sinh chưa hiểu bài, khi giáo viên soạn nội dung, khi
+                    chấm tự luận và khi cần rà soát chất lượng khóa học.</p>
+                <div class="ai-flow">
+                    <div class="ai-flow-card">
+                        <div class="ai-flow-icon">01</div>
+                        <div>
+                            <div class="ai-flow-title">Hiểu ngữ cảnh khóa học</div>
+                            <div class="ai-flow-desc">Dựa trên bài học, tài liệu và nội dung giáo viên đã đưa vào hệ thống.</div>
+                        </div>
+                    </div>
+                    <div class="ai-flow-card">
+                        <div class="ai-flow-icon">02</div>
+                        <div>
+                            <div class="ai-flow-title">Gợi ý hành động tiếp theo</div>
+                            <div class="ai-flow-desc">Ưu tiên bài cần chấm, lớp sắp dạy và học sinh cần được hỗ trợ.</div>
+                        </div>
+                    </div>
+                    <div class="ai-flow-card">
+                        <div class="ai-flow-icon">03</div>
+                        <div>
+                            <div class="ai-flow-title">Giáo viên luôn là người duyệt cuối</div>
+                            <div class="ai-flow-desc">AI đề xuất, giáo viên kiểm tra và quyết định phản hồi chính thức.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ai-console fade-in" style="transition-delay:.16s">
+                <div class="ai-console-head">
+                    <div class="ai-console-title">AI Lesson Tutor</div>
+                    <span class="card-badge">Context-aware</span>
+                </div>
+                <div class="ai-console-body">
+                    <div class="ai-message user">Em chưa hiểu phần điều kiện trong JavaScript.</div>
+                    <div class="ai-message system">Trong bài này, điều kiện giống như một cổng kiểm tra. Nếu điều kiện đúng,
+                        chương trình chạy nhánh A; nếu sai, chạy nhánh B.</div>
+                    <div class="ai-evidence">Dựa trên: Bài 7 · JavaScript cơ bản · Ví dụ if/else</div>
+                    <div class="ai-message system">Gợi ý ôn tập: làm lại quiz 5 câu và thử viết ví dụ kiểm tra điểm số.</div>
+                </div>
             </div>
         </div>
     </section>
@@ -1308,21 +1691,20 @@
         <div class="steps">
             <div class="step fade-in">
                 <div class="step-num">1</div>
-                <h3 class="step-title">Đăng nhập tài khoản</h3>
-                <p class="step-desc">Truy cập smartlms.io.vn và đăng nhập — không cần tải hay cài đặt bất kỳ thứ gì.
+                <h3 class="step-title">Thiết lập lớp học</h3>
+                <p class="step-desc">Tạo lớp, gán giáo viên, thêm học sinh và đưa khóa học vào đúng nhóm người học.
                 </p>
             </div>
             <div class="step fade-in" style="transition-delay:.15s">
                 <div class="step-num">2</div>
-                <h3 class="step-title">Tạo lớp & tải tài liệu</h3>
-                <p class="step-desc">Thêm học viên, tạo lịch học và tải lên giáo trình để AI bắt đầu học theo nội dung
-                    của bạn.</p>
+                <h3 class="step-title">Kích hoạt nội dung & AI</h3>
+                <p class="step-desc">Tạo bài học, bài tập, quiz và đưa tài liệu vào để AI hỗ trợ đúng ngữ cảnh.</p>
             </div>
             <div class="step fade-in" style="transition-delay:.3s">
                 <div class="step-num">3</div>
-                <h3 class="step-title">Dạy học thông minh hơn</h3>
-                <p class="step-desc">AI hỗ trợ học viên 24/7, bạn chỉ cần tập trung vào giảng dạy và theo dõi kết quả
-                    học tập.</p>
+                <h3 class="step-title">Theo dõi và tối ưu liên tục</h3>
+                <p class="step-desc">Dashboard gợi ý việc cần làm, giáo viên xử lý nhanh và học sinh học theo lộ trình rõ
+                    ràng.</p>
             </div>
         </div>
     </section>
@@ -1331,11 +1713,11 @@
     <div class="cta-section">
         <div class="free-banner fade-in">
             <div class="banner-content">
-                <h2>Miễn phí hoàn toàn. Bắt đầu ngay hôm nay.</h2>
+                <h2>Sẵn sàng đưa trung tâm của bạn lên một nhịp vận hành mới?</h2>
                 <p>
-                    <span>✓ Không giới hạn tính năng</span>
-                    <span>✓ Không cần thẻ tín dụng</span>
-                    <span>✓ Hỗ trợ tiếng Việt đầy đủ</span>
+                    <span>✓ Quản lý lớp học</span>
+                    <span>✓ AI hỗ trợ giáo viên</span>
+                    <span>✓ Học sinh thao tác dễ hơn</span>
                 </p>
             </div>
             <a class="btn-white" href="https://smartlms.io.vn/login">Truy cập SmartLMS →</a>
@@ -1349,8 +1731,8 @@
                 <!-- Column 1: Brand Info -->
                 <div class="footer-brand">
                     <a href="{{ url('/') }}" class="footer-logo">SmartLMS</a>
-                    <p class="footer-desc">Phần mềm quản lý trung tâm đào tạo tích hợp AI, miễn phí 100% dành cho Việt
-                        Nam. Đơn giản, thực dụng và đầy đủ.</p>
+                    <p class="footer-desc">Nền tảng quản lý đào tạo tích hợp AI dành cho trung tâm, giáo viên và học sinh
+                        Việt Nam. Rõ luồng, nhẹ thao tác và sẵn sàng mở rộng.</p>
                     <div class="footer-socials">
                         <a href="#" aria-label="Facebook">
                             <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
@@ -1402,7 +1784,7 @@
             </div>
 
             <div class="footer-bottom">
-                <span>© 2026 SmartLMS. Được xây dựng với ❤️ tại Việt Nam.</span>
+                <span>© 2026 SmartLMS. Được xây dựng tại Việt Nam.</span>
                 <span><a href="https://smartlms.io.vn">smartlms.io.vn</a> · Phần mềm quản lý đào tạo AI miễn phí</span>
             </div>
         </div>

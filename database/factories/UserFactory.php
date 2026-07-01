@@ -27,10 +27,9 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            // 'email_verified_at' => now(), <--- XÓA HOẶC COMMENT DÒNG NÀY
             'password' => (static::$password ??= Hash::make('password')),
             'remember_token' => Str::random(10),
-            'role' => 'student', // Đảm bảo role mặc định khớp với enum của bạn
+            'role' => 'student',
         ];
     }
 

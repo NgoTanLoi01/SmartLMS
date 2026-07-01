@@ -112,6 +112,49 @@ class DashboardController extends Controller
                 ->orderBy('schedules.start_time', 'asc')
                 ->get();
 
+            $data['today_schedules_count'] = $data['week_schedule']
+                ->filter(fn ($slot) => Carbon::parse($slot->schedule_date)->toDateString() === $todayDate)
+                ->count();
+
+            $data['next_schedule'] = DB::table('schedules')
+                ->join('courses', 'schedules.course_id', '=', 'courses.id')
+                ->join('classes', 'schedules.class_id', '=', 'classes.id')
+                ->where('classes.teacher_id', $user->id)
+                ->where($this->activeOrLegacyColumn('schedules.status'))
+                ->where($this->notArchivedColumn('classes.status'))
+                ->where($this->notArchivedColumn('courses.status'))
+                ->where(function ($query) use ($todayDate, $now) {
+                    $query->whereDate('schedules.schedule_date', '>', $todayDate)
+                        ->orWhere(function ($todayQuery) use ($todayDate, $now) {
+                            $todayQuery->whereDate('schedules.schedule_date', $todayDate)
+                                ->where('schedules.start_time', '>=', $now->format('H:i:s'));
+                        });
+                })
+                ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
+                ->orderBy('schedules.schedule_date', 'asc')
+                ->orderBy('schedules.start_time', 'asc')
+                ->first();
+
+            $data['priority_submissions'] = DB::table('assignment_submissions')
+                ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')
+                ->join('courses', 'assignments.course_id', '=', 'courses.id')
+                ->join('users', 'assignment_submissions.user_id', '=', 'users.id')
+                ->whereIn('assignments.course_id', $courseIds)
+                ->whereNull('assignment_submissions.grade')
+                ->select(
+                    'assignment_submissions.*',
+                    'assignments.title as assignment_title',
+                    'assignments.due_date',
+                    'users.name as student_name',
+                    'courses.title as course_title',
+                    'courses.id as course_id'
+                )
+                ->orderByRaw('CASE WHEN assignments.due_date < ? THEN 0 ELSE 1 END', [$now->toDateTimeString()])
+                ->orderBy('assignments.due_date', 'asc')
+                ->orderBy('assignment_submissions.submitted_at', 'asc')
+                ->take(5)
+                ->get();
+
             $gradeSummary = DB::table('assignment_submissions')
                 ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')
                 ->whereIn('assignments.course_id', $courseIds)
@@ -132,6 +175,10 @@ class DashboardController extends Controller
                 ->orderBy('avg_grade')
                 ->take(5)
                 ->get();
+
+            $data['attention_students_count'] = $data['attention_students']->count();
+
+            $data['teacher_ai_suggestions'] = $this->buildTeacherAiSuggestions($data, $now);
         }
 
         // ==========================================
@@ -337,5 +384,74 @@ class DashboardController extends Controller
             $query->whereNull($column)
                 ->orWhere($column, 'active');
         };
+    }
+
+    private function buildTeacherAiSuggestions(array $data, Carbon $now): array
+    {
+        $suggestions = [];
+        $pendingGrades = (int) ($data['pending_grades'] ?? 0);
+        $todaySchedules = (int) ($data['today_schedules_count'] ?? 0);
+        $prioritySubmissions = $data['priority_submissions'] ?? collect();
+        $attentionStudents = $data['attention_students'] ?? collect();
+        $nextSchedule = $data['next_schedule'] ?? null;
+
+        if ($prioritySubmissions->isNotEmpty()) {
+            $firstSubmission = $prioritySubmissions->first();
+            $dueDate = $firstSubmission->due_date ? Carbon::parse($firstSubmission->due_date) : null;
+            $isOverdue = $dueDate && $dueDate->lt($now);
+
+            $suggestions[] = [
+                'type' => $isOverdue ? 'danger' : 'warning',
+                'icon' => 'fas fa-pen',
+                'title' => $isOverdue ? 'Ưu tiên chấm bài quá hạn' : 'Nên chấm bài sắp đến hạn trước',
+                'body' => "{$firstSubmission->student_name} đang chờ chấm bài \"{$firstSubmission->assignment_title}\".",
+                'action_label' => 'Chấm bài',
+                'action_url' => route('assignments.submissions.review', $firstSubmission->id),
+            ];
+        } elseif ($pendingGrades === 0) {
+            $suggestions[] = [
+                'type' => 'success',
+                'icon' => 'fas fa-check-circle',
+                'title' => 'Không còn bài chờ chấm',
+                'body' => 'Có thể tranh thủ cập nhật bài học, tạo quiz ôn tập hoặc xem tiến độ lớp.',
+                'action_label' => 'Mở khóa học',
+                'action_url' => route('courses.index'),
+            ];
+        }
+
+        if ($nextSchedule) {
+            $scheduleStart = Carbon::parse($nextSchedule->schedule_date . ' ' . $nextSchedule->start_time);
+            $suggestions[] = [
+                'type' => $scheduleStart->isToday() ? 'primary' : 'info',
+                'icon' => 'fas fa-calendar-day',
+                'title' => $scheduleStart->isToday() ? 'Chuẩn bị ca dạy kế tiếp' : 'Xem trước lịch dạy gần nhất',
+                'body' => "{$nextSchedule->course_title} - {$nextSchedule->class_name}, {$scheduleStart->format('H:i d/m')}.",
+                'action_label' => 'Xem lịch',
+                'action_url' => route('schedules.index'),
+            ];
+        } elseif ($todaySchedules === 0) {
+            $suggestions[] = [
+                'type' => 'muted',
+                'icon' => 'fas fa-calendar-check',
+                'title' => 'Hôm nay chưa có ca dạy sắp tới',
+                'body' => 'Có thể dùng thời gian này để chuẩn bị nội dung hoặc rà soát bài chưa chấm.',
+                'action_label' => 'AI tạo quiz',
+                'action_url' => route('quizzes.ai_generate'),
+            ];
+        }
+
+        if ($attentionStudents->isNotEmpty()) {
+            $student = $attentionStudents->first();
+            $suggestions[] = [
+                'type' => 'warning',
+                'icon' => 'fas fa-user-clock',
+                'title' => 'Theo dõi học sinh cần hỗ trợ',
+                'body' => "{$student->name} thuộc {$student->class_name}, điểm TB " . ($student->avg_grade !== null ? round($student->avg_grade, 1) : 'chưa có dữ liệu') . '.',
+                'action_label' => 'Xem hồ sơ',
+                'action_url' => route('classes.students.show', ['classId' => $student->class_id, 'studentId' => $student->id]),
+            ];
+        }
+
+        return array_slice($suggestions, 0, 3);
     }
 }
