@@ -222,8 +222,8 @@
         }
 
         /* =========================================
-                               QUICK ACTIONS
-            ========================================= */
+                                   QUICK ACTIONS
+                ========================================= */
         .quick-actions {
             display: flex;
             flex-wrap: wrap;
@@ -269,12 +269,12 @@
         }
 
         /* =========================================
-                               TEACHER FOCUS
-                            ========================================= */
+                                   TEACHER FOCUS
+                                ========================================= */
         .teacher-priority-grid {
             display: grid;
             gap: 1rem;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             margin-bottom: 1.5rem;
         }
 
@@ -384,6 +384,26 @@
             margin: 0;
         }
 
+        .teacher-action-strip .quick-action--ai {
+            background: linear-gradient(135deg, var(--brand-light), var(--accent-light));
+            border-color: rgba(139, 92, 246, .25);
+            color: #6d28d9;
+        }
+
+        .teacher-action-strip .quick-action--ai i {
+            color: var(--accent);
+        }
+
+        .teacher-action-strip .quick-action--ai:hover {
+            background: linear-gradient(135deg, var(--brand), var(--accent));
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .teacher-action-strip .quick-action--ai:hover i {
+            color: #fff;
+        }
+
         .teacher-list-scroll {
             max-height: 360px;
             overflow-y: auto;
@@ -488,11 +508,13 @@
 
         .teacher-ai-panel {
             padding: 1.15rem;
+            background: linear-gradient(180deg, var(--surface) 0%, #fbfaff 100%);
+            border-color: rgba(139, 92, 246, .16);
         }
 
         .teacher-ai-panel__eyebrow,
         .priority-submissions__eyebrow {
-            color: var(--brand);
+            color: var(--accent);
         }
 
         .teacher-ai-panel__title {
@@ -553,8 +575,8 @@
 
         .teacher-ai-suggestion--primary .teacher-ai-suggestion__icon,
         .teacher-ai-suggestion--info .teacher-ai-suggestion__icon {
-            background: var(--brand-light);
-            color: var(--brand);
+            background: linear-gradient(135deg, var(--brand-light), var(--accent-light));
+            color: var(--accent);
         }
 
         .teacher-ai-suggestion--success .teacher-ai-suggestion__icon {
@@ -701,6 +723,21 @@
         .stat-card--violet .stat-card__icon {
             background: var(--accent-light);
             color: var(--accent);
+        }
+
+        /* compact variant for dense teaching-overview rows */
+        .stat-card--compact {
+            padding: 1.05rem 1.25rem;
+        }
+
+        .stat-card--compact .stat-card__icon {
+            width: 42px;
+            height: 42px;
+            font-size: 1.05rem;
+        }
+
+        .stat-card--compact .stat-card__value {
+            font-size: 1.6rem;
         }
 
         /* accent stripe (teacher) */
@@ -1145,6 +1182,7 @@
             background: linear-gradient(90deg, var(--brand), var(--accent));
             transition: width .4s ease;
         }
+
         .empty-state {
             text-align: center;
             padding: 2.5rem 2rem;
@@ -1177,10 +1215,14 @@
             text-transform: uppercase;
             letter-spacing: .1em;
             color: var(--text-muted);
-            margin: 0 0 .75rem;
+            margin: 1.75rem 0 .75rem;
             display: flex;
             align-items: center;
             gap: .5rem;
+        }
+
+        .section-heading:first-child {
+            margin-top: 0;
         }
 
         .section-heading::after {
@@ -1247,17 +1289,17 @@
             }
 
             .greeting-banner {
-                min-height: 150px;
+                min-height: 130px;
                 border-radius: var(--radius-lg);
                 margin-bottom: 1rem !important;
             }
 
             .greeting-banner__content {
-                padding: 1.25rem 1.35rem;
+                padding: 1.1rem 1.25rem;
             }
 
             .greeting-title {
-                font-size: 1.4rem;
+                font-size: 1.3rem;
             }
 
             .greeting-banner__img-wrap {
@@ -1395,7 +1437,7 @@
 
         @media (max-width: 576px) {
             .greeting-title {
-                font-size: 1.2rem;
+                font-size: 1.15rem;
             }
         }
 
@@ -1431,45 +1473,427 @@
         .anim-5 {
             animation: fadeUp .4s .32s ease both;
         }
+
+        /* Premium SaaS teacher dashboard redesign */
+        body {
+            background: linear-gradient(180deg, #f7faff 0%, #f6f8fc 48%, #f8fafc 100%);
+        }
+
+        .dashboard-wrap {
+            max-width: 1440px;
+            padding: 24px !important;
+        }
+
+        .lms-hero {
+            background: linear-gradient(135deg, #eff6ff 0%, #eef2ff 45%, #f8fbff 100%);
+            border: 1px solid rgba(37, 99, 235, .12);
+            border-radius: 28px;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .08);
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+            gap: 24px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            padding: 28px;
+            position: relative;
+        }
+
+        .lms-hero::before {
+            background:
+                linear-gradient(115deg, transparent 0 54%, rgba(37, 99, 235, .08) 54.3% 54.8%, transparent 55.1%),
+                linear-gradient(24deg, transparent 0 58%, rgba(14, 165, 233, .08) 58.3% 58.8%, transparent 59.1%),
+                linear-gradient(90deg, rgba(37, 99, 235, .06) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(37, 99, 235, .05) 1px, transparent 1px);
+            background-size: 320px 180px, 260px 160px, 34px 34px, 34px 34px;
+            bottom: 0;
+            content: '';
+            height: 78%;
+            left: 0;
+            mask-image: linear-gradient(180deg, transparent 0%, #000 42%, #000 100%);
+            opacity: .72;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+        }
+
+        .lms-hero__content,
+        .lms-hero__side {
+            position: relative;
+            z-index: 1;
+        }
+
+        .lms-hero__pill {
+            align-items: center;
+            background: #fff;
+            border: 1px solid rgba(37, 99, 235, .14);
+            border-radius: 999px;
+            color: #2563eb;
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 900;
+            gap: 8px;
+            letter-spacing: .08em;
+            margin-bottom: 14px;
+            padding: 8px 12px;
+            text-transform: uppercase;
+        }
+
+        .lms-hero__pill span {
+            background: #22c55e;
+            border-radius: 999px;
+            box-shadow: 0 0 0 5px rgba(34, 197, 94, .16);
+            height: 8px;
+            width: 8px;
+        }
+
+        .lms-hero__title {
+            color: #0f172a;
+            font-size: clamp(28px, 3vw, 42px);
+            font-weight: 900;
+            letter-spacing: -.04em;
+            line-height: 1.08;
+            margin: 0 0 10px;
+        }
+
+        .lms-hero__desc {
+            color: #64748b;
+            font-size: 15px;
+            line-height: 1.7;
+            margin: 0 0 18px;
+            max-width: 720px;
+        }
+
+        .lms-hero__date {
+            align-items: center;
+            color: #475569;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 800;
+            gap: 8px;
+        }
+
+        .lms-hero__side {
+            align-items: end;
+            display: grid;
+            grid-template-columns: 1fr;
+            justify-items: center;
+        }
+
+        .lms-hero__side img {
+            max-height: 170px;
+            object-fit: contain;
+            width: min(240px, 100%);
+        }
+
+        .lms-hero-metrics {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-top: 18px;
+        }
+
+        .lms-hero-metric {
+            background: rgba(255, 255, 255, .88);
+            border: 1px solid rgba(226, 232, 240, .9);
+            border-radius: 18px;
+            box-shadow: 0 14px 32px rgba(15, 23, 42, .06);
+            padding: 14px;
+        }
+
+        .lms-hero-metric__value {
+            color: #0f172a;
+            font-size: 22px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .lms-hero-metric__label {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .section-heading {
+            color: #0f172a;
+            font-size: 18px;
+            letter-spacing: -.02em;
+            margin: 0 0 14px;
+            text-transform: none;
+        }
+
+        .section-heading::after {
+            background: linear-gradient(90deg, rgba(37, 99, 235, .18), transparent);
+        }
+
+        .teacher-priority-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .teacher-priority-card,
+        .stat-card,
+        .panel,
+        .teacher-ai-panel,
+        .priority-submissions {
+            background: rgba(255, 255, 255, .96);
+            border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 22px;
+            box-shadow: 0 16px 42px rgba(15, 23, 42, .06);
+        }
+
+        .teacher-priority-card {
+            min-height: 142px;
+            padding: 18px;
+        }
+
+        .teacher-priority-card__icon,
+        .stat-card__icon,
+        .panel__title .icon-dot,
+        .teacher-ai-suggestion__icon {
+            border-radius: 16px;
+            height: 46px;
+            width: 46px;
+        }
+
+        .teacher-priority-card__value,
+        .stat-card__value {
+            font-size: 28px;
+        }
+
+        .teacher-action-strip {
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            gap: 12px;
+            padding: 0;
+        }
+
+        .quick-action {
+            border-radius: 18px;
+            min-height: 52px;
+            padding: 0 18px;
+        }
+
+        .quick-action--ai {
+            background: linear-gradient(135deg, #eef2ff, #eff6ff);
+            border-color: rgba(99, 102, 241, .18);
+            color: #4338ca;
+        }
+
+        .teacher-command-grid {
+            grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .teacher-next-class {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 55%, #0e7490 100%);
+            border-radius: 24px;
+            box-shadow: 0 22px 46px rgba(29, 78, 216, .22);
+            padding: 24px;
+        }
+
+        .teacher-next-class::before {
+            background:
+                linear-gradient(135deg, rgba(15, 23, 42, .16), transparent 56%),
+                linear-gradient(115deg, transparent 0 55%, rgba(255, 255, 255, .14) 55.2% 55.7%, transparent 56%),
+                linear-gradient(24deg, transparent 0 62%, rgba(125, 211, 252, .16) 62.2% 62.7%, transparent 63%),
+                linear-gradient(90deg, rgba(255, 255, 255, .06) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255, 255, 255, .05) 1px, transparent 1px);
+            background-size: auto, 280px 180px, 240px 150px, 32px 32px, 32px 32px;
+            content: '';
+            inset: 0;
+            opacity: .9;
+            pointer-events: none;
+            position: absolute;
+            z-index: 0;
+        }
+
+        .teacher-next-class::after {
+            background:
+                linear-gradient(38deg, transparent 0 42%, rgba(255, 255, 255, .18) 42.2% 42.7%, transparent 43%),
+                linear-gradient(148deg, transparent 0 50%, rgba(147, 197, 253, .22) 50.2% 50.6%, transparent 51%);
+            background-position: right bottom;
+            background-size: 210px 130px, 250px 150px;
+            bottom: 0;
+            content: '';
+            height: 58%;
+            opacity: .7;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+            width: 70%;
+            z-index: 0;
+        }
+
+        .teacher-ai-panel {
+            padding: 20px;
+        }
+
+        .teacher-ai-panel__eyebrow,
+        .teacher-next-class__eyebrow {
+            color: #6366f1;
+        }
+
+        .teacher-next-class__eyebrow {
+            color: rgba(255, 255, 255, .72);
+        }
+
+        .teacher-ai-suggestion {
+            border-color: rgba(226, 232, 240, .8);
+            padding: 14px 0;
+        }
+
+        .stat-card {
+            padding: 20px;
+        }
+
+        .panel__header {
+            background: #fff;
+            padding: 18px 20px;
+        }
+
+        .compact-card,
+        .priority-submission,
+        .teacher-schedule-card,
+        .feed-item,
+        .todo-item {
+            padding: 16px 20px;
+        }
+
+        .priority-submission {
+            align-items: center;
+        }
+
+        .btn-xs--danger {
+            background: #fff1f4;
+            border-color: #fecdd3;
+            color: #e11d48;
+        }
+
+        .tbl thead th {
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        .tbl tbody tr.is-today td {
+            background: #eff6ff;
+        }
+
+        .score-hero {
+            background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 58%, #1d4ed8 100%);
+            border-radius: 24px;
+            box-shadow: 0 22px 48px rgba(30, 58, 138, .24);
+        }
+
+        .score-hero::before {
+            background:
+                linear-gradient(135deg, rgba(15, 23, 42, .2), transparent 58%),
+                linear-gradient(112deg, transparent 0 52%, rgba(255, 255, 255, .12) 52.2% 52.7%, transparent 53%),
+                linear-gradient(24deg, transparent 0 60%, rgba(165, 180, 252, .16) 60.2% 60.7%, transparent 61%),
+                linear-gradient(90deg, rgba(255, 255, 255, .055) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255, 255, 255, .045) 1px, transparent 1px);
+            background-size: auto, 260px 170px, 220px 140px, 30px 30px, 30px 30px;
+            opacity: .95;
+        }
+
+        .score-hero::after {
+            background:
+                linear-gradient(42deg, transparent 0 42%, rgba(255, 255, 255, .15) 42.2% 42.7%, transparent 43%),
+                linear-gradient(148deg, transparent 0 50%, rgba(191, 219, 254, .18) 50.2% 50.6%, transparent 51%);
+            background-position: right bottom;
+            background-size: 190px 120px, 240px 150px;
+            bottom: 0;
+            content: '';
+            height: 56%;
+            opacity: .75;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+            width: 78%;
+        }
+
+        @media (max-width: 1199.98px) {
+            .teacher-priority-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .teacher-command-grid,
+            .lms-hero {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .dashboard-wrap {
+                padding: 14px !important;
+            }
+
+            .lms-hero {
+                border-radius: 22px;
+                padding: 20px;
+            }
+
+            .lms-hero__side img {
+                display: none;
+            }
+
+            .lms-hero-metrics,
+            .teacher-priority-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .teacher-action-strip {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .quick-action {
+                width: 100%;
+            }
+        }
     </style>
 @endpush
 
 @section('content')
     <div class="dashboard-wrap container-fluid py-4">
 
-        {{-- GREETING BANNER --}}
-        <div class="greeting-banner mb-4 anim-1">
-            <div class="greeting-banner__bg"></div>
-            <div class="greeting-banner__noise"></div>
-            <div class="greeting-banner__grid"></div>
-            <div class="greeting-banner__orbs">
-                <div class="orb orb-1"></div>
-                <div class="orb orb-2"></div>
-                <div class="orb orb-3"></div>
-            </div>
-            <img src="{{ asset('grettings-pattern.png') }}" alt="" class="greeting-banner__pattern"
-                style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.05;mix-blend-mode:overlay;pointer-events:none;">
-            <div class="row w-100 align-items-center g-0">
-                <div class="col-sm-7">
-                    <div class="greeting-banner__content">
-                        <div class="greeting-pill">
-                            <span class="dot"></span>
-                            Đang hoạt động
-                        </div>
-                        <h3 class="greeting-title">Xin chào, {{ auth()->user()->name }}! 👋</h3>
-                        <p class="greeting-date">
-                            <i class="far fa-calendar-alt"></i>
-                            {{ \Carbon\Carbon::now()->translatedFormat('l, d/m/Y') }}
-                        </p>
-                    </div>
-                </div>
-                <div class="col-sm-5 d-none d-sm-flex greeting-banner__img-wrap pe-3">
-                    <img src="{{ asset('gretting-img.png') }}" class="greeting-banner__img" alt="Greeting">
-                </div>
-            </div>
-        </div>
-
         @php $role = auth()->user()->role; @endphp
+
+        <section class="lms-hero anim-1">
+            <div class="lms-hero__content">
+                <div class="lms-hero__pill">
+                    <span></span>
+                    @if ($role === 'teacher')
+                        SmartLMS Teacher Workspace
+                    @elseif ($role === 'admin')
+                        SmartLMS Admin Workspace
+                    @else
+                        SmartLMS Student Workspace
+                    @endif
+                </div>
+                <h1 class="lms-hero__title">Xin chào, {{ auth()->user()->name }}!</h1>
+                <p class="lms-hero__desc">
+                    @if ($role === 'teacher')
+                        Theo dõi lớp sắp dạy, bài cần chấm, học sinh cần chú ý và các gợi ý AI trong một bảng điều khiển gọn gàng.
+                    @elseif ($role === 'admin')
+                        Quản lý tổng quan người dùng, lớp học, khóa học và các hoạt động vận hành quan trọng của hệ thống.
+                    @else
+                        Theo dõi khóa học, bài tập, quiz và tiến độ học tập của bạn trong một không gian rõ ràng.
+                    @endif
+                </p>
+                <div class="lms-hero__date">
+                    <i class="far fa-calendar-alt"></i>
+                    {{ \Carbon\Carbon::now()->translatedFormat('l, d/m/Y') }}
+                </div>
+            </div>
+            <div class="lms-hero__side">
+                <img src="{{ asset('gretting-img.png') }}" alt="">
+            </div>
+        </section>
 
         @if ($role !== 'teacher')
             {{-- QUICK ACTIONS --}}
@@ -1477,8 +1901,10 @@
                 @if ($role === 'admin')
                     <a href="{{ route('users.index') }}" class="quick-action"><i class="fas fa-users-cog"></i> Quản lý người
                         dùng</a>
-                    <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-school"></i> Quản lý lớp</a>
-                    <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Quản lý khóa
+                    <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-school"></i> Quản lý
+                        lớp</a>
+                    <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Quản lý
+                        khóa
                         học</a>
                     <a href="{{ route('documents.upload') }}" class="quick-action"><i class="fas fa-robot"></i> Huấn luyện
                         AI</a>
@@ -1707,7 +2133,9 @@
                 $aiSuggestions = $data['teacher_ai_suggestions'] ?? [];
             @endphp
 
-            <div class="teacher-priority-grid anim-3">
+            {{-- 1. TODAY'S PRIORITY ACTIONS --}}
+            <div class="section-heading anim-2">Việc cần làm hôm nay</div>
+            <div class="teacher-priority-grid anim-2">
                 <a href="{{ route('assignments.index') }}" class="teacher-priority-card teacher-priority-card--danger">
                     <span class="teacher-priority-card__icon"><i class="fas fa-pen"></i></span>
                     <span>
@@ -1746,26 +2174,35 @@
                 </a>
             </div>
 
-            <div class="teacher-action-strip anim-3">
-                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-plus-circle"></i> Tạo bài tập</a>
-                <a href="{{ route('quizzes.ai_generate') }}" class="quick-action"><i class="fas fa-magic"></i> AI tạo quiz</a>
-                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-robot"></i> AI soạn nội dung</a>
+            {{-- 2. QUICK ACTIONS --}}
+            <div class="teacher-action-strip anim-2">
+                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-plus-circle"></i> Tạo
+                    bài tập</a>
+                <a href="{{ route('quizzes.ai_generate') }}" class="quick-action quick-action--ai"><i
+                        class="fas fa-magic"></i> AI tạo quiz</a>
+                <a href="{{ route('courses.index') }}" class="quick-action quick-action--ai"><i
+                        class="fas fa-robot"></i> AI soạn nội dung</a>
                 <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-users"></i> Xem lớp</a>
             </div>
 
-            <div class="teacher-command-grid anim-4">
+            <div class="teacher-command-grid anim-3">
                 <div class="teacher-next-class">
                     <div class="teacher-next-class__eyebrow">Lớp sắp dạy</div>
                     @if ($nextSchedule)
                         @php
-                            $nextStart = \Carbon\Carbon::parse($nextSchedule->schedule_date . ' ' . $nextSchedule->start_time);
-                            $nextEnd = \Carbon\Carbon::parse($nextSchedule->schedule_date . ' ' . $nextSchedule->end_time);
+                            $nextStart = \Carbon\Carbon::parse(
+                                $nextSchedule->schedule_date . ' ' . $nextSchedule->start_time,
+                            );
+                            $nextEnd = \Carbon\Carbon::parse(
+                                $nextSchedule->schedule_date . ' ' . $nextSchedule->end_time,
+                            );
                         @endphp
                         <h3 class="teacher-next-class__title">{{ $nextSchedule->course_title }}</h3>
                         <div class="teacher-next-class__meta">
                             <span><i class="fas fa-school"></i>{{ $nextSchedule->class_name }}</span>
                             <span><i class="far fa-calendar"></i>{{ $nextStart->format('d/m/Y') }}</span>
-                            <span><i class="far fa-clock"></i>{{ $nextStart->format('H:i') }} - {{ $nextEnd->format('H:i') }}</span>
+                            <span><i class="far fa-clock"></i>{{ $nextStart->format('H:i') }} -
+                                {{ $nextEnd->format('H:i') }}</span>
                             <span><i class="fas fa-map-marker-alt"></i>{{ $nextSchedule->room ?? 'Online' }}</span>
                         </div>
                         <a href="{{ route('schedules.index') }}" class="btn-xs btn-xs--primary">
@@ -1807,9 +2244,11 @@
                 </div>
             </div>
 
+            {{-- 3. TEACHING OVERVIEW STATISTICS --}}
+            <div class="section-heading anim-3">Tổng quan giảng dạy</div>
             <div class="row g-3 mb-4 anim-3">
                 <div class="col-12 col-md-4">
-                    <div class="stat-card stat-card--red stat-card--stripe">
+                    <div class="stat-card stat-card--compact stat-card--red stat-card--stripe">
                         <div class="stat-card__icon"><i class="fas fa-hourglass-half"></i></div>
                         <div class="stat-card__body">
                             <div class="stat-card__label">Bài chờ chấm</div>
@@ -1818,7 +2257,7 @@
                     </div>
                 </div>
                 <div class="col-12 col-md-4">
-                    <div class="stat-card stat-card--blue stat-card--stripe">
+                    <div class="stat-card stat-card--compact stat-card--blue stat-card--stripe">
                         <div class="stat-card__icon"><i class="fas fa-book-open"></i></div>
                         <div class="stat-card__body">
                             <div class="stat-card__label">Khóa học phụ trách</div>
@@ -1827,7 +2266,7 @@
                     </div>
                 </div>
                 <div class="col-12 col-md-4">
-                    <div class="stat-card stat-card--green stat-card--stripe">
+                    <div class="stat-card stat-card--compact stat-card--green stat-card--stripe">
                         <div class="stat-card__icon"><i class="fas fa-user-graduate"></i></div>
                         <div class="stat-card__body">
                             <div class="stat-card__label">Tổng học sinh</div>
@@ -1838,6 +2277,8 @@
                 </div>
             </div>
 
+            {{-- 4. MANAGED CLASSES + STUDENTS NEEDING ATTENTION --}}
+            <div class="section-heading anim-4">Lớp học &amp; học sinh cần theo dõi</div>
             <div class="row g-3 mb-4 anim-4">
                 <div class="col-12 col-xl-7">
                     <div class="panel">
@@ -1889,10 +2330,10 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--red"><i class="fas fa-user-clock"></i></span>
+                                <span class="icon-dot idot--amber"><i class="fas fa-user-clock"></i></span>
                                 Học sinh cần chú ý
                             </h6>
-                            <span class="bdg bdg--danger">Ưu tiên</span>
+                            <span class="bdg bdg--warning">Theo dõi</span>
                         </div>
                         @forelse ($data['attention_students'] ?? [] as $student)
                             <div class="compact-card">
@@ -1929,6 +2370,8 @@
                 </div>
             </div>
 
+            {{-- 5. ASSIGNMENTS REQUIRING GRADING --}}
+            <div class="section-heading anim-5">Bài cần chấm</div>
             <div class="row g-3 mb-4 anim-5">
                 <div class="col-md-8">
                     <div class="priority-submissions">
@@ -1943,14 +2386,18 @@
                             @forelse ($prioritySubmissions as $sub)
                                 @php
                                     $dueDate = $sub->due_date ? \Carbon\Carbon::parse($sub->due_date) : null;
-                                    $submittedAt = $sub->submitted_at ? \Carbon\Carbon::parse($sub->submitted_at) : \Carbon\Carbon::parse($sub->created_at);
+                                    $submittedAt = $sub->submitted_at
+                                        ? \Carbon\Carbon::parse($sub->submitted_at)
+                                        : \Carbon\Carbon::parse($sub->created_at);
                                     $isOverdue = $dueDate && $dueDate->isPast();
                                 @endphp
                                 <div class="priority-submission">
                                     <div class="priority-submission__main">
-                                        <span class="feed-item__avatar">{{ mb_strtoupper(mb_substr($sub->student_name, 0, 1)) }}</span>
+                                        <span
+                                            class="feed-item__avatar">{{ mb_strtoupper(mb_substr($sub->student_name, 0, 1)) }}</span>
                                         <div class="min-w-0">
-                                            <div class="priority-submission__title">{{ $sub->assignment_title ?? 'N/A' }}</div>
+                                            <div class="priority-submission__title">{{ $sub->assignment_title ?? 'N/A' }}
+                                            </div>
                                             <div class="priority-submission__meta">
                                                 {{ $sub->student_name }} · {{ $sub->course_title ?? 'N/A' }}
                                             </div>
@@ -1995,6 +2442,8 @@
                 </div>
             </div>
 
+            {{-- 6. WEEKLY TEACHING SCHEDULE --}}
+            <div class="section-heading">Lịch dạy tuần này</div>
             <div class="row g-3">
                 <div class="col-12">
                     <div class="panel">

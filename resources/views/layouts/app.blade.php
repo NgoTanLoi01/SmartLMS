@@ -26,18 +26,18 @@
 
     <style>
         :root {
-            --sidebar-width: 255px;
-            --navbar-height: 64px;
+            --sidebar-width: 272px;
+            --navbar-height: 72px;
             --blue: #2563eb;
             --blue-light: #eff6ff;
             --blue-mid: #dbeafe;
             --surface: #ffffff;
-            --bg: #f1f5f9;
+            --bg: #f6f8fc;
             --border: #e2e8f0;
             --text: #0f172a;
             --muted: #64748b;
-            --radius: 10px;
-            --radius-lg: 14px;
+            --radius: 14px;
+            --radius-lg: 20px;
         }
 
         *,
@@ -62,32 +62,104 @@
             left: 0;
             right: 0;
             z-index: 1060;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, .92);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(226, 232, 240, .8);
             display: flex;
             align-items: center;
-            padding: 0 24px;
+            gap: 16px;
+            padding: 0 28px;
         }
 
         .navbar-brand img {
-            height: 44px;
+            height: 42px;
             width: auto;
         }
 
+        .topbar-search {
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            color: var(--muted);
+            display: flex;
+            flex: 1 1 360px;
+            gap: 10px;
+            max-width: 520px;
+            min-height: 42px;
+            padding: 0 16px;
+        }
+
+        .topbar-search input {
+            background: transparent;
+            border: 0;
+            color: var(--text);
+            flex: 1;
+            font-size: 14px;
+            min-width: 0;
+            outline: none;
+        }
+
+        .topbar-action {
+            align-items: center;
+            background: var(--blue);
+            border-radius: 999px;
+            color: #fff;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 700;
+            gap: 8px;
+            min-height: 42px;
+            padding: 0 16px;
+            text-decoration: none;
+            white-space: nowrap;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, .22);
+        }
+
+        .topbar-action:hover {
+            background: #1d4ed8;
+            color: #fff;
+        }
+
+        .topbar-icon-btn {
+            align-items: center;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            color: var(--muted);
+            display: inline-flex;
+            height: 42px;
+            justify-content: center;
+            position: relative;
+            width: 42px;
+        }
+
+        .topbar-icon-btn::after {
+            background: #ef4444;
+            border: 2px solid #fff;
+            border-radius: 999px;
+            content: '';
+            height: 9px;
+            position: absolute;
+            right: 9px;
+            top: 9px;
+            width: 9px;
+        }
+
         .user-btn {
-            margin-left: auto;
             display: flex;
             align-items: center;
             gap: 10px;
-            background: var(--blue-light);
-            border: 1px solid var(--blue-mid);
+            background: #fff;
+            border: 1px solid #e2e8f0;
             border-radius: 999px;
             padding: 6px 16px 6px 8px;
             cursor: pointer;
             transition: background 0.15s;
             font-size: 14px;
-            font-weight: 500;
-            color: var(--blue);
+            font-weight: 700;
+            color: var(--text);
         }
 
         .user-btn:hover {
@@ -112,14 +184,14 @@
             width: var(--sidebar-width);
             height: calc(100vh - var(--navbar-height));
             background: var(--surface);
-            border-right: 1px solid var(--border);
+            border-right: 1px solid rgba(226, 232, 240, .9);
             position: fixed;
             top: var(--navbar-height);
             left: 0;
             z-index: 1000;
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 16px 0 24px;
+            padding: 18px 12px 26px;
             transition: transform 0.3s cubic-bezier(.4, 0, .2, 1);
         }
 
@@ -134,24 +206,24 @@
 
         /* Section labels */
         .nav-section {
-            font-size: 10.5px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--muted);
-            padding: 20px 20px 6px;
+            padding: 22px 14px 8px;
         }
 
         /* Nav links */
         .nav-link {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 9px 14px;
-            margin: 1px 10px;
-            border-radius: var(--radius);
-            font-size: 14px;
-            font-weight: 500;
+            gap: 12px;
+            padding: 11px 12px;
+            margin: 3px 0;
+            border-radius: 16px;
+            font-size: 14.5px;
+            font-weight: 700;
             color: var(--muted);
             text-decoration: none;
             transition: background 0.15s, color 0.15s;
@@ -159,7 +231,7 @@
         }
 
         .nav-link i {
-            width: 20px;
+            width: 22px;
             text-align: center;
             font-size: 15px;
             flex-shrink: 0;
@@ -173,6 +245,7 @@
         .nav-link.active {
             background: var(--blue);
             color: #fff;
+            box-shadow: 0 14px 26px rgba(37, 99, 235, .24);
         }
 
         /* Chevron toggle */
@@ -188,7 +261,7 @@
 
         /* Sub-menu */
         .sub-menu {
-            margin: 2px 10px 4px 38px !important;
+            margin: 4px 0 6px 34px !important;
             border-left: 1.5px solid var(--border);
             padding-left: 8px !important;
         }
@@ -360,7 +433,7 @@
 
             .main-content {
                 margin-left: 0 !important;
-                padding: 20px 16px;
+                padding: 18px 14px;
             }
 
             .sidebar.show {
@@ -429,6 +502,13 @@
                 display: none;
             }
         }
+
+        @media (max-width: 992px) {
+            .topbar-search,
+            .topbar-action {
+                display: none;
+            }
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -447,7 +527,7 @@
                 <img src="{{ asset('smartlms-logo-sharpened.png') }}" alt="SmartLMS">
             </a>
 
-            <div class="user-btn dropdown ms-auto" data-bs-toggle="dropdown" id="userMenuBtn" aria-expanded="false">
+            <div class="user-btn dropdown" data-bs-toggle="dropdown" id="userMenuBtn" aria-expanded="false">
                 <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
                 <span>{{ Auth::user()->name }}</span>
                 <i class="fas fa-chevron-down" style="font-size:11px; opacity:.6;"></i>
