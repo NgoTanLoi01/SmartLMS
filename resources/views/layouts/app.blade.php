@@ -385,6 +385,50 @@
         .hamburger {
             display: none;
         }
+
+        .page-transition {
+            align-items: center;
+            background: #ffffff;
+            display: flex;
+            inset: 0;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            transition: opacity .18s ease;
+            z-index: 3000;
+        }
+
+        .page-transition.is-active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .page-transition__card {
+            align-items: center;
+            display: flex;
+            justify-content: center;
+        }
+
+        .page-transition__image {
+            display: block;
+            height: 400px;
+            object-fit: contain;
+            width: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .page-transition__image {
+                height: 190px;
+                width: 190px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .page-transition {
+                display: none;
+            }
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -687,6 +731,12 @@
                 </form>
             </div>
         </div>
+
+        <div class="page-transition" id="pageTransition" aria-hidden="true">
+            <div class="page-transition__card">
+                <img class="page-transition__image" src="{{ asset('preloader.gif') }}" alt="" aria-hidden="true">
+            </div>
+        </div>
     @endauth
 
     <div class="wrapper">
@@ -721,6 +771,53 @@
         document.getElementById('sidebarToggle')?.addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('show');
         });
+
+        (() => {
+            const overlay = document.getElementById('pageTransition');
+            if (!overlay || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            const currentUrl = new URL(window.location.href);
+
+            const shouldAnimate = (link, event) => {
+                if (!link || event.defaultPrevented || event.button !== 0) return false;
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
+                if (link.target && link.target !== '_self') return false;
+                if (link.hasAttribute('download')) return false;
+                if (link.dataset.bsToggle || link.dataset.noPageTransition !== undefined) return false;
+
+                const href = link.getAttribute('href');
+                if (!href || href === '#' || href.startsWith('#') || href.startsWith('javascript:')) return false;
+
+                const targetUrl = new URL(link.href, window.location.href);
+                if (targetUrl.origin !== window.location.origin) return false;
+                if (targetUrl.href === currentUrl.href) return false;
+                if (targetUrl.pathname === currentUrl.pathname && targetUrl.search === currentUrl.search && targetUrl.hash) return false;
+
+                return true;
+            };
+
+            const showTransition = () => {
+                overlay.classList.add('is-active');
+                overlay.setAttribute('aria-hidden', 'false');
+            };
+
+            document.addEventListener('click', function(event) {
+                const link = event.target.closest('a[href]');
+                if (!shouldAnimate(link, event)) return;
+
+                event.preventDefault();
+                showTransition();
+
+                window.setTimeout(() => {
+                    window.location.href = link.href;
+                }, 420);
+            });
+
+            window.addEventListener('pageshow', function() {
+                overlay.classList.remove('is-active');
+                overlay.setAttribute('aria-hidden', 'true');
+            });
+        })();
 
         @if ($errors->any())
             (new bootstrap.Modal(document.getElementById('changePasswordModal'))).show();
