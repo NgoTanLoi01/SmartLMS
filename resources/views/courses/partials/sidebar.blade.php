@@ -134,7 +134,8 @@
                                     style="min-width:0;padding-left:{{ $isManager ? '8px' : '16px' }};"
                                     data-id="{{ $lesson->id }}" data-content="{{ $lesson->content }}"
                                     data-title="{{ $lesson->title }}" data-video="{{ $lesson->video_url }}"
-                                    data-module="{{ $module->id }}"
+                                    data-module="{{ $module->id }}" data-module-title="{{ $module->title }}"
+                                    data-duration-label="{{ $durLabel }}"
                                     data-attachment="{{ $lesson->attachment ? route('lessons.attachment', $lesson->id) : '' }}"
                                     data-attachment-name="{{ $lesson->attachment_original_name ?: ($lesson->attachment ? basename($lesson->attachment) : '') }}">
 
@@ -361,9 +362,12 @@
                             @endforeach
 
                         @empty
-                            <div class="py-3 px-4 text-center">
-                                <span class="text-muted" style="font-size:12px;font-style:italic;">Chưa có bài
-                                    học</span>
+                            <div class="course-empty-state">
+                                <div class="course-empty-state__icon">
+                                    <i class="fas fa-file-lines"></i>
+                                </div>
+                                <div class="course-empty-state__title">Chưa có bài học</div>
+                                <p class="course-empty-state__desc">Chương này chưa có nội dung học tập.</p>
                             </div>
                         @endforelse
                     </div>
@@ -371,12 +375,12 @@
             </div>
         </div>
     @empty
-        <div class="p-5 text-center">
-            <div
-                style="width:48px;height:48px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                <i class="fas fa-folder-open" style="color:#9ca3af;font-size:18px;"></i>
+        <div class="course-empty-state">
+            <div class="course-empty-state__icon">
+                <i class="fas fa-folder-open"></i>
             </div>
-            <p class="text-muted mb-0" style="font-size:13px;">Chưa có nội dung</p>
+            <div class="course-empty-state__title">Chưa có nội dung</div>
+            <p class="course-empty-state__desc">Khóa học chưa có chương hoặc bài học nào.</p>
         </div>
     @endforelse
 

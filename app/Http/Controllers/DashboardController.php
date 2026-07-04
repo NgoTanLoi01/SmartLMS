@@ -149,9 +149,8 @@ class DashboardController extends Controller
                     'courses.title as course_title',
                     'courses.id as course_id'
                 )
-                ->orderByRaw('CASE WHEN assignments.due_date < ? THEN 0 ELSE 1 END', [$now->toDateTimeString()])
-                ->orderBy('assignments.due_date', 'asc')
-                ->orderBy('assignment_submissions.submitted_at', 'asc')
+                ->orderByRaw('COALESCE(assignment_submissions.submitted_at, assignment_submissions.created_at) DESC')
+                ->orderBy('assignment_submissions.id', 'desc')
                 ->take(5)
                 ->get();
 

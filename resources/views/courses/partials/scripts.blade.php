@@ -221,6 +221,18 @@
                 setAiLessonContext(this);
 
                 document.getElementById('lesson-title').innerText = this.getAttribute('data-title');
+                const moduleTitleEl = document.getElementById('lesson-module-title');
+                if (moduleTitleEl) {
+                    const moduleTitle = this.getAttribute('data-module-title') || '';
+                    moduleTitleEl.innerText = moduleTitle ? `Module: ${moduleTitle}` : '';
+                }
+                const durationBox = document.getElementById('lesson-duration-box');
+                const durationText = document.getElementById('lesson-duration-text');
+                const durationLabel = this.getAttribute('data-duration-label') || '';
+                if (durationBox && durationText) {
+                    durationText.innerText = durationLabel;
+                    durationBox.classList.toggle('d-none', durationLabel.trim() === '');
+                }
                 document.getElementById('lesson-body').innerHTML = this.getAttribute('data-content') ||
                     '<p class="text-muted fst-italic">Không có nội dung văn bản.</p>';
                 const placeholder = document.getElementById('welcome-placeholder');
@@ -244,15 +256,18 @@
                 const attachmentName = this.getAttribute('data-attachment-name');
                 const attachmentContainer = document.getElementById('lesson-attachment-container');
                 const attachmentBtn = document.getElementById('lesson-attachment-btn');
+                const attachmentViewBtn = document.getElementById('lesson-attachment-view-btn');
                 const attachmentNameSpan = document.getElementById('lesson-attachment-name');
 
                 if (attachmentUrl && attachmentUrl.trim() !== '') {
                     attachmentContainer.classList.remove('d-none');
                     attachmentBtn.href = attachmentUrl;
+                    if (attachmentViewBtn) attachmentViewBtn.href = attachmentUrl;
                     attachmentNameSpan.innerText = attachmentName;
                 } else {
                     attachmentContainer.classList.add('d-none');
                     attachmentBtn.href = '#';
+                    if (attachmentViewBtn) attachmentViewBtn.href = '#';
                 }
 
             });
@@ -472,9 +487,14 @@
                         let newProgress = Math.round((currentCompletedCount / totalLessonsCount) * 100);
                         const progressText = document.getElementById('progress-text');
                         const progressBar = document.getElementById('progress-bar');
+                        const sidebarProgressText = document.getElementById('sidebar-progress-text');
+                        const sidebarProgressBar = document.getElementById('sidebar-progress-bar');
                         if (progressText) progressText.innerText =
                             `${currentCompletedCount}/${totalLessonsCount} bài (${newProgress}%)`;
                         if (progressBar) progressBar.style.width = newProgress + '%';
+                        if (sidebarProgressText) sidebarProgressText.innerText =
+                            `Đã học ${currentCompletedCount}/${totalLessonsCount} bài · Tiến độ ${newProgress}%`;
+                        if (sidebarProgressBar) sidebarProgressBar.style.width = newProgress + '%';
                     }
                     if (getNextLessonElement()) {
                         setTimeout(() => document.getElementById('btn-next').click(), 1400);
