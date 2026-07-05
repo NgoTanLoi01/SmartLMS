@@ -144,6 +144,60 @@
             color: white;
             font-size: 24px;
         }
+
+        .source-options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .source-option {
+            align-items: flex-start;
+            background: #fff;
+            border: 1px solid #e0e6ed;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            gap: 12px;
+            padding: 13px 14px;
+            transition: all .2s ease;
+        }
+
+        .source-option:hover {
+            border-color: #9aa9ff;
+            box-shadow: 0 8px 22px rgba(102, 126, 234, .12);
+        }
+
+        .source-option input {
+            margin-top: 4px;
+        }
+
+        .source-option strong {
+            color: #202634;
+            display: block;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .source-option span {
+            color: #6b7280;
+            display: block;
+            font-size: 12px;
+            line-height: 1.45;
+            margin-top: 2px;
+        }
+
+        .source-option:has(input:checked) {
+            background: linear-gradient(135deg, rgba(102, 126, 234, .08), rgba(33, 150, 243, .06));
+            border-color: #667eea;
+            box-shadow: 0 10px 24px rgba(102, 126, 234, .15);
+        }
+
+        .ai-context-box {
+            background: #f8fafc;
+            border: 1px solid #e8edf5;
+            border-radius: 14px;
+            padding: 14px;
+        }
     </style>
 
     <div class="container py-5">
@@ -168,14 +222,73 @@
                                 </select>
                                 <div class="form-text mt-2 d-flex align-items-center">
                                     <i class="fas fa-info-circle me-1 text-primary"></i>
-                                    AI sẽ dùng tài liệu PDF của khóa này.
+                                    AI có thể dùng nội dung bài học, tài liệu upload hoặc chủ đề nhập tay.
                                 </div>
                             </div>
 
                             <div class="mb-4">
-                                <label class="form-label fw-bold small text-uppercase text-muted">Chủ đề chi tiết</label>
+                                <label class="form-label fw-bold small text-uppercase text-muted">Nguồn tạo câu hỏi</label>
+                                <div class="source-options">
+                                    <label class="source-option">
+                                        <input class="form-check-input source-type-input" type="radio" name="source_type"
+                                            value="course_content" checked>
+                                        <span>
+                                            <strong>Nội dung khóa học</strong>
+                                            <span>Lấy từ mô tả khóa học, chương và nội dung bài học.</span>
+                                        </span>
+                                    </label>
+                                    <label class="source-option">
+                                        <input class="form-check-input source-type-input" type="radio" name="source_type"
+                                            value="document">
+                                        <span>
+                                            <strong>Tài liệu upload</strong>
+                                            <span>Dùng tài liệu đã xử lý trong kho tri thức của khóa học.</span>
+                                        </span>
+                                    </label>
+                                    <label class="source-option">
+                                        <input class="form-check-input source-type-input" type="radio" name="source_type"
+                                            value="topic">
+                                        <span>
+                                            <strong>Chủ đề nhập tay</strong>
+                                            <span>Tạo nhanh theo chủ đề, không cần khóa học có tài liệu.</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 ai-context-box" id="courseContentOptions">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Phạm vi nội dung</label>
+                                <select class="form-select ai-input mb-3" id="content_scope">
+                                    <option value="course">Toàn bộ khóa học</option>
+                                    <option value="module">Một chương / module</option>
+                                    <option value="lesson">Một bài học cụ thể</option>
+                                </select>
+
+                                <div class="mb-3 d-none" id="moduleSelectWrap">
+                                    <label class="form-label fw-bold small text-muted">Chọn chương</label>
+                                    <select class="form-select ai-input" id="module_id">
+                                        <option value="">-- Chọn chương --</option>
+                                    </select>
+                                </div>
+
+                                <div class="d-none" id="lessonSelectWrap">
+                                    <label class="form-label fw-bold small text-muted">Chọn bài học</label>
+                                    <select class="form-select ai-input" id="lesson_id">
+                                        <option value="">-- Chọn bài học --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-uppercase text-muted">
+                                    Chủ đề trọng tâm
+                                    <span class="text-muted fw-normal" id="topicOptionalLabel">(không bắt buộc)</span>
+                                </label>
                                 <input type="text" class="form-control ai-input" id="topic"
-                                    placeholder="VD: Middleware, React Hooks..." required>
+                                    placeholder="VD: HTML semantic, Bootstrap Grid, React Hooks...">
+                                <div class="form-text mt-2" id="topicHelpText">
+                                    Bỏ trống nếu muốn AI tự chọn ý quan trọng từ phạm vi nội dung đã chọn.
+                                </div>
                             </div>
 
                             <div class="row g-3 mb-4">
@@ -236,7 +349,7 @@
                         <div class="spinner-border text-primary mb-4" role="status" style="width: 3rem; height: 3rem;">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <h5 class="fw-bold text-gradient">AI đang phân tích tài liệu...</h5>
+                        <h5 class="fw-bold text-gradient">AI đang phân tích nguồn nội dung...</h5>
                         <p class="text-muted mt-2">Quá trình này mất 10-20s. Hãy pha một cốc cà phê nhé!</p>
                     </div>
 
@@ -302,9 +415,102 @@
         const processUrl = "{{ route('quizzes.ai_generate.process') }}";
         const saveUrl = "{{ route('quizzes.ai_generate.save') }}";
         const csrfToken = "{{ csrf_token() }}";
+        const courseContextOptions = @json($courseContextOptions);
 
         let generatedQuestions = [];
         let tempIdCounter = 0; // Dùng để đánh dấu ID tạm thời cho việc xóa
+
+        const courseSelect = document.getElementById('course_id');
+        const sourceInputs = document.querySelectorAll('.source-type-input');
+        const contentScopeSelect = document.getElementById('content_scope');
+        const courseContentOptions = document.getElementById('courseContentOptions');
+        const moduleSelectWrap = document.getElementById('moduleSelectWrap');
+        const lessonSelectWrap = document.getElementById('lessonSelectWrap');
+        const moduleSelect = document.getElementById('module_id');
+        const lessonSelect = document.getElementById('lesson_id');
+        const topicInput = document.getElementById('topic');
+        const topicOptionalLabel = document.getElementById('topicOptionalLabel');
+        const topicHelpText = document.getElementById('topicHelpText');
+
+        function selectedSourceType() {
+            return document.querySelector('.source-type-input:checked')?.value || 'course_content';
+        }
+
+        function fillSelect(select, options, placeholder) {
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            options.forEach((item) => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.title;
+                select.appendChild(option);
+            });
+        }
+
+        function currentCourseData() {
+            return courseContextOptions[courseSelect.value] || {
+                modules: []
+            };
+        }
+
+        function refreshModuleOptions() {
+            const courseData = currentCourseData();
+            fillSelect(moduleSelect, courseData.modules || [], '-- Chọn chương --');
+            refreshLessonOptions();
+        }
+
+        function refreshLessonOptions() {
+            const courseData = currentCourseData();
+            let lessons = [];
+
+            if (moduleSelect.value) {
+                const selectedModule = (courseData.modules || []).find((module) => String(module.id) === moduleSelect.value);
+                lessons = selectedModule?.lessons || [];
+            } else {
+                lessons = (courseData.modules || []).flatMap((module) => (module.lessons || []).map((lesson) => ({
+                    ...lesson,
+                    title: `${module.title} - ${lesson.title}`
+                })));
+            }
+
+            fillSelect(lessonSelect, lessons, '-- Chọn bài học --');
+        }
+
+        function syncSourceUi() {
+            const sourceType = selectedSourceType();
+            const isCourseContent = sourceType === 'course_content';
+            const isTopicOnly = sourceType === 'topic';
+
+            courseContentOptions.classList.toggle('d-none', !isCourseContent);
+            topicInput.required = isTopicOnly;
+            topicOptionalLabel.textContent = isTopicOnly ? '(bắt buộc)' : '(không bắt buộc)';
+            topicHelpText.textContent = isTopicOnly ?
+                'Nhập rõ chủ đề để AI tạo câu hỏi, ví dụ: Bootstrap Grid hoặc HTML Form.' :
+                'Bỏ trống nếu muốn AI tự chọn ý quan trọng từ phạm vi nội dung đã chọn.';
+
+            syncScopeUi();
+        }
+
+        function syncScopeUi() {
+            const scope = contentScopeSelect.value;
+            const isCourseContent = selectedSourceType() === 'course_content';
+
+            moduleSelectWrap.classList.toggle('d-none', !isCourseContent || !['module', 'lesson'].includes(scope));
+            lessonSelectWrap.classList.toggle('d-none', !isCourseContent || scope !== 'lesson');
+            moduleSelect.required = isCourseContent && ['module', 'lesson'].includes(scope);
+            lessonSelect.required = isCourseContent && scope === 'lesson';
+
+            if (!moduleSelect.required) moduleSelect.value = '';
+            if (!lessonSelect.required) lessonSelect.value = '';
+            if (scope === 'lesson') refreshLessonOptions();
+        }
+
+        courseSelect.addEventListener('change', refreshModuleOptions);
+        moduleSelect.addEventListener('change', refreshLessonOptions);
+        contentScopeSelect.addEventListener('change', syncScopeUi);
+        sourceInputs.forEach((input) => input.addEventListener('change', syncSourceUi));
+
+        refreshModuleOptions();
+        syncSourceUi();
 
         // ==========================================
         // 1. XỬ LÝ SINH CÂU HỎI
@@ -321,8 +527,12 @@
             btnGenerate.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> ĐANG XỬ LÝ...';
 
             const payload = {
-                course_id: document.getElementById('course_id').value,
-                topic: document.getElementById('topic').value,
+                course_id: courseSelect.value,
+                source_type: selectedSourceType(),
+                content_scope: contentScopeSelect.value,
+                module_id: moduleSelect.value,
+                lesson_id: lessonSelect.value,
+                topic: topicInput.value,
                 difficulty: document.getElementById('difficulty').value,
                 quantity: document.getElementById('quantity').value
             };

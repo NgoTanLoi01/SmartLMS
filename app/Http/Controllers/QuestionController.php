@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use App\Models\Question;
 use App\Models\Option;
 use App\Models\Course;
@@ -240,9 +241,27 @@ class QuestionController extends Controller
     public function aiGenerateView()
     {
         $user = auth()->user();
-        $courses = $user->role === 'admin' ? Course::all() : Course::where('teacher_id', $user->id)->get();
+        $courses = $user->role === 'admin'
+            ? Course::with(['modules.lessons'])->get()
+            : Course::with(['modules.lessons'])->where('teacher_id', $user->id)->get();
 
-        return view('quizzes.ai_generate', compact('courses'));
+        $courseContextOptions = $courses->mapWithKeys(function ($course) {
+            return [
+                $course->id => [
+                    'title' => $course->title,
+                    'modules' => $course->modules->map(fn ($module) => [
+                        'id' => $module->id,
+                        'title' => $module->title,
+                        'lessons' => $module->lessons->map(fn ($lesson) => [
+                            'id' => $lesson->id,
+                            'title' => $lesson->title,
+                        ])->values(),
+                    ])->values(),
+                ],
+            ];
+        });
+
+        return view('quizzes.ai_generate', compact('courses', 'courseContextOptions'));
     }
     // ==========================================
     // 7. LOGIC AI TRUY XUẤT VÀ SOẠN ĐỀ (AJAX)
@@ -250,83 +269,77 @@ class QuestionController extends Controller
     public function generateQuestions(Request $request)
     {
         $request->validate([
-            'course_id' => 'required',
-            'topic' => 'required|string',
-            'difficulty' => 'required',
-            'quantity' => 'required|integer|max:20',
+            'course_id' => 'required|exists:courses,id',
+            'source_type' => 'required|in:course_content,document,topic',
+            'content_scope' => 'nullable|in:course,module,lesson',
+            'module_id' => 'nullable|integer',
+            'lesson_id' => 'nullable|integer',
+            'topic' => 'nullable|string|max:255',
+            'difficulty' => 'required|string',
+            'quantity' => 'required|integer|min:1|max:20',
         ]);
 
-        // 1. Lấy Vector câu hỏi từ Gemini (Sử dụng API Key Gemini)
-        $apiKeyGemini = env('GOOGLE_API_KEY'); // Lấy trực tiếp từ env giống Service
+        $course = Course::with(['modules.lessons'])->findOrFail($request->course_id);
+        $this->authorizeCourse($course);
 
-        if (empty($apiKeyGemini)) {
-            return response()->json(['error' => 'Chưa cấu hình API Key của Gemini trong hệ thống.'], 500);
+        if ($request->source_type === 'topic' && !$request->filled('topic')) {
+            return response()->json(['error' => 'Thầy / Cô vui lòng nhập chủ đề để AI tạo câu hỏi.'], 422);
         }
 
-        // BÊ Y NGUYÊN CẤU HÌNH TỪ DocumentProcessingService SANG ĐÂY
-        $responseGemini = Http::timeout(30)
-            ->withoutVerifying() // Bỏ qua check SSL trên localhost
-            ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$apiKeyGemini}", [
-                'model' => 'models/gemini-embedding-001',
-                'content' => [
-                    'parts' => [['text' => $request->topic]],
-                ],
-            ]);
-
-        // BẮT LỖI TỪ GOOGLE TRẢ VỀ
-        if ($responseGemini->failed() || !isset($responseGemini->json()['embedding'])) {
-            $errorData = $responseGemini->json();
-            $errorMsg = $errorData['error']['message'] ?? 'Lỗi không xác định từ Gemini API';
-            \Illuminate\Support\Facades\Log::error('Gemini API Error: ', $errorData);
-            return response()->json(['error' => 'Lỗi tạo Vector (Gemini): ' . $errorMsg], 500);
+        $contextResult = $this->quizAiContext($request, $course);
+        if (empty($contextResult['text'])) {
+            return response()->json(['error' => $contextResult['error'] ?? 'Không tìm thấy nội dung phù hợp để AI tạo câu hỏi.'], 404);
         }
 
-        $queryVector = $responseGemini->json()['embedding']['values']; // Gemini trả về 768 chiều
-        $queryVectorStr = '[' . implode(',', $queryVector) . ']';
-
-        // 2. Tìm kiếm nội dung liên quan nhất trong PostgreSQL
-        // Chúng ta lấy khoảng 10 đoạn liên quan để AI có đủ dữ liệu soạn bài
-        $contextChunks = DB::connection('pgsql')
-            ->table('document_chunks')
-            ->select('content')
-            ->where('course_id', $request->course_id)
-            ->orderByRaw('embedding <=> ?::vector', [$queryVectorStr])
-            ->limit(10)
-            ->get();
-
-        if ($contextChunks->isEmpty()) {
-            return response()->json(['error' => 'Không tìm thấy tài liệu huấn luyện cho khóa học này. Thầy / Cô hãy upload tài liệu trước nhé!'], 404);
-        }
-
-        $contextText = $contextChunks->pluck('content')->implode("\n");
+        $contextText = $contextResult['text'];
+        $sourceLabel = $contextResult['label'];
+        $topic = trim((string) $request->topic);
+        $topicInstruction = $topic !== ''
+            ? "Tập trung vào chủ đề: '{$topic}'."
+            : 'Tự chọn các ý quan trọng nhất từ nguồn nội dung đã cung cấp.';
 
         // 3. Gửi cho DeepSeek để soạn câu hỏi dưới dạng JSON
-        $prompt = "Dựa trên nội dung bài giảng sau:
+        $prompt = "Dựa trên nguồn nội dung: {$sourceLabel}
         ---
         {$contextText}
         ---
-        Hãy tạo {$request->quantity} câu hỏi trắc nghiệm về chủ đề: '{$request->topic}', độ khó: {$request->difficulty}.
+        Hãy tạo {$request->quantity} câu hỏi trắc nghiệm, độ khó: {$request->difficulty}.
+        {$topicInstruction}
         
         YÊU CẦU BẮT BUỘC:
         1. Ngôn ngữ: Tiếng Việt.
-        2. Trả về ĐÚNG cấu trúc JSON là một mảng các đối tượng.
-        3. Mỗi đối tượng phải có cấu trúc:
+        2. Chỉ tạo câu hỏi dựa trên nội dung được cung cấp, không bịa kiến thức ngoài.
+        3. Trả về ĐÚNG cấu trúc JSON:
         {
-            \"question\": \"nội dung câu hỏi\",
-            \"options\": [\"đáp án A\", \"đáp án B\", \"đáp án C\", \"đáp án D\"],
-            \"correct_index\": 0,
-            \"explanation\": \"giải thích ngắn gọn\"
-        }";
+            \"questions\": [
+                {
+                    \"question\": \"nội dung câu hỏi\",
+                    \"options\": [\"đáp án A\", \"đáp án B\", \"đáp án C\", \"đáp án D\"],
+                    \"correct_index\": 0,
+                    \"explanation\": \"giải thích ngắn gọn\"
+                }
+            ]
+        }
+        4. Mỗi câu hỏi phải có đúng 4 đáp án, correct_index là số từ 0 đến 3.
+        5. Không thêm markdown, không thêm chữ giải thích ngoài JSON.";
+
+        $baseUrl = rtrim(config('services.deepseek.base_url', 'https://api.deepseek.com'), '/');
 
         try {
             $responseDeepSeek = Http::withHeaders([
                 'Authorization' => 'Bearer ' . config('services.deepseek.key'),
                 'Content-Type' => 'application/json',
             ])
-                ->timeout(120) // Tăng thời gian chờ lên 2 phút cho AI soạn đề
-                ->post('https://api.deepseek.com/v1/chat/completions', [
-                    'model' => 'deepseek-chat',
-                    'messages' => [['role' => 'system', 'content' => 'You are a professional teacher assistant. Support language: Vietnamese. Always return a JSON array of questions.'], ['role' => 'user', 'content' => $prompt]],
+                ->timeout(120)
+                ->post("{$baseUrl}/v1/chat/completions", [
+                    'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'You are a professional teacher assistant. Support language: Vietnamese. Always return valid JSON only.',
+                        ],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
                     'response_format' => ['type' => 'json_object'],
                 ]);
 
@@ -334,11 +347,9 @@ class QuestionController extends Controller
                 return response()->json(['error' => 'DeepSeek không phản hồi. Thầy / Cô vui lòng thử lại.'], 500);
             }
 
-            $aiResult = $responseDeepSeek->json()['choices'][0]['message']['content'];
+            $aiResult = $responseDeepSeek->json()['choices'][0]['message']['content'] ?? '';
             $decodedData = json_decode($aiResult, true);
 
-            // Bẫy lỗi: Nếu AI bọc JSON trong một object như {"questions": [...]} hoặc {"data": [...]}
-            // Chúng ta sẽ lấy đúng cái mảng bên trong ra.
             $finalQuestions = $decodedData;
             if (isset($decodedData['questions'])) {
                 $finalQuestions = $decodedData['questions'];
@@ -347,11 +358,157 @@ class QuestionController extends Controller
                 $finalQuestions = $decodedData['data'];
             }
 
-            return response()->json($finalQuestions);
+            if (!is_array($finalQuestions)) {
+                return response()->json(['error' => 'AI trả về dữ liệu chưa đúng định dạng. Thầy / Cô vui lòng thử lại.'], 500);
+            }
+
+            return response()->json([
+                'questions' => $finalQuestions,
+                'source_label' => $sourceLabel,
+            ]);
         } catch (\Exception $e) {
             \Log::error('Lỗi AI Quiz: ' . $e->getMessage());
             return response()->json(['error' => 'Hệ thống AI đang quá tải. Thầy / Cô hãy thử lại sau ít phút.'], 500);
         }
+    }
+
+    private function quizAiContext(Request $request, Course $course): array
+    {
+        return match ($request->source_type) {
+            'document' => $this->quizAiDocumentContext($request, $course),
+            'topic' => [
+                'text' => $this->sanitizeContextText($request->topic),
+                'label' => 'Chủ đề nhập tay',
+            ],
+            default => $this->quizAiCourseContentContext($request, $course),
+        };
+    }
+
+    private function quizAiCourseContentContext(Request $request, Course $course): array
+    {
+        $scope = $request->input('content_scope', 'course');
+        $parts = [
+            "Khóa học: {$course->title}",
+            'Mô tả khóa học: ' . $this->sanitizeContextText($course->description ?: 'Chưa có mô tả.'),
+        ];
+        $sourceLabel = 'Nội dung toàn khóa học';
+
+        $modules = $course->modules;
+
+        if ($scope === 'module') {
+            $modules = $modules->where('id', (int) $request->module_id);
+            $sourceLabel = 'Nội dung một chương trong khóa học';
+        }
+
+        if ($scope === 'lesson') {
+            $selectedLessonId = (int) $request->lesson_id;
+            $foundLesson = null;
+
+            foreach ($course->modules as $module) {
+                $lesson = $module->lessons->firstWhere('id', $selectedLessonId);
+                if ($lesson) {
+                    $foundLesson = [$module, $lesson];
+                    break;
+                }
+            }
+
+            if (!$foundLesson) {
+                return ['text' => '', 'error' => 'Không tìm thấy bài học đã chọn trong khóa học này.'];
+            }
+
+            [$module, $lesson] = $foundLesson;
+            $parts[] = "Chương: {$module->title}";
+            $parts[] = "Bài học: {$lesson->title}";
+            $parts[] = $this->sanitizeContextText($lesson->content);
+            $sourceLabel = 'Nội dung một bài học trong khóa học';
+
+            return [
+                'text' => Str::limit(implode("\n\n", array_filter($parts)), 18000, ''),
+                'label' => $sourceLabel,
+            ];
+        }
+
+        if ($modules->isEmpty()) {
+            return ['text' => '', 'error' => 'Khóa học chưa có chương hoặc bài học để AI tạo câu hỏi.'];
+        }
+
+        foreach ($modules as $module) {
+            $parts[] = "Chương: {$module->title}";
+
+            foreach ($module->lessons as $lesson) {
+                $content = $this->sanitizeContextText($lesson->content);
+                if ($content === '') {
+                    continue;
+                }
+
+                $parts[] = "Bài học: {$lesson->title}\n{$content}";
+            }
+        }
+
+        $context = trim(implode("\n\n", array_filter($parts)));
+
+        return [
+            'text' => Str::limit($context, 18000, ''),
+            'label' => $sourceLabel,
+            'error' => $context === '' ? 'Khóa học chưa có nội dung bài học để AI tạo câu hỏi.' : null,
+        ];
+    }
+
+    private function quizAiDocumentContext(Request $request, Course $course): array
+    {
+        // 1. Lấy Vector câu hỏi từ Gemini (Sử dụng API Key Gemini)
+        $apiKeyGemini = env('GOOGLE_API_KEY');
+
+        if (empty($apiKeyGemini)) {
+            return ['text' => '', 'error' => 'Chưa cấu hình API Key của Gemini trong hệ thống.'];
+        }
+
+        $searchTopic = trim((string) $request->topic) ?: $course->title;
+
+        $responseGemini = Http::timeout(30)
+            ->withoutVerifying()
+            ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$apiKeyGemini}", [
+                'model' => 'models/gemini-embedding-001',
+                'content' => [
+                    'parts' => [['text' => $searchTopic]],
+                ],
+            ]);
+
+        if ($responseGemini->failed() || !isset($responseGemini->json()['embedding'])) {
+            $errorData = $responseGemini->json();
+            $errorMsg = $errorData['error']['message'] ?? 'Lỗi không xác định từ Gemini API';
+            \Illuminate\Support\Facades\Log::error('Gemini API Error: ', $errorData);
+
+            return ['text' => '', 'error' => 'Lỗi tạo Vector (Gemini): ' . $errorMsg];
+        }
+
+        $queryVector = $responseGemini->json()['embedding']['values'];
+        $queryVectorStr = '[' . implode(',', $queryVector) . ']';
+
+        $contextChunks = DB::connection('pgsql')
+            ->table('document_chunks')
+            ->select('content')
+            ->where('course_id', $course->id)
+            ->orderByRaw('embedding <=> ?::vector', [$queryVectorStr])
+            ->limit(10)
+            ->get();
+
+        if ($contextChunks->isEmpty()) {
+            return ['text' => '', 'error' => 'Không tìm thấy tài liệu huấn luyện cho khóa học này. Thầy / Cô hãy upload tài liệu trước nhé!'];
+        }
+
+        return [
+            'text' => Str::limit($contextChunks->pluck('content')->implode("\n"), 18000, ''),
+            'label' => 'Tài liệu upload của khóa học',
+        ];
+    }
+
+    private function sanitizeContextText(?string $text): string
+    {
+        $text = strip_tags((string) $text);
+        $text = html_entity_decode($text);
+
+        return trim(preg_replace('/\s+/', ' ', $text));
     }
 
     // ==========================================
