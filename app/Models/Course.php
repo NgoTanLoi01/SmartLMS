@@ -86,6 +86,23 @@ class Course extends Model
     {
         return $this->belongsToMany(QuestionBank::class, 'course_question_bank')->withTimestamps();
     }
+
+    public function materialAssignments()
+    {
+        return $this->hasMany(LearningMaterialAssignment::class);
+    }
+
+    public function learningMaterials()
+    {
+        return $this->belongsToMany(
+            LearningMaterial::class,
+            'learning_material_assignments',
+            'course_id',
+            'learning_material_id'
+        )->withPivot(['class_id', 'lesson_id', 'unlock_when_lesson_id', 'available_from', 'status', 'sort_order'])
+            ->withTimestamps();
+    }
+
     // 1. Lấy tất cả bài học thông qua modules
     public function lessons()
     {

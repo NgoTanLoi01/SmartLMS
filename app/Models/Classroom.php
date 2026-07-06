@@ -44,4 +44,9 @@ class Classroom extends Model
     {
         return $this->belongsToMany(Course::class, 'class_course', 'class_id', 'course_id');
     }
+
+    public function materialAssignments()
+    {
+        return $this->hasMany(LearningMaterialAssignment::class, 'class_id');
+    }
 }

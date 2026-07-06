@@ -58,4 +58,9 @@ class Lesson extends Model
     {
         return $this->hasMany(Assignments::class, 'lesson_id')->notArchived();
     }
+
+    public function materialAssignments()
+    {
+        return $this->hasMany(LearningMaterialAssignment::class);
+    }
 }

@@ -151,6 +151,7 @@
         const canManageCourseContent = @json(auth()->id() === $course->teacher_id || auth()->user()->role === 'admin');
         const currentCourseId = {{ $course->id }};
         const currentCourseTitle = @json($course->title);
+        const courseMaterialCards = @json($courseMaterialCards ?? []);
 
         function getYoutubeId(url) {
             const regExp = /^.*(http:\/\/www\.youtube\.com\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -185,6 +186,9 @@
         const navFooter = document.getElementById('nav-footer');
         const iframe = document.getElementById('lesson-video');
         const externalBtn = document.getElementById('external-link-btn');
+        const lessonMaterialContainer = document.getElementById('lesson-material-container');
+        const lessonMaterialList = document.getElementById('lesson-material-list');
+        const lessonMaterialCount = document.getElementById('lesson-material-count');
 
         function parseDataJson(value, fallback = '') {
             try {
@@ -212,6 +216,70 @@
             return currentLessonIndex >= 0 && currentLessonIndex < lessons.length - 1
                 ? lessons[currentLessonIndex + 1]
                 : null;
+        }
+
+        function renderLessonMaterials(lessonId = null) {
+            if (!lessonMaterialContainer || !lessonMaterialList || !lessonMaterialCount) return;
+
+            const normalizedLessonId = lessonId ? String(lessonId) : null;
+            const materials = courseMaterialCards.filter((material) => {
+                if (material.unlock_lesson_id && String(material.unlock_lesson_id) !== normalizedLessonId) {
+                    return false;
+                }
+
+                if (!normalizedLessonId) {
+                    return material.lesson_id === null || material.lesson_id === undefined || material.lesson_id === '';
+                }
+
+                return material.lesson_id === null ||
+                    material.lesson_id === undefined ||
+                    material.lesson_id === '' ||
+                    String(material.lesson_id) === normalizedLessonId;
+            });
+
+            lessonMaterialList.innerHTML = '';
+            lessonMaterialCount.textContent = `${materials.length} mục`;
+            lessonMaterialContainer.classList.toggle('d-none', materials.length === 0);
+
+            materials.forEach((material) => {
+                const item = document.createElement('a');
+                item.className = 'lesson-material-card';
+                item.href = material.url || '#';
+                item.target = material.target || '_self';
+                if (item.target === '_blank') item.rel = 'noopener';
+                if (material.source_type !== 'link') item.dataset.noPageTransition = '';
+
+                const icon = document.createElement('span');
+                icon.className = 'lesson-material-icon';
+                const iconInner = document.createElement('i');
+                iconInner.className = `fas ${material.icon || 'fa-file-lines'}`;
+                icon.appendChild(iconInner);
+
+                const content = document.createElement('span');
+                content.className = 'min-w-0 flex-grow-1';
+                const title = document.createElement('span');
+                title.className = 'lesson-material-title';
+                title.textContent = material.title || 'Học liệu';
+                const meta = document.createElement('span');
+                meta.className = 'lesson-material-meta';
+                meta.textContent = [
+                    material.type_label,
+                    material.size,
+                    material.class_name ? `Lớp ${material.class_name}` : null,
+                    material.lock_label
+                ].filter(Boolean).join(' · ');
+                content.appendChild(title);
+                content.appendChild(meta);
+
+                const action = document.createElement('span');
+                action.className = 'btn btn-sm btn-light border fw-bold';
+                action.textContent = material.source_type === 'link' ? 'Mở' : 'Tải';
+
+                item.appendChild(icon);
+                item.appendChild(content);
+                item.appendChild(action);
+                lessonMaterialList.appendChild(item);
+            });
         }
 
         function beautifyLessonBody() {
@@ -412,6 +480,7 @@
             // ✅ THÊM: Reset attachment container
             const attachCont = document.getElementById('lesson-attachment-container');
             if (attachCont) attachCont.classList.add('d-none');
+            if (lessonMaterialContainer) lessonMaterialContainer.classList.add('d-none');
             if (assignmentArea) {
                 assignmentArea.classList.add('d-none');
                 assignmentArea.classList.remove('d-flex');
@@ -496,8 +565,12 @@
                     if (attachmentViewBtn) attachmentViewBtn.href = '#';
                 }
 
+                renderLessonMaterials(currentLessonId);
+
             });
         });
+
+        renderLessonMaterials(null);
 
         // ==========================================
         // 2. CLICK VÀO BÀI TẬP

@@ -570,9 +570,15 @@
                     </a>
                 </li>
                 <li>
-                    <a class="nav-link {{ request()->is('courses*') ? 'active' : '' }}"
+                    <a class="nav-link {{ request()->is('courses*') && !request()->routeIs('courses.materials.*') ? 'active' : '' }}"
                         href="{{ route('courses.index') }}">
                         <i class="fas fa-graduation-cap"></i> Khóa học của tôi
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link {{ request()->routeIs('materials.index') || request()->routeIs('courses.materials.*') ? 'active' : '' }}"
+                        href="{{ route('materials.index') }}">
+                        <i class="fas fa-folder-open"></i> Kho học liệu
                     </a>
                 </li>
                 @if (Auth::user()->role === 'student')
@@ -870,6 +876,8 @@
 
                 const targetUrl = new URL(link.href, window.location.href);
                 if (targetUrl.origin !== window.location.origin) return false;
+                if (/^\/materials\/[^/]+\/download\/?$/.test(targetUrl.pathname)) return false;
+                if (/^\/lessons\/[^/]+\/attachment\/?$/.test(targetUrl.pathname)) return false;
                 if (targetUrl.href === currentUrl.href) return false;
                 if (targetUrl.pathname === currentUrl.pathname && targetUrl.search === currentUrl.search && targetUrl.hash) return false;
 

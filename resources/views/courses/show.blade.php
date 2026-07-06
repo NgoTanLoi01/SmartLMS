@@ -2427,6 +2427,88 @@
             white-space: nowrap;
         }
 
+        .lesson-material-box {
+            background: #fff;
+            border: 1px solid #e7eaf2;
+            border-radius: 14px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, .04);
+            margin: 0 0 18px;
+            padding: 12px;
+        }
+
+        .lesson-material-head {
+            align-items: center;
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .lesson-material-head h6 {
+            align-items: center;
+            color: #202634;
+            display: flex;
+            font-size: 13px;
+            font-weight: 900;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .lesson-material-head i {
+            color: #2f6fed;
+        }
+
+        .lesson-material-list {
+            display: grid;
+            gap: 9px;
+        }
+
+        .lesson-material-card {
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #eef2f7;
+            border-radius: 12px;
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            text-decoration: none;
+        }
+
+        .lesson-material-card:hover {
+            background: #eef4ff;
+            border-color: #d7e6ff;
+            text-decoration: none;
+        }
+
+        .lesson-material-icon {
+            align-items: center;
+            background: #eaf1ff;
+            border-radius: 10px;
+            color: #2f6fed;
+            display: inline-flex;
+            flex: 0 0 36px;
+            height: 36px;
+            justify-content: center;
+            width: 36px;
+        }
+
+        .lesson-material-title {
+            color: #111827;
+            display: block;
+            font-size: 14px;
+            font-weight: 900;
+            line-height: 1.35;
+        }
+
+        .lesson-material-meta {
+            color: #64748b;
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.35;
+            margin-top: 2px;
+        }
+
         .lesson-inline-code {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -2716,6 +2798,15 @@
                         <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
                             <i class="fas fa-user-check"></i> Điểm danh
                         </a>
+                        <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
+                            <i class="fas fa-folder-open"></i> Kho học liệu
+                        </a>
+                    </div>
+                @else
+                    <div class="toolbar">
+                        <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
+                            <i class="fas fa-folder-open"></i> Kho học liệu
+                        </a>
                     </div>
                 @endif
             </div>
@@ -2754,6 +2845,9 @@
                     </button>
                     <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
                         <i class="fas fa-user-check"></i> Điểm danh
+                    </a>
+                    <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
+                        <i class="fas fa-folder-open"></i> Kho học liệu
                     </a>
                     <a href="{{ route('quizzes.ai_generate') }}" class="tool-btn purple">
                         <i class="fas fa-wand-magic-sparkles"></i> Tạo câu hỏi AI
@@ -2997,6 +3091,17 @@
                                     </a>
                                 </div>
                             </div>
+                        </div>
+
+                        <div id="lesson-material-container" class="lesson-material-box d-none">
+                            <div class="lesson-material-head">
+                                <h6>
+                                    <i class="fas fa-folder-open"></i>
+                                    Học liệu liên quan
+                                </h6>
+                                <span id="lesson-material-count" class="badge bg-light text-dark border">0 mục</span>
+                            </div>
+                            <div id="lesson-material-list" class="lesson-material-list"></div>
                         </div>
 
                         <hr class="lesson-divider">

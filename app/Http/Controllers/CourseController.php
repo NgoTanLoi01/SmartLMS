@@ -7,6 +7,7 @@ use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Classroom;
 use App\Models\LearningProgram;
+use App\Models\LearningMaterialAssignment;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Question;
@@ -158,6 +159,47 @@ class CourseController extends Controller
         $completedCount = 0;
         $userSubmissions = collect();
         $courseDashboard = $this->buildCourseDashboard($course);
+        $courseMaterialAssignments = LearningMaterialAssignment::with(['material', 'classroom', 'lesson', 'unlockLesson'])
+            ->where('course_id', $course->id)
+            ->notArchived()
+            ->orderBy('sort_order')
+            ->latest()
+            ->get();
+
+        $canManageMaterials = Gate::allows('update', $course);
+        if (!$canManageMaterials && auth()->user()->role === 'student') {
+            $courseMaterialAssignments = $courseMaterialAssignments
+                ->filter(fn ($assignment) => $assignment->visibleToStudent(auth()->user()))
+                ->values();
+        }
+
+        $courseMaterialCards = $courseMaterialAssignments
+            ->filter(fn ($assignment) => $assignment->material)
+            ->map(function ($assignment) use ($canManageMaterials) {
+                $material = $assignment->material;
+                $lockLabel = $assignment->lockLabel();
+
+                return [
+                    'id' => $assignment->id,
+                    'lesson_id' => $assignment->lesson_id,
+                    'title' => $material->title,
+                    'description' => $material->description,
+                    'type' => $material->type,
+                    'type_label' => $material->typeLabel(),
+                    'source_type' => $material->source_type,
+                    'icon' => $material->iconClass(),
+                    'size' => $material->humanSize(),
+                    'class_name' => $assignment->classroom?->name,
+                    'lesson_title' => $assignment->lesson?->title,
+                    'unlock_lesson_id' => $assignment->unlock_when_lesson_id,
+                    'lock_label' => $lockLabel,
+                    'status' => $assignment->status,
+                    'is_locked' => !$canManageMaterials && $lockLabel !== null,
+                    'url' => $material->downloadUrl($assignment),
+                    'target' => $material->isLink() ? '_blank' : '_self',
+                ];
+            })
+            ->values();
 
         if (auth()->check() && auth()->user()->role === 'student') {
             $user = auth()->user();
@@ -183,7 +225,7 @@ class CourseController extends Controller
                 ->keyBy('quiz_id');
         }
 
-        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'courseDashboard'));
+        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards'));
     }
 
     public function create()
