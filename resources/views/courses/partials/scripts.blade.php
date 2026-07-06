@@ -218,7 +218,46 @@
             const body = document.getElementById('lesson-body');
             if (!body) return;
 
-            const createResourceLinkCard = (href, label = 'Mở tài nguyên bài học') => {
+            const linkTitleFromUrl = (href) => {
+                try {
+                    const url = new URL(href);
+                    const host = url.hostname.replace(/^www\./, '');
+                    const path = url.pathname.toLowerCase();
+
+                    if (host.includes('docs.google.com') && path.includes('/spreadsheets/')) {
+                        return 'Google Sheet bài học';
+                    }
+                    if (host.includes('docs.google.com') && path.includes('/document/')) {
+                        return 'Google Docs bài học';
+                    }
+                    if (host.includes('docs.google.com') && path.includes('/presentation/')) {
+                        return 'Google Slides bài học';
+                    }
+                    if (host.includes('drive.google.com')) {
+                        return 'Thư mục Google Drive';
+                    }
+                    if (host.includes('youtube.com') || host.includes('youtu.be')) {
+                        return 'Video bài học';
+                    }
+
+                    return `Tài nguyên từ ${host}`;
+                } catch (e) {
+                    return 'Tài nguyên bài học';
+                }
+            };
+
+            const cleanLinkLabel = (text, href) => {
+                const withoutUrl = text.replace(href, '').replace(/^\s*(link|liên kết|tài nguyên)\s*[:：-]?\s*/i, '').trim();
+                const normalized = withoutUrl.replace(/\s+/g, ' ');
+
+                if (normalized.length >= 3 && normalized.length <= 80) {
+                    return normalized;
+                }
+
+                return linkTitleFromUrl(href);
+            };
+
+            const createResourceLinkCard = (href, label = '') => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'lesson-resource-link';
 
@@ -231,7 +270,7 @@
                 const content = document.createElement('span');
                 content.className = 'lesson-resource-link__content';
                 const title = document.createElement('strong');
-                title.textContent = label;
+                title.textContent = label || linkTitleFromUrl(href);
                 const anchor = document.createElement('a');
                 anchor.href = href;
                 anchor.target = '_blank';
@@ -250,10 +289,11 @@
                 const href = link.getAttribute('href') || link.textContent.trim();
                 if (!href || href.length < 28) return;
 
-                const wrapper = createResourceLinkCard(href);
-
                 const parent = link.parentElement;
-                if (parent && parent.childNodes.length <= 2 && parent.textContent.trim().length <= href.length + 30) {
+                const parentText = parent?.textContent?.trim() || link.textContent.trim();
+                const wrapper = createResourceLinkCard(href, cleanLinkLabel(parentText, href));
+
+                if (parent && parent.childNodes.length <= 2 && parentText.length <= href.length + 90) {
                     parent.replaceWith(wrapper);
                 } else {
                     link.replaceWith(wrapper);
@@ -265,10 +305,7 @@
                 const text = paragraph.textContent.trim();
                 const url = text.match(/https?:\/\/[^\s<>"']+/)?.[0];
                 if (url && url.length >= 28) {
-                    const label = text.toLowerCase().includes('link') || text.toLowerCase().includes('tài nguyên')
-                        ? 'Mở tài nguyên bài học'
-                        : 'Mở liên kết';
-                    paragraph.replaceWith(createResourceLinkCard(url, label));
+                    paragraph.replaceWith(createResourceLinkCard(url, cleanLinkLabel(text, url)));
                     return;
                 }
 

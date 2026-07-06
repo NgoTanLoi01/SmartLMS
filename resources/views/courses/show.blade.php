@@ -714,14 +714,14 @@
         }
 
         .lesson-body {
-            font-size: 14.5px;
-            line-height: 1.85;
+            font-size: 16px;
+            line-height: 1.9;
             color: var(--gray-700);
         }
 
         @media (min-width: 768px) {
             .lesson-body {
-                font-size: 15px;
+                font-size: 17px;
             }
         }
 
@@ -1598,7 +1598,7 @@
         @media (min-width: 1200px) {
             .course-ref-grid {
                 display: grid;
-                grid-template-columns: minmax(0, 1fr) minmax(460px, 540px);
+                grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
             }
 
             .course-ref-grid > [class*="col-"] {
@@ -1621,7 +1621,7 @@
 
         .course-sidebar-stack {
             display: grid;
-            gap: 18px;
+            gap: 14px;
         }
 
         @media (min-width: 768px) {
@@ -1675,8 +1675,8 @@
             border-bottom: 1px solid #e7eaf2;
             display: flex;
             flex-direction: column;
-            gap: 9px;
-            padding: 18px;
+            gap: 8px;
+            padding: 14px;
         }
 
         .sidebar-head-row {
@@ -1688,7 +1688,7 @@
 
         .sidebar-head-title {
             color: #202634;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 900;
             letter-spacing: 0;
             text-transform: none;
@@ -1738,17 +1738,17 @@
             border: 1px solid #e7eaf2;
             border-radius: 16px;
             box-shadow: 0 2px 10px rgba(20, 30, 60, .04);
-            padding: 18px;
+            padding: 14px;
         }
 
         .course-side-card__title {
             align-items: center;
             color: #202634;
             display: flex;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 900;
-            gap: 10px;
-            margin: 0 0 14px;
+            gap: 8px;
+            margin: 0 0 10px;
         }
 
         .course-side-card__title i {
@@ -1766,8 +1766,8 @@
             align-items: flex-start;
             border-bottom: 1px solid #e7eaf2;
             display: flex;
-            gap: 12px;
-            padding: 13px 0;
+            gap: 10px;
+            padding: 10px 0;
             text-decoration: none;
         }
 
@@ -1812,14 +1812,14 @@
 
         .course-todo-title {
             color: #202634;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 850;
             line-height: 1.35;
         }
 
         .course-todo-meta {
             color: #6b7386;
-            font-size: 12.5px;
+            font-size: 12px;
             line-height: 1.45;
             margin-top: 2px;
         }
@@ -1828,9 +1828,9 @@
             align-items: center;
             border-bottom: 1px solid #e7eaf2;
             display: flex;
-            gap: 14px;
+            gap: 10px;
             justify-content: space-between;
-            padding: 11px 0;
+            padding: 9px 0;
         }
 
         .course-info-row:first-child {
@@ -1844,25 +1844,63 @@
 
         .course-info-label {
             color: #6b7386;
-            font-size: 13.5px;
+            font-size: 12.5px;
             font-weight: 700;
         }
 
         .course-info-value {
             color: #202634;
-            font-size: 13.5px;
+            font-size: 12.5px;
             font-weight: 900;
             text-align: right;
         }
 
         .sidebar-inner-card .accordion-button {
-            padding-right: 18px;
+            padding-right: 14px;
         }
 
         .sidebar-inner-card .accordion-button::after {
             margin-left: 12px;
             margin-right: 4px;
             flex-shrink: 0;
+        }
+
+        .course-sidebar-column .module-title-block {
+            padding: 12px 14px;
+        }
+
+        .course-sidebar-column .module-title-text {
+            font-size: 13px;
+            line-height: 1.32;
+        }
+
+        .course-sidebar-column .module-meta {
+            font-size: 11px;
+        }
+
+        .course-sidebar-column .lesson-item,
+        .course-sidebar-column .assignment-item,
+        .course-sidebar-column .quiz-item {
+            gap: 8px !important;
+            padding-bottom: 8px !important;
+            padding-top: 8px !important;
+        }
+
+        .course-sidebar-column .lesson-item > div:first-child,
+        .course-sidebar-column .assignment-item > div:first-child,
+        .course-sidebar-column .quiz-item > div:first-child {
+            height: 26px !important;
+            width: 26px !important;
+        }
+
+        .course-sidebar-column .lesson-name-text {
+            font-size: 12.8px;
+            line-height: 1.34;
+        }
+
+        .course-sidebar-column .sidebar-status-row {
+            gap: 4px;
+            margin-top: 4px;
         }
 
         /* Final polish: status, active state, mobile, teacher actions, empty states */
@@ -2242,8 +2280,8 @@
 
         .lesson-body {
             color: #202634;
-            font-size: 15px;
-            line-height: 1.78;
+            font-size: 17px;
+            line-height: 1.86;
             overflow-wrap: anywhere;
             word-break: normal;
         }
@@ -2271,15 +2309,15 @@
         }
 
         .lesson-body h2 {
-            font-size: 1.35rem;
+            font-size: 1.48rem;
         }
 
         .lesson-body h3 {
-            font-size: 1.18rem;
+            font-size: 1.28rem;
         }
 
         .lesson-body h4 {
-            font-size: 1rem;
+            font-size: 1.08rem;
         }
 
         .lesson-body p,
@@ -2373,7 +2411,7 @@
         .lesson-resource-link__content strong {
             color: #111827;
             display: block;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 900;
             line-height: 1.35;
         }
@@ -2381,7 +2419,7 @@
         .lesson-resource-link__content a {
             color: #64748b;
             display: block;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
             line-height: 1.35;
             overflow: hidden;
@@ -2627,9 +2665,6 @@
                 <p class="header-teacher">
                     <i class="fas fa-chalkboard-teacher"></i> {{ $course->teacher->name }}
                 </p>
-                @if (!empty($course->description))
-                    <p class="course-ref-description">{{ \Illuminate\Support\Str::limit($course->description, 220) }}</p>
-                @endif
                 @if (auth()->user()->role === 'student')
                     <div class="progress-wrap">
                         <div class="progress-label">
@@ -2764,7 +2799,7 @@
         <div class="course-ref-grid row align-items-start">
 
             {{-- DESKTOP SIDEBAR --}}
-            <div class="col-md-4 col-xl-4 d-none d-md-block order-md-2 course-sidebar-column">
+            <div class="col-md-4 col-xl-3 d-none d-md-block order-md-2 course-sidebar-column">
                 <div class="desktop-sidebar-wrap course-sidebar-stack">
                     <div class="sidebar-inner-card course-outline-card">
                         <div class="sidebar-head">
@@ -2896,7 +2931,7 @@
             </div>
 
             {{-- CONTENT --}}
-            <div class="col-12 col-md-8 col-xl-8 order-md-1">
+            <div class="col-12 col-md-8 col-xl-9 order-md-1">
                 <div class="content-card">
 
                     {{-- Video --}}
