@@ -1583,6 +1583,67 @@
             max-height: 170px;
             object-fit: contain;
             width: min(240px, 100%);
+            animation: heroCharacterFloat 5s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-motion-icons {
+            inset: 0;
+            pointer-events: none;
+            position: absolute;
+            z-index: 1;
+        }
+
+        .hero-motion-icon {
+            align-items: center;
+            animation: heroIconFloat 4.8s ease-in-out infinite;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, .88);
+            border: 1px solid rgba(37, 99, 235, .14);
+            border-radius: 15px;
+            box-shadow: 0 12px 26px rgba(37, 99, 235, .14);
+            color: #2563eb;
+            display: flex;
+            font-size: 16px;
+            height: 42px;
+            justify-content: center;
+            position: absolute;
+            width: 42px;
+        }
+
+        .hero-motion-icon:nth-child(1) { left: 4%; top: 15%; }
+        .hero-motion-icon:nth-child(2) { animation-delay: -.9s; right: 2%; top: 10%; color: #7c3aed; }
+        .hero-motion-icon:nth-child(3) { animation-delay: -1.8s; bottom: 12%; left: 1%; color: #0f766e; }
+        .hero-motion-icon:nth-child(4) { animation-delay: -2.7s; bottom: 18%; right: 0; color: #d97706; }
+
+        .stat-card__icon,
+        .teacher-priority-card__icon,
+        .icon-dot {
+            transition: transform .25s cubic-bezier(.22, 1, .36, 1);
+        }
+
+        .stat-card:hover .stat-card__icon,
+        .teacher-priority-card:hover .teacher-priority-card__icon,
+        .panel:hover .icon-dot {
+            transform: translateY(-3px) rotate(-5deg) scale(1.08);
+        }
+
+        @keyframes heroCharacterFloat {
+            0%, 100% { transform: translateY(2px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes heroIconFloat {
+            0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+            50% { transform: translate3d(0, -10px, 0) rotate(4deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .lms-hero__side img,
+            .hero-motion-icon {
+                animation: none !important;
+            }
         }
 
         .lms-hero-metrics {
@@ -1841,6 +1902,10 @@
                 display: none;
             }
 
+            .hero-motion-icons {
+                display: none;
+            }
+
             .lms-hero-metrics,
             .teacher-priority-grid {
                 grid-template-columns: 1fr;
@@ -1892,6 +1957,12 @@
                 </div>
             </div>
             <div class="lms-hero__side">
+                <div class="hero-motion-icons" aria-hidden="true">
+                    <span class="hero-motion-icon"><i class="fas fa-book-open"></i></span>
+                    <span class="hero-motion-icon"><i class="fas fa-lightbulb"></i></span>
+                    <span class="hero-motion-icon"><i class="fas fa-graduation-cap"></i></span>
+                    <span class="hero-motion-icon"><i class="fas fa-chart-line"></i></span>
+                </div>
                 <img src="{{ asset('gretting-img.png') }}" alt="">
             </div>
         </section>

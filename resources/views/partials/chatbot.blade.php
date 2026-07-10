@@ -122,10 +122,10 @@
         position: fixed;
         bottom: 96px;
         right: 28px;
-        width: 380px;
-        height: 560px;
+        width: 440px;
+        height: 650px;
         background: var(--cb-surface);
-        border-radius: var(--cb-radius);
+        border-radius: 24px;
         box-shadow: var(--cb-shadow);
         display: flex;
         flex-direction: column;
@@ -158,8 +158,8 @@
 
     /* ── Header ── */
     .cb-header {
-        background: var(--cb-primary);
-        padding: 14px 18px;
+        background: linear-gradient(135deg, #172554 0%, #1d4ed8 58%, #6d28d9 100%);
+        padding: 16px 18px;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -168,10 +168,10 @@
     }
 
     .cb-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
+        width: 48px;
+        height: 48px;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, .14);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -261,7 +261,9 @@
         flex: 1;
         padding: 16px;
         overflow-y: auto;
-        background: var(--cb-surface-alt);
+        background:
+            radial-gradient(circle at 100% 0%, rgba(99, 102, 241, .09), transparent 34%),
+            linear-gradient(180deg, #f8fafc, #f5f7fb);
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -305,14 +307,15 @@
         width: 28px;
         height: 28px;
         border-radius: 50%;
-        background: var(--cb-primary-light);
+        background: #eef2ff;
         color: var(--cb-primary);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         font-size: 14px;
-        border: 1.5px solid var(--cb-border);
+        border: 1.5px solid #c7d2fe;
+        overflow: hidden;
     }
 
     .cb-msg-wrap {
@@ -498,13 +501,84 @@
         cursor: not-allowed;
     }
 
+    .cb-mascot {
+        animation: cbMascotIdle 3.6s ease-in-out infinite;
+        background: transparent;
+        border-radius: inherit;
+        display: block;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+    }
+
+    .cb-mascot img {
+        display: block;
+        height: 100%;
+        image-rendering: auto;
+        object-fit: contain;
+        width: 100%;
+    }
+
+    .cb-mascot__blink {
+        animation: cbMascotBlink 6.4s infinite;
+        background:
+            linear-gradient(#8be9fd, #8be9fd) left 13% center / 31% 2px no-repeat,
+            linear-gradient(#8be9fd, #8be9fd) right 13% center / 31% 2px no-repeat,
+            #20284c;
+        border-radius: 999px;
+        height: 8%;
+        left: 30%;
+        opacity: 0;
+        position: absolute;
+        top: 44%;
+        width: 40%;
+    }
+
+    @keyframes cbMascotBlink {
+        0%, 38%, 41%, 43%, 71%, 74%, 100% { opacity: 0; transform: scaleY(.15); }
+        39%, 40%, 42%, 72%, 73% { opacity: 1; transform: scaleY(1); }
+    }
+
+    @keyframes cbMascotIdle {
+        0%, 100% { transform: translateY(2px) rotate(-1deg) scale(1); }
+        35% { transform: translateY(-5px) rotate(1.5deg) scale(1.025); }
+        62% { transform: translateY(-2px) rotate(-.5deg) scale(1.01); }
+    }
+
+    .cb-toggler {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        height: 102px;
+        overflow: visible;
+        padding: 0;
+        width: 94px;
+    }
+
+    .cb-toggler:hover { background:transparent; box-shadow:none; transform:scale(1.06); }
+    .cb-toggler::before { display:none !important; }
+    .cb-toggler .cb-mascot { filter:drop-shadow(0 10px 12px rgba(49,46,129,.28)); height:auto; inset:0; position:absolute; width:auto; }
+    .cb-toggler .icon-close { background:rgba(15,23,42,.88); border-radius:999px; padding:9px; z-index:3; }
+    .cb-header-name { font-size:.96rem; font-weight:800; }
+    .cb-header-status { color:rgba(255,255,255,.82); }
+    .cb-msg.ai { border:1px solid #e2e8f0; box-shadow:0 3px 12px rgba(15,23,42,.05); }
+    .cb-footer { background:#fff; border-top:1px solid #e2e8f0; padding:13px 14px; }
+    .cb-bot-avatar img { height:100%; object-fit:cover; width:100%; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .cb-mascot__blink,
+        .cb-mascot { animation: none; }
+    }
+
     /* ── Responsive ── */
     @media (max-width: 480px) {
         .cb-toggler {
             bottom: 20px;
             right: 20px;
-            width: 52px;
-            height: 52px;
+            width: 76px;
+            height: 84px;
         }
 
         .cb-window {
@@ -537,7 +611,10 @@
 
 {{-- Nút kích hoạt --}}
 <button class="cb-toggler has-pulse" id="cbToggler" aria-label="Mở trợ lý AI" aria-expanded="false">
-    <i class="fas fa-robot fa-lg icon-open"></i>
+    <span class="cb-mascot icon-open" aria-hidden="true">
+        <img src="{{ asset('chatbot-mascot-v2.png') }}" alt="">
+        <span class="cb-mascot__blink"></span>
+    </span>
     <i class="fas fa-times icon-close"></i>
     <span class="cb-badge" id="cbBadge">1</span>
 </button>
@@ -548,7 +625,10 @@
     {{-- Header --}}
     <div class="cb-header">
         <div class="cb-avatar">
-            <i class="fas fa-robot" style="color:#fff; font-size:16px;"></i>
+            <span class="cb-mascot" aria-hidden="true">
+                <img src="{{ asset('chatbot-mascot-v2.png') }}" alt="">
+                <span class="cb-mascot__blink"></span>
+            </span>
         </div>
         <div class="cb-header-info">
             <div class="cb-header-name">Trợ lý học tập AI</div>
@@ -576,7 +656,7 @@
     <div class="cb-body" id="cbBody">
         <div class="cb-date-divider" id="cbDateDivider"></div>
         <div class="cb-row ai">
-            <div class="cb-bot-avatar"><i class="fas fa-robot"></i></div>
+            <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.png') }}" alt=""></div>
             <div class="cb-msg-wrap">
                 <div class="cb-msg ai">Chào bạn! 👋 Mình có thể giúp gì cho bài học của bạn hôm nay?</div>
                 <span class="cb-msg-time" id="cbWelcomeTime"></span>
@@ -587,7 +667,7 @@
     {{-- Typing --}}
     <div class="cb-typing" id="cbTyping" aria-live="polite" aria-label="AI đang trả lời">
         <div style="padding: 0 0 12px 16px; display:flex; align-items:flex-end; gap:8px;">
-            <div class="cb-bot-avatar"><i class="fas fa-robot"></i></div>
+            <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.png') }}" alt=""></div>
             <div class="cb-typing-dots">
                 <span></span><span></span><span></span>
             </div>
@@ -765,7 +845,7 @@
 
             if (sender === 'ai') {
                 row.innerHTML = `
-                <div class="cb-bot-avatar"><i class="fas fa-robot"></i></div>
+                <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.png') }}" alt=""></div>
                 <div class="cb-msg-wrap">
                     <div class="cb-msg ai">${html}</div>
                     <span class="cb-msg-time">${timeStr}</span>

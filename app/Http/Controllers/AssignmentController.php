@@ -12,6 +12,7 @@ use App\Services\NotificationCenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use ZipStream\ZipStream;
 
 class AssignmentController extends Controller
 {
@@ -100,13 +101,17 @@ class AssignmentController extends Controller
     // Giáo viên chấm điểm
     public function grade(Request $request, $submissionId)
     {
-        $submission = AssignmentSubmission::with('assignment')->findOrFail($submissionId);
+        $submission = AssignmentSubmission::with('assignment.course')->findOrFail($submissionId);
+        if (!$this->canManageAssignmentCourse($submission->assignment->course)) {
+            abort(403, 'Bạn không có quyền chấm bài nộp này.');
+        }
         $scale = $submission->assignment?->grading_scale ?? 10;
         $oldValues = AuditLogger::snapshot($submission, ['grade', 'feedback']);
 
         $request->validate([
             'grade' => 'required|numeric|min:0|max:' . $scale,
             'feedback' => 'nullable|string',
+            'action' => 'nullable|in:save,save_next',
         ]);
 
         $submission->update([
@@ -136,6 +141,27 @@ class AssignmentController extends Controller
             ],
             'Giáo viên cập nhật điểm và nhận xét bài nộp.'
         );
+
+        if ($request->input('action') === 'save_next') {
+            $nextSubmission = AssignmentSubmission::query()
+                ->where('assignment_id', $submission->assignment_id)
+                ->whereNull('grade')
+                ->where('id', '!=', $submission->id)
+                ->orderByRaw('submitted_at IS NULL')
+                ->orderBy('submitted_at')
+                ->orderBy('id')
+                ->first();
+
+            if ($nextSubmission) {
+                return redirect()
+                    ->route('assignments.submissions.review', $nextSubmission)
+                    ->with('success', 'Đã lưu. Đang chuyển sang bài chưa chấm tiếp theo.');
+            }
+
+            return redirect()
+                ->route('assignments.submissions.review', $submission)
+                ->with('success', 'Đã lưu điểm. Không còn bài nộp nào chờ chấm.');
+        }
 
         return back()->with('success', 'Đã lưu điểm và nhận xét!');
     }
@@ -294,6 +320,39 @@ class AssignmentController extends Controller
         $filePreviewType = $this->submissionPreviewType($submission);
         $fileName = $submission->original_filename ?: ($submission->file_path ? basename($submission->file_path) : null);
 
+        $students = $course->classes()
+            ->where('classes.status', 'active')
+            ->with('students')
+            ->get()
+            ->flatMap->students
+            ->unique('id')
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+        $submissions = AssignmentSubmission::where('assignment_id', $assignment->id)
+            ->orderBy('submitted_at')
+            ->get()
+            ->keyBy('user_id');
+        $gradingQueue = $students->map(function ($student) use ($submissions, $submission) {
+            $studentSubmission = $submissions->get($student->id);
+
+            return [
+                'student_id' => $student->id,
+                'student_name' => $student->name,
+                'student_code' => $student->student_code,
+                'submission_id' => $studentSubmission?->id,
+                'submitted_at' => $studentSubmission?->submitted_at,
+                'grade' => $studentSubmission?->grade,
+                'is_current' => $studentSubmission?->id === $submission->id,
+                'status' => !$studentSubmission ? 'missing' : ($studentSubmission->grade === null ? 'pending' : 'graded'),
+            ];
+        });
+        $queueStats = [
+            'total' => $gradingQueue->count(),
+            'submitted' => $gradingQueue->whereNotNull('submission_id')->count(),
+            'pending' => $gradingQueue->where('status', 'pending')->count(),
+            'graded' => $gradingQueue->where('status', 'graded')->count(),
+        ];
+
         return view('assignments.submission_review', compact(
             'submission',
             'assignment',
@@ -303,6 +362,8 @@ class AssignmentController extends Controller
             'filePreviewUrl',
             'filePreviewType',
             'fileName',
+            'gradingQueue',
+            'queueStats',
         ));
     }
     // 1. Hàm lấy danh sách bài nộp cho Giáo viên (Dùng AJAX để load vào Modal)
@@ -324,12 +385,14 @@ class AssignmentController extends Controller
             $submission = $submissions->get($student->id);
             return [
                 'student_name' => $student->name,
+                'student_code' => $student->student_code,
                 'student_email' => $student->email,
                 'submitted_at' => $submission ? $submission->formatSubmittedAt('d/m/Y H:i:s') : null,
                 'file_url' => $submission ? $this->submissionFileUrl($submission) : null,
                 'text_answer' => $submission ? $submission->text_answer : null,
                 'grade' => $submission ? $submission->grade : null,
                 'submission_id' => $submission ? $submission->id : null,
+                'has_file' => (bool) ($submission?->file_path),
                 'review_url' => $submission ? route('assignments.submissions.review', $submission->id) : null,
                 'feedback' => $submission ? $submission->feedback : null,
             ];
@@ -340,8 +403,102 @@ class AssignmentController extends Controller
             'course_title' => $assignment->course->title,
             'total_students' => $students->count(),
             'submitted_count' => $data->filter(fn ($row) => !empty($row['submission_id']))->count(),
+            'download_url' => route('assignments.submissions.download', $assignment->id),
             'submissions' => $data,
         ]);
+    }
+
+    public function downloadSubmissionsArchive(Request $request, $id)
+    {
+        $assignment = Assignments::with('course')->notArchived()->findOrFail($id);
+        if (!$this->canManageAssignmentCourse($assignment->course)) {
+            abort(403, 'Bạn không có quyền tải các bài nộp này.');
+        }
+
+        $validated = $request->validate([
+            'mode' => 'required|in:all,ungraded,selected',
+            'submission_ids' => 'nullable|array',
+            'submission_ids.*' => 'integer',
+        ]);
+
+        $submissions = AssignmentSubmission::with('user')
+            ->where('assignment_id', $assignment->id)
+            ->when($validated['mode'] === 'ungraded', fn ($query) => $query->whereNull('grade'))
+            ->when($validated['mode'] === 'selected', function ($query) use ($validated) {
+                $query->whereIn('id', $validated['submission_ids'] ?? [-1]);
+            })
+            ->orderBy('submitted_at')
+            ->get();
+
+        if ($submissions->isEmpty()) {
+            return back()->with('error', 'Không có bài nộp phù hợp để tải.');
+        }
+
+        $archiveName = 'Bai_nop_' . Str::slug($assignment->title, '_') . '_' . now()->format('Y-m-d_His') . '.zip';
+
+        return response()->streamDownload(function () use ($submissions, $assignment) {
+            $zip = new ZipStream(outputStream: fopen('php://output', 'wb'), sendHttpHeaders: false);
+            $usedNames = [];
+            $csv = fopen('php://temp', 'w+b');
+            fwrite($csv, "\xEF\xBB\xBF");
+            fputcsv($csv, ['Mã học sinh', 'Họ và tên', 'Email', 'Thời gian nộp', 'Trạng thái', 'Tên file', 'Điểm', 'Nhận xét'], ',', '"', '');
+
+            foreach ($submissions as $submission) {
+                $student = $submission->user;
+                $isLate = $assignment->due_date && $submission->submitted_at?->gt($assignment->due_date);
+                $archiveFileName = '';
+
+                if ($submission->file_path) {
+                    $disk = Storage::disk($this->submissionDisk($submission));
+                    if ($disk->exists($submission->file_path)) {
+                        $originalName = $submission->original_filename ?: basename($submission->file_path);
+                        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+                        $studentName = Str::slug($student?->name ?: 'hoc_sinh', '_');
+                        $archiveFileName = $studentName . ($extension ? '.' . strtolower($extension) : '');
+                        $archiveFileName = $this->uniqueArchiveName($archiveFileName, $usedNames);
+                        $stream = $disk->readStream($submission->file_path);
+
+                        if (is_resource($stream)) {
+                            $zip->addFileFromStream(fileName: 'files/' . $archiveFileName, stream: $stream);
+                            fclose($stream);
+                        } else {
+                            $archiveFileName = '';
+                        }
+                    }
+                }
+
+                fputcsv($csv, [
+                    $student?->student_code,
+                    $student?->name,
+                    $student?->email,
+                    $submission->formatSubmittedAt('d/m/Y H:i:s'),
+                    $isLate ? 'Nộp muộn' : 'Đúng hạn',
+                    $archiveFileName ?: ($submission->file_path ? 'Không tìm thấy file' : 'Chỉ nộp nội dung tự luận'),
+                    $submission->grade,
+                    $submission->feedback,
+                ], ',', '"', '');
+            }
+
+            rewind($csv);
+            $zip->addFileFromStream(fileName: 'Danh_sach_bai_nop.csv', stream: $csv);
+            fclose($csv);
+            $zip->finish();
+        }, $archiveName, ['Content-Type' => 'application/zip']);
+    }
+
+    private function uniqueArchiveName(string $name, array &$usedNames): string
+    {
+        $candidate = $name;
+        $counter = 2;
+        while (isset($usedNames[Str::lower($candidate)])) {
+            $extension = pathinfo($name, PATHINFO_EXTENSION);
+            $stem = pathinfo($name, PATHINFO_FILENAME);
+            $candidate = $stem . '_' . $counter++ . ($extension ? '.' . $extension : '');
+        }
+
+        $usedNames[Str::lower($candidate)] = true;
+
+        return $candidate;
     }
 
     public function submit(Request $request, $id)

@@ -376,6 +376,24 @@
             color: #92400e;
         }
 
+        .bulk-download-toolbar {
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding: 11px 13px;
+        }
+
+        .bulk-download-toolbar__hint { color: #64748b; font-size: 12px; }
+        .bulk-download-toolbar__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .bulk-download-toolbar select { border: 1px solid #dbe2ea; border-radius: 999px; font-size: 12px; font-weight: 700; padding: 7px 32px 7px 12px; }
+        .submission-select { height: 17px; width: 17px; }
+
         @media (max-width: 767.98px) {
             .assignments-page {
                 padding-left: 2px;
@@ -639,11 +657,31 @@
                     return;
                 }
 
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
                 submissionsContent.innerHTML = `
+                    <form method="POST" action="${esc(data.download_url || '')}" class="bulk-download-form">
+                    <input type="hidden" name="_token" value="${esc(csrf)}">
+                    <div class="bulk-download-toolbar">
+                        <div>
+                            <div class="fw-bold text-dark small"><i class="fas fa-file-zipper text-primary me-1"></i>Tải bài nộp hàng loạt</div>
+                            <div class="bulk-download-toolbar__hint">File ZIP kèm danh sách CSV tổng hợp.</div>
+                        </div>
+                        <div class="bulk-download-toolbar__actions">
+                            <select name="mode" class="bulk-download-mode" aria-label="Phạm vi tải">
+                                <option value="all">Tất cả bài đã nộp</option>
+                                <option value="ungraded">Chỉ bài chưa chấm</option>
+                                <option value="selected">Các học sinh đã chọn</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                <i class="fas fa-download me-1"></i>Tải ZIP
+                            </button>
+                        </div>
+                    </div>
                     <div class="table-responsive submission-desktop-table">
                         <table class="table align-middle submission-table">
                             <thead class="table-light">
                                 <tr>
+                                    <th style="width:42px"><input type="checkbox" class="submission-select select-all-submissions" aria-label="Chọn tất cả"></th>
                                     <th>Học sinh</th>
                                     <th>Trạng thái</th>
                                     <th>Thời gian nộp</th>
@@ -654,8 +692,10 @@
                             <tbody>
                                 ${rows.map(row => `
                                     <tr>
+                                        <td>${row.submission_id ? `<input type="checkbox" class="submission-select submission-checkbox" name="submission_ids[]" value="${esc(row.submission_id)}">` : ''}</td>
                                         <td>
                                             <div class="fw-bold">${esc(row.student_name || 'Học sinh')}</div>
+                                            ${row.student_code ? `<div class="text-muted small">${esc(row.student_code)}</div>` : ''}
                                             <div class="text-muted small">${esc(row.student_email || '')}</div>
                                         </td>
                                         <td>
@@ -685,6 +725,7 @@
                             <div class="submission-mobile-card">
                                 <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                     <div class="min-w-0">
+                                        ${row.submission_id ? `<input type="checkbox" class="submission-select submission-checkbox float-start me-2 mt-1" name="submission_ids[]" value="${esc(row.submission_id)}">` : ''}
                                         <div class="fw-bold text-dark">${esc(row.student_name || 'Học sinh')}</div>
                                         <div class="text-muted small text-break">${esc(row.student_email || '')}</div>
                                     </div>
@@ -708,8 +749,26 @@
                                 ` : '<div class="text-muted small">Chưa có bài làm</div>'}
                             </div>
                         `).join('')}
-                    </div>`;
+                    </div>
+                    </form>`;
             }
+
+            submissionsContent?.addEventListener('change', function(event) {
+                if (!event.target.matches('.select-all-submissions')) return;
+                this.querySelectorAll('.submission-checkbox').forEach(checkbox => {
+                    if (checkbox.offsetParent !== null) checkbox.checked = event.target.checked;
+                });
+            });
+
+            submissionsContent?.addEventListener('submit', function(event) {
+                const form = event.target.closest('.bulk-download-form');
+                if (!form) return;
+                const mode = form.querySelector('.bulk-download-mode')?.value;
+                if (mode === 'selected' && !form.querySelector('.submission-checkbox:checked')) {
+                    event.preventDefault();
+                    alert('Vui lòng chọn ít nhất một học sinh đã nộp bài.');
+                }
+            });
         });
     </script>
 @endpush

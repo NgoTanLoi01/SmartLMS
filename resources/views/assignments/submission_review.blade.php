@@ -52,6 +52,15 @@
             background: var(--surface-2);
         }
 
+        #sidebar,
+        #sidebarToggle {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+        }
+
         /* ── PAGE WRAP ─────────────────────────────── */
         .srp {
             min-height: 100vh;
@@ -65,9 +74,59 @@
         }
 
         .srp__shell {
-            max-width: 1240px;
+            max-width: 1680px;
             margin: 0 auto;
         }
+
+        .grading-workspace {
+            align-items: start;
+            display: grid;
+            gap: 18px;
+            grid-template-columns: 250px minmax(0, 1fr) 390px;
+        }
+
+        .grading-queue,
+        .grading-aside {
+            max-height: calc(100vh - 110px);
+            position: sticky;
+            top: 18px;
+        }
+
+        .grading-aside { overflow-y: auto; scrollbar-width: thin; }
+
+        .grading-queue {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .grading-queue__head { border-bottom: 1px solid var(--border); padding: 15px; }
+        .grading-queue__title { color: var(--text); font-size: .86rem; font-weight: 900; margin: 0 0 5px; }
+        .grading-queue__stats { color: var(--text-muted); font-size: .72rem; }
+        .grading-queue__search { margin-top: 11px; position: relative; }
+        .grading-queue__search i { color: var(--text-light); font-size: .72rem; left: 11px; position: absolute; top: 50%; transform: translateY(-50%); }
+        .grading-queue__search input { background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; font-size: .76rem; outline: none; padding: 9px 10px 9px 30px; width: 100%; }
+        .grading-queue__filters { display: flex; gap: 5px; margin-top: 9px; }
+        .queue-filter { background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; color: var(--text-muted); cursor: pointer; font-size: .66rem; font-weight: 800; padding: 5px 8px; }
+        .queue-filter.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .grading-queue__list { overflow-y: auto; padding: 7px; }
+        .queue-student { align-items: center; border: 1px solid transparent; border-radius: 11px; color: inherit; display: flex; gap: 9px; margin-bottom: 3px; padding: 9px; text-decoration: none; transition: background .15s, border-color .15s; }
+        .queue-student:hover { background: var(--surface-2); }
+        .queue-student.current { background: var(--brand-light); border-color: #c7d9ff; }
+        .queue-student.disabled { cursor: default; opacity: .55; }
+        .queue-student__avatar { align-items: center; background: var(--surface-3); border-radius: 9px; color: var(--text-2); display: flex; flex: 0 0 34px; font-size: .76rem; font-weight: 900; height: 34px; justify-content: center; }
+        .queue-student.current .queue-student__avatar { background: var(--brand); color: #fff; }
+        .queue-student__body { min-width: 0; }
+        .queue-student__name { color: var(--text); font-size: .76rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .queue-student__status { font-size: .65rem; margin-top: 2px; }
+        .queue-student__status.pending { color: #b45309; }
+        .queue-student__status.graded { color: #047857; }
+        .queue-student__status.missing { color: var(--text-light); }
+        .grading-content { min-width: 0; }
 
         /* ── BACK LINK ─────────────────────────────── */
         .back-link {
@@ -136,6 +195,39 @@
         .srp-header__meta .sep {
             color: var(--border-strong);
         }
+
+        .review-download-form {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .review-download-form select {
+            background: var(--surface-2);
+            border: 1px solid var(--border-strong);
+            border-radius: 999px;
+            color: var(--text-2);
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 9px 32px 9px 12px;
+        }
+
+        .btn-download-zip {
+            align-items: center;
+            background: #0f766e;
+            border: 0;
+            border-radius: 999px;
+            color: #fff;
+            display: inline-flex;
+            font-size: .76rem;
+            font-weight: 800;
+            gap: 7px;
+            padding: 10px 14px;
+            white-space: nowrap;
+        }
+
+        .btn-download-zip:hover { background: #115e59; }
 
         /* ── BADGE ─────────────────────────────────── */
         .bdg {
@@ -398,8 +490,6 @@
 
         /* ── GRADING SIDEBAR ───────────────────────── */
         .grading-card {
-            position: sticky;
-            top: 20px;
             display: flex;
             flex-direction: column;
             gap: 0;
@@ -704,6 +794,17 @@
             transform: translateY(-1px);
         }
 
+        .grading-actions { display: grid; gap: 8px; }
+        .btn-save-next { background: var(--brand); box-shadow: 0 4px 16px rgba(79, 127, 255, .28); }
+        .btn-save-next:hover { background: var(--brand-dark); box-shadow: 0 6px 20px rgba(79, 127, 255, .36); }
+
+        @media (max-width: 1199.98px) {
+            .grading-workspace { grid-template-columns: 1fr; }
+            .grading-queue, .grading-aside { max-height: none; position: static; }
+            .grading-queue__list { display: flex; gap: 6px; overflow-x: auto; padding: 8px; }
+            .queue-student { flex: 0 0 210px; margin: 0; }
+        }
+
         /* ── ALERT ─────────────────────────────────── */
         .ai-notice {
             background: var(--surface-2);
@@ -794,13 +895,66 @@
                             {{ $assignment->due_date?->format('d/m/Y H:i') ?? '---' }}</span>
                     </div>
                 </div>
+                <form method="POST" action="{{ route('assignments.submissions.download', $assignment->id) }}"
+                    class="review-download-form">
+                    @csrf
+                    <select name="mode" aria-label="Phạm vi tải bài nộp">
+                        <option value="all">Tất cả bài đã nộp</option>
+                        <option value="ungraded">Chỉ bài chưa chấm</option>
+                    </select>
+                    <button type="submit" class="btn-download-zip">
+                        <i class="fas fa-file-zipper"></i>
+                        Tải bài nộp (.zip)
+                    </button>
+                </form>
             </div>
 
-            {{-- MAIN GRID --}}
-            <div class="row g-3 g-lg-4 align-items-start">
+            {{-- GRADING WORKSPACE --}}
+            <div class="grading-workspace">
 
-                {{-- LEFT: CONTENT --}}
-                <div class="col-lg-8">
+                {{-- LEFT: STUDENT QUEUE --}}
+                <aside class="grading-queue">
+                    <div class="grading-queue__head">
+                        <h2 class="grading-queue__title">Danh sách học sinh</h2>
+                        <div class="grading-queue__stats">{{ $queueStats['pending'] }} chờ chấm · {{ $queueStats['graded'] }} đã chấm</div>
+                        <div class="grading-queue__search">
+                            <i class="fas fa-search"></i>
+                            <input type="search" id="queueSearch" placeholder="Tìm học sinh...">
+                        </div>
+                        <div class="grading-queue__filters" role="group" aria-label="Lọc trạng thái">
+                            <button type="button" class="queue-filter active" data-queue-filter="all">Tất cả</button>
+                            <button type="button" class="queue-filter" data-queue-filter="pending">Chờ chấm</button>
+                            <button type="button" class="queue-filter" data-queue-filter="graded">Đã chấm</button>
+                        </div>
+                    </div>
+                    <div class="grading-queue__list" id="gradingQueueList">
+                        @foreach ($gradingQueue as $item)
+                            @php
+                                $statusLabel = match ($item['status']) {
+                                    'pending' => 'Chờ chấm',
+                                    'graded' => 'Đã chấm: ' . $item['grade'],
+                                    default => 'Chưa nộp',
+                                };
+                            @endphp
+                            @if ($item['submission_id'])
+                                <a href="{{ route('assignments.submissions.review', $item['submission_id']) }}"
+                                    class="queue-student {{ $item['is_current'] ? 'current' : '' }}"
+                                    data-status="{{ $item['status'] }}" data-name="{{ Str::lower($item['student_name']) }}">
+                            @else
+                                <div class="queue-student disabled" data-status="missing" data-name="{{ Str::lower($item['student_name']) }}">
+                            @endif
+                                <span class="queue-student__avatar">{{ mb_strtoupper(mb_substr($item['student_name'], 0, 1)) }}</span>
+                                <span class="queue-student__body">
+                                    <span class="queue-student__name">{{ $item['student_name'] }}</span>
+                                    <span class="queue-student__status {{ $item['status'] }}">{{ $statusLabel }}</span>
+                                </span>
+                            @if ($item['submission_id']) </a> @else </div> @endif
+                        @endforeach
+                    </div>
+                </aside>
+
+                {{-- CENTER: CONTENT --}}
+                <main class="grading-content">
 
                     {{-- INSTRUCTIONS --}}
                     <div class="panel">
@@ -917,10 +1071,10 @@
                         </div>
                     </div>
 
-                </div>
+                </main>
 
                 {{-- RIGHT: GRADING --}}
-                <div class="col-lg-4">
+                <aside class="grading-aside">
                     <div class="grading-card">
                         <div class="panel">
 
@@ -1065,15 +1219,21 @@
                                     <textarea name="feedback" id="feedbackInput" class="form-ctrl" placeholder="Nhập nhận xét cho học sinh...">{{ $submission->feedback }}</textarea>
                                 </div>
 
-                                <button type="submit" class="btn-save">
-                                    <i class="fas fa-check-circle"></i>
-                                    Lưu điểm và nhận xét
-                                </button>
+                                <div class="grading-actions">
+                                    <button type="submit" name="action" value="save_next" class="btn-save btn-save-next">
+                                        <i class="fas fa-forward"></i>
+                                        Lưu & bài tiếp theo
+                                    </button>
+                                    <button type="submit" name="action" value="save" class="btn-save">
+                                        <i class="fas fa-check-circle"></i>
+                                        Chỉ lưu bài này
+                                    </button>
+                                </div>
                             </form>
 
                         </div>
                     </div>
-                </div>
+                </aside>
 
             </div>
         </div>
@@ -1082,6 +1242,37 @@
 
 @push('scripts')
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const search = document.getElementById('queueSearch');
+            const filters = document.querySelectorAll('[data-queue-filter]');
+            const students = document.querySelectorAll('#gradingQueueList [data-status]');
+            let activeFilter = 'all';
+
+            const applyQueueFilter = () => {
+                const keyword = (search?.value || '').trim().toLocaleLowerCase('vi');
+                students.forEach(student => {
+                    const matchesStatus = activeFilter === 'all' || student.dataset.status === activeFilter;
+                    const matchesName = !keyword || (student.dataset.name || '').includes(keyword);
+                    student.style.display = matchesStatus && matchesName ? '' : 'none';
+                });
+            };
+
+            search?.addEventListener('input', applyQueueFilter);
+            filters.forEach(button => button.addEventListener('click', function() {
+                filters.forEach(item => item.classList.remove('active'));
+                this.classList.add('active');
+                activeFilter = this.dataset.queueFilter;
+                applyQueueFilter();
+            }));
+
+            document.addEventListener('keydown', function(event) {
+                if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                    event.preventDefault();
+                    document.querySelector('button[name="action"][value="save_next"]')?.click();
+                }
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             const aiBtn = document.getElementById('aiAnalyzeBtn');
             if (!aiBtn) return;

@@ -130,6 +130,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/assignments/{id}', [AssignmentController::class, 'update'])->name('assignments.update');
         Route::delete('/assignments/{id}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
         Route::get('/assignments/{id}/submissions-list', [AssignmentController::class, 'listSubmissions'])->name('assignments.submissions.list');
+        Route::post('/assignments/{id}/submissions/download', [AssignmentController::class, 'downloadSubmissionsArchive'])->name('assignments.submissions.download');
         Route::post('/submissions/{id}/ai-analysis', [AssignmentController::class, 'analyzeSubmissionWithAi'])->name('assignments.submissions.ai-analysis');
         Route::post('/submissions/{id}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
         Route::post('/ai/teaching-content/generate', [AiTeachingContentController::class, 'generate'])->name('ai.teaching-content.generate');

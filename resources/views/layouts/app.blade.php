@@ -133,6 +133,22 @@
             justify-content: center;
             position: relative;
             width: 42px;
+            transition: background .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s;
+        }
+
+        .topbar-icon-btn:hover { color:#2563eb; transform:translateY(-2px); box-shadow:0 8px 20px rgba(37,99,235,.16); }
+        .topbar-icon-btn.has-unread { background:linear-gradient(135deg,#2563eb,#7c3aed); border-color:transparent; box-shadow:0 10px 24px rgba(37,99,235,.34); color:#fff; }
+        .topbar-icon-btn.has-unread:hover { color:#fff; box-shadow:0 13px 30px rgba(37,99,235,.44); }
+        .topbar-icon-btn.has-unread::before { animation:notificationPulse 2.4s ease-out infinite; border:2px solid rgba(37,99,235,.5); border-radius:999px; content:''; inset:-5px; pointer-events:none; position:absolute; }
+        .topbar-icon-btn.has-unread i { animation:notificationBell 4s ease-in-out infinite; transform-origin:50% 10%; }
+        .topbar-icon-btn.has-unread::after { display:none; }
+
+        @keyframes notificationPulse { 0%{opacity:.7;transform:scale(.85)} 70%,100%{opacity:0;transform:scale(1.3)} }
+        @keyframes notificationBell { 0%,82%,100%{transform:rotate(0)} 86%{transform:rotate(14deg)} 90%{transform:rotate(-12deg)} 94%{transform:rotate(8deg)} 97%{transform:rotate(-5deg)} }
+
+        @media (prefers-reduced-motion: reduce) {
+            .topbar-icon-btn.has-unread::before,
+            .topbar-icon-btn.has-unread i { animation:none; }
         }
 
         .topbar-icon-btn::after {
@@ -151,7 +167,7 @@
         .notification-menu { width: min(390px, calc(100vw - 24px)); padding: 0; overflow: hidden; }
         .notification-menu-head { align-items:center; display:flex; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #e2e8f0; }
         .notification-menu-title { font-size:14px; font-weight:800; margin:0; }
-        .notification-badge { align-items:center; background:#ef4444; border:2px solid #fff; border-radius:999px; color:#fff; display:flex; font-size:10px; font-weight:800; height:20px; justify-content:center; min-width:20px; padding:0 5px; position:absolute; right:-4px; top:-5px; }
+        .notification-badge { align-items:center; background:#ef4444; border:2px solid #fff; border-radius:999px; box-shadow:0 4px 10px rgba(239,68,68,.36); color:#fff; display:flex; font-size:10px; font-weight:900; height:21px; justify-content:center; min-width:21px; padding:0 5px; position:absolute; right:-6px; top:-7px; z-index:2; }
         .notification-item { border-bottom:1px solid #f1f5f9; display:block; padding:12px 16px; text-decoration:none; white-space:normal; }
         .notification-item.unread { background:#eff6ff; }
         .notification-item-title { color:#0f172a; font-size:13px; font-weight:750; margin-bottom:3px; }
@@ -540,7 +556,7 @@
             </a>
 
             <div class="dropdown ms-auto">
-                <button class="topbar-icon-btn {{ ($topbarUnreadCount ?? 0) === 0 ? 'no-unread' : '' }}" type="button"
+                <button class="topbar-icon-btn {{ ($topbarUnreadCount ?? 0) === 0 ? 'no-unread' : 'has-unread' }}" type="button"
                     data-bs-toggle="dropdown" aria-expanded="false" aria-label="Thông báo">
                     <i class="fas fa-bell"></i>
                     @if (($topbarUnreadCount ?? 0) > 0)
