@@ -96,10 +96,21 @@
             grid-template-columns: repeat(12, minmax(0, 1fr));
         }
 
-        .mf-col-3 { grid-column: span 3; }
-        .mf-col-4 { grid-column: span 4; }
-        .mf-col-6 { grid-column: span 6; }
-        .mf-col-12 { grid-column: span 12; }
+        .mf-col-3 {
+            grid-column: span 3;
+        }
+
+        .mf-col-4 {
+            grid-column: span 4;
+        }
+
+        .mf-col-6 {
+            grid-column: span 6;
+        }
+
+        .mf-col-12 {
+            grid-column: span 12;
+        }
 
         .materials-label {
             color: #64748b;
@@ -223,6 +234,7 @@
         }
 
         @media (max-width: 991.98px) {
+
             .materials-hero,
             .material-card {
                 grid-template-columns: 1fr;
@@ -464,7 +476,8 @@
                                             @endif
                                         </div>
                                         @if ($material->description)
-                                            <div class="text-muted small fw-semibold mt-2">{{ $material->description }}</div>
+                                            <div class="text-muted small fw-semibold mt-2">{{ $material->description }}
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
@@ -474,17 +487,21 @@
                                         target="{{ $material->isLink() ? '_blank' : '_self' }}"
                                         @if ($material->isFile()) data-no-page-transition @endif
                                         class="btn btn-primary material-btn">
-                                        <i class="fas {{ $material->isLink() ? 'fa-up-right-from-square' : 'fa-download' }} me-1"></i>
+                                        <i
+                                            class="fas {{ $material->isLink() ? 'fa-up-right-from-square' : 'fa-download' }} me-1"></i>
                                         {{ $material->isLink() ? 'Mở' : 'Tải' }}
                                     </a>
 
                                     @if ($isManager)
                                         <button class="btn btn-outline-secondary material-btn" type="button"
-                                            data-bs-toggle="collapse" data-bs-target="#edit-material-{{ $assignment->id }}">
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#edit-material-{{ $assignment->id }}">
                                             <i class="fas fa-sliders me-1"></i> Điều kiện
                                         </button>
-                                        <form action="{{ route('courses.materials.assignments.destroy', [$course->id, $assignment->id]) }}"
-                                            method="POST" onsubmit="return confirm('Bỏ học liệu này khỏi khóa học? File gốc vẫn được giữ.');">
+                                        <form
+                                            action="{{ route('courses.materials.assignments.destroy', [$course->id, $assignment->id]) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Bỏ học liệu này khỏi khóa học? File gốc vẫn được giữ.');">
                                             @csrf
                                             @method('DELETE')
                                             <button class="btn btn-outline-danger material-btn" type="submit">
@@ -495,7 +512,8 @@
                                 </div>
 
                                 @if ($isManager)
-                                    <div class="collapse" id="edit-material-{{ $assignment->id }}" style="grid-column:1 / -1;">
+                                    <div class="collapse" id="edit-material-{{ $assignment->id }}"
+                                        style="grid-column:1 / -1;">
                                         <form class="materials-form-grid pt-3 border-top"
                                             action="{{ route('courses.materials.assignments.update', [$course->id, $assignment->id]) }}"
                                             method="POST">
@@ -543,7 +561,8 @@
                                             <div class="mf-col-3">
                                                 <label class="materials-label">Trạng thái</label>
                                                 <select name="status" class="form-select materials-input">
-                                                    <option value="published" @selected($assignment->status === 'published')>Published</option>
+                                                    <option value="published" @selected($assignment->status === 'published')>Published
+                                                    </option>
                                                     <option value="hidden" @selected($assignment->status === 'hidden')>Hidden</option>
                                                 </select>
                                             </div>

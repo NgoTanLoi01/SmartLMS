@@ -222,8 +222,8 @@
         }
 
         /* =========================================
-                                   QUICK ACTIONS
-                ========================================= */
+                                       QUICK ACTIONS
+                    ========================================= */
         .quick-actions {
             display: flex;
             flex-wrap: wrap;
@@ -269,8 +269,8 @@
         }
 
         /* =========================================
-                                   TEACHER FOCUS
-                                ========================================= */
+                                       TEACHER FOCUS
+                                    ========================================= */
         .teacher-priority-grid {
             display: grid;
             gap: 1rem;
@@ -1878,7 +1878,8 @@
                 <h1 class="lms-hero__title">Xin chào, {{ auth()->user()->name }}!</h1>
                 <p class="lms-hero__desc">
                     @if ($role === 'teacher')
-                        Theo dõi lớp sắp dạy, bài cần chấm, học sinh cần chú ý và các gợi ý AI trong một bảng điều khiển gọn gàng.
+                        Theo dõi lớp sắp dạy, bài cần chấm, học sinh cần chú ý và các gợi ý AI trong một bảng điều khiển gọn
+                        gàng.
                     @elseif ($role === 'admin')
                         Quản lý tổng quan người dùng, lớp học, khóa học và các hoạt động vận hành quan trọng của hệ thống.
                     @else

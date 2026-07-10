@@ -72,7 +72,6 @@
             font-family: 'Be Vietnam Pro', sans-serif;
         }
 
-        /* ── PAGE WRAPPER ── */
         .page-wrapper {
             background: #f0f4f8;
             min-height: 100vh;
@@ -85,7 +84,6 @@
             }
         }
 
-        /* ── TOP HEADER CARD ── */
         .header-card {
             background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
             border-radius: var(--radius-xl);
@@ -162,7 +160,6 @@
             gap: 5px;
         }
 
-        /* Progress */
         .progress-wrap {
             margin-top: 12px;
         }
@@ -195,7 +192,6 @@
             box-shadow: 0 0 8px rgba(34, 197, 94, .5);
         }
 
-        /* ── TOOLBAR (teacher) ── */
         .toolbar {
             display: flex;
             align-items: center;
@@ -216,48 +212,17 @@
             }
         }
 
-        .tool-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 7px 11px;
-            border-radius: var(--radius-sm);
-            border: none;
-            cursor: pointer;
-            transition: all .18s;
-            text-decoration: none;
-            line-height: 1;
-            white-space: nowrap;
-        }
-
         .tool-btn i {
             font-size: 11px;
-        }
-
-        .tool-btn.blue {
-            background: rgba(255, 255, 255, .9);
-            color: var(--blue-700);
         }
 
         .tool-btn.blue:hover {
             background: #fff;
         }
 
-        .tool-btn.amber {
-            background: var(--amber-100);
-            color: var(--amber-800);
-        }
-
         .tool-btn.amber:hover {
             background: var(--amber-400);
             color: #fff;
-        }
-
-        .tool-btn.purple {
-            background: var(--purple-100);
-            color: var(--purple-800);
         }
 
         .tool-btn.purple:hover {
@@ -275,7 +240,6 @@
             color: #fff;
         }
 
-        /* ── MOBILE SIDEBAR ── */
         #mobile-sidebar-overlay {
             display: none;
             position: fixed;
@@ -308,31 +272,12 @@
             transform: translateX(0);
         }
 
-        .mobile-drawer-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--gray-100);
-            background: #fff;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        /* FAB */
         #btn-open-sidebar {
             position: fixed;
-            bottom: 20px;
-            left: 16px;
             z-index: 1050;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
             background: var(--blue-600);
             color: #fff;
             border: none;
-            box-shadow: 0 6px 24px rgba(37, 99, 235, .42);
             font-size: 18px;
             display: flex;
             align-items: center;
@@ -352,7 +297,6 @@
             }
         }
 
-        /* ── DESKTOP SIDEBAR ── */
         .desktop-sidebar-wrap {
             display: none;
         }
@@ -361,20 +305,7 @@
             .desktop-sidebar-wrap {
                 display: block;
                 position: sticky;
-                top: 16px;
             }
-        }
-
-        .sidebar-inner-card {
-            background: #fff;
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
-        }
-
-        .sidebar-scroll {
-            max-height: calc(100vh - 120px);
-            overflow-y: auto;
         }
 
         .sidebar-scroll::-webkit-scrollbar {
@@ -390,49 +321,17 @@
             border-radius: 99px;
         }
 
-        /* ── SIDEBAR HEADER ── */
-        .sidebar-head {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--gray-100);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-        }
-
-        .sidebar-head-title {
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            color: var(--gray-500);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
         .sidebar-head-count {
             font-size: 11px;
             font-weight: 700;
-            background: var(--blue-50);
-            color: var(--blue-700);
-            padding: 2px 8px;
-            border-radius: var(--radius-full);
         }
 
-        /* ── ACCORDION ── */
         .accordion-button {
             padding: 0;
             font-weight: 700;
             font-size: 14px;
             background: #fff;
             box-shadow: none !important;
-        }
-
-        .accordion-button:not(.collapsed) {
-            background: var(--blue-50) !important;
-            color: var(--blue-700);
         }
 
         .accordion-button:hover {
@@ -443,16 +342,6 @@
             box-shadow: none !important;
         }
 
-        .accordion-item {
-            border: none;
-            border-bottom: 1px solid var(--gray-100);
-        }
-
-        .accordion-item:last-child {
-            border-bottom: none;
-        }
-
-        /* Module header wrapper */
         .module-header-wrapper {
             display: flex;
             align-items: center;
@@ -460,12 +349,7 @@
             transition: background .15s;
         }
 
-        .module-header-wrapper:hover {
-            background: var(--gray-50);
-        }
-
         .module-title-block {
-            padding: 12px 14px 12px 16px;
             flex: 1;
             min-width: 0;
         }
@@ -486,28 +370,13 @@
             margin-top: 2px;
         }
 
-        /* ── LESSON ITEM ── */
         .lesson-item-wrapper {
             background: #fff;
-            border-bottom: 1px solid var(--gray-100);
-            border-left: 3px solid transparent;
             transition: all .15s;
             cursor: pointer;
         }
 
-        .lesson-item-wrapper:hover {
-            background: var(--blue-50) !important;
-            border-left-color: var(--blue-500);
-        }
-
-        .lesson-item-wrapper.active {
-            background: var(--blue-50) !important;
-            border-left-color: var(--blue-600);
-        }
-
-        /* ── ASSIGNMENT ITEM ── */
         .assignment-item-wrapper {
-            background: var(--amber-50) !important;
             border-bottom: 1px solid #fde68a;
             border-left: 3px solid var(--amber-400);
             transition: all .15s;
@@ -526,11 +395,9 @@
 
         .assignment-item-wrapper.submitted {
             background: var(--green-50) !important;
-            border-left-color: var(--green-600);
             border-bottom-color: #bbf7d0;
         }
 
-        /* ── QUIZ ITEM ── */
         .quiz-item-wrapper {
             background: var(--purple-50);
             border-bottom: 1px solid var(--purple-100);
@@ -551,11 +418,9 @@
 
         .quiz-item-wrapper.completed {
             background: var(--green-50) !important;
-            border-left-color: var(--green-600);
             border-bottom-color: #bbf7d0;
         }
 
-        /* Shared item text */
         .lesson-name-text {
             font-size: 13.5px;
             color: var(--gray-900);
@@ -567,26 +432,6 @@
             font-size: 11px;
             color: var(--gray-400);
             margin-top: 2px;
-        }
-
-        /* Status pills */
-        .sidebar-status-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            margin-top: 4px;
-        }
-
-        .sidebar-status-pill {
-            align-items: center;
-            border-radius: var(--radius-full);
-            display: inline-flex;
-            font-size: 10px;
-            font-weight: 800;
-            gap: 3px;
-            line-height: 1;
-            padding: 3px 7px;
-            white-space: nowrap;
         }
 
         .sidebar-status-pill.done {
@@ -614,7 +459,6 @@
             color: var(--red-800);
         }
 
-        /* Action buttons */
         .action-buttons {
             opacity: 0;
             transition: opacity .15s;
@@ -663,12 +507,8 @@
             background: var(--red-100);
         }
 
-        /* ── CONTENT CARD ── */
         .content-card {
-            background: #fff;
-            border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow: var(--shadow-md);
             display: flex;
             flex-direction: column;
         }
@@ -682,47 +522,14 @@
             border-bottom: 1px solid var(--gray-200);
         }
 
-        /* ── LESSON AREA ── */
         #lesson-content-area {
             padding: 20px 18px;
-        }
-
-        @media (min-width: 768px) {
-            #lesson-content-area {
-                padding: 32px 36px;
-            }
-        }
-
-        .lesson-header-title {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--gray-900);
-            margin-bottom: 12px;
-        }
-
-        @media (min-width: 768px) {
-            .lesson-header-title {
-                font-size: 1.35rem;
-                margin-bottom: 16px;
-            }
         }
 
         .lesson-divider {
             border: none;
             border-top: 2px solid var(--gray-100);
             margin-bottom: 20px;
-        }
-
-        .lesson-body {
-            font-size: 16px;
-            line-height: 1.9;
-            color: var(--gray-700);
-        }
-
-        @media (min-width: 768px) {
-            .lesson-body {
-                font-size: 17px;
-            }
         }
 
         .lesson-ai-toolbar {
@@ -831,7 +638,6 @@
             }
         }
 
-        /* Welcome guide */
         .welcome-guide {
             background: var(--gray-50);
             border: 1px solid var(--gray-200);
@@ -873,21 +679,6 @@
             font-size: 15px;
         }
 
-        /* ── ATTACHMENT ── */
-        .attachment-box {
-            margin: 0 18px 20px;
-            background: var(--gray-50);
-            border: 1.5px dashed var(--gray-300);
-            border-radius: var(--radius-md);
-            padding: 14px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            transition: all .2s;
-        }
-
         @media (min-width: 768px) {
             .attachment-box {
                 margin: 0 36px 24px;
@@ -900,7 +691,6 @@
             background: var(--blue-50);
         }
 
-        /* ── ASSIGNMENT AREA ── */
         #assignment-content-area {
             padding: 20px 18px;
             background: #fffdf5;
@@ -991,7 +781,6 @@
             padding: 16px 18px;
         }
 
-        /* ── QUIZ AREA ── */
         #quiz-content-area {
             padding: 24px 18px;
             background: #faf8ff;
@@ -1091,17 +880,6 @@
             width: 100%;
         }
 
-        /* ── FOOTER NAV ── */
-        .footer-nav {
-            background: #fff;
-            border-top: 1px solid var(--gray-100);
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-        }
-
         @media (min-width: 768px) {
             .footer-nav {
                 padding: 14px 28px;
@@ -1166,30 +944,6 @@
             box-shadow: none;
         }
 
-        /* ── TEACHER PANEL ── */
-        .teacher-mode-panel {
-            background: #fff;
-            border: 1px solid var(--gray-200);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 16px;
-            padding: 14px 16px;
-        }
-
-        .teacher-mode-row {
-            align-items: center;
-            display: flex;
-            gap: 12px;
-            justify-content: space-between;
-        }
-
-        .teacher-mode-title {
-            color: #0f172a;
-            font-size: 14px;
-            font-weight: 800;
-            margin: 0;
-        }
-
         .teacher-mode-subtitle {
             color: var(--gray-500);
             font-size: 12px;
@@ -1208,7 +962,6 @@
         .teacher-mode-btn {
             background: transparent;
             border: 0;
-            border-radius: 6px;
             color: var(--gray-500);
             font-size: 12px;
             font-weight: 700;
@@ -1219,13 +972,6 @@
             background: #fff;
             box-shadow: var(--shadow-sm);
             color: var(--blue-700);
-        }
-
-        .teacher-quick-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
         }
 
         .teacher-quick-actions .tool-btn {
@@ -1252,7 +998,6 @@
             padding: 10px 12px;
         }
 
-        /* ── DASHBOARD GRID ── */
         .course-dashboard-grid {
             display: grid;
             gap: 12px;
@@ -1302,7 +1047,6 @@
             margin-top: 5px;
         }
 
-        /* ── SORTABLE ── */
         .drag-handle {
             color: var(--gray-300);
             cursor: grab;
@@ -1335,7 +1079,6 @@
             display: block;
         }
 
-        /* ── PREVIEW MODE ── */
         .preview-student-mode .toolbar,
         .preview-student-mode .teacher-quick-actions,
         .preview-student-mode .course-dashboard-grid,
@@ -1347,7 +1090,6 @@
             display: flex;
         }
 
-        /* ── MISC ── */
         .text-truncate-custom {
             white-space: nowrap;
             overflow: hidden;
@@ -1405,7 +1147,6 @@
             }
         }
 
-        /* Reference-based course detail redesign */
         .page-wrapper {
             background: #f4f6fb;
             margin: 0 auto;
@@ -1464,7 +1205,7 @@
             }
         }
 
-        .course-ref-header > * {
+        .course-ref-header>* {
             position: relative;
             z-index: 1;
         }
@@ -1576,16 +1317,22 @@
         }
 
         .course-ref-header .toolbar {
+            align-items: center;
             background: transparent;
             border: 0;
             box-shadow: none;
+            display: flex;
+            flex-wrap: wrap;
             gap: 8px;
+            justify-content: flex-end;
             margin-top: 0;
+            min-width: 0;
             padding: 0;
         }
 
         .course-ref-header .tool-btn {
             border-radius: 999px;
+            flex: 0 1 auto;
             min-height: 36px;
             padding: 9px 12px;
         }
@@ -1601,7 +1348,7 @@
                 grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
             }
 
-            .course-ref-grid > [class*="col-"] {
+            .course-ref-grid>[class*="col-"] {
                 max-width: none;
                 width: auto;
             }
@@ -1658,10 +1405,6 @@
             }
         }
 
-        .sidebar-inner-card {
-            overflow: hidden;
-        }
-
         @media (min-width: 768px) {
             .course-outline-card {
                 position: static;
@@ -1697,7 +1440,6 @@
         .sidebar-head-count {
             background: #eaf1ff;
             color: #2f6fed;
-            font-size: 12px;
             padding: 5px 9px;
         }
 
@@ -1886,9 +1628,9 @@
             padding-top: 8px !important;
         }
 
-        .course-sidebar-column .lesson-item > div:first-child,
-        .course-sidebar-column .assignment-item > div:first-child,
-        .course-sidebar-column .quiz-item > div:first-child {
+        .course-sidebar-column .lesson-item>div:first-child,
+        .course-sidebar-column .assignment-item>div:first-child,
+        .course-sidebar-column .quiz-item>div:first-child {
             height: 26px !important;
             width: 26px !important;
         }
@@ -1903,7 +1645,6 @@
             margin-top: 4px;
         }
 
-        /* Final polish: status, active state, mobile, teacher actions, empty states */
         .lesson-item-wrapper.active,
         .assignment-item-wrapper.active,
         .quiz-item-wrapper.active {
@@ -1917,17 +1658,25 @@
         }
 
         .sidebar-status-row {
+            display: flex;
+            flex-wrap: wrap;
             gap: 6px;
             margin-top: 6px;
         }
 
         .sidebar-status-pill {
+            align-items: center;
             border: 1px solid transparent;
+            border-radius: var(--radius-full);
+            display: inline-flex;
             font-size: 10.5px;
             font-weight: 850;
+            gap: 3px;
             letter-spacing: 0;
+            line-height: 1;
             min-height: 22px;
             padding: 5px 8px;
+            white-space: nowrap;
         }
 
         .sidebar-status-pill.done {
@@ -1958,18 +1707,6 @@
             background: #fbe0e0;
             border-color: #f5caca;
             color: #b02a37;
-        }
-
-        .teacher-mode-panel {
-            border-radius: 16px;
-            box-shadow: 0 2px 10px rgba(20, 30, 60, .04);
-        }
-
-        .teacher-quick-actions {
-            background: #f8fbff;
-            border: 1px solid #e4efff;
-            border-radius: 14px;
-            padding: 10px;
         }
 
         .teacher-quick-actions .tool-btn {
@@ -2016,16 +1753,23 @@
         }
 
         .mobile-drawer-header {
-            border-bottom-color: #e7eaf2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             padding: 16px 18px;
+            border-bottom: 1px solid #e7eaf2;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
 
         #btn-open-sidebar {
             border-radius: 18px;
             bottom: 18px;
+            left: 18px;
             box-shadow: 0 12px 28px rgba(47, 111, 237, .32);
             height: 54px;
-            left: 18px;
             width: 54px;
         }
 
@@ -2667,6 +2411,10 @@
             margin: 12px;
             position: sticky;
             z-index: 5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
         }
 
         @media (max-width: 767.98px) {
@@ -2693,6 +2441,204 @@
                 width: 100%;
             }
         }
+
+        .teacher-mode-panel {
+            background: #ffffff;
+            border: 1px solid #e5ebf5;
+            border-radius: 18px;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+            margin-bottom: 20px;
+            overflow: hidden;
+            padding: 20px 22px 22px;
+            position: relative;
+        }
+
+        .teacher-mode-panel::before {
+            background: linear-gradient(90deg, #2563eb 0 25%, #b7842d 25% 50%, #7c3aed 50% 75%, #0f766e 75% 100%);
+            content: '';
+            height: 4px;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+
+        .teacher-mode-row {
+            align-items: flex-start;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        .teacher-mode-title {
+            color: #111827;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16.5px;
+            font-weight: 700;
+            margin: 0 0 4px;
+        }
+
+        .teacher-mode-title i {
+            color: #2563eb;
+        }
+
+        .teacher-mode-subtitle {
+            color: #64748b;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .teacher-mode-toggle {
+            background: #f1f5f9;
+            border-radius: 999px;
+            display: inline-flex;
+            gap: 2px;
+            padding: 4px;
+        }
+
+        .teacher-mode-btn {
+            background: transparent;
+            border: 0;
+            border-radius: 999px;
+            color: #64748b;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 8px 14px;
+            transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+            white-space: nowrap;
+        }
+
+        .teacher-mode-btn.active {
+            background: #2563eb;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, .28);
+            color: #fff;
+        }
+
+        .teacher-mode-btn:not(.active):hover {
+            color: #2563eb;
+        }
+
+        .teacher-preview-banner {
+            align-items: center;
+            background: #fef6e7;
+            border: 1px solid #f3dfae;
+            border-radius: 12px;
+            color: #8a611f;
+            display: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 10px 14px;
+        }
+
+        .teacher-preview-banner i {
+            color: #b7842d;
+        }
+
+        .teacher-mode-panel.is-preview .teacher-preview-banner {
+            display: flex;
+        }
+
+        .teacher-quick-actions {
+            background: #f8fbff;
+            border: 1px solid #e4efff;
+            border-radius: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+            padding: 10px;
+        }
+
+        .tool-btn {
+            align-items: center;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            display: inline-flex;
+            font-family: 'Inter', sans-serif;
+            font-size: 13.5px;
+            font-weight: 700;
+            gap: 8px;
+            padding: 10px 14px;
+            transition: background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+            line-height: 1;
+            white-space: nowrap;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .tool-btn.blue {
+            background: #e8f0fe;
+            border-color: #c7d9fb;
+            color: #2563eb;
+        }
+
+        .tool-btn.blue:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #fff;
+        }
+
+        .tool-btn.amber {
+            background: #f6e8ce;
+            border-color: #e7cf9c;
+            color: #8a611f;
+        }
+
+        .tool-btn.amber:hover {
+            background: #b7842d;
+            border-color: #b7842d;
+            color: #fff;
+        }
+
+        .tool-btn.purple {
+            background: #efe7fe;
+            border-color: #d9c8fb;
+            color: #6d28d9;
+        }
+
+        .tool-btn.purple:hover {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            color: #fff;
+        }
+
+        .tool-btn.teal {
+            background: #e1f2ef;
+            border-color: #bfe3dd;
+            color: #0f766e;
+        }
+
+        .tool-btn.teal:hover {
+            background: #0f766e;
+            border-color: #0f766e;
+            color: #fff;
+        }
+
+        @media (max-width: 575.98px) {
+            .teacher-mode-row {
+                flex-direction: column;
+            }
+
+            .teacher-mode-toggle,
+            .tool-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .teacher-mode-toggle {
+                display: flex;
+            }
+        }
     </style>
 
     {{-- Mobile overlay + drawer --}}
@@ -2716,22 +2662,29 @@
             $courseAssignmentCount = $course->modules->sum(
                 fn($module) => $module->lessons->sum(fn($lesson) => $lesson->assignments->count()),
             );
-            $courseQuizCount = $course->quizzes->filter(fn($quiz) => !str_contains(mb_strtolower($quiz->title), 'thi'))->count();
-            $courseExamCount = $course->quizzes->filter(fn($quiz) => str_contains(mb_strtolower($quiz->title), 'thi'))->count();
+            $courseQuizCount = $course->quizzes
+                ->filter(fn($quiz) => !str_contains(mb_strtolower($quiz->title), 'thi'))
+                ->count();
+            $courseExamCount = $course->quizzes
+                ->filter(fn($quiz) => str_contains(mb_strtolower($quiz->title), 'thi'))
+                ->count();
             $isCourseManager = auth()->id() === $course->teacher_id || auth()->user()->role === 'admin';
             $allLessons = $course->modules->flatMap(fn($module) => $module->lessons);
             $allAssignments = $allLessons->flatMap(fn($lesson) => $lesson->assignments);
-            $nextLesson = auth()->user()->role === 'student'
-                ? $allLessons->first(fn($lesson) => !in_array($lesson->id, $completedLessonIds ?? []))
-                : $allLessons->first();
-            $nextAssignment = auth()->user()->role === 'student'
-                ? $allAssignments->first(fn($assignment) => !isset($userSubmissions[$assignment->id]))
-                : $allAssignments->first();
+            $nextLesson =
+                auth()->user()->role === 'student'
+                    ? $allLessons->first(fn($lesson) => !in_array($lesson->id, $completedLessonIds ?? []))
+                    : $allLessons->first();
+            $nextAssignment =
+                auth()->user()->role === 'student'
+                    ? $allAssignments->first(fn($assignment) => !isset($userSubmissions[$assignment->id]))
+                    : $allAssignments->first();
             $finalExam = $course->quizzes->first(fn($quiz) => str_contains(mb_strtolower($quiz->title), 'thi'));
             $regularQuizzes = $course->quizzes->filter(fn($quiz) => !str_contains(mb_strtolower($quiz->title), 'thi'));
-            $nextQuiz = auth()->user()->role === 'student'
-                ? $regularQuizzes->first(fn($quiz) => !isset($userQuizAttempts[$quiz->id]))
-                : $regularQuizzes->first();
+            $nextQuiz =
+                auth()->user()->role === 'student'
+                    ? $regularQuizzes->first(fn($quiz) => !isset($userQuizAttempts[$quiz->id]))
+                    : $regularQuizzes->first();
         @endphp
 
         {{-- ── HEADER ── --}}
@@ -2804,6 +2757,9 @@
                     </div>
                 @else
                     <div class="toolbar">
+                        <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
+                            <i class="fas fa-user-check"></i> Điểm danh & điểm số
+                        </a>
                         <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
                             <i class="fas fa-folder-open"></i> Kho học liệu
                         </a>
@@ -2816,8 +2772,7 @@
             <div class="teacher-mode-panel" id="teacher-mode-panel">
                 <div class="teacher-mode-row">
                     <div>
-                        <h6 class="teacher-mode-title"><i class="fas fa-layer-group me-2 text-primary"></i>Chế độ giáo viên
-                        </h6>
+                        <h6 class="teacher-mode-title"><i class="fas fa-layer-group me-2"></i>Chế độ giáo viên</h6>
                         <div class="teacher-mode-subtitle">Quản lý nội dung, theo dõi tiến độ và thao tác nhanh.</div>
                     </div>
                     <div class="teacher-mode-toggle" role="group">
@@ -2869,12 +2824,14 @@
                         {{ $courseDashboard['lessons_count'] }} bài</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fas fa-graduation-cap me-1"></i> Hoàn thành bài học</div>
+                    <div class="course-dashboard-label"><i class="fas fa-graduation-cap me-1"></i> Hoàn thành bài học
+                    </div>
                     <div class="course-dashboard-value">{{ $courseDashboard['lesson_completion_rate'] }}%</div>
                     <div class="course-dashboard-sub">Tỷ lệ toàn khóa</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fas fa-file-signature me-1 text-warning"></i> Nộp bài tập
+                    <div class="course-dashboard-label"><i class="fas fa-file-signature me-1 text-warning"></i> Nộp bài
+                        tập
                     </div>
                     <div class="course-dashboard-value">{{ $courseDashboard['assignment_submission_rate'] }}%</div>
                     <div class="course-dashboard-sub">{{ $courseDashboard['pending_grades'] }} bài chờ chấm</div>
@@ -2907,10 +2864,12 @@
                             </div>
                             @if (auth()->user()->role === 'student')
                                 <div class="course-sidebar-progress">
-                                    <span id="sidebar-progress-text">Đã học {{ $completedCount }}/{{ $totalLessons }} bài · Tiến độ {{ $progress }}%</span>
+                                    <span id="sidebar-progress-text">Đã học {{ $completedCount }}/{{ $totalLessons }} bài
+                                        · Tiến độ {{ $progress }}%</span>
                                 </div>
                                 <div class="course-sidebar-progress-track" aria-hidden="true">
-                                    <span id="sidebar-progress-bar" class="course-sidebar-progress-fill" style="width: {{ $progress }}%;"></span>
+                                    <span id="sidebar-progress-bar" class="course-sidebar-progress-fill"
+                                        style="width: {{ $progress }}%;"></span>
                                 </div>
                             @endif
                         </div>
@@ -2945,7 +2904,8 @@
                                     onclick="document.querySelector('.sidebar-scroll .assignment-item[data-id=&quot;{{ $nextAssignment->id }}&quot;]')?.click()">
                                     <span class="course-todo-icon assignment"><i class="fas fa-file-signature"></i></span>
                                     <span>
-                                        <span class="course-todo-title">{{ auth()->user()->role === 'student' ? 'Nộp bài tập' : 'Bài tập trong khóa' }}</span>
+                                        <span
+                                            class="course-todo-title">{{ auth()->user()->role === 'student' ? 'Nộp bài tập' : 'Bài tập trong khóa' }}</span>
                                         <span class="course-todo-meta">
                                             {{ $nextAssignment->title }}
                                             @if ($nextAssignment->due_date)
@@ -2961,8 +2921,10 @@
                                     onclick="document.querySelector('.sidebar-scroll .quiz-item[data-id=&quot;{{ $nextQuiz->id }}&quot;]')?.click()">
                                     <span class="course-todo-icon quiz"><i class="fas fa-list-check"></i></span>
                                     <span>
-                                        <span class="course-todo-title">{{ auth()->user()->role === 'student' ? 'Làm kiểm tra' : 'Kiểm tra trong khóa' }}</span>
-                                        <span class="course-todo-meta">{{ $nextQuiz->title }} · {{ $nextQuiz->time_limit }} phút</span>
+                                        <span
+                                            class="course-todo-title">{{ auth()->user()->role === 'student' ? 'Làm kiểm tra' : 'Kiểm tra trong khóa' }}</span>
+                                        <span class="course-todo-meta">{{ $nextQuiz->title }} ·
+                                            {{ $nextQuiz->time_limit }} phút</span>
                                     </span>
                                 </a>
                             @endif

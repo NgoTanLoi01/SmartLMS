@@ -745,10 +745,11 @@
         <div class="att-toolbar">
             <div class="att-title-block">
                 <h5><i class="fas fa-clipboard-check"></i> Điểm danh & Điểm số</h5>
-                <small>{{ $course->title }}</small>
+                <small>{{ $course->title }}{{ $isStudentView ? ' · Dữ liệu của bạn' : '' }}</small>
             </div>
 
             <div class="att-actions">
+                @unless ($isStudentView)
                 {{-- Search --}}
                 <div class="att-search">
                     <i class="fas fa-search"></i>
@@ -777,6 +778,7 @@
                         <i class="fas fa-plus"></i> Thêm cột
                     </button>
                 </form>
+                @endunless
             </div>
         </div>
 
@@ -799,10 +801,12 @@
                                 @endphp
                                 <th class="{{ $typeClass }}">
                                     <div class="col-header-inner">
-                                        <span class="editable-name" contenteditable="true" data-col-id="{{ $col->id }}"
-                                            onblur="updateColumnName(this)">{{ $col->name }}</span>
+                                        <span class="editable-name" @unless ($isStudentView) contenteditable="true"
+                                            data-col-id="{{ $col->id }}" onblur="updateColumnName(this)" @endunless>{{ $col->name }}</span>
+                                        @unless ($isStudentView)
                                         <i class="fas fa-times btn-delete-col"
                                             onclick="deleteColumn({{ $col->id }}, '{{ addslashes($col->name) }}')"></i>
+                                        @endunless
                                     </div>
                                 </th>
                             @endforeach
@@ -833,7 +837,7 @@
                                     <td class="{{ $cellClass }}" style="padding:0;">
                                         <input type="text" name="data[{{ $col->id }}][{{ $student->id }}]"
                                             value="{{ $attendanceData[$student->id][$col->id] ?? '' }}"
-                                            placeholder="{{ $ph }}">
+                                            placeholder="{{ $ph }}" @if ($isStudentView) readonly aria-label="{{ $col->name }}" @endif>
                                     </td>
                                 @endforeach
                             </tr>
@@ -854,18 +858,21 @@
             {{-- ── FOOTER ── --}}
             <div class="att-footer">
                 <div class="att-hint">
-                    <i class="fas fa-lightbulb"></i>
-                    Click vào tên cột để đổi tên. Hover vào cột để xóa.
+                    <i class="fas fa-{{ $isStudentView ? 'circle-info' : 'lightbulb' }}"></i>
+                    {{ $isStudentView ? 'Dữ liệu do giáo viên cập nhật và chỉ bạn có thể xem dòng này.' : 'Click vào tên cột để đổi tên. Hover vào cột để xóa.' }}
                 </div>
+                @unless ($isStudentView)
                 <button type="submit" class="btn-save">
                     <i class="fas fa-save"></i> Lưu bảng điểm
                 </button>
+                @endunless
             </div>
         </form>
 
     </div>
 
     {{-- Hidden delete form --}}
+    @unless ($isStudentView)
     <form id="delete-column-form" method="POST" style="display:none;">
         @csrf @method('DELETE')
     </form>
@@ -933,4 +940,5 @@
             setTimeout(() => flash.classList.remove('show'), 2200);
         });
     </script>
+    @endunless
 @endsection

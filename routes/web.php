@@ -140,8 +140,8 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     // 2.7. ĐIỂM DANH (ATTENDANCE)
     // ==========================================
+    Route::get('/courses/{id}/attendance', [AttendanceController::class, 'show'])->name('attendance.show');
     Route::middleware('role:admin,teacher')->group(function () {
-        Route::get('/courses/{id}/attendance', [AttendanceController::class, 'show'])->name('attendance.show');
         Route::post('/courses/{id}/attendance/save', [AttendanceController::class, 'save'])->name('attendance.save');
         Route::post('/courses/{id}/attendance/add-column', [AttendanceController::class, 'addColumn'])->name('attendance.addColumn');
         Route::delete('/attendance/column/{id}', [AttendanceController::class, 'deleteColumn'])->name('attendance.deleteColumn');

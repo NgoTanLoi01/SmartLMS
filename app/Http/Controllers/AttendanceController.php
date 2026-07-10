@@ -28,11 +28,25 @@ class AttendanceController extends Controller
     public function show($courseId)
     {
         $course = Course::with('classes.students')->findOrFail($courseId);
-        $students = $course->classes->flatMap->students->unique('id');
+        $user = auth()->user();
+        $isStudentView = $user->isStudent();
+
+        if ($isStudentView) {
+            $isEnrolled = $course->isVisibleToStudents()
+                && $course->classes
+                    ->where('status', 'active')
+                    ->flatMap->students
+                    ->contains('id', $user->id);
+
+            abort_unless($isEnrolled, 403, 'Bạn không tham gia khóa học này.');
+            $students = collect([$user]);
+        } else {
+            $students = $course->classes->flatMap->students->unique('id');
+        }
 
         $columnCount = AttendanceColumn::where('course_id', $courseId)->count();
 
-        if ($columnCount == 0) {
+        if (!$isStudentView && $columnCount == 0) {
             // Tạo mặc định 10 buổi học (Dùng ngày hiện tại làm mẫu)
             for ($i = 0; $i < 10; $i++) {
                 AttendanceColumn::create([
@@ -63,13 +77,15 @@ class AttendanceController extends Controller
         // Lấy cột sắp xếp theo Order
         $columns = AttendanceColumn::where('course_id', $courseId)->orderBy('order')->get();
 
-        $rawData = AttendanceData::whereIn('attendance_column_id', $columns->pluck('id'))->get();
+        $rawData = AttendanceData::whereIn('attendance_column_id', $columns->pluck('id'))
+            ->when($isStudentView, fn ($query) => $query->where('user_id', $user->id))
+            ->get();
         $attendanceData = [];
         foreach ($rawData as $d) {
             $attendanceData[$d->user_id][$d->attendance_column_id] = $d->value;
         }
 
-        return view('attendance.show', compact('course', 'students', 'columns', 'attendanceData'));
+        return view('attendance.show', compact('course', 'students', 'columns', 'attendanceData', 'isStudentView'));
     }
     public function addColumn(Request $request, $courseId)
     {

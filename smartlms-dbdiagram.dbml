@@ -1,7 +1,6 @@
 Project SmartLMS {
 database_type: "MySQL + PostgreSQL(pgvector)"
-Note: "Sơ đồ được tổng hợp từ Laravel migrations. Bảng submissions là legacy; luồng hiện tại dùng
-assignment_submissions."
+Note: "Sơ đồ nghiệp vụ chính được tổng hợp từ Laravel migrations. Đã lược bỏ các bảng hạ tầng/legacy như sessions, cache, jobs, submissions để sơ đồ dễ đọc hơn."
 }
 
 Enum user_role {
@@ -141,6 +140,53 @@ created_at timestamp [null]
 updated_at timestamp [null]
 }
 
+Table learning_materials {
+id bigint [pk, increment]
+title varchar
+description text [null]
+type varchar [default: "document", note: "document, slide, video, link, code, other"]
+source_type varchar [default: "file", note: "file hoặc link"]
+disk varchar [null, note: "VD: public, r2"]
+file_path varchar [null]
+url varchar(2048) [null]
+original_name varchar [null]
+mime_type varchar [null]
+file_size bigint [null]
+uploaded_by bigint [null]
+status varchar [default: "published"]
+created_at timestamp [null]
+updated_at timestamp [null]
+
+Note: "Kho học liệu gốc. Một file/link có thể dùng lại cho nhiều khóa học, lớp học hoặc bài học."
+
+Indexes {
+(source_type, type)
+status
+}
+}
+
+Table learning_material_assignments {
+id bigint [pk, increment]
+learning_material_id bigint [not null]
+course_id bigint [not null]
+class_id bigint [null]
+lesson_id bigint [null]
+unlock_when_lesson_id bigint [null]
+available_from timestamp [null]
+status varchar [default: "published"]
+sort_order int [default: 0]
+created_at timestamp [null]
+updated_at timestamp [null]
+
+Note: "Bảng gắn học liệu vào phạm vi sử dụng. Nhờ bảng này, cùng một học liệu có thể dùng chung cho nhiều lớp/khóa mà không upload lại."
+
+Indexes {
+(course_id, status)
+(lesson_id, status)
+(class_id, status)
+}
+}
+
 Table lesson_user {
 id bigint [pk, increment]
 user_id bigint [not null]
@@ -195,26 +241,6 @@ ai_analyzed_at timestamp [null]
 submitted_at timestamp [null]
 created_at timestamp [null]
 updated_at timestamp [null]
-}
-
-Table submissions {
-id bigint [pk, increment]
-assignment_id bigint [not null]
-student_id bigint [not null]
-file_path varchar
-submitted_at timestamp [null]
-is_final boolean [default: true]
-grade float [null]
-feedback text [null]
-deleted_at timestamp [null]
-created_at timestamp [null]
-updated_at timestamp [null]
-
-Note: "Legacy API/table cũ. Luồng nộp bài hiện tại dùng assignment_submissions."
-
-Indexes {
-(assignment_id, student_id)
-}
 }
 
 Table quizzes {
@@ -332,24 +358,6 @@ updated_at timestamp [null]
 Note: "Bảng nằm trên kết nối PostgreSQL, dùng cho RAG/AI."
 }
 
-
-Table sessions {
-id varchar [pk]
-user_id bigint [null]
-ip_address varchar(45) [null]
-user_agent text [null]
-payload longtext
-last_activity int
-
-Indexes {
-user_id
-last_activity
-}
-}
-
-
-
-
 Ref: learning_programs.teacher_id > users.id [delete: cascade]
 Ref: courses.teacher_id > users.id [delete: cascade]
 Ref: courses.learning_program_id > learning_programs.id [delete: set null]
@@ -362,6 +370,12 @@ Ref: class_course.course_id > courses.id [delete: cascade]
 
 Ref: modules.course_id > courses.id [delete: cascade]
 Ref: lessons.module_id > modules.id [delete: cascade]
+Ref: learning_materials.uploaded_by > users.id [delete: set null]
+Ref: learning_material_assignments.learning_material_id > learning_materials.id [delete: cascade]
+Ref: learning_material_assignments.course_id > courses.id [delete: cascade]
+Ref: learning_material_assignments.class_id > classes.id [delete: set null]
+Ref: learning_material_assignments.lesson_id > lessons.id [delete: set null]
+Ref: learning_material_assignments.unlock_when_lesson_id > lessons.id [delete: set null]
 Ref: lesson_user.user_id > users.id [delete: cascade]
 Ref: lesson_user.lesson_id > lessons.id [delete: cascade]
 
@@ -369,8 +383,6 @@ Ref: assignments.course_id > courses.id [delete: cascade]
 Ref: assignments.lesson_id > lessons.id [delete: cascade]
 Ref: assignment_submissions.assignment_id > assignments.id [delete: cascade]
 Ref: assignment_submissions.user_id > users.id [delete: cascade]
-Ref: submissions.assignment_id > assignments.id
-Ref: submissions.student_id > users.id
 
 Ref: quizzes.course_id > courses.id [delete: cascade]
 Ref: questions.course_id > courses.id [delete: cascade]
@@ -389,4 +401,3 @@ Ref: attendance_data.user_id > users.id [delete: cascade]
 Ref: schedules.class_id > classes.id [delete: cascade]
 Ref: schedules.course_id > courses.id [delete: cascade]
 Ref: document_chunks.course_id > courses.id
-Ref: sessions.user_id > users.id
