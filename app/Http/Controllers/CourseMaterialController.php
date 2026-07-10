@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Services\NotificationCenter;
 
 class CourseMaterialController extends Controller
 {
@@ -151,6 +152,7 @@ class CourseMaterialController extends Controller
         $this->assertCourseLesson($course, $validated['lesson_id'] ?? null);
         $this->assertCourseLesson($course, $validated['unlock_when_lesson_id'] ?? null);
 
+        $wasPublished = $assignment->status === LearningMaterialAssignment::STATUS_PUBLISHED;
         $assignment->update([
             'class_id' => $validated['class_id'] ?? null,
             'lesson_id' => $validated['lesson_id'] ?? null,
@@ -158,6 +160,16 @@ class CourseMaterialController extends Controller
             'available_from' => $validated['available_from'] ?? null,
             'status' => $validated['status'] ?? LearningMaterialAssignment::STATUS_PUBLISHED,
         ]);
+
+        if (!$wasPublished && $assignment->status === LearningMaterialAssignment::STATUS_PUBLISHED) {
+            $assignment->load('material');
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $course, 'material', 'Có học liệu mới',
+                "Học liệu \"{$assignment->material->title}\" vừa được thêm vào khóa học.",
+                route('courses.materials.index', $course), ['material_assignment_id' => $assignment->id],
+                "material-assignment:{$assignment->id}:published", $assignment->class_id
+            );
+        }
 
         return back()->with('success', 'Đã cập nhật điều kiện mở học liệu.');
     }
@@ -245,7 +257,7 @@ class CourseMaterialController extends Controller
 
     private function createAssignment(Course $course, LearningMaterial $material, array $data): LearningMaterialAssignment
     {
-        return LearningMaterialAssignment::create([
+        $assignment = LearningMaterialAssignment::create([
             'learning_material_id' => $material->id,
             'course_id' => $course->id,
             'class_id' => $data['class_id'] ?? null,
@@ -255,6 +267,21 @@ class CourseMaterialController extends Controller
             'status' => $data['status'] ?? LearningMaterialAssignment::STATUS_PUBLISHED,
             'sort_order' => LearningMaterialAssignment::where('course_id', $course->id)->count() + 1,
         ]);
+
+        if ($assignment->status === LearningMaterialAssignment::STATUS_PUBLISHED) {
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $course,
+                'material',
+                'Có học liệu mới',
+                "Học liệu \"{$material->title}\" vừa được thêm vào khóa học.",
+                route('courses.materials.index', $course),
+                ['material_assignment_id' => $assignment->id],
+                "material-assignment:{$assignment->id}:published",
+                $assignment->class_id
+            );
+        }
+
+        return $assignment;
     }
 
     private function titleFromUrl(string $url): string

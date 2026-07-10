@@ -147,6 +147,18 @@
             width: 9px;
         }
 
+        .topbar-icon-btn.no-unread::after { display: none; }
+        .notification-menu { width: min(390px, calc(100vw - 24px)); padding: 0; overflow: hidden; }
+        .notification-menu-head { align-items:center; display:flex; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #e2e8f0; }
+        .notification-menu-title { font-size:14px; font-weight:800; margin:0; }
+        .notification-badge { align-items:center; background:#ef4444; border:2px solid #fff; border-radius:999px; color:#fff; display:flex; font-size:10px; font-weight:800; height:20px; justify-content:center; min-width:20px; padding:0 5px; position:absolute; right:-4px; top:-5px; }
+        .notification-item { border-bottom:1px solid #f1f5f9; display:block; padding:12px 16px; text-decoration:none; white-space:normal; }
+        .notification-item.unread { background:#eff6ff; }
+        .notification-item-title { color:#0f172a; font-size:13px; font-weight:750; margin-bottom:3px; }
+        .notification-item-message { color:#64748b; font-size:12px; line-height:1.45; }
+        .notification-item-time { color:#94a3b8; font-size:11px; margin-top:5px; }
+        .notification-menu-footer { display:block; font-size:12px; font-weight:750; padding:12px; text-align:center; text-decoration:none; }
+
         .user-btn {
             display: flex;
             align-items: center;
@@ -526,6 +538,33 @@
             <a class="navbar-brand" href="{{ route('dashboard') }}">
                 <img src="{{ asset('smartlms-logo-sharpened.png') }}" alt="SmartLMS">
             </a>
+
+            <div class="dropdown ms-auto">
+                <button class="topbar-icon-btn {{ ($topbarUnreadCount ?? 0) === 0 ? 'no-unread' : '' }}" type="button"
+                    data-bs-toggle="dropdown" aria-expanded="false" aria-label="Thông báo">
+                    <i class="fas fa-bell"></i>
+                    @if (($topbarUnreadCount ?? 0) > 0)
+                        <span class="notification-badge">{{ $topbarUnreadCount > 99 ? '99+' : $topbarUnreadCount }}</span>
+                    @endif
+                </button>
+                <div class="dropdown-menu dropdown-menu-end notification-menu mt-2">
+                    <div class="notification-menu-head">
+                        <h6 class="notification-menu-title">Thông báo</h6>
+                        <span class="text-muted small">{{ $topbarUnreadCount ?? 0 }} chưa đọc</span>
+                    </div>
+                    @forelse (($topbarNotifications ?? collect()) as $notification)
+                        <a class="notification-item {{ $notification->read_at ? '' : 'unread' }}"
+                            href="{{ route('notifications.open', $notification) }}">
+                            <div class="notification-item-title">{{ $notification->title }}</div>
+                            <div class="notification-item-message">{{ Str::limit($notification->message, 105) }}</div>
+                            <div class="notification-item-time">{{ $notification->created_at->diffForHumans() }}</div>
+                        </a>
+                    @empty
+                        <div class="text-center text-muted small py-4">Chưa có thông báo.</div>
+                    @endforelse
+                    <a class="notification-menu-footer" href="{{ route('notifications.index') }}">Xem tất cả thông báo</a>
+                </div>
+            </div>
 
             <div class="user-btn dropdown" data-bs-toggle="dropdown" id="userMenuBtn" aria-expanded="false">
                 <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>

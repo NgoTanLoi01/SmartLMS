@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Services\AuditLogger;
 use App\Services\DeepSeekService;
 use App\Services\SubmissionTextExtractor;
+use App\Services\NotificationCenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -81,7 +82,18 @@ class AssignmentController extends Controller
         $data['ai_grading_enabled'] = $request->boolean('ai_grading_enabled');
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
 
-        Assignments::create($data);
+        $assignment = Assignments::create($data);
+        if ($assignment->status === Assignments::STATUS_PUBLISHED) {
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $assignment->course_id,
+                'assignment',
+                'Có bài tập mới',
+                "Bài tập \"{$assignment->title}\" vừa được đăng.",
+                route('courses.show', $assignment->course_id),
+                ['assignment_id' => $assignment->id],
+                "assignment:{$assignment->id}:published"
+            );
+        }
         return back()->with('success', 'Đã tạo bài tập thành công!');
     }
 
@@ -101,6 +113,16 @@ class AssignmentController extends Controller
             'grade' => $request->grade,
             'feedback' => $request->feedback,
         ]);
+
+        app(NotificationCenter::class)->notifyUser(
+            $submission->user_id,
+            'grade',
+            'Bài tập đã được chấm',
+            "Bài \"{$submission->assignment->title}\" đã có điểm {$submission->grade}/{$scale}" . ($submission->feedback ? ' và nhận xét mới.' : '.'),
+            route('students.grades'),
+            ['assignment_id' => $submission->assignment_id, 'submission_id' => $submission->id],
+            "grade:submission:{$submission->id}:" . md5($submission->updated_at . '|' . $submission->grade . '|' . $submission->feedback)
+        );
 
         AuditLogger::log(
             AuditLogger::GRADE_UPDATED,
@@ -447,6 +469,8 @@ class AssignmentController extends Controller
 
         // SỬA CHỖ NÀY
         $assignment = Assignments::findOrFail($id);
+        $wasPublished = $assignment->status === Assignments::STATUS_PUBLISHED;
+        $oldDueDate = $assignment->due_date?->copy();
 
         $validated['status'] = $validated['status'] ?? $assignment->status;
         $validated['grading_scale'] = $validated['grading_scale'] ?? 10;
@@ -454,6 +478,22 @@ class AssignmentController extends Controller
         $validated['published_at'] = $validated['status'] === 'published' ? ($assignment->published_at ?? now()) : null;
 
         $assignment->update($validated);
+
+        if (!$wasPublished && $assignment->status === Assignments::STATUS_PUBLISHED) {
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $assignment->course_id, 'assignment', 'Có bài tập mới',
+                "Bài tập \"{$assignment->title}\" vừa được đăng.",
+                route('courses.show', $assignment->course_id), ['assignment_id' => $assignment->id],
+                "assignment:{$assignment->id}:published"
+            );
+        } elseif ($wasPublished && $assignment->status === Assignments::STATUS_PUBLISHED && (!$oldDueDate || !$oldDueDate->equalTo($assignment->due_date))) {
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $assignment->course_id, 'assignment', 'Hạn nộp bài đã thay đổi',
+                "Bài \"{$assignment->title}\" có hạn nộp mới: {$assignment->due_date->format('H:i d/m/Y')}.",
+                route('courses.show', $assignment->course_id), ['assignment_id' => $assignment->id],
+                "assignment:{$assignment->id}:due:{$assignment->due_date->timestamp}"
+            );
+        }
 
         return back()->with('success', 'Đã cập nhật bài tập thành công!');
     }

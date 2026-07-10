@@ -8,6 +8,8 @@ use App\Models\AttendanceData;
 use Illuminate\Http\Request;
 use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\NotificationCenter;
+use Illuminate\Support\Str;
 
 class AttendanceController extends Controller
 {
@@ -115,12 +117,51 @@ class AttendanceController extends Controller
 
     public function save(Request $request, $courseId)
     {
-        foreach ($request->data as $columnId => $users) {
+        foreach ($request->input('data', []) as $columnId => $users) {
             foreach ($users as $userId => $value) {
                 AttendanceData::updateOrCreate(['attendance_column_id' => $columnId, 'user_id' => $userId], ['value' => $value]);
             }
         }
+
+        $this->notifyFrequentAbsences((int) $courseId, collect($request->input('data', []))->flatMap(fn ($users) => array_keys($users))->unique());
+
         return back()->with('success', 'Đã lưu bảng điểm danh thành công!');
+    }
+
+    private function notifyFrequentAbsences(int $courseId, $userIds): void
+    {
+        $attendanceColumnIds = AttendanceColumn::where('course_id', $courseId)
+            ->where('type', 'attendance')
+            ->pluck('id');
+
+        foreach ($userIds as $userId) {
+            $absenceCount = AttendanceData::where('user_id', $userId)
+                ->whereIn('attendance_column_id', $attendanceColumnIds)
+                ->pluck('value')
+                ->filter(fn ($value) => $this->isAbsentValue($value))
+                ->count();
+
+            if ($absenceCount >= 3) {
+                app(NotificationCenter::class)->notifyUser(
+                    (int) $userId,
+                    'attendance_warning',
+                    'Cảnh báo chuyên cần',
+                    "Bạn đã có {$absenceCount} lượt vắng/nghỉ trong khóa học. Hãy trao đổi với giáo viên nếu cần hỗ trợ.",
+                    route('attendance.show', $courseId),
+                    ['course_id' => $courseId, 'absence_count' => $absenceCount],
+                    "attendance-warning:{$courseId}:{$userId}:{$absenceCount}"
+                );
+            }
+        }
+    }
+
+    private function isAbsentValue($value): bool
+    {
+        $normalized = Str::of((string) $value)->lower()->ascii()->trim()->toString();
+
+        return in_array($normalized, ['0', 'no', 'false', 'abs', 'absent', 'v', 'vang', 'nghi'], true)
+            || str_contains(Str::lower((string) $value), 'vắng')
+            || str_contains(Str::lower((string) $value), 'nghỉ');
     }
     // Xóa cột
     public function deleteColumn($columnId)

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Quiz;
 use App\Models\Question;
+use App\Services\NotificationCenter;
 
 class QuizController extends Controller
 {
@@ -21,7 +22,7 @@ class QuizController extends Controller
             'available_from' => 'nullable|date',
         ]);
 
-        Quiz::create([
+        $quiz = Quiz::create([
             'course_id' => $request->course_id,
             'title' => $request->title,
             'time_limit' => $request->time_limit,
@@ -33,6 +34,18 @@ class QuizController extends Controller
             'published_at' => $request->input('status', 'published') === 'published' ? now() : null,
             'available_from' => $request->available_from,
         ]);
+
+        if ($quiz->status === Quiz::STATUS_PUBLISHED) {
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $quiz->course_id,
+                'quiz',
+                'Có bài kiểm tra mới',
+                "Bài kiểm tra \"{$quiz->title}\" vừa được đăng.",
+                route('courses.show', $quiz->course_id),
+                ['quiz_id' => $quiz->id],
+                "quiz:{$quiz->id}:published"
+            );
+        }
 
         return back()->with('success', 'Đã tạo cấu hình bài kiểm tra ngẫu nhiên thành công!');
     }

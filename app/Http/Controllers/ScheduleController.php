@@ -10,6 +10,7 @@ use App\Imports\ScheduleImport;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\NotificationCenter;
 
 class ScheduleController extends Controller
 {
@@ -100,7 +101,8 @@ class ScheduleController extends Controller
 
         $this->clearCourseExamNoteIfNeeded($request);
 
-        Schedule::create(array_merge($request->all(), ['status' => Schedule::STATUS_ACTIVE]));
+        $schedule = Schedule::create(array_merge($request->all(), ['status' => Schedule::STATUS_ACTIVE]));
+        $this->notifyScheduleChange($schedule, 'Lịch học mới', 'Lịch học mới đã được thêm.');
         return response()->json(['status' => 'success', 'message' => 'Đã thêm lịch học!']);
     }
 
@@ -307,6 +309,8 @@ class ScheduleController extends Controller
             'status' => $request->input('status', $schedule->status ?? Schedule::STATUS_ACTIVE),
         ]));
 
+        $this->notifyScheduleChange($schedule, 'Lịch học đã thay đổi', 'Giáo viên vừa cập nhật thời gian hoặc thông tin buổi học.');
+
         AuditLogger::log(
             AuditLogger::SCHEDULE_UPDATED,
             $schedule,
@@ -327,6 +331,8 @@ class ScheduleController extends Controller
         $schedule = Schedule::findOrFail($id);
         $oldValues = AuditLogger::snapshot($schedule);
         $schedule->update(['status' => Schedule::STATUS_ARCHIVED]);
+
+        $this->notifyScheduleChange($schedule, 'Buổi học đã hủy', 'Một buổi học trong lịch của bạn đã được hủy.');
 
         AuditLogger::log(
             AuditLogger::SCHEDULE_ARCHIVED,
@@ -356,5 +362,21 @@ class ScheduleController extends Controller
             ->when($exceptScheduleId, fn ($query) => $query->where('id', '!=', $exceptScheduleId))
             ->where('note', 'Thi kết thúc môn')
             ->update(['note' => null]);
+    }
+
+    private function notifyScheduleChange(Schedule $schedule, string $title, string $message): void
+    {
+        $date = \Carbon\Carbon::parse($schedule->schedule_date)->format('d/m/Y');
+        $time = \Carbon\Carbon::parse($schedule->start_time)->format('H:i');
+
+        app(NotificationCenter::class)->notifyClassStudents(
+            (int) $schedule->class_id,
+            'schedule',
+            $title,
+            "{$message} Thời gian: {$time} ngày {$date}.",
+            route('students.schedule'),
+            ['schedule_id' => $schedule->id, 'course_id' => $schedule->course_id],
+            "schedule:{$schedule->id}:{$schedule->updated_at->timestamp}:" . md5($title)
+        );
     }
 }

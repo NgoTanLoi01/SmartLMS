@@ -8,6 +8,7 @@ use App\Models\Assignments;
 use App\Models\Lesson;
 use App\Models\Module;
 use Illuminate\Support\Str;
+use App\Services\NotificationCenter;
 
 class LessonController extends Controller
 {
@@ -33,7 +34,18 @@ class LessonController extends Controller
             $data = array_merge($data, $this->storeAttachment($request));
         }
 
-        Lesson::create($data);
+        $lesson = Lesson::create($data);
+        if ($lesson->status === Lesson::STATUS_PUBLISHED) {
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $module->course,
+                'lesson',
+                'Có bài học mới',
+                "Bài học \"{$lesson->title}\" vừa được đăng.",
+                route('courses.show', $module->course_id),
+                ['lesson_id' => $lesson->id],
+                "lesson:{$lesson->id}:published"
+            );
+        }
         return back()->with('success', 'Đã thêm bài học thành công.');
     }
 
@@ -41,6 +53,7 @@ class LessonController extends Controller
     public function update(Request $request, $id)
     {
         $lesson = Lesson::findOrFail($id);
+        $wasPublished = $lesson->status === Lesson::STATUS_PUBLISHED;
         $this->authorizeManageCourse($lesson->module->course);
 
         $data = $request->validate([
@@ -66,6 +79,14 @@ class LessonController extends Controller
         }
 
         $lesson->update($data);
+        if (!$wasPublished && $lesson->status === Lesson::STATUS_PUBLISHED) {
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $targetModule->course, 'lesson', 'Có bài học mới',
+                "Bài học \"{$lesson->title}\" vừa được đăng.",
+                route('courses.show', $targetModule->course_id), ['lesson_id' => $lesson->id],
+                "lesson:{$lesson->id}:published"
+            );
+        }
         return back()->with('success', 'Đã cập nhật bài học.');
     }
 
