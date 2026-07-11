@@ -3534,7 +3534,7 @@
                                 <div class="ai-plan-span-2"><label class="form-label fw-semibold">Yêu cầu hoặc lưu ý thêm</label><textarea class="form-control" name="notes" rows="2" placeholder="Chủ đề bắt buộc, cách tổ chức lớp, loại bài tập mong muốn..."></textarea></div>
                             </form>
                         </div>
-                        <div id="ai-plan-loading" class="text-center py-5 d-none"><div class="spinner-border text-primary"></div><h6 class="mt-3 mb-1">AI đang thiết kế chương trình...</h6><div class="small text-muted">Quá trình có thể mất khoảng một phút.</div></div>
+                        <div id="ai-plan-loading" class="text-center py-5 d-none"><div class="spinner-border text-primary"></div><h6 class="mt-3 mb-1">AI đang thiết kế chương trình...</h6><div class="small text-muted">Quá trình có thể mất một vài phút.</div></div>
                         <div id="ai-plan-review-step" class="d-none">
                             <div class="alert alert-info" id="ai-plan-summary"></div>
                             <div class="small text-muted mb-3"><i class="fas fa-pen me-1"></i>Có thể sửa trực tiếp tên chương, tên bài và nội dung trước khi áp dụng.</div>

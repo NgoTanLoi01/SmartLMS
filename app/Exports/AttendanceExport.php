@@ -43,7 +43,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
             $headers[] = $col->name;
         }
 
-        return [['TRƯỜNG TRUNG CẤP ÂU VIỆT'], ['BẢNG ĐIỂM DANH & ĐIỂM SỐ CHI TIẾT'], ['Môn học: ' . $this->course->title], ['Ngày xuất: ' . date('d/m/Y H:i')], ['Quy ước: trống = Có mặt  |  V = Vắng  |  M = Đi muộn  |  P = Có phép'], $headers];
+        return [['TRƯỜNG TRUNG CẤP ÂU VIỆT'], ['BẢNG ĐIỂM DANH & ĐIỂM SỐ CHI TIẾT'], ['Môn học: ' . $this->course->title], ['Ngày xuất: ' . date('d/m/Y H:i')], ['Quy ước: Trống = Có mặt  |  V = Vắng  |  M = Đi muộn  |  P = Có phép'], $headers];
     }
 
     public function map($student): array

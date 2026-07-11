@@ -26,7 +26,17 @@ class AttendanceController extends Controller
             $attendanceData[$d->user_id][$d->attendance_column_id] = $d->value;
         }
 
-        return Excel::download(new AttendanceExport($course, $students, $columns, $attendanceData), 'Diem_Danh_' . $course->id . '.xlsx');
+        $courseFileName = Str::ascii($course->title);
+        $courseFileName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $courseFileName);
+        $courseFileName = preg_replace('/_+/', '_', $courseFileName);
+        $courseFileName = trim($courseFileName, '_-');
+        $courseFileName = Str::limit($courseFileName, 120, '');
+        $courseFileName = $courseFileName !== '' ? $courseFileName : 'Khoa_hoc_' . $course->id;
+
+        return Excel::download(
+            new AttendanceExport($course, $students, $columns, $attendanceData),
+            $courseFileName . '.xlsx'
+        );
     }
     public function show($courseId)
     {
