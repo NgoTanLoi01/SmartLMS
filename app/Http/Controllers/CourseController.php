@@ -16,6 +16,7 @@ use App\Models\Quiz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -348,6 +349,57 @@ class CourseController extends Controller
         ]);
 
         return redirect()->route('courses.index')->with('success', 'Đã lưu trữ khóa học. Dữ liệu học tập vẫn được giữ lại.');
+    }
+
+    public function permanentDestroy(Course $course)
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        if ($course->status !== Course::STATUS_ARCHIVED) {
+            return redirect()->route('courses.index')
+                ->with('error', 'Hãy lưu trữ khóa học trước khi xóa vĩnh viễn.');
+        }
+
+        $lessonFiles = Lesson::whereHas('module', fn ($query) => $query->where('course_id', $course->id))
+            ->whereNotNull('attachment')
+            ->get(['attachment', 'attachment_disk']);
+
+        $assignmentIds = Assignments::where('course_id', $course->id)->pluck('id');
+        $submissionFiles = AssignmentSubmission::whereIn('assignment_id', $assignmentIds)
+            ->whereNotNull('file_path')
+            ->get(['file_path', 'file_disk']);
+        $legacySubmissionFiles = Schema::hasTable('submissions')
+            ? DB::table('submissions')
+                ->whereIn('assignment_id', $assignmentIds)
+                ->whereNotNull('file_path')
+                ->pluck('file_path')
+            : collect();
+
+        DB::transaction(function () use ($course, $assignmentIds) {
+            // Bảng submissions cũ không khai báo cascade nên cần dọn trước.
+            if (Schema::hasTable('submissions')) {
+                DB::table('submissions')->whereIn('assignment_id', $assignmentIds)->delete();
+            }
+            if (Schema::hasTable('document_chunks')) {
+                DB::table('document_chunks')->where('course_id', $course->id)->delete();
+            }
+            $course->delete();
+        });
+
+        $lessonFiles->each(function ($file) {
+            $disk = $file->attachment_disk ?: 'public';
+            rescue(fn () => Storage::disk($disk)->delete($file->attachment), report: false);
+        });
+        $submissionFiles->each(function ($file) {
+            $disk = $file->file_disk ?: 'public';
+            rescue(fn () => Storage::disk($disk)->delete($file->file_path), report: false);
+        });
+        $legacySubmissionFiles->each(
+            fn ($path) => rescue(fn () => Storage::disk('public')->delete($path), report: false)
+        );
+
+        return redirect()->route('courses.index')
+            ->with('success', 'Đã xóa vĩnh viễn khóa học và toàn bộ dữ liệu liên quan.');
     }
 
     private function authorizeCourseAccess(Course $course): void

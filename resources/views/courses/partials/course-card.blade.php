@@ -22,16 +22,31 @@
                     <li>
                         <hr class="dropdown-divider">
                     </li>
-                    <li>
-                        <form action="{{ route('courses.destroy', $course->id) }}" method="POST"
-                            onsubmit="return confirm('Lưu trữ khóa học này? Học sinh sẽ không còn thấy khóa học nhưng dữ liệu vẫn được giữ lại.')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="dropdown-item text-danger"
-                                style="background:none; border:none; width:100%; text-align:left;">
-                                <i class="fas fa-archive"></i> Lưu trữ khóa học
-                            </button>
-                        </form>
-                    </li>
+                    @if ($course->status === \App\Models\Course::STATUS_ARCHIVED)
+                        @if (auth()->user()->role === 'admin')
+                            <li>
+                                <form action="{{ route('courses.permanent-destroy', $course) }}" method="POST"
+                                    onsubmit="return confirm('XÓA VĨNH VIỄN khóa học này? Toàn bộ chương, bài học, bài tập, điểm và bài nộp sẽ bị xóa, không thể khôi phục.')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger"
+                                        style="background:none; border:none; width:100%; text-align:left;">
+                                        <i class="fas fa-trash-can"></i> Xóa vĩnh viễn
+                                    </button>
+                                </form>
+                            </li>
+                        @endif
+                    @else
+                        <li>
+                            <form action="{{ route('courses.destroy', $course->id) }}" method="POST"
+                                onsubmit="return confirm('Lưu trữ khóa học này? Học sinh sẽ không còn thấy khóa học nhưng dữ liệu vẫn được giữ lại.')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="dropdown-item text-danger"
+                                    style="background:none; border:none; width:100%; text-align:left;">
+                                    <i class="fas fa-archive"></i> Lưu trữ khóa học
+                                </button>
+                            </form>
+                        </li>
+                    @endif
                 </ul>
             </div>
         @endif

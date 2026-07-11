@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController, AiTeachingContentController, CourseQualityController, CourseMaterialController, NotificationController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, CoursePlannerController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController, AiTeachingContentController, CourseQualityController, CourseMaterialController, NotificationController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -91,12 +91,17 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::patch('/courses/{course}', [CourseController::class, 'update']);
         Route::post('/courses/{course}/quality-check', [CourseQualityController::class, 'check'])->name('courses.quality-check');
+        Route::post('/courses/{course}/ai-plan/generate', [CoursePlannerController::class, 'generate'])->name('courses.ai-plan.generate');
+        Route::post('/courses/{course}/ai-plan/apply', [CoursePlannerController::class, 'apply'])->name('courses.ai-plan.apply');
         Route::post('/courses/{course}/materials', [CourseMaterialController::class, 'store'])->name('courses.materials.store');
         Route::post('/courses/{course}/materials/attach', [CourseMaterialController::class, 'attachExisting'])->name('courses.materials.attach');
         Route::put('/courses/{course}/materials/assignments/{assignment}', [CourseMaterialController::class, 'updateAssignment'])->name('courses.materials.assignments.update');
         Route::delete('/courses/{course}/materials/assignments/{assignment}', [CourseMaterialController::class, 'destroyAssignment'])->name('courses.materials.assignments.destroy');
         Route::delete('/courses/{course}/materials/{material}', [CourseMaterialController::class, 'destroyMaterial'])->name('courses.materials.destroy');
         Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
+        Route::delete('/courses/{course}/permanent', [CourseController::class, 'permanentDestroy'])
+            ->middleware('role:admin')
+            ->name('courses.permanent-destroy');
     });
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::get('/materials', [CourseMaterialController::class, 'library'])->name('materials.index');

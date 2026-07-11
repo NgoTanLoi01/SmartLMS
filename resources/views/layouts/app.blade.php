@@ -27,6 +27,7 @@
     <style>
         :root {
             --sidebar-width: 272px;
+            --sidebar-collapsed-width: 82px;
             --navbar-height: 72px;
             --blue: #2563eb;
             --blue-light: #eff6ff;
@@ -220,7 +221,62 @@
             overflow-y: auto;
             overflow-x: hidden;
             padding: 18px 12px 26px;
-            transition: transform 0.3s cubic-bezier(.4, 0, .2, 1);
+            transition: width 0.3s cubic-bezier(.4, 0, .2, 1), transform 0.3s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .sidebar-collapse-btn {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            border-radius: 999px;
+            color: var(--text);
+            cursor: pointer;
+            display: inline-flex;
+            flex: 0 0 42px;
+            font-size: 19px;
+            height: 42px;
+            justify-content: center;
+            transition: background .2s, color .2s;
+            width: 42px;
+        }
+
+        .sidebar-collapse-btn:hover {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        body.sidebar-collapsed .sidebar {
+            width: var(--sidebar-collapsed-width);
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        body.sidebar-collapsed .sidebar .nav-link {
+            font-size: 0;
+            gap: 0;
+            justify-content: center;
+            min-height: 48px;
+            padding: 11px 8px;
+            position: relative;
+        }
+
+        body.sidebar-collapsed .sidebar .nav-link > i:not(.chevron) {
+            font-size: 18px;
+            width: 26px;
+        }
+
+        body.sidebar-collapsed .sidebar .nav-section,
+        body.sidebar-collapsed .sidebar .chevron,
+        body.sidebar-collapsed .sidebar .collapse {
+            display: none !important;
+        }
+
+        body.sidebar-collapsed .sidebar .nav-link.active {
+            box-shadow: 0 9px 20px rgba(37, 99, 235, .24);
         }
 
         .sidebar::-webkit-scrollbar {
@@ -455,6 +511,39 @@
 
         /* ── Mobile ── */
         @media (max-width: 768px) {
+            body.sidebar-collapsed .sidebar {
+                width: var(--sidebar-width);
+                padding: 18px 12px 26px;
+            }
+
+            body.sidebar-collapsed .sidebar .nav-link {
+                font-size: 14.5px;
+                gap: 12px;
+                justify-content: flex-start;
+                padding: 11px 12px;
+            }
+
+            body.sidebar-collapsed .sidebar .nav-link > i:not(.chevron) {
+                font-size: 15px;
+                width: 22px;
+            }
+
+            body.sidebar-collapsed .sidebar .nav-section {
+                display: block !important;
+            }
+
+            body.sidebar-collapsed .sidebar .chevron {
+                display: inline-block !important;
+            }
+
+            body.sidebar-collapsed .sidebar .collapse.show {
+                display: block !important;
+            }
+
+            .sidebar-collapse-btn {
+                display: none;
+            }
+
             .sidebar {
                 transform: translateX(-100%);
             }
@@ -549,6 +638,11 @@
         <nav class="navbar">
             <button class="hamburger me-3" id="sidebarToggle" aria-label="Mở menu">
                 <i class="fas fa-bars"></i>
+            </button>
+
+            <button class="sidebar-collapse-btn" id="sidebarCollapseToggle" type="button"
+                aria-label="Thu gọn menu" title="Thu gọn menu" aria-expanded="true">
+                <i class="fas fa-bars" aria-hidden="true"></i>
             </button>
 
             <a class="navbar-brand" href="{{ route('dashboard') }}">
@@ -909,6 +1003,53 @@
     @stack('scripts')
 
     <script>
+        (() => {
+            const body = document.body;
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarCollapseToggle');
+            if (!sidebar || !toggle) return;
+
+            const storageKey = 'smartlms.sidebarCollapsed';
+            const applyState = (collapsed, persist = true) => {
+                body.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth > 768);
+                document.documentElement.classList.remove('sidebar-will-collapse');
+                toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                toggle.setAttribute('aria-label', collapsed ? 'Mở rộng menu' : 'Thu gọn menu');
+                toggle.setAttribute('title', collapsed ? 'Mở rộng menu' : 'Thu gọn menu');
+                if (persist) {
+                    try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch (error) {}
+                }
+            };
+
+            let storedCollapsed = false;
+            try { storedCollapsed = localStorage.getItem(storageKey) === '1'; } catch (error) {}
+            applyState(storedCollapsed, false);
+
+            sidebar.querySelectorAll('.nav-link').forEach((link) => {
+                const label = link.textContent.replace(/\s+/g, ' ').trim();
+                if (label) {
+                    link.setAttribute('title', label);
+                    link.setAttribute('aria-label', label);
+                }
+            });
+
+            toggle.addEventListener('click', () => applyState(!body.classList.contains('sidebar-collapsed')));
+
+            sidebar.querySelectorAll('[data-bs-toggle="collapse"]').forEach((link) => {
+                link.addEventListener('click', (event) => {
+                    if (window.innerWidth > 768 && body.classList.contains('sidebar-collapsed')) {
+                        event.preventDefault();
+                        event.stopImmediatePropagation();
+                        applyState(false);
+                    }
+                }, true);
+            });
+
+            window.addEventListener('resize', () => applyState(storedCollapsed = (() => {
+                try { return localStorage.getItem(storageKey) === '1'; } catch (error) { return false; }
+            })(), false));
+        })();
+
         document.getElementById('sidebarToggle')?.addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('show');
         });

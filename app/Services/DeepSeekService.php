@@ -409,6 +409,106 @@ PROMPT;
         }
     }
 
+    public function generateCoursePlan(array $payload): array
+    {
+        try {
+            $apiKey = config('services.deepseek.key');
+            $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
+
+            if (!$apiKey) {
+                return ['success' => false, 'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.'];
+            }
+
+            $systemPrompt = <<<'PROMPT'
+Bạn là chuyên gia thiết kế chương trình giảng dạy cho giáo viên trong SmartLMS.
+Hãy tạo một kế hoạch khóa học thực tế bằng tiếng Việt, phù hợp đúng đối tượng, trình độ, số buổi và thời lượng được cung cấp.
+Nếu khóa học đã có nội dung, tránh lặp lại nguyên văn các chương/bài hiện có.
+
+Chỉ trả về JSON hợp lệ, không markdown, không bọc ```json. Schema:
+{
+  "summary": "Mô tả ngắn định hướng kế hoạch",
+  "modules": [
+    {
+      "title": "Tên chương",
+      "lessons": [
+        {
+          "title": "Tên bài học/buổi học",
+          "objectives": ["Mục tiêu đo lường được"],
+          "key_topics": ["Kiến thức trọng tâm"],
+          "activities": ["Hoạt động trên lớp kèm thời lượng gợi ý"],
+          "assessment": "Cách kiểm tra nhanh cuối buổi",
+          "assignment": "Bài tập phù hợp hoặc Không có"
+        }
+      ]
+    }
+  ]
+}
+
+Quy tắc:
+- Tổng số lesson phải đúng bằng session_count; mỗi lesson tương ứng một buổi học.
+- Phân bổ lesson vào các chương hợp lý, không tạo chương rỗng.
+- Nội dung phải đủ cụ thể để giáo viên có thể dùng làm bản nháp giảng dạy.
+- Hoạt động phải phù hợp minutes_per_session và có thực hành khi phù hợp.
+- Bài tập bám sát mục tiêu buổi học, không quá sức đối tượng.
+- Không bịa yêu cầu đầu ra ngoài dữ liệu người dùng cung cấp.
+PROMPT;
+
+            $response = Http::withToken($apiKey)
+                ->timeout(120)
+                ->withoutVerifying()
+                ->post("{$baseUrl}/chat/completions", [
+                    'model' => 'deepseek-v4-flash',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => $this->cleanUtf8(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE) ?: '{}')],
+                    ],
+                    'temperature' => 0.35,
+                ]);
+
+            if ($response->failed()) {
+                Log::warning('DeepSeek course plan failed', ['status' => $response->status(), 'body' => $response->body()]);
+                return ['success' => false, 'message' => 'AI chưa tạo được kế hoạch. Vui lòng thử lại.'];
+            }
+
+            $plan = $this->decodeJsonResponse($response->json('choices.0.message.content'));
+            if (!$plan || empty($plan['modules']) || !is_array($plan['modules'])) {
+                return ['success' => false, 'message' => 'AI trả về kế hoạch chưa đúng định dạng. Vui lòng tạo lại.'];
+            }
+
+            $modules = collect($plan['modules'])->filter(fn ($module) => is_array($module))
+                ->map(function ($module) {
+                    $lessons = collect($module['lessons'] ?? [])->filter(fn ($lesson) => is_array($lesson))
+                        ->map(function ($lesson) {
+                            $section = function (string $heading, $value): string {
+                                $items = is_array($value) ? $value : array_filter([(string) $value]);
+                                if (!$items) return '';
+                                $list = collect($items)->map(fn ($item) => '<li>' . e((string) $item) . '</li>')->implode('');
+                                return '<h3>' . e($heading) . '</h3><ul>' . $list . '</ul>';
+                            };
+
+                            $content = $section('Mục tiêu buổi học', $lesson['objectives'] ?? [])
+                                . $section('Kiến thức trọng tâm', $lesson['key_topics'] ?? [])
+                                . $section('Hoạt động trên lớp', $lesson['activities'] ?? [])
+                                . $section('Kiểm tra cuối buổi', $lesson['assessment'] ?? '')
+                                . $section('Bài tập gợi ý', $lesson['assignment'] ?? '');
+
+                            return ['title' => trim((string) ($lesson['title'] ?? 'Bài học')), 'content' => $content];
+                        })->filter(fn ($lesson) => $lesson['title'] !== '')->values()->all();
+
+                    return ['title' => trim((string) ($module['title'] ?? 'Chương học')), 'lessons' => $lessons];
+                })->filter(fn ($module) => $module['title'] !== '' && count($module['lessons']) > 0)->values()->all();
+
+            if (!$modules) {
+                return ['success' => false, 'message' => 'Kế hoạch AI chưa có chương hoặc bài học hợp lệ.'];
+            }
+
+            return ['success' => true, 'plan' => ['summary' => (string) ($plan['summary'] ?? ''), 'modules' => $modules]];
+        } catch (\Throwable $e) {
+            Log::error('DeepSeek course plan error: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Không thể kết nối đến AI thiết kế khóa học.'];
+        }
+    }
+
     private function askDeepSeek(array $historyMessages, string $context, array $options = []): string
     {
         $apiKey = config('services.deepseek.key');

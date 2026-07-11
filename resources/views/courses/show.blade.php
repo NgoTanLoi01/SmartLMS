@@ -2849,31 +2849,7 @@
                     </div>
                 </div>
 
-                @if ($isCourseManager)
-                    <div class="toolbar">
-                        <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addModuleModal">
-                            <i class="fas fa-folder-plus"></i> Thêm chương
-                        </button>
-                        <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addLessonModal">
-                            <i class="fas fa-plus"></i> Bài học
-                        </button>
-                        <button class="tool-btn amber" data-bs-toggle="modal" data-bs-target="#addCourseAssignmentModal">
-                            <i class="fas fa-tasks"></i> Bài tập
-                        </button>
-                        <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#addQuizModal">
-                            <i class="fas fa-question-circle"></i> Trắc nghiệm
-                        </button>
-                        <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
-                            <i class="fas fa-user-check"></i> Điểm danh
-                        </a>
-                        <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
-                            <i class="fas fa-folder-open"></i> Kho học liệu
-                        </a>
-                        <button type="button" class="tool-btn purple" id="start-presentation-btn">
-                            <i class="fas fa-display"></i> Trình chiếu
-                        </button>
-                    </div>
-                @else
+                @if (!$isCourseManager)
                     <div class="toolbar">
                         <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
                             <i class="fas fa-user-check"></i> Điểm danh & điểm số
@@ -2907,6 +2883,12 @@
                     <span>Đang xem ở chế độ học sinh. Nút sửa/xóa đang ẩn.</span>
                 </div>
                 <div class="teacher-quick-actions">
+                    <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#aiCoursePlanModal">
+                        <i class="fas fa-wand-magic-sparkles"></i> AI thiết kế khóa học
+                    </button>
+                    <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addModuleModal">
+                        <i class="fas fa-folder-plus"></i> Thêm chương
+                    </button>
                     <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addLessonModal">
                         <i class="fas fa-plus"></i> Thêm bài học
                     </button>
@@ -2916,18 +2898,21 @@
                     <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#addQuizModal">
                         <i class="fas fa-stopwatch"></i> Tạo quiz
                     </button>
+                    <a href="{{ route('quizzes.ai_generate') }}" class="tool-btn purple">
+                        <i class="fas fa-wand-magic-sparkles"></i> Tạo câu hỏi AI
+                    </a>
                     <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
                         <i class="fas fa-user-check"></i> Điểm danh
                     </a>
                     <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
                         <i class="fas fa-folder-open"></i> Kho học liệu
                     </a>
-                    <a href="{{ route('quizzes.ai_generate') }}" class="tool-btn purple">
-                        <i class="fas fa-wand-magic-sparkles"></i> Tạo câu hỏi AI
-                    </a>
                     <button type="button" class="tool-btn amber" id="course-quality-check-btn"
                         data-url="{{ route('courses.quality-check', $course->id) }}">
                         <i class="fas fa-shield-halved"></i> Kiểm tra chất lượng
+                    </button>
+                    <button type="button" class="tool-btn purple" id="start-presentation-btn">
+                        <i class="fas fa-display"></i> Trình chiếu
                     </button>
                 </div>
             </div>
@@ -3510,6 +3495,64 @@
         </div>
     @endif
 
+    @if ($isCourseManager)
+        <style>
+            .ai-plan-dialog { max-width: 1080px; }
+            .ai-plan-intro { background: linear-gradient(135deg,#eff6ff,#f5f3ff); border:1px solid #dbeafe; border-radius:14px; color:#334155; padding:14px 16px; }
+            .ai-plan-form-grid { display:grid; gap:14px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .ai-plan-span-2 { grid-column:1/-1; }
+            .ai-plan-result { max-height:58vh; overflow:auto; padding-right:4px; }
+            .ai-plan-module { background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; margin-bottom:14px; padding:14px; }
+            .ai-plan-module-head { align-items:center; display:flex; gap:10px; margin-bottom:10px; }
+            .ai-plan-module-title { font-weight:800; }
+            .ai-plan-lesson { background:#fff; border:1px solid #e2e8f0; border-radius:12px; margin-top:10px; padding:12px; }
+            .ai-plan-lesson-head { align-items:center; display:flex; gap:8px; margin-bottom:8px; }
+            .ai-plan-lesson-content { border:1px solid #dbe2ea; border-radius:10px; color:#334155; line-height:1.55; min-height:120px; padding:12px; }
+            .ai-plan-lesson-content:focus { border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,.12); outline:0; }
+            .ai-plan-remove { background:#fff1f2; border:0; border-radius:9px; color:#be123c; height:34px; width:34px; }
+            @media(max-width:767px){ .ai-plan-form-grid{grid-template-columns:1fr}.ai-plan-span-2{grid-column:auto} }
+        </style>
+        <div class="modal fade" id="aiCoursePlanModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable ai-plan-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title fw-bold"><i class="fas fa-wand-magic-sparkles text-primary me-2"></i>AI thiết kế khóa học</h5>
+                            <div class="small text-muted mt-1">AI tạo bản nháp, giáo viên duyệt trước khi đưa vào khóa học.</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="ai-plan-form-step">
+                            <div class="ai-plan-intro mb-3"><strong>{{ $course->title }}</strong><br>Hãy cung cấp bối cảnh ngắn để kế hoạch sát với lớp học thực tế.</div>
+                            <form id="ai-course-plan-form" class="ai-plan-form-grid">
+                                <div><label class="form-label fw-semibold">Đối tượng học sinh</label><input class="form-control" name="audience" placeholder="VD: Học sinh trung cấp năm 1" required></div>
+                                <div><label class="form-label fw-semibold">Trình độ hiện tại</label><input class="form-control" name="current_level" placeholder="VD: Đã biết HTML/CSS cơ bản" required></div>
+                                <div><label class="form-label fw-semibold">Số buổi</label><input class="form-control" name="session_count" type="number" min="1" max="60" value="10" required></div>
+                                <div><label class="form-label fw-semibold">Phút mỗi buổi</label><input class="form-control" name="minutes_per_session" type="number" min="30" max="480" value="135" required></div>
+                                <div class="ai-plan-span-2"><label class="form-label fw-semibold">Mục tiêu đầu ra</label><textarea class="form-control" name="learning_outcomes" rows="3" placeholder="Sau khóa học, học sinh có thể..." required></textarea></div>
+                                <div class="ai-plan-span-2"><label class="form-label fw-semibold">Yêu cầu hoặc lưu ý thêm</label><textarea class="form-control" name="notes" rows="2" placeholder="Chủ đề bắt buộc, cách tổ chức lớp, loại bài tập mong muốn..."></textarea></div>
+                            </form>
+                        </div>
+                        <div id="ai-plan-loading" class="text-center py-5 d-none"><div class="spinner-border text-primary"></div><h6 class="mt-3 mb-1">AI đang thiết kế chương trình...</h6><div class="small text-muted">Quá trình có thể mất khoảng một phút.</div></div>
+                        <div id="ai-plan-review-step" class="d-none">
+                            <div class="alert alert-info" id="ai-plan-summary"></div>
+                            <div class="small text-muted mb-3"><i class="fas fa-pen me-1"></i>Có thể sửa trực tiếp tên chương, tên bài và nội dung trước khi áp dụng.</div>
+                            <div id="ai-plan-result" class="ai-plan-result"></div>
+                        </div>
+                        <div id="ai-plan-error" class="alert alert-danger d-none mt-3"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-outline-primary d-none" id="ai-plan-back-btn"><i class="fas fa-arrow-left me-1"></i>Điều chỉnh yêu cầu</button>
+                        <button type="button" class="btn btn-primary" id="ai-plan-generate-btn"><i class="fas fa-sparkles me-1"></i>Tạo bản nháp</button>
+                        <button type="button" class="btn btn-success d-none" id="ai-plan-apply-btn"><i class="fas fa-check me-1"></i>Áp dụng vào khóa học</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @include('courses.partials.modals')
     @include('courses.partials.scripts')
 
@@ -3620,5 +3663,115 @@
                 }
             });
         })();
+
+        @if ($isCourseManager)
+        (function() {
+            const form = document.getElementById('ai-course-plan-form');
+            if (!form) return;
+            const generateBtn = document.getElementById('ai-plan-generate-btn');
+            const applyBtn = document.getElementById('ai-plan-apply-btn');
+            const backBtn = document.getElementById('ai-plan-back-btn');
+            const formStep = document.getElementById('ai-plan-form-step');
+            const reviewStep = document.getElementById('ai-plan-review-step');
+            const loading = document.getElementById('ai-plan-loading');
+            const result = document.getElementById('ai-plan-result');
+            const summary = document.getElementById('ai-plan-summary');
+            const errorBox = document.getElementById('ai-plan-error');
+            const generateUrl = @json(route('courses.ai-plan.generate', $course));
+            const applyUrl = @json(route('courses.ai-plan.apply', $course));
+
+            const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char]));
+            const showError = message => { errorBox.textContent = message; errorBox.classList.remove('d-none'); };
+            const setLoading = active => {
+                loading.classList.toggle('d-none', !active);
+                generateBtn.disabled = active;
+                formStep.classList.toggle('d-none', active);
+            };
+
+            function renderPlan(plan) {
+                summary.textContent = plan.summary || 'Bản nháp chương trình đã được tạo.';
+                result.innerHTML = (plan.modules || []).map((module, moduleIndex) => `
+                    <section class="ai-plan-module" data-module>
+                        <div class="ai-plan-module-head">
+                            <span class="badge bg-primary">Chương ${moduleIndex + 1}</span>
+                            <input class="form-control ai-plan-module-title" value="${esc(module.title)}" aria-label="Tên chương">
+                            <button type="button" class="ai-plan-remove" data-remove-module title="Xóa chương"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <div data-lessons>${(module.lessons || []).map((lesson, lessonIndex) => `
+                            <article class="ai-plan-lesson" data-lesson>
+                                <div class="ai-plan-lesson-head">
+                                    <span class="badge bg-light text-dark">Buổi ${lessonIndex + 1}</span>
+                                    <input class="form-control fw-semibold" value="${esc(lesson.title)}" aria-label="Tên bài học">
+                                    <button type="button" class="ai-plan-remove" data-remove-lesson title="Xóa bài"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="ai-plan-lesson-content" contenteditable="true">${lesson.content || ''}</div>
+                            </article>`).join('')}</div>
+                    </section>`).join('');
+                formStep.classList.add('d-none');
+                loading.classList.add('d-none');
+                reviewStep.classList.remove('d-none');
+                generateBtn.classList.add('d-none');
+                applyBtn.classList.remove('d-none');
+                backBtn.classList.remove('d-none');
+            }
+
+            function collectPlan() {
+                return { modules: [...result.querySelectorAll('[data-module]')].map(module => ({
+                    title: module.querySelector('.ai-plan-module-title').value.trim(),
+                    lessons: [...module.querySelectorAll('[data-lesson]')].map(lesson => ({
+                        title: lesson.querySelector('input').value.trim(),
+                        content: lesson.querySelector('.ai-plan-lesson-content').innerHTML.trim()
+                    }))
+                })).filter(module => module.title && module.lessons.length) };
+            }
+
+            generateBtn.addEventListener('click', async () => {
+                if (!form.reportValidity()) return;
+                errorBox.classList.add('d-none');
+                setLoading(true);
+                try {
+                    const payload = Object.fromEntries(new FormData(form).entries());
+                    payload.session_count = Number(payload.session_count);
+                    payload.minutes_per_session = Number(payload.minutes_per_session);
+                    const response = await axios.post(generateUrl, payload);
+                    renderPlan(response.data.plan);
+                } catch (error) {
+                    setLoading(false);
+                    showError(error.response?.data?.message || 'Không thể tạo kế hoạch lúc này.');
+                }
+            });
+
+            backBtn.addEventListener('click', () => {
+                reviewStep.classList.add('d-none');
+                formStep.classList.remove('d-none');
+                generateBtn.classList.remove('d-none');
+                applyBtn.classList.add('d-none');
+                backBtn.classList.add('d-none');
+            });
+
+            result.addEventListener('click', event => {
+                const removeLesson = event.target.closest('[data-remove-lesson]');
+                const removeModule = event.target.closest('[data-remove-module]');
+                if (removeLesson) removeLesson.closest('[data-lesson]').remove();
+                if (removeModule) removeModule.closest('[data-module]').remove();
+            });
+
+            applyBtn.addEventListener('click', async () => {
+                const plan = collectPlan();
+                if (!plan.modules.length) return showError('Kế hoạch cần ít nhất một chương có bài học.');
+                errorBox.classList.add('d-none');
+                applyBtn.disabled = true;
+                applyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang áp dụng...';
+                try {
+                    const response = await axios.post(applyUrl, plan);
+                    window.location.href = response.data.redirect_url;
+                } catch (error) {
+                    applyBtn.disabled = false;
+                    applyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Áp dụng vào khóa học';
+                    showError(error.response?.data?.message || 'Không thể áp dụng kế hoạch.');
+                }
+            });
+        })();
+        @endif
     </script>
 @endsection

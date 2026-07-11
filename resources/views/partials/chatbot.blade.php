@@ -36,12 +36,12 @@
 
     .cb-toggler:hover {
         background: var(--cb-primary-dark);
-        transform: scale(1.08);
+        transform: scale(1.08) rotate(-4deg);
         box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
     }
 
     .cb-toggler:active {
-        transform: scale(0.96);
+        transform: scale(0.9) rotate(2deg);
     }
 
     /* Pulse ring khi chưa mở */
@@ -56,6 +56,22 @@
     }
 
     .cb-toggler.has-pulse::before {
+        opacity: 1;
+    }
+
+    /* Vòng pulse thứ 2 lệch nhịp để tạo hiệu ứng sóng lan tỏa */
+    .cb-toggler::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 50%;
+        border: 2px solid var(--cb-primary);
+        opacity: 0;
+        animation: cb-pulse 2.5s ease-out infinite;
+        animation-delay: 1.25s;
+    }
+
+    .cb-toggler.has-pulse::after {
         opacity: 1;
     }
 
@@ -79,23 +95,23 @@
     /* Icon toggle */
     .cb-toggler .icon-open,
     .cb-toggler .icon-close {
-        transition: opacity 0.2s, transform 0.2s;
+        transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         position: absolute;
     }
 
     .cb-toggler .icon-close {
         opacity: 0;
-        transform: rotate(-90deg);
+        transform: rotate(-90deg) scale(0.5);
     }
 
     .cb-toggler.active .icon-open {
         opacity: 0;
-        transform: rotate(90deg);
+        transform: rotate(90deg) scale(0.5);
     }
 
     .cb-toggler.active .icon-close {
         opacity: 1;
-        transform: rotate(0deg);
+        transform: rotate(0deg) scale(1);
     }
 
     /* Badge thông báo */
@@ -115,6 +131,19 @@
         justify-content: center;
         border: 2px solid #fff;
         display: none;
+        animation: cb-badge-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes cb-badge-pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.18);
+        }
     }
 
     /* ── Cửa sổ chat ── */
@@ -136,15 +165,15 @@
         /* Trạng thái đóng */
         opacity: 0;
         pointer-events: none;
-        transform: translateY(16px) scale(0.97);
+        transform: translateY(24px) scale(0.94) rotate(1deg);
         transform-origin: bottom right;
-        transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .cb-window.active {
         opacity: 1;
         pointer-events: auto;
-        transform: translateY(0) scale(1);
+        transform: translateY(0) scale(1) rotate(0deg);
     }
 
     /* Fullscreen */
@@ -154,17 +183,36 @@
         /* bottom: 4vh; */
         right: max(2vw, 12px);
         border-radius: 20px;
+        transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+            height 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+            right 0.35s ease, border-radius 0.35s ease;
     }
 
     /* ── Header ── */
     .cb-header {
-        background: linear-gradient(135deg, #172554 0%, #1d4ed8 58%, #6d28d9 100%);
+        background: linear-gradient(120deg, #172554 0%, #1d4ed8 45%, #6d28d9 80%, #1d4ed8 100%);
+        background-size: 220% 220%;
+        animation: cb-header-shimmer 8s ease infinite;
         padding: 16px 18px;
         display: flex;
         align-items: center;
         gap: 12px;
         flex-shrink: 0;
         user-select: none;
+    }
+
+    @keyframes cb-header-shimmer {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
     }
 
     .cb-avatar {
@@ -176,6 +224,11 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .cb-header:hover .cb-avatar {
+        transform: scale(1.08) rotate(-3deg);
     }
 
     .cb-header-info {
@@ -209,6 +262,19 @@
         background: #4ade80;
         flex-shrink: 0;
         box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
+        animation: cb-status-breathe 2s ease-in-out infinite;
+    }
+
+    @keyframes cb-status-breathe {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
+        }
+
+        50% {
+            box-shadow: 0 0 0 5px rgba(74, 222, 128, 0.12);
+        }
     }
 
     .cb-header-actions {
@@ -228,12 +294,17 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: background 0.15s;
+        transition: background 0.15s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         flex-shrink: 0;
     }
 
     .cb-icon-btn:hover {
         background: rgba(255, 255, 255, 0.22);
+        transform: scale(1.12) rotate(8deg);
+    }
+
+    .cb-icon-btn:active {
+        transform: scale(0.92);
     }
 
     .cb-context {
@@ -245,10 +316,26 @@
         font-size: 0.75rem;
         gap: 8px;
         padding: 9px 14px;
+        overflow: hidden;
     }
 
     .cb-context.active {
         display: flex;
+        animation: cb-slide-down 0.3s ease;
+    }
+
+    @keyframes cb-slide-down {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+            max-height: 0;
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 60px;
+        }
     }
 
     .cb-context strong {
@@ -316,6 +403,19 @@
         font-size: 14px;
         border: 1.5px solid #c7d2fe;
         overflow: hidden;
+        animation: cb-avatar-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes cb-avatar-pop {
+        from {
+            transform: scale(0.4);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
     }
 
     .cb-msg-wrap {
@@ -336,18 +436,39 @@
         word-break: break-word;
         overflow-wrap: anywhere;
         position: relative;
-        animation: cb-fadein 0.2s ease;
+        animation: cb-fadein 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .cb-msg:hover {
+        transform: translateY(-1px);
     }
 
     @keyframes cb-fadein {
         from {
             opacity: 0;
-            transform: translateY(6px);
+            transform: translateY(10px) scale(0.92);
         }
 
         to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .cb-row.user .cb-msg {
+        animation-name: cb-fadein-right;
+    }
+
+    @keyframes cb-fadein-right {
+        from {
+            opacity: 0;
+            transform: translateX(12px) scale(0.92);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
         }
     }
 
@@ -356,6 +477,7 @@
         color: var(--cb-text);
         border: 1px solid var(--cb-border);
         border-bottom-left-radius: 4px;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, .05);
     }
 
     .cb-msg.user {
@@ -369,6 +491,14 @@
         color: var(--cb-text-muted);
         margin-top: 3px;
         padding: 0 2px;
+        opacity: 0;
+        animation: cb-fade-in-simple 0.3s ease 0.15s forwards;
+    }
+
+    @keyframes cb-fade-in-simple {
+        to {
+            opacity: 1;
+        }
     }
 
     /* ── Typing indicator ── */
@@ -380,6 +510,7 @@
 
     .cb-typing.visible {
         display: flex;
+        animation: cb-fadein 0.25s ease;
     }
 
     .cb-typing-dots {
@@ -415,10 +546,12 @@
         60%,
         100% {
             transform: translateY(0);
+            background: #94a3b8;
         }
 
         30% {
-            transform: translateY(-6px);
+            transform: translateY(-7px);
+            background: var(--cb-primary);
         }
     }
 
@@ -452,7 +585,7 @@
         background: var(--cb-surface-alt);
         max-height: 120px;
         overflow-y: auto;
-        transition: border-color 0.15s, box-shadow 0.15s;
+        transition: border-color 0.2s ease, box-shadow 0.3s ease, background 0.2s ease;
         box-sizing: border-box;
     }
 
@@ -460,6 +593,19 @@
         border-color: var(--cb-primary);
         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         background: var(--cb-surface);
+        animation: cb-input-glow 1.6s ease-in-out infinite;
+    }
+
+    @keyframes cb-input-glow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        50% {
+            box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.16);
+        }
     }
 
     .cb-input:disabled {
@@ -483,22 +629,50 @@
         justify-content: center;
         cursor: pointer;
         flex-shrink: 0;
-        transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+        transition: background 0.15s, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s;
         box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        position: relative;
+        overflow: hidden;
     }
 
     .cb-send-btn:hover:not(:disabled) {
         background: var(--cb-primary-dark);
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+        transform: scale(1.06);
     }
 
     .cb-send-btn:active:not(:disabled) {
-        transform: scale(0.94);
+        transform: scale(0.88) rotate(-6deg);
     }
 
     .cb-send-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    .cb-send-btn i {
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .cb-send-btn:hover:not(:disabled) i {
+        transform: translate(2px, -2px) rotate(8deg);
+    }
+
+    /* Hiệu ứng ripple khi bấm gửi */
+    .cb-ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.55);
+        transform: scale(0);
+        animation: cb-ripple-anim 0.55s ease-out;
+        pointer-events: none;
+    }
+
+    @keyframes cb-ripple-anim {
+        to {
+            transform: scale(2.6);
+            opacity: 0;
+        }
     }
 
     .cb-mascot {
@@ -536,14 +710,42 @@
     }
 
     @keyframes cbMascotBlink {
-        0%, 38%, 41%, 43%, 71%, 74%, 100% { opacity: 0; transform: scaleY(.15); }
-        39%, 40%, 42%, 72%, 73% { opacity: 1; transform: scaleY(1); }
+
+        0%,
+        38%,
+        41%,
+        43%,
+        71%,
+        74%,
+        100% {
+            opacity: 0;
+            transform: scaleY(.15);
+        }
+
+        39%,
+        40%,
+        42%,
+        72%,
+        73% {
+            opacity: 1;
+            transform: scaleY(1);
+        }
     }
 
     @keyframes cbMascotIdle {
-        0%, 100% { transform: translateY(2px) rotate(-1deg) scale(1); }
-        35% { transform: translateY(-5px) rotate(1.5deg) scale(1.025); }
-        62% { transform: translateY(-2px) rotate(-.5deg) scale(1.01); }
+
+        0%,
+        100% {
+            transform: translateY(2px) rotate(-1deg) scale(1);
+        }
+
+        35% {
+            transform: translateY(-5px) rotate(1.5deg) scale(1.025);
+        }
+
+        62% {
+            transform: translateY(-2px) rotate(-.5deg) scale(1.01);
+        }
     }
 
     .cb-toggler {
@@ -557,19 +759,75 @@
         width: 94px;
     }
 
-    .cb-toggler:hover { background:transparent; box-shadow:none; transform:scale(1.06); }
-    .cb-toggler::before { display:none !important; }
-    .cb-toggler .cb-mascot { filter:drop-shadow(0 10px 12px rgba(49,46,129,.28)); height:auto; inset:0; position:absolute; width:auto; }
-    .cb-toggler .icon-close { background:rgba(15,23,42,.88); border-radius:999px; padding:9px; z-index:3; }
-    .cb-header-name { font-size:.96rem; font-weight:800; }
-    .cb-header-status { color:rgba(255,255,255,.82); }
-    .cb-msg.ai { border:1px solid #e2e8f0; box-shadow:0 3px 12px rgba(15,23,42,.05); }
-    .cb-footer { background:#fff; border-top:1px solid #e2e8f0; padding:13px 14px; }
-    .cb-bot-avatar img { height:100%; object-fit:cover; width:100%; }
+    .cb-toggler:hover {
+        background: transparent;
+        box-shadow: none;
+        transform: scale(1.06);
+    }
+
+    .cb-toggler::before,
+    .cb-toggler::after {
+        display: none !important;
+    }
+
+    .cb-toggler .cb-mascot {
+        filter: drop-shadow(0 10px 12px rgba(49, 46, 129, .28));
+        height: auto;
+        inset: 0;
+        position: absolute;
+        width: auto;
+    }
+
+    .cb-toggler .icon-close {
+        background: rgba(15, 23, 42, .88);
+        border-radius: 999px;
+        padding: 9px;
+        z-index: 3;
+    }
+
+    .cb-header-name {
+        font-size: .96rem;
+        font-weight: 800;
+    }
+
+    .cb-header-status {
+        color: rgba(255, 255, 255, .82);
+    }
+
+    .cb-msg.ai {
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, .05);
+    }
+
+    .cb-footer {
+        background: #fff;
+        border-top: 1px solid #e2e8f0;
+        padding: 13px 14px;
+    }
+
+    .cb-bot-avatar img {
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+    }
 
     @media (prefers-reduced-motion: reduce) {
+
         .cb-mascot__blink,
-        .cb-mascot { animation: none; }
+        .cb-mascot,
+        .cb-header,
+        .cb-status-dot,
+        .cb-badge,
+        .cb-msg,
+        .cb-typing.visible,
+        .cb-bot-avatar,
+        .cb-input:focus,
+        .cb-toggler,
+        .cb-toggler:hover,
+        .cb-send-btn:hover:not(:disabled) i {
+            animation: none !important;
+            transition: none !important;
+        }
     }
 
     /* ── Responsive ── */
@@ -755,6 +1013,23 @@
             input.style.height = 'auto';
             input.style.height = Math.min(input.scrollHeight, 120) + 'px';
         });
+
+        // ── Hiệu ứng ripple khi bấm nút gửi ──
+        function spawnRipple(btn, evt) {
+            const rect = btn.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            const size = Math.max(rect.width, rect.height);
+            const x = (evt && evt.clientX ? evt.clientX - rect.left : rect.width / 2) - size / 2;
+            const y = (evt && evt.clientY ? evt.clientY - rect.top : rect.height / 2) - size / 2;
+            ripple.className = 'cb-ripple';
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            btn.appendChild(ripple);
+            ripple.addEventListener('animationend', () => ripple.remove());
+        }
+
+        sendBtn.addEventListener('click', (evt) => spawnRipple(sendBtn, evt));
 
         // ── Gửi tin nhắn ──
         const sendMessage = async (presetMessage = null, presetContext = null) => {
