@@ -2974,7 +2974,7 @@
                         <div class="sidebar-head">
                             <div class="sidebar-head-row">
                                 <h6 class="sidebar-head-title">
-                                    <i class="fas fa-list-ul text-primary"></i>Nội dung khóa học
+                                    <i class="fas fa-list-ul text-primary"></i>  Nội dung khóa học
                                 </h6>
                                 @if (auth()->user()->role === 'student')
                                     <span class="sidebar-head-count">{{ $progress }}%</span>

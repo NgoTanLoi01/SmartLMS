@@ -79,7 +79,7 @@
 
             /* Title block */
             .att-title-block {
-                flex: 1;
+                flex: 1 1 100%;
                 min-width: 0;
             }
 
@@ -111,11 +111,21 @@
 
             /* Toolbar right */
             .att-actions {
-                display: flex;
+                display: grid;
                 align-items: center;
                 gap: 0.5rem;
-                flex-wrap: wrap;
-                flex-shrink: 0;
+                flex: 1 1 100%;
+                grid-template-columns: auto minmax(0, 1fr);
+                min-width: 0;
+                width: 100%;
+            }
+
+            .att-primary-actions {
+                align-items:center;
+                display:flex;
+                flex-wrap:nowrap;
+                gap:.5rem;
+                min-width:0;
             }
 
             /* Search */
@@ -165,7 +175,10 @@
             .add-col-form {
                 display: flex;
                 align-items: center;
+                flex: 1 1 650px;
+                flex-wrap: nowrap;
                 gap: 0.4rem;
+                min-width: 0;
             }
 
             .add-col-form input,
@@ -193,6 +206,12 @@
                 background-position: right 0.55rem center;
                 padding-right: 1.75rem;
             }
+
+            .add-col-form input[name="name"] { flex: 1 1 150px; max-width: 220px; width: auto; }
+            .add-col-form input[name="attendance_date"] { flex: 0 1 155px; width: 155px; }
+            .add-col-form select[name="type"] { flex: 0 1 135px; width: 135px; }
+            .add-col-form select[name="schedule_id"] { flex: 1 1 180px; max-width: 245px; width: auto; }
+            .add-col-form .chip-btn { flex: 0 0 auto; }
 
             .add-col-form input:focus,
             .add-col-form select:focus {
@@ -588,6 +607,68 @@
                 margin: 0;
             }
 
+            .attendance-control {
+                align-items: center;
+                display: flex;
+                gap: 5px;
+                justify-content: center;
+                min-width: 118px;
+                padding: 4px;
+            }
+
+            .attendance-status-btn {
+                align-items: center;
+                border: 1px solid transparent;
+                border-radius: 999px;
+                cursor: pointer;
+                display: inline-flex;
+                font-family: 'Be Vietnam Pro', sans-serif;
+                font-size: 10px;
+                font-weight: 800;
+                gap: 4px;
+                justify-content: center;
+                min-height: 30px;
+                min-width: 78px;
+                padding: 5px 8px;
+                transition: transform .15s, box-shadow .15s;
+            }
+
+            .attendance-status-btn:not(:disabled):hover { box-shadow: 0 5px 12px rgba(15, 23, 42, .12); transform: translateY(-1px); }
+            .attendance-status-btn.status-present { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+            .attendance-status-btn.status-absent { background:#fee2e2; border-color:#fecaca; color:#b91c1c; }
+            .attendance-status-btn.status-late { background:#fef3c7; border-color:#fde68a; color:#92400e; }
+            .attendance-status-btn.status-excused { background:#dbeafe; border-color:#bfdbfe; color:#1d4ed8; }
+
+            .attendance-note-btn {
+                align-items:center;
+                background:#fff;
+                border:1px solid var(--border);
+                border-radius:9px;
+                color:var(--text-4);
+                display:flex;
+                height:28px;
+                justify-content:center;
+                width:28px;
+            }
+            .attendance-note-btn.has-note { background:#f5f3ff; border-color:#ddd6fe; color:#7c3aed; }
+            .attendance-note-btn:disabled { opacity:.75; }
+            .attendance-column-meta { color:var(--text-4); display:block; font-size:9px; font-weight:600; margin-top:3px; white-space:nowrap; }
+            .attendance-legend { align-items:center; display:flex; flex-wrap:wrap; gap:6px; }
+            .attendance-legend span { border-radius:999px; font-size:10px; font-weight:800; padding:4px 8px; }
+            .attendance-only-field[hidden] { display:none !important; }
+
+            @media (max-width: 1599.98px) {
+                .att-actions { grid-template-columns:1fr; }
+                .att-primary-actions { justify-content:flex-start; }
+                .att-search { flex:1 1 220px; max-width:320px; }
+                .att-search input { width:100%; }
+                .add-col-form { width:100%; }
+            }
+
+            @media (max-width: 1099.98px) {
+                .add-col-form { flex-wrap:wrap; }
+            }
+
             @media (max-width: 767.98px) {
                 .att-page {
                     height: auto;
@@ -623,6 +704,18 @@
                     gap: 0.6rem;
                 }
 
+                .att-primary-actions {
+                    display:grid;
+                    grid-template-columns:1fr 1fr;
+                    width:100%;
+                }
+
+                .att-primary-actions .att-search,
+                .att-primary-actions #markAllPresentBtn {
+                    grid-column:1 / -1;
+                    max-width:none;
+                }
+
                 .att-search,
                 .att-search input,
                 .chip-btn {
@@ -640,8 +733,14 @@
                 .add-col-form {
                     width: 100%;
                     display: grid;
-                    grid-template-columns: 1fr;
+                    grid-template-columns: 1fr 1fr;
                     gap: 0.5rem;
+                }
+
+                .add-col-form input[name="name"],
+                .add-col-form select[name="schedule_id"],
+                .add-col-form .chip-btn {
+                    grid-column: 1 / -1;
                 }
 
                 .add-col-form input,
@@ -650,8 +749,14 @@
                     min-height: 38px;
                 }
 
+                .add-col-form input[name="name"],
+                .add-col-form select[name="schedule_id"] {
+                    max-width: none;
+                }
+
                 .att-table-wrap {
-                    max-height: 62dvh;
+                    max-height: calc(100dvh - 250px);
+                    min-height: 320px;
                     -webkit-overflow-scrolling: touch;
                 }
 
@@ -663,9 +768,9 @@
 
                 .col-name {
                     left: 38px !important;
-                    width: 142px !important;
-                    min-width: 142px !important;
-                    max-width: 142px !important;
+                    width: 120px !important;
+                    min-width: 120px !important;
+                    max-width: 120px !important;
                 }
 
                 .att-table thead .col-name {
@@ -677,7 +782,8 @@
                 }
 
                 .name-cell {
-                    padding: 0.5rem 0.65rem;
+                    font-size: .74rem;
+                    padding: 0.45rem 0.5rem;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
@@ -691,6 +797,25 @@
                 .col-note-cell input {
                     min-width: 120px;
                 }
+
+                .attendance-control {
+                    gap: 3px;
+                    min-width: 98px;
+                    padding: 3px;
+                }
+
+                .attendance-status-btn {
+                    font-size: 9px;
+                    gap: 3px;
+                    min-height: 28px;
+                    min-width: 66px;
+                    padding: 4px 6px;
+                }
+
+                .attendance-status-btn i { font-size: 9px; }
+                .attendance-note-btn { border-radius: 7px; height: 26px; width: 26px; }
+                .attendance-column-meta { font-size: 8px; }
+                .col-header-inner { min-width: 96px; padding: .4rem 1rem .4rem .3rem; }
 
                 .btn-delete-col {
                     opacity: 1;
@@ -722,17 +847,18 @@
 
             @media (min-width: 576px) and (max-width: 767.98px) {
                 .att-actions {
-                    grid-template-columns: 1fr auto;
+                    grid-template-columns: 1fr;
                     align-items: center;
                 }
 
+                .att-primary-actions,
                 .att-search {
                     grid-column: 1 / -1;
                 }
 
                 .add-col-form {
                     grid-column: 1 / -1;
-                    grid-template-columns: 1fr 150px auto;
+                    grid-template-columns: 1fr 1fr;
                     align-items: center;
                 }
             }
@@ -750,34 +876,45 @@
 
             <div class="att-actions">
                 @unless ($isStudentView)
-                {{-- Search --}}
-                <div class="att-search">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="filterName" placeholder="Tìm tên học sinh...">
+                <div class="att-primary-actions">
+                    <div class="att-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="filterName" placeholder="Tìm tên học sinh...">
+                    </div>
+                    <a href="{{ route('attendance.export', $course->id) }}" class="chip-btn chip-green"
+                        data-no-page-transition data-file-download>
+                        <i class="fas fa-file-excel"></i> Xuất Excel
+                    </a>
+                    <button type="button" class="chip-btn chip-green" id="markAllPresentBtn">
+                        <i class="fas fa-user-check"></i> Buổi mới nhất: tất cả có mặt
+                    </button>
                 </div>
-
-                <div class="att-divider"></div>
-
-                {{-- Export --}}
-                <a href="{{ route('attendance.export', $course->id) }}" class="chip-btn chip-green">
-                    <i class="fas fa-file-excel"></i> Xuất Excel
-                </a>
-
-                <div class="att-divider"></div>
 
                 {{-- Add column --}}
                 <form action="{{ route('attendance.addColumn', $course->id) }}" method="POST" class="add-col-form">
                     @csrf
-                    <input type="text" name="name" placeholder="Tên cột mới..." required>
-                    <select name="type">
+                    <input type="text" name="name" placeholder="Tên cột (có thể để trống)">
+                    <select name="type" id="newColumnType">
                         <option value="attendance">Điểm danh</option>
                         <option value="grade">Điểm số</option>
                         <option value="note">Ghi chú</option>
+                    </select>
+                    <input type="date" name="attendance_date" value="{{ now()->format('Y-m-d') }}"
+                        class="attendance-only-field" aria-label="Ngày điểm danh">
+                    <select name="schedule_id" class="attendance-only-field" aria-label="Liên kết lịch học">
+                        <option value="">Không liên kết lịch</option>
+                        @foreach ($schedules as $schedule)
+                            <option value="{{ $schedule->id }}" data-date="{{ $schedule->schedule_date }}">
+                                {{ \Carbon\Carbon::parse($schedule->schedule_date)->format('d/m/Y') }} ·
+                                {{ substr($schedule->start_time, 0, 5) }} · {{ $schedule->class_name }}
+                            </option>
+                        @endforeach
                     </select>
                     <button type="submit" class="chip-btn chip-blue">
                         <i class="fas fa-plus"></i> Thêm cột
                     </button>
                 </form>
+
                 @endunless
             </div>
         </div>
@@ -803,6 +940,12 @@
                                     <div class="col-header-inner">
                                         <span class="editable-name" @unless ($isStudentView) contenteditable="true"
                                             data-col-id="{{ $col->id }}" onblur="updateColumnName(this)" @endunless>{{ $col->name }}</span>
+                                        @if ($col->type === 'attendance' && ($col->attendance_date || $col->schedule))
+                                            <small class="attendance-column-meta">
+                                                {{ $col->attendance_date?->format('d/m/Y') }}
+                                                @if ($col->schedule) · {{ substr($col->schedule->start_time, 0, 5) }} @endif
+                                            </small>
+                                        @endif
                                         @unless ($isStudentView)
                                         <i class="fas fa-times btn-delete-col"
                                             onclick="deleteColumn({{ $col->id }}, '{{ addslashes($col->name) }}')"></i>
@@ -835,9 +978,35 @@
                                         };
                                     @endphp
                                     <td class="{{ $cellClass }}" style="padding:0;">
-                                        <input type="text" name="data[{{ $col->id }}][{{ $student->id }}]"
-                                            value="{{ $attendanceData[$student->id][$col->id] ?? '' }}"
-                                            placeholder="{{ $ph }}" @if ($isStudentView) readonly aria-label="{{ $col->name }}" @endif>
+                                        @if ($col->type === 'attendance')
+                                            @php
+                                                $status = $attendanceData[$student->id][$col->id] ?? 'present';
+                                                $statusLabels = ['present' => 'Có mặt', 'absent' => 'Vắng', 'late' => 'Đi muộn', 'excused' => 'Có phép'];
+                                                $statusIcons = ['present' => 'check', 'absent' => 'xmark', 'late' => 'clock', 'excused' => 'file-circle-check'];
+                                                $note = $attendanceNotes[$student->id][$col->id] ?? '';
+                                                $noteId = "attendance-note-{$col->id}-{$student->id}";
+                                            @endphp
+                                            <div class="attendance-control">
+                                                <input type="hidden" class="attendance-value"
+                                                    data-column-id="{{ $col->id }}"
+                                                    name="data[{{ $col->id }}][{{ $student->id }}]" value="{{ $status }}">
+                                                <button type="button" class="attendance-status-btn status-{{ $status }}"
+                                                    data-status="{{ $status }}" @disabled($isStudentView)>
+                                                    <i class="fas fa-{{ $statusIcons[$status] ?? 'check' }}"></i>
+                                                    <span>{{ $statusLabels[$status] ?? 'Có mặt' }}</span>
+                                                </button>
+                                                <input type="hidden" id="{{ $noteId }}"
+                                                    name="notes[{{ $col->id }}][{{ $student->id }}]" value="{{ $note }}">
+                                                <button type="button" class="attendance-note-btn {{ $note ? 'has-note' : '' }}"
+                                                    data-note-input="{{ $noteId }}" title="{{ $note ?: 'Thêm ghi chú' }}" @disabled($isStudentView)>
+                                                    <i class="fas fa-note-sticky"></i>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <input type="text" name="data[{{ $col->id }}][{{ $student->id }}]"
+                                                value="{{ $attendanceData[$student->id][$col->id] ?? '' }}"
+                                                placeholder="{{ $ph }}" @if ($isStudentView) readonly aria-label="{{ $col->name }}" @endif>
+                                        @endif
                                     </td>
                                 @endforeach
                             </tr>
@@ -919,6 +1088,70 @@
         });
 
         // ── Select all on focus ──
+        const attendanceStates = {
+            present: { label: 'Có mặt', icon: 'fa-check' },
+            absent: { label: 'Vắng', icon: 'fa-xmark' },
+            late: { label: 'Đi muộn', icon: 'fa-clock' },
+            excused: { label: 'Có phép', icon: 'fa-file-circle-check' },
+        };
+        const attendanceOrder = ['present', 'absent', 'late', 'excused'];
+
+        function setAttendanceStatus(button, status) {
+            const input = button.closest('.attendance-control').querySelector('.attendance-value');
+            const state = attendanceStates[status] || attendanceStates.present;
+            input.value = status;
+            button.dataset.status = status;
+            button.className = `attendance-status-btn status-${status}`;
+            button.querySelector('i').className = `fas ${state.icon}`;
+            button.querySelector('span').textContent = state.label;
+        }
+
+        document.querySelectorAll('.attendance-status-btn:not(:disabled)').forEach(button => {
+            button.addEventListener('click', function() {
+                const currentIndex = attendanceOrder.indexOf(this.dataset.status);
+                setAttendanceStatus(this, attendanceOrder[(currentIndex + 1) % attendanceOrder.length]);
+            });
+        });
+
+        document.querySelectorAll('.attendance-note-btn:not(:disabled)').forEach(button => {
+            button.addEventListener('click', function() {
+                const noteInput = document.getElementById(this.dataset.noteInput);
+                const note = window.prompt('Ghi chú riêng cho học sinh trong buổi này:', noteInput.value);
+                if (note === null) return;
+                noteInput.value = note.trim();
+                this.classList.toggle('has-note', noteInput.value !== '');
+                this.title = noteInput.value || 'Thêm ghi chú';
+            });
+        });
+
+        document.getElementById('markAllPresentBtn')?.addEventListener('click', function() {
+            const inputs = [...document.querySelectorAll('.attendance-value')];
+            if (!inputs.length) {
+                alert('Chưa có buổi điểm danh nào.');
+                return;
+            }
+            const latestColumnId = inputs[inputs.length - 1].dataset.columnId;
+            inputs.filter(input => input.dataset.columnId === latestColumnId).forEach(input => {
+                setAttendanceStatus(input.closest('.attendance-control').querySelector('.attendance-status-btn'), 'present');
+            });
+        });
+
+        const columnType = document.getElementById('newColumnType');
+        const attendanceFields = document.querySelectorAll('.attendance-only-field');
+        const toggleAttendanceFields = () => attendanceFields.forEach(field => {
+            const hidden = columnType.value !== 'attendance';
+            field.hidden = hidden;
+            field.disabled = hidden;
+        });
+        columnType?.addEventListener('change', toggleAttendanceFields);
+        toggleAttendanceFields();
+
+        const scheduleSelect = document.querySelector('select[name="schedule_id"]');
+        scheduleSelect?.addEventListener('change', function() {
+            const date = this.selectedOptions[0]?.dataset.date;
+            if (date) document.querySelector('input[name="attendance_date"]').value = date;
+        });
+
         document.querySelectorAll('.att-table input[type="text"]').forEach(inp => {
             inp.addEventListener('focus', () => inp.select());
 

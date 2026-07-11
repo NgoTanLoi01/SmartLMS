@@ -10,6 +10,7 @@ use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\NotificationCenter;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
@@ -46,53 +47,57 @@ class AttendanceController extends Controller
             $students = $course->classes->flatMap->students->unique('id');
         }
 
-        $columnCount = AttendanceColumn::where('course_id', $courseId)->count();
-
-        if (!$isStudentView && $columnCount == 0) {
-            // Tạo mặc định 10 buổi học (Dùng ngày hiện tại làm mẫu)
-            for ($i = 0; $i < 10; $i++) {
-                AttendanceColumn::create([
-                    'course_id' => $courseId,
-                    'name' => now()->addDays($i)->format('d/m'), // Tên cột là ngày tháng
-                    'type' => 'attendance',
-                    'order' => $i,
-                ]);
-            }
-            // Tạo cột điểm
-            foreach (['HS1', 'HS1 ', 'HS2', 'HS2 '] as $key => $name) {
-                AttendanceColumn::create([
-                    'course_id' => $courseId,
-                    'name' => $name,
-                    'type' => 'grade',
-                    'order' => 50 + $key, // Cho order cao để nằm sau
-                ]);
-            }
-            // Tạo cột ghi chú cuối cùng
-            AttendanceColumn::create([
-                'course_id' => $courseId,
-                'name' => 'Ghi chú',
-                'type' => 'note',
-                'order' => 100,
-            ]);
-        }
-
         // Lấy cột sắp xếp theo Order
-        $columns = AttendanceColumn::where('course_id', $courseId)->orderBy('order')->get();
+        $columns = AttendanceColumn::with('schedule')->where('course_id', $courseId)->orderBy('order')->get();
+        $columnTypes = $columns->pluck('type', 'id');
 
         $rawData = AttendanceData::whereIn('attendance_column_id', $columns->pluck('id'))
             ->when($isStudentView, fn ($query) => $query->where('user_id', $user->id))
             ->get();
         $attendanceData = [];
+        $attendanceNotes = [];
         foreach ($rawData as $d) {
-            $attendanceData[$d->user_id][$d->attendance_column_id] = $d->value;
+            $attendanceData[$d->user_id][$d->attendance_column_id] = $columnTypes->get($d->attendance_column_id) === 'attendance'
+                ? $this->normalizeAttendanceStatus($d->value)
+                : $d->value;
+            $attendanceNotes[$d->user_id][$d->attendance_column_id] = $d->note;
         }
 
-        return view('attendance.show', compact('course', 'students', 'columns', 'attendanceData', 'isStudentView'));
+        $schedules = DB::table('schedules')
+            ->join('classes', 'schedules.class_id', '=', 'classes.id')
+            ->where('schedules.course_id', $courseId)
+            ->where('schedules.status', 'active')
+            ->where('classes.status', 'active')
+            ->orderByDesc('schedules.schedule_date')
+            ->orderBy('schedules.start_time')
+            ->select('schedules.*', 'classes.name as class_name')
+            ->get();
+
+        return view('attendance.show', compact('course', 'students', 'columns', 'attendanceData', 'attendanceNotes', 'schedules', 'isStudentView'));
     }
     public function addColumn(Request $request, $courseId)
     {
-        $type = $request->type;
+        $validated = $request->validate([
+            'type' => 'required|in:attendance,grade,note',
+            'name' => 'nullable|string|max:100',
+            'schedule_id' => 'nullable|integer|exists:schedules,id',
+            'attendance_date' => 'nullable|date',
+        ]);
+        $type = $validated['type'];
         $lastOrder = 0;
+        $schedule = null;
+
+        if ($type === 'attendance' && !empty($validated['schedule_id'])) {
+            $schedule = DB::table('schedules')
+                ->where('id', $validated['schedule_id'])
+                ->where('course_id', $courseId)
+                ->first();
+            abort_unless($schedule, 422, 'Lịch học không thuộc khóa học này.');
+
+            if (AttendanceColumn::where('course_id', $courseId)->where('schedule_id', $schedule->id)->exists()) {
+                return back()->with('error', 'Lịch học này đã có buổi điểm danh.');
+            }
+        }
 
         if ($type == 'attendance') {
             // Nếu thêm điểm danh, lấy order của cột điểm danh cuối cùng
@@ -105,9 +110,22 @@ class AttendanceController extends Controller
             $newOrder = 100; // Ghi chú luôn là 100
         }
 
+        $attendanceDate = $type === 'attendance'
+            ? ($schedule?->schedule_date ?? ($validated['attendance_date'] ?? now()->toDateString()))
+            : null;
+        $name = trim((string) ($validated['name'] ?? ''));
+        if ($type === 'attendance' && $name === '') {
+            $name = $attendanceDate ? \Carbon\Carbon::parse($attendanceDate)->format('d/m/Y') : now()->format('d/m/Y');
+        }
+        if ($type !== 'attendance' && $name === '') {
+            return back()->withErrors(['name' => 'Vui lòng nhập tên cột.'])->withInput();
+        }
+
         AttendanceColumn::create([
             'course_id' => $courseId,
-            'name' => $request->name, // Giáo viên có thể nhập "20/04" hoặc "B11"
+            'schedule_id' => $schedule?->id,
+            'attendance_date' => $attendanceDate,
+            'name' => $name,
             'type' => $type,
             'order' => $newOrder,
         ]);
@@ -117,9 +135,25 @@ class AttendanceController extends Controller
 
     public function save(Request $request, $courseId)
     {
+        $columns = AttendanceColumn::where('course_id', $courseId)->get()->keyBy('id');
+        $allowedUserIds = Course::with('classes.students')->findOrFail($courseId)
+            ->classes->flatMap->students->pluck('id')->unique();
+
         foreach ($request->input('data', []) as $columnId => $users) {
+            $column = $columns->get((int) $columnId);
+            if (!$column) continue;
+
             foreach ($users as $userId => $value) {
-                AttendanceData::updateOrCreate(['attendance_column_id' => $columnId, 'user_id' => $userId], ['value' => $value]);
+                if (!$allowedUserIds->contains((int) $userId)) continue;
+
+                $savedValue = $column->type === 'attendance' ? $this->normalizeAttendanceStatus($value) : $value;
+                AttendanceData::updateOrCreate(
+                    ['attendance_column_id' => $column->id, 'user_id' => $userId],
+                    [
+                        'value' => $savedValue,
+                        'note' => $request->input("notes.{$column->id}.{$userId}"),
+                    ]
+                );
             }
         }
 
@@ -162,6 +196,17 @@ class AttendanceController extends Controller
         return in_array($normalized, ['0', 'no', 'false', 'abs', 'absent', 'v', 'vang', 'nghi'], true)
             || str_contains(Str::lower((string) $value), 'vắng')
             || str_contains(Str::lower((string) $value), 'nghỉ');
+    }
+
+    private function normalizeAttendanceStatus($value): string
+    {
+        $normalized = Str::of((string) $value)->lower()->ascii()->trim()->toString();
+
+        if (in_array($normalized, ['absent', 'v', 'vang', 'nghi', '0', 'no', 'false'], true)) return 'absent';
+        if (in_array($normalized, ['late', 'muon', 'di muon'], true)) return 'late';
+        if (in_array($normalized, ['excused', 'phep', 'co phep', 'vang co phep'], true)) return 'excused';
+
+        return 'present';
     }
     // Xóa cột
     public function deleteColumn($columnId)

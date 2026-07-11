@@ -924,6 +924,7 @@
                 if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
                 if (link.target && link.target !== '_self') return false;
                 if (link.hasAttribute('download')) return false;
+                if (link.dataset.fileDownload !== undefined) return false;
                 if (link.dataset.bsToggle || link.dataset.noPageTransition !== undefined) return false;
 
                 const href = link.getAttribute('href');
@@ -933,6 +934,7 @@
                 if (targetUrl.origin !== window.location.origin) return false;
                 if (/^\/materials\/[^/]+\/download\/?$/.test(targetUrl.pathname)) return false;
                 if (/^\/lessons\/[^/]+\/attachment\/?$/.test(targetUrl.pathname)) return false;
+                if (/^\/courses\/[^/]+\/attendance\/export\/?$/.test(targetUrl.pathname)) return false;
                 if (targetUrl.href === currentUrl.href) return false;
                 if (targetUrl.pathname === currentUrl.pathname && targetUrl.search === currentUrl.search && targetUrl.hash) return false;
 
