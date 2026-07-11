@@ -2639,6 +2639,121 @@
                 display: flex;
             }
         }
+
+        .presentation-controls {
+            align-items: center;
+            background: rgba(15, 23, 42, .92);
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 999px;
+            box-shadow: 0 14px 38px rgba(15, 23, 42, .3);
+            display: none;
+            gap: 6px;
+            padding: 6px;
+            position: fixed;
+            right: 22px;
+            top: 18px;
+            z-index: 12000;
+        }
+
+        .presentation-controls button {
+            align-items: center;
+            background: rgba(255, 255, 255, .1);
+            border: 0;
+            border-radius: 999px;
+            color: #fff;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 800;
+            gap: 5px;
+            min-height: 38px;
+            padding: 0 13px;
+        }
+
+        .presentation-controls button:hover { background: rgba(255, 255, 255, .2); }
+        .presentation-controls .presentation-exit-btn { background: #dc2626; }
+        .presentation-controls .presentation-exit-btn:hover { background: #b91c1c; }
+
+        body.course-presentation-mode { background: #fff; overflow-y: auto; }
+        body.course-presentation-mode .navbar,
+        body.course-presentation-mode #sidebar,
+        body.course-presentation-mode #sidebarToggle,
+        body.course-presentation-mode #mobile-sidebar-overlay,
+        body.course-presentation-mode #mobile-sidebar-drawer,
+        body.course-presentation-mode #btn-open-sidebar,
+        body.course-presentation-mode #course-page-wrapper > .course-ref-header,
+        body.course-presentation-mode #teacher-mode-panel,
+        body.course-presentation-mode .course-dashboard-grid,
+        body.course-presentation-mode .course-sidebar-column,
+        body.course-presentation-mode .teacher-quick-actions,
+        body.course-presentation-mode .action-buttons,
+        body.course-presentation-mode .lesson-ai-toolbar,
+        body.course-presentation-mode .toolbar,
+        body.course-presentation-mode #chatbot-container,
+        body.course-presentation-mode .cb-toggler,
+        body.course-presentation-mode .cb-window {
+            display: none !important;
+        }
+
+        body.course-presentation-mode .main-content {
+            margin: 0 !important;
+            min-height: 100vh;
+            padding: 0 !important;
+        }
+
+        body.course-presentation-mode #course-page-wrapper {
+            margin: 0;
+            max-width: none;
+            padding: 0;
+            width: 100%;
+        }
+
+        body.course-presentation-mode .course-ref-grid {
+            display: block;
+            margin: 0;
+        }
+
+        body.course-presentation-mode #course-content-column {
+            max-width: none;
+            padding: 0;
+            width: 100%;
+        }
+
+        body.course-presentation-mode .content-card {
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            min-height: 100vh;
+        }
+
+        body.course-presentation-mode #lesson-content-area {
+            margin: 0 auto;
+            max-width: 1500px;
+            padding: clamp(70px, 8vw, 120px) clamp(36px, 8vw, 140px) 80px;
+        }
+
+        body.course-presentation-mode .lesson-header-title {
+            font-size: calc(2.15rem * var(--presentation-font-scale, 1));
+            line-height: 1.25;
+        }
+
+        body.course-presentation-mode .lesson-body {
+            font-size: calc(1.55rem * var(--presentation-font-scale, 1));
+            line-height: 1.9;
+        }
+
+        body.course-presentation-mode .lesson-body h2 { font-size: calc(2rem * var(--presentation-font-scale, 1)); }
+        body.course-presentation-mode .lesson-body h3 { font-size: calc(1.75rem * var(--presentation-font-scale, 1)); }
+        body.course-presentation-mode .lesson-body h4 { font-size: calc(1.5rem * var(--presentation-font-scale, 1)); }
+        body.course-presentation-mode .presentation-controls { display: flex; }
+        body.course-presentation-mode .footer-nav { border-top: 1px solid #e2e8f0; padding: 18px clamp(24px, 6vw, 90px); }
+        body.course-presentation-mode .btn-footer-nav { font-size: 16px; min-height: 48px; padding: 0 22px; }
+
+        @media (max-width: 767.98px) {
+            .presentation-controls { border-radius: 16px; left: 10px; right: 10px; top: 10px; }
+            .presentation-controls button { flex: 1; justify-content: center; }
+            body.course-presentation-mode #lesson-content-area { padding: 76px 22px 50px; }
+            body.course-presentation-mode .lesson-body { font-size: calc(1.2rem * var(--presentation-font-scale, 1)); }
+        }
     </style>
 
     {{-- Mobile overlay + drawer --}}
@@ -2754,6 +2869,9 @@
                         <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
                             <i class="fas fa-folder-open"></i> Kho học liệu
                         </a>
+                        <button type="button" class="tool-btn purple" id="start-presentation-btn">
+                            <i class="fas fa-display"></i> Trình chiếu
+                        </button>
                     </div>
                 @else
                     <div class="toolbar">
@@ -2987,7 +3105,7 @@
             </div>
 
             {{-- CONTENT --}}
-            <div class="col-12 col-md-8 col-xl-9 order-md-1">
+            <div class="col-12 col-md-8 col-xl-9 order-md-1" id="course-content-column">
                 <div class="content-card">
 
                     {{-- Video --}}
@@ -3378,6 +3496,20 @@
         <i class="fas fa-list"></i>
     </button>
 
+    @if ($isCourseManager)
+        <div class="presentation-controls" id="presentation-controls" aria-label="Điều khiển trình chiếu">
+            <button type="button" id="presentation-font-down" title="Giảm cỡ chữ" aria-label="Giảm cỡ chữ">
+                <i class="fas fa-minus"></i><span>A</span>
+            </button>
+            <button type="button" id="presentation-font-up" title="Tăng cỡ chữ" aria-label="Tăng cỡ chữ">
+                <span>A</span><i class="fas fa-plus"></i>
+            </button>
+            <button type="button" id="exit-presentation-btn" class="presentation-exit-btn">
+                <i class="fas fa-compress"></i> Thoát trình chiếu
+            </button>
+        </div>
+    @endif
+
     @include('courses.partials.modals')
     @include('courses.partials.scripts')
 
@@ -3433,6 +3565,60 @@
                     closeDrawer();
                 });
             }
+        })();
+
+        (function() {
+            var startButton = document.getElementById('start-presentation-btn');
+            var exitButton = document.getElementById('exit-presentation-btn');
+            var fontUpButton = document.getElementById('presentation-font-up');
+            var fontDownButton = document.getElementById('presentation-font-down');
+            var fontScale = 1;
+
+            if (!startButton) return;
+
+            function updateFontScale(delta) {
+                fontScale = Math.max(.75, Math.min(1.5, fontScale + delta));
+                document.body.style.setProperty('--presentation-font-scale', fontScale.toFixed(2));
+            }
+
+            function startPresentation() {
+                document.body.classList.add('course-presentation-mode');
+                document.body.style.setProperty('--presentation-font-scale', fontScale.toFixed(2));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(function() {
+                        // Chế độ trình chiếu vẫn hoạt động khi trình duyệt từ chối fullscreen.
+                    });
+                }
+            }
+
+            function exitPresentation(leaveFullscreen) {
+                document.body.classList.remove('course-presentation-mode');
+                document.body.style.removeProperty('--presentation-font-scale');
+
+                if (leaveFullscreen !== false && document.fullscreenElement && document.exitFullscreen) {
+                    document.exitFullscreen().catch(function() {});
+                }
+            }
+
+            startButton.addEventListener('click', startPresentation);
+            if (exitButton) exitButton.addEventListener('click', function() { exitPresentation(true); });
+            if (fontUpButton) fontUpButton.addEventListener('click', function() { updateFontScale(.1); });
+            if (fontDownButton) fontDownButton.addEventListener('click', function() { updateFontScale(-.1); });
+
+            document.addEventListener('keydown', function(event) {
+                if (!document.body.classList.contains('course-presentation-mode')) return;
+                if (event.key === 'Escape') exitPresentation(false);
+                if (event.key === '+' || event.key === '=') updateFontScale(.1);
+                if (event.key === '-') updateFontScale(-.1);
+            });
+
+            document.addEventListener('fullscreenchange', function() {
+                if (!document.fullscreenElement && document.body.classList.contains('course-presentation-mode')) {
+                    exitPresentation(false);
+                }
+            });
         })();
     </script>
 @endsection
