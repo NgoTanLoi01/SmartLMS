@@ -31,13 +31,18 @@ class DashboardController extends Controller
         // 1. DỮ LIỆU CHO ADMIN
         // ==========================================
         if ($user->role === 'admin') {
-            $data['total_students'] = User::where('role', 'student')->count();
-            $data['total_teachers'] = User::where('role', 'teacher')->count();
+            $roleCounts = User::query()
+                ->select('role', DB::raw('COUNT(*) as aggregate'))
+                ->whereIn('role', ['student', 'teacher', 'admin'])
+                ->groupBy('role')
+                ->pluck('aggregate', 'role');
+            $data['total_students'] = (int) ($roleCounts['student'] ?? 0);
+            $data['total_teachers'] = (int) ($roleCounts['teacher'] ?? 0);
             $data['total_classes'] = DB::table('classes')->where($this->notArchivedColumn('status'))->count();
             $data['total_courses'] = Course::where('course_type', 'delivery')->notArchived()->count();
             $data['recent_users'] = User::orderBy('created_at', 'desc')->take(7)->get();
             $data['chart_role_labels'] = ['Học sinh', 'Giáo viên', 'Admin'];
-            $data['chart_role_data'] = [$data['total_students'], $data['total_teachers'], User::where('role', 'admin')->count()];
+            $data['chart_role_data'] = [$data['total_students'], $data['total_teachers'], (int) ($roleCounts['admin'] ?? 0)];
             $data['pending_grades'] = DB::table('assignment_submissions')->whereNull('grade')->count();
             $data['today_schedules'] = DB::table('schedules')
                 ->join('courses', 'schedules.course_id', '=', 'courses.id')
@@ -57,6 +62,10 @@ class DashboardController extends Controller
                 ->take(5)
                 ->get();
             $data['recent_courses'] = Course::with('teacher')->where('course_type', 'delivery')->notArchived()->latest()->take(5)->get();
+            $data['draft_courses_count'] = Course::where('status', Course::STATUS_DRAFT)->count();
+            $data['archived_courses_count'] = Course::where('status', Course::STATUS_ARCHIVED)->count();
+            $data['classes_without_teacher_count'] = Classroom::notArchived()->whereNull('teacher_id')->count();
+            $data['classes_without_courses_count'] = Classroom::notArchived()->whereDoesntHave('courses')->count();
         }
 
         // ==========================================
@@ -77,11 +86,14 @@ class DashboardController extends Controller
                 ->take(6)
                 ->get();
 
-            // Bài chờ chấm
-            $data['pending_grades'] = DB::table('assignment_submissions')->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')->whereIn('assignments.course_id', $courseIds)->whereNull('assignment_submissions.grade')->count();
-
-            // Đã chấm
-            $gradedCount = DB::table('assignment_submissions')->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')->whereIn('assignments.course_id', $courseIds)->whereNotNull('assignment_submissions.grade')->count();
+            $gradeCounts = DB::table('assignment_submissions')
+                ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')
+                ->whereIn('assignments.course_id', $courseIds)
+                ->selectRaw('SUM(CASE WHEN assignment_submissions.grade IS NULL THEN 1 ELSE 0 END) as pending_count')
+                ->selectRaw('SUM(CASE WHEN assignment_submissions.grade IS NOT NULL THEN 1 ELSE 0 END) as graded_count')
+                ->first();
+            $data['pending_grades'] = (int) ($gradeCounts->pending_count ?? 0);
+            $gradedCount = (int) ($gradeCounts->graded_count ?? 0);
 
             // Tổng học sinh
             $data['total_students'] = DB::table('class_user')
@@ -170,14 +182,15 @@ class DashboardController extends Controller
                 ->where($this->notArchivedColumn('classes.status'))
                 ->where('users.role', 'student')
                 ->select('users.id', 'users.name', 'users.email', 'classes.id as class_id', 'classes.name as class_name', 'grade_summary.avg_grade')
-                ->orderByRaw('grade_summary.avg_grade IS NULL DESC')
+                ->whereNotNull('grade_summary.avg_grade')
+                ->where('grade_summary.avg_grade', '<', 5)
                 ->orderBy('avg_grade')
                 ->take(5)
                 ->get();
 
             $data['attention_students_count'] = $data['attention_students']->count();
 
-            $data['teacher_ai_suggestions'] = $this->buildTeacherAiSuggestions($data, $now);
+            $data['teacher_priority_suggestions'] = $this->buildTeacherPrioritySuggestions($data, $now);
         }
 
         // ==========================================
@@ -196,32 +209,38 @@ class DashboardController extends Controller
                 ->pluck('id');
 
             $data['total_courses'] = $courseIds->count();
-            $data['course_progress'] = Course::whereIn('id', $courseIds)
-                ->get()
-                ->map(function ($course) use ($user, $now) {
-                    $lessonIds = DB::table('lessons')
-                        ->join('modules', 'lessons.module_id', '=', 'modules.id')
-                        ->where('modules.course_id', $course->id)
+            $data['course_progress'] = DB::table('courses')
+                ->leftJoin('modules', 'modules.course_id', '=', 'courses.id')
+                ->leftJoin('lessons', function ($join) use ($now) {
+                    $join->on('lessons.module_id', '=', 'modules.id')
                         ->where('lessons.status', 'published')
-                        ->where(function ($q) use ($now) {
-                            $q->whereNull('lessons.available_from')
+                        ->where(function ($query) use ($now) {
+                            $query->whereNull('lessons.available_from')
                                 ->orWhere('lessons.available_from', '<=', $now);
-                        })
-                        ->pluck('lessons.id');
-                    $completed = DB::table('lesson_user')
-                        ->where('user_id', $user->id)
-                        ->whereIn('lesson_id', $lessonIds)
-                        ->count();
-
-                    return (object) [
-                        'id' => $course->id,
-                        'title' => $course->title,
-                        'lesson_total' => $lessonIds->count(),
-                        'lesson_completed' => $completed,
-                        'progress' => $lessonIds->count() > 0 ? round(($completed / $lessonIds->count()) * 100) : 0,
-                    ];
+                        });
                 })
-                ->take(5);
+                ->leftJoin('lesson_user', function ($join) use ($user) {
+                    $join->on('lesson_user.lesson_id', '=', 'lessons.id')
+                        ->where('lesson_user.user_id', $user->id)
+                        ->whereNotNull('lesson_user.completed_at');
+                })
+                ->whereIn('courses.id', $courseIds)
+                ->groupBy('courses.id', 'courses.title')
+                ->select('courses.id', 'courses.title')
+                ->selectRaw('COUNT(DISTINCT lessons.id) as lesson_total')
+                ->selectRaw('COUNT(DISTINCT lesson_user.lesson_id) as lesson_completed')
+                ->orderByDesc('courses.created_at')
+                ->limit(5)
+                ->get()
+                ->map(function ($course) {
+                    $course->lesson_total = (int) $course->lesson_total;
+                    $course->lesson_completed = (int) $course->lesson_completed;
+                    $course->progress = $course->lesson_total > 0
+                        ? round(($course->lesson_completed / $course->lesson_total) * 100)
+                        : 0;
+
+                    return $course;
+                });
 
             // ==========================================
             // BÀI TẬP SẮP ĐẾN HẠN
@@ -242,6 +261,12 @@ class DashboardController extends Controller
                 ->whereNull('assignments.deleted_at')
 
                 ->where('assignments.due_date', '>=', $now)
+                ->whereNotExists(function ($query) use ($user) {
+                    $query->selectRaw('1')
+                        ->from('assignment_submissions')
+                        ->whereColumn('assignment_submissions.assignment_id', 'assignments.id')
+                        ->where('assignment_submissions.user_id', $user->id);
+                })
 
                 ->select('assignments.*', 'courses.title as course_title', 'courses.id as course_id')
 
@@ -250,9 +275,6 @@ class DashboardController extends Controller
                 ->take(5)
 
                 ->get();
-            $submittedAssignmentIds = DB::table('assignment_submissions')
-                ->where('user_id', $user->id)
-                ->pluck('assignment_id');
             $data['missing_assignments_count'] = DB::table('assignments')
                 ->whereIn('course_id', $courseIds)
                 ->where('status', 'published')
@@ -261,18 +283,17 @@ class DashboardController extends Controller
                         ->orWhere('available_from', '<=', $now);
                 })
                 ->whereNull('deleted_at')
-                ->whereNotIn('id', $submittedAssignmentIds)
+                ->whereNotExists(function ($query) use ($user) {
+                    $query->selectRaw('1')
+                        ->from('assignment_submissions')
+                        ->whereColumn('assignment_submissions.assignment_id', 'assignments.id')
+                        ->where('assignment_submissions.user_id', $user->id);
+                })
                 ->count();
 
             // ==========================================
             // BÀI KIỂM TRA CHƯA LÀM
             // ==========================================
-
-            $attemptedQuizIds = DB::table('quiz_attempts')
-
-                ->where('user_id', $user->id)
-
-                ->pluck('quiz_id');
 
             $data['pending_quizzes'] = DB::table('quizzes')
 
@@ -285,7 +306,12 @@ class DashboardController extends Controller
                         ->orWhere('quizzes.available_from', '<=', $now);
                 })
 
-                ->whereNotIn('quizzes.id', $attemptedQuizIds)
+                ->whereNotExists(function ($query) use ($user) {
+                    $query->selectRaw('1')
+                        ->from('quiz_attempts')
+                        ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
+                        ->where('quiz_attempts.user_id', $user->id);
+                })
 
                 ->select('quizzes.*', 'courses.title as course_title', 'courses.id as course_id')
 
@@ -301,7 +327,12 @@ class DashboardController extends Controller
                     $q->whereNull('available_from')
                         ->orWhere('available_from', '<=', $now);
                 })
-                ->whereNotIn('id', $attemptedQuizIds)
+                ->whereNotExists(function ($query) use ($user) {
+                    $query->selectRaw('1')
+                        ->from('quiz_attempts')
+                        ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
+                        ->where('quiz_attempts.user_id', $user->id);
+                })
                 ->count();
             // ==========================================
             // ĐIỂM TRUNG BÌNH QUIZ
@@ -314,6 +345,19 @@ class DashboardController extends Controller
                 ->avg('score');
 
             $data['average_score'] = $avgQuizScore ? round($avgQuizScore, 1) : 0;
+
+            $data['recent_feedback'] = DB::table('assignment_submissions')
+                ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')
+                ->join('courses', 'assignments.course_id', '=', 'courses.id')
+                ->where('assignment_submissions.user_id', $user->id)
+                ->where(function ($query) {
+                    $query->whereNotNull('assignment_submissions.grade')
+                        ->orWhereNotNull('assignment_submissions.feedback');
+                })
+                ->select('assignment_submissions.grade', 'assignment_submissions.feedback', 'assignment_submissions.updated_at', 'assignments.title as assignment_title', 'courses.title as course_title', 'courses.id as course_id')
+                ->latest('assignment_submissions.updated_at')
+                ->take(4)
+                ->get();
 
             // ==========================================
             // DỮ LIỆU BIỂU ĐỒ QUIZ
@@ -365,6 +409,30 @@ class DashboardController extends Controller
                 ->orderBy('schedules.start_time', 'asc')
 
                 ->get();
+
+            $data['next_schedule'] = DB::table('schedules')
+                ->join('courses', 'schedules.course_id', '=', 'courses.id')
+                ->join('classes', 'schedules.class_id', '=', 'classes.id')
+                ->join('class_user', 'classes.id', '=', 'class_user.class_id')
+                ->where('class_user.user_id', $user->id)
+                ->where($this->activeOrLegacyColumn('schedules.status'))
+                ->where('classes.status', 'active')
+                ->where($this->notArchivedColumn('courses.status'))
+                ->where(function ($query) use ($todayDate, $now) {
+                    $query->whereDate('schedules.schedule_date', '>', $todayDate)
+                        ->orWhere(function ($todayQuery) use ($todayDate, $now) {
+                            $todayQuery->whereDate('schedules.schedule_date', $todayDate)
+                                ->where('schedules.end_time', '>=', $now->format('H:i:s'));
+                        });
+                })
+                ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name')
+                ->orderBy('schedules.schedule_date')
+                ->orderBy('schedules.start_time')
+                ->first();
+
+            $data['continue_course'] = $data['course_progress']
+                ->first(fn ($course) => $course->lesson_total > 0 && $course->progress < 100)
+                ?? $data['course_progress']->first();
         }
         return view('dashboard', compact('data'));
     }
@@ -385,7 +453,7 @@ class DashboardController extends Controller
         };
     }
 
-    private function buildTeacherAiSuggestions(array $data, Carbon $now): array
+    private function buildTeacherPrioritySuggestions(array $data, Carbon $now): array
     {
         $suggestions = [];
         $pendingGrades = (int) ($data['pending_grades'] ?? 0);
@@ -434,8 +502,8 @@ class DashboardController extends Controller
                 'icon' => 'fas fa-calendar-check',
                 'title' => 'Hôm nay chưa có ca dạy sắp tới',
                 'body' => 'Có thể dùng thời gian này để chuẩn bị nội dung hoặc rà soát bài chưa chấm.',
-                'action_label' => 'AI tạo quiz',
-                'action_url' => route('quizzes.ai_generate'),
+                'action_label' => 'Mở khóa học',
+                'action_url' => route('courses.index'),
             ];
         }
 

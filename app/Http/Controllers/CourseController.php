@@ -664,9 +664,11 @@ class CourseController extends Controller
             ->whereNotNull('completed_at')
             ->count();
 
-        $assignmentSubmitted = AssignmentSubmission::whereIn('user_id', $studentIds)
-            ->whereIn('assignment_id', $assignmentIds)
-            ->count();
+        $assignmentStats = AssignmentSubmission::whereIn('assignment_id', $assignmentIds)
+            ->selectRaw('SUM(CASE WHEN user_id IN (' . ($studentIds->isEmpty() ? 'NULL' : $studentIds->map(fn () => '?')->implode(',')) . ') THEN 1 ELSE 0 END) as submitted_count', $studentIds->all())
+            ->selectRaw('SUM(CASE WHEN grade IS NULL THEN 1 ELSE 0 END) as pending_count')
+            ->first();
+        $assignmentSubmitted = (int) ($assignmentStats->submitted_count ?? 0);
         $assignmentTotal = $assignmentIds->count() * $studentIds->count();
 
         $quizAttempted = QuizAttempt::whereIn('user_id', $studentIds)
@@ -677,9 +679,7 @@ class CourseController extends Controller
             ->count();
         $quizTotal = $quizIds->count() * $studentIds->count();
 
-        $pendingGrades = AssignmentSubmission::whereIn('assignment_id', $assignmentIds)
-            ->whereNull('grade')
-            ->count();
+        $pendingGrades = (int) ($assignmentStats->pending_count ?? 0);
 
         return [
             'students_count' => $studentIds->count(),

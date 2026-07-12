@@ -18,6 +18,7 @@ use App\Services\DeepSeekService;
 use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
@@ -86,8 +87,9 @@ class ClassManagementController extends Controller
             });
         }
 
+        $snapshotContext = $this->loadSnapshotContext($selectedCourseIds, $students);
         $allStudentSummaries = $students
-            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $selectedCourseIds))
+            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $selectedCourseIds, $snapshotContext))
             ->values();
 
         $studentSummaries = $allStudentSummaries;
@@ -148,8 +150,13 @@ class ClassManagementController extends Controller
             ? [(int) $filters['course_id']]
             : $availableCourses->pluck('id')->all();
 
+        $snapshotContext = $this->loadSnapshotContext(
+            $availableCourses->pluck('id')->all(),
+            $classroom->students
+        );
+
         $allStudentProgress = $classroom->students
-            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $selectedCourseIds))
+            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $selectedCourseIds, $snapshotContext))
             ->values();
 
         $studentProgress = $filters['attention_only']
@@ -158,9 +165,9 @@ class ClassManagementController extends Controller
 
         $classReport = $this->buildClassProgressReport($allStudentProgress);
         $courseReports = $availableCourses
-            ->map(function ($course) use ($classroom) {
+            ->map(function ($course) use ($classroom, $snapshotContext) {
                 $courseProgress = $classroom->students
-                    ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, [$course->id]))
+                    ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, [$course->id], $snapshotContext))
                     ->values();
 
                 return [
@@ -187,8 +194,9 @@ class ClassManagementController extends Controller
             $students = $students->where('id', (int) $request->input('student_id'))->values();
         }
 
+        $snapshotContext = $this->loadSnapshotContext($courseIds, $students);
         $studentSummaries = $students
-            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $courseIds))
+            ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $courseIds, $snapshotContext))
             ->values();
 
         $payload = [
@@ -492,18 +500,65 @@ class ClassManagementController extends Controller
         ];
     }
 
-    private function buildStudentSnapshot(Classroom $classroom, User $student, array $courseIds): array
+    private function loadSnapshotContext(array $courseIds, Collection $students): array
     {
+        $courseIds = collect($courseIds)->map(fn ($id) => (int) $id)->unique()->values();
+        $studentIds = $students->pluck('id')->map(fn ($id) => (int) $id)->unique()->values();
         $courses = Course::whereIn('id', $courseIds)->get()->keyBy('id');
-
         $assignments = Assignments::whereIn('course_id', $courseIds)
             ->orderByRaw('due_date IS NULL')
             ->orderBy('due_date')
             ->get();
+        $quizzes = Quiz::whereIn('course_id', $courseIds)->get();
+        $lessons = Lesson::query()
+            ->select('lessons.*', 'modules.course_id', 'modules.title as module_title')
+            ->join('modules', 'lessons.module_id', '=', 'modules.id')
+            ->whereIn('modules.course_id', $courseIds)
+            ->orderBy('modules.order')
+            ->orderBy('lessons.order')
+            ->get();
+        $attendanceColumns = AttendanceColumn::whereIn('course_id', $courseIds)->get();
+
+        return [
+            'courses' => $courses,
+            'assignments' => $assignments,
+            'submissions_by_user' => AssignmentSubmission::whereIn('user_id', $studentIds)
+                ->whereIn('assignment_id', $assignments->pluck('id'))
+                ->get()
+                ->groupBy('user_id'),
+            'quizzes' => $quizzes,
+            'quiz_attempts_by_user' => QuizAttempt::whereIn('user_id', $studentIds)
+                ->whereIn('quiz_id', $quizzes->pluck('id'))
+                ->orderByDesc('completed_at')
+                ->get()
+                ->groupBy('user_id'),
+            'lessons' => $lessons,
+            'lesson_completions_by_user' => DB::table('lesson_user')
+                ->whereIn('user_id', $studentIds)
+                ->whereIn('lesson_id', $lessons->pluck('id'))
+                ->get()
+                ->groupBy('user_id'),
+            'attendance_columns' => $attendanceColumns,
+            'attendance_by_user' => AttendanceData::whereIn('user_id', $studentIds)
+                ->whereIn('attendance_column_id', $attendanceColumns->pluck('id'))
+                ->get()
+                ->groupBy('user_id'),
+        ];
+    }
+
+    private function buildStudentSnapshot(Classroom $classroom, User $student, array $courseIds, ?array $context = null): array
+    {
+        if ($context === null) {
+            $context = $this->loadSnapshotContext($courseIds, collect([$student]));
+        }
+
+        $courseIds = collect($courseIds)->map(fn ($id) => (int) $id);
+        $courses = $context['courses']->only($courseIds->all());
+
+        $assignments = $context['assignments']->whereIn('course_id', $courseIds)->values();
         $assignmentIds = $assignments->pluck('id');
-        $submissions = AssignmentSubmission::where('user_id', $student->id)
+        $submissions = $context['submissions_by_user']->get($student->id, collect())
             ->whereIn('assignment_id', $assignmentIds)
-            ->get()
             ->keyBy('assignment_id');
 
         $submittedCount = $submissions->count();
@@ -531,12 +586,11 @@ class ClassManagementController extends Controller
             ];
         })->values();
 
-        $quizzes = Quiz::whereIn('course_id', $courseIds)->get();
+        $quizzes = $context['quizzes']->whereIn('course_id', $courseIds)->values();
         $quizIds = $quizzes->pluck('id');
-        $quizAttempts = QuizAttempt::where('user_id', $student->id)
+        $quizAttempts = $context['quiz_attempts_by_user']->get($student->id, collect())
             ->whereIn('quiz_id', $quizIds)
-            ->orderByDesc('completed_at')
-            ->get();
+            ->values();
         $attempts = $quizAttempts->groupBy('quiz_id');
         $latestAttempts = $attempts->map(fn ($quizAttempts) => $quizAttempts->first());
         $quizAverage = $latestAttempts->pluck('score')->filter(fn ($score) => $score !== null)->avg();
@@ -554,18 +608,11 @@ class ClassManagementController extends Controller
             ];
         })->values();
 
-        $lessons = Lesson::query()
-            ->select('lessons.*', 'modules.course_id', 'modules.title as module_title')
-            ->join('modules', 'lessons.module_id', '=', 'modules.id')
-            ->whereIn('modules.course_id', $courseIds)
-            ->orderBy('modules.order')
-            ->orderBy('lessons.order')
-            ->get();
+        $lessons = $context['lessons']->whereIn('course_id', $courseIds)->values();
         $lessonIds = $lessons->pluck('id');
-        $completedLessons = DB::table('lesson_user')
-            ->where('user_id', $student->id)
+        $completedLessons = $context['lesson_completions_by_user']->get($student->id, collect())
             ->whereIn('lesson_id', $lessonIds)
-            ->get();
+            ->values();
         $completedLessonIds = $completedLessons->pluck('lesson_id');
         $lessonTotal = $lessonIds->count();
         $lessonCompleted = $completedLessons->count();
@@ -583,10 +630,10 @@ class ClassManagementController extends Controller
             ];
         })->values();
 
-        $attendanceColumns = AttendanceColumn::whereIn('course_id', $courseIds)->get()->keyBy('id');
-        $attendanceData = AttendanceData::where('user_id', $student->id)
+        $attendanceColumns = $context['attendance_columns']->whereIn('course_id', $courseIds)->keyBy('id');
+        $attendanceData = $context['attendance_by_user']->get($student->id, collect())
             ->whereIn('attendance_column_id', $attendanceColumns->keys())
-            ->get();
+            ->values();
         $absenceCount = $attendanceData
             ->filter(function ($entry) use ($attendanceColumns) {
                 $column = $attendanceColumns->get($entry->attendance_column_id);

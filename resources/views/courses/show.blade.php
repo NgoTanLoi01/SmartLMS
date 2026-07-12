@@ -3646,6 +3646,9 @@
             }
 
             startButton.addEventListener('click', startPresentation);
+            if (new URLSearchParams(window.location.search).get('presentation') === '1') {
+                startPresentation();
+            }
             if (exitButton) exitButton.addEventListener('click', function() { exitPresentation(true); });
             if (fontUpButton) fontUpButton.addEventListener('click', function() { updateFontScale(.1); });
             if (fontDownButton) fontDownButton.addEventListener('click', function() { updateFontScale(-.1); });

@@ -1943,7 +1943,7 @@
                 <h1 class="lms-hero__title">Xin chào, {{ auth()->user()->name }}!</h1>
                 <p class="lms-hero__desc">
                     @if ($role === 'teacher')
-                        Theo dõi lớp sắp dạy, bài cần chấm, học sinh cần chú ý và các gợi ý AI trong một bảng điều khiển gọn
+                        Theo dõi lớp sắp dạy, bài cần chấm, học sinh cần chú ý và các gợi ý ưu tiên trong một bảng điều khiển gọn
                         gàng.
                     @elseif ($role === 'admin')
                         Quản lý tổng quan người dùng, lớp học, khóa học và các hoạt động vận hành quan trọng của hệ thống.
@@ -1992,6 +1992,30 @@
              ADMIN VIEW
         ══════════════════════════════════════ --}}
         @if ($role === 'admin')
+
+            <div class="section-heading anim-2">Cần xử lý</div>
+            <div class="teacher-priority-grid anim-2 mb-4">
+                <a href="{{ route('courses.index', ['status' => 'draft']) }}" class="teacher-priority-card teacher-priority-card--amber">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-file-pen"></i></span>
+                    <span><span class="teacher-priority-card__label">Khóa học bản nháp</span><span class="teacher-priority-card__value">{{ $data['draft_courses_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Nội dung chưa được xuất bản.</span></span>
+                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                </a>
+                <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--danger">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-user-slash"></i></span>
+                    <span><span class="teacher-priority-card__label">Chưa phân công</span><span class="teacher-priority-card__value">{{ $data['classes_without_teacher_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Lớp chưa có giáo viên phụ trách.</span></span>
+                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                </a>
+                <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--blue">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-book-circle-xmark"></i></span>
+                    <span><span class="teacher-priority-card__label">Lớp chưa có khóa</span><span class="teacher-priority-card__value">{{ $data['classes_without_courses_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Cần gắn nội dung học tập.</span></span>
+                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                </a>
+                <a href="{{ route('courses.index', ['status' => 'archived']) }}" class="teacher-priority-card teacher-priority-card--green">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-box-archive"></i></span>
+                    <span><span class="teacher-priority-card__label">Đã lưu trữ</span><span class="teacher-priority-card__value">{{ $data['archived_courses_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Khóa học đang được lưu trữ.</span></span>
+                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                </a>
+            </div>
 
             <div class="row g-3 mb-4 anim-3">
                 <div class="col-6 col-md-3">
@@ -2202,7 +2226,7 @@
                 $attentionCount = $data['attention_students_count'] ?? 0;
                 $nextSchedule = $data['next_schedule'] ?? null;
                 $prioritySubmissions = $data['priority_submissions'] ?? collect();
-                $aiSuggestions = $data['teacher_ai_suggestions'] ?? [];
+                $prioritySuggestions = $data['teacher_priority_suggestions'] ?? [];
             @endphp
 
             {{-- 1. TODAY'S PRIORITY ACTIONS --}}
@@ -2235,12 +2259,12 @@
                     </span>
                     <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
-                <a href="{{ route('courses.index') }}" class="teacher-priority-card teacher-priority-card--green">
-                    <span class="teacher-priority-card__icon"><i class="fas fa-book-open"></i></span>
+                <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--green">
+                    <span class="teacher-priority-card__icon"><i class="fas fa-user-graduate"></i></span>
                     <span>
-                        <span class="teacher-priority-card__label">Khóa học</span>
-                        <span class="teacher-priority-card__value">{{ $data['total_courses'] }}</span>
-                        <span class="teacher-priority-card__hint">Khóa học đang phụ trách và cần cập nhật.</span>
+                        <span class="teacher-priority-card__label">Học sinh</span>
+                        <span class="teacher-priority-card__value">{{ $data['total_students'] }}</span>
+                        <span class="teacher-priority-card__hint">Học sinh trong các lớp đang phụ trách.</span>
                     </span>
                     <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
@@ -2250,10 +2274,8 @@
             <div class="teacher-action-strip anim-2">
                 <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-plus-circle"></i> Tạo
                     bài tập</a>
-                <a href="{{ route('quizzes.ai_generate') }}" class="quick-action quick-action--ai"><i
-                        class="fas fa-magic"></i> AI tạo quiz</a>
-                <a href="{{ route('courses.index') }}" class="quick-action quick-action--ai"><i
-                        class="fas fa-robot"></i> AI soạn nội dung</a>
+                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Mở khóa học</a>
+                <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fas fa-calendar-days"></i> Xem lịch dạy</a>
                 <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-users"></i> Xem lớp</a>
             </div>
 
@@ -2277,9 +2299,11 @@
                                 {{ $nextEnd->format('H:i') }}</span>
                             <span><i class="fas fa-map-marker-alt"></i>{{ $nextSchedule->room ?? 'Online' }}</span>
                         </div>
-                        <a href="{{ route('schedules.index') }}" class="btn-xs btn-xs--primary">
-                            <i class="fas fa-calendar-alt"></i> Mở lịch dạy
-                        </a>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ route('courses.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fas fa-book-open"></i> Vào khóa học</a>
+                            <a href="{{ route('attendance.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--ghost"><i class="fas fa-user-check"></i> Điểm danh</a>
+                            <a href="{{ route('courses.show', ['course' => $nextSchedule->course_id, 'presentation' => 1]) }}" class="btn-xs btn-xs--ghost"><i class="fas fa-display"></i> Trình chiếu</a>
+                        </div>
                     @else
                         <h3 class="teacher-next-class__title">Chưa có ca dạy sắp tới</h3>
                         <div class="teacher-next-class__meta">
@@ -2292,9 +2316,9 @@
                 </div>
 
                 <div class="teacher-ai-panel">
-                    <div class="teacher-ai-panel__eyebrow">AI gợi ý việc cần làm</div>
+                    <div class="teacher-ai-panel__eyebrow">Gợi ý ưu tiên</div>
                     <h3 class="teacher-ai-panel__title">Ưu tiên dựa trên dữ liệu hiện tại</h3>
-                    @forelse ($aiSuggestions as $suggestion)
+                    @forelse ($prioritySuggestions as $suggestion)
                         <div class="teacher-ai-suggestion teacher-ai-suggestion--{{ $suggestion['type'] ?? 'primary' }}">
                             <span class="teacher-ai-suggestion__icon">
                                 <i class="{{ $suggestion['icon'] ?? 'fas fa-lightbulb' }}"></i>
@@ -2316,40 +2340,7 @@
                 </div>
             </div>
 
-            {{-- 3. TEACHING OVERVIEW STATISTICS --}}
-            <div class="section-heading anim-3">Tổng quan giảng dạy</div>
-            <div class="row g-3 mb-4 anim-3">
-                <div class="col-12 col-md-4">
-                    <div class="stat-card stat-card--compact stat-card--red stat-card--stripe">
-                        <div class="stat-card__icon"><i class="fas fa-hourglass-half"></i></div>
-                        <div class="stat-card__body">
-                            <div class="stat-card__label">Bài chờ chấm</div>
-                            <div class="stat-card__value" style="color:var(--danger)">{{ $data['pending_grades'] }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <div class="stat-card stat-card--compact stat-card--blue stat-card--stripe">
-                        <div class="stat-card__icon"><i class="fas fa-book-open"></i></div>
-                        <div class="stat-card__body">
-                            <div class="stat-card__label">Khóa học phụ trách</div>
-                            <div class="stat-card__value" style="color:var(--brand)">{{ $data['total_courses'] }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <div class="stat-card stat-card--compact stat-card--green stat-card--stripe">
-                        <div class="stat-card__icon"><i class="fas fa-user-graduate"></i></div>
-                        <div class="stat-card__body">
-                            <div class="stat-card__label">Tổng học sinh</div>
-                            <div class="stat-card__value" style="color:var(--success)">{{ $data['total_students'] }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 4. MANAGED CLASSES + STUDENTS NEEDING ATTENTION --}}
+            {{-- MANAGED CLASSES + STUDENTS NEEDING ATTENTION --}}
             <div class="section-heading anim-4">Lớp học &amp; học sinh cần theo dõi</div>
             <div class="row g-3 mb-4 anim-4">
                 <div class="col-12 col-xl-7">
@@ -2679,6 +2670,48 @@
              STUDENT VIEW
         ══════════════════════════════════════ --}}
         @else
+            @php
+                $studentNextSchedule = $data['next_schedule'] ?? null;
+                $continueCourse = $data['continue_course'] ?? null;
+                $recentFeedback = $data['recent_feedback'] ?? collect();
+            @endphp
+
+            <div class="section-heading anim-2">Hôm nay của em</div>
+            <div class="teacher-command-grid anim-2 mb-4">
+                <div class="teacher-next-class">
+                    <div class="teacher-next-class__eyebrow">Lịch học tiếp theo</div>
+                    @if ($studentNextSchedule)
+                        @php
+                            $studentNextStart = \Carbon\Carbon::parse($studentNextSchedule->schedule_date . ' ' . $studentNextSchedule->start_time);
+                            $studentNextEnd = \Carbon\Carbon::parse($studentNextSchedule->schedule_date . ' ' . $studentNextSchedule->end_time);
+                        @endphp
+                        <h3 class="teacher-next-class__title">{{ $studentNextSchedule->course_title }}</h3>
+                        <div class="teacher-next-class__meta">
+                            <span><i class="fas fa-school"></i>{{ $studentNextSchedule->class_name }}</span>
+                            <span><i class="far fa-calendar"></i>{{ $studentNextStart->format('d/m/Y') }}</span>
+                            <span><i class="far fa-clock"></i>{{ $studentNextStart->format('H:i') }} - {{ $studentNextEnd->format('H:i') }}</span>
+                            <span><i class="fas fa-location-dot"></i>{{ $studentNextSchedule->room ?? 'Online' }}</span>
+                        </div>
+                        <a href="{{ route('courses.show', $studentNextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fas fa-arrow-right"></i> Mở khóa học</a>
+                    @else
+                        <h3 class="teacher-next-class__title">Chưa có lịch học sắp tới</h3>
+                        <div class="teacher-next-class__meta"><span><i class="fas fa-calendar-check"></i>Em có thể tiếp tục bài học đang dở.</span></div>
+                    @endif
+                </div>
+
+                <div class="teacher-ai-panel">
+                    <div class="teacher-ai-panel__eyebrow">Tiếp tục học</div>
+                    @if ($continueCourse)
+                        <h3 class="teacher-ai-panel__title">{{ $continueCourse->title }}</h3>
+                        <div class="progress-line mb-2"><span style="width:{{ $continueCourse->progress }}%"></span></div>
+                        <div class="text-muted small mb-3">Đã hoàn thành {{ $continueCourse->lesson_completed }}/{{ $continueCourse->lesson_total }} bài · {{ $continueCourse->progress }}%</div>
+                        <a href="{{ route('courses.show', $continueCourse->id) }}" class="btn-xs btn-xs--primary">Tiếp tục học <i class="fas fa-arrow-right"></i></a>
+                    @else
+                        <div class="empty-state" style="padding:1.25rem 1rem"><div class="empty-icon"><i class="fas fa-book-open"></i></div><p>Chưa có khóa học để tiếp tục.</p></div>
+                    @endif
+                </div>
+            </div>
+
             <div class="row g-3 mb-4 anim-3">
                 <div class="col-12 col-md-4">
                     <div class="stat-card stat-card--blue">
@@ -2708,6 +2741,33 @@
                     </div>
                 </div>
             </div>
+
+            @if ($recentFeedback->isNotEmpty())
+                <div class="row g-3 mb-4 anim-4">
+                    <div class="col-12">
+                        <div class="panel">
+                            <div class="panel__header">
+                                <h6 class="panel__title"><span class="icon-dot idot--green"><i class="fas fa-comment-dots"></i></span>Điểm và nhận xét mới</h6>
+                                <a href="{{ route('students.grades') }}" class="btn-xs btn-xs--primary">Xem tất cả</a>
+                            </div>
+                            <div class="row g-0">
+                                @foreach ($recentFeedback as $feedback)
+                                    <div class="col-12 col-lg-6">
+                                        <div class="compact-card h-100">
+                                            <div class="d-flex justify-content-between gap-2 mb-1">
+                                                <div class="fw-bold" style="font-size:.85rem">{{ $feedback->assignment_title }}</div>
+                                                @if ($feedback->grade !== null)<span class="bdg bdg--success">{{ round($feedback->grade, 1) }} điểm</span>@endif
+                                            </div>
+                                            <div class="text-muted" style="font-size:.75rem">{{ $feedback->course_title }}</div>
+                                            @if ($feedback->feedback)<div class="mt-2" style="font-size:.8rem">{{ \Illuminate\Support\Str::limit($feedback->feedback, 120) }}</div>@endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="row g-3 mb-4 anim-4">
                 <div class="col-md-4">
