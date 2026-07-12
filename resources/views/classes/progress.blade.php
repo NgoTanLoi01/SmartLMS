@@ -1332,7 +1332,20 @@
                                     }
                                 });
 
-                            const analysis = response.data.analysis || {};
+                            const waitForOperation = async (url) => {
+                                for (let attempt = 0; attempt < 90; attempt++) {
+                                    const statusResponse = await axios.get(url);
+                                    const operation = statusResponse.data;
+                                    if (operation.status === 'completed') return operation.result || {};
+                                    if (operation.status === 'failed') throw new Error(operation.message || 'Tác vụ AI thất bại.');
+                                    await new Promise(resolve => setTimeout(resolve, 2000));
+                                }
+                                throw new Error('AI xử lý quá lâu. Bạn có thể tải lại trang và thử lại sau.');
+                            };
+                            const operationResult = response.data.queued
+                                ? await waitForOperation(response.data.status_url)
+                                : response.data;
+                            const analysis = operationResult.analysis || {};
                             summaryBox.textContent = analysis.summary || 'AI chưa có tóm tắt.';
                             risksBox.innerHTML = renderRisks(analysis.risks || []);
                             actionsBox.innerHTML = renderActions(analysis.actions || []);

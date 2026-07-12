@@ -35,7 +35,10 @@ return [
     ],
     'deepseek' => [
         'key' => env('DEEPSEEK_API_KEY'),
-        'base_url' => 'https://api.deepseek.com',
+        'base_url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
+        'model' => env('DEEPSEEK_MODEL', 'deepseek-v4-flash'),
+        'input_cost_per_million' => (float) env('DEEPSEEK_INPUT_COST_PER_MILLION', 0.14),
+        'output_cost_per_million' => (float) env('DEEPSEEK_OUTPUT_COST_PER_MILLION', 0.28),
     ],
 
     'gemini' => [

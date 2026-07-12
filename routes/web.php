@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, CoursePlannerController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController, AiTeachingContentController, CourseQualityController, CourseMaterialController, NotificationController};
+use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, CoursePlannerController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController, AiTeachingContentController, AiOperationController, CourseQualityController, CourseMaterialController, NotificationController};
 use App\Http\Controllers\ChessController;
 
 /*
@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/ai-operations/{uuid}', [AiOperationController::class, 'show'])->name('ai-operations.show');
     Route::get('/notifications/{notification}/open', [NotificationController::class, 'open'])->name('notifications.open');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::patch('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -43,6 +44,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/system/backups', [SystemBackupController::class, 'store'])->name('system.backups.store');
         Route::get('/system/backups/{backup}/download', [SystemBackupController::class, 'download'])->name('system.backups.download');
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/system/ai-operations', [AiOperationController::class, 'index'])->name('system.ai-operations.index');
         Route::delete('/audit-logs', [AuditLogController::class, 'bulkDestroy'])->name('audit-logs.bulk-destroy');
         Route::delete('/audit-logs/{auditLog}', [AuditLogController::class, 'destroy'])->name('audit-logs.destroy');
     });

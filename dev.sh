@@ -17,7 +17,7 @@ error() { echo -e "${RED}❌ $1${NC}"; exit 1; }
 # BUILD & START
 # =============================
 log "Khởi động Docker containers..."
-docker-compose up -d --build
+docker compose up -d --build
 
 # =============================
 # ĐỢI MySQL HEALTHY
@@ -81,6 +81,11 @@ docker exec lms-app curl -s http://lms-reverb:8080/apps/123456 > /dev/null \
     && log "Reverb (internal) OK" \
     || warn "Reverb (internal) chưa phản hồi"
 
+# Queue worker
+docker compose ps --status running --services | grep -qx 'queue-worker' \
+    && log "Queue worker OK" \
+    || { warn "Queue worker chưa chạy, log gần nhất:"; docker compose logs --tail=30 queue-worker; }
+
 # =============================
 # THÔNG TIN
 # =============================
@@ -92,6 +97,7 @@ echo -e "  🌐 App:    https://smartlms.io.vn"
 echo -e "  🔌 WS:     wss://ws.smartlms.io.vn"
 echo -e "  🗄️  MySQL:  localhost:3306"
 echo -e "  🐘 PgSQL:  localhost:5432"
+echo -e "  ⚙️  Queue:  ai, documents, default"
 echo ""
 
 # =============================

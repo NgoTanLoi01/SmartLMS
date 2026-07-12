@@ -75,7 +75,7 @@ PROMPT;
                 ->timeout(90)
                 ->withoutVerifying()
                 ->post("{$baseUrl}/chat/completions", [
-                    'model' => 'deepseek-v4-flash',
+                    'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
                     'messages' => [
                         ['role' => 'system', 'content' => $systemPrompt],
                         ['role' => 'user', 'content' => json_encode($payload, JSON_UNESCAPED_UNICODE)],
@@ -109,6 +109,7 @@ PROMPT;
             return [
                 'success' => true,
                 'analysis' => $analysis,
+                '_usage' => $response->json('usage') ?? [],
             ];
         } catch (\Exception $e) {
             Log::error('DeepSeek learning analysis error: ' . $e->getMessage());

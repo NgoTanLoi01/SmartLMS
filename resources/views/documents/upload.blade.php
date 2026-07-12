@@ -695,6 +695,30 @@
             </div>
         </div>
 
+        @if ($processingOperations->isNotEmpty())
+            <div class="card-panel">
+                <div class="table-header">
+                    <div class="table-title"><i class="fas fa-list-check"></i> Hàng đợi xử lý gần đây</div>
+                </div>
+                <div class="docs-table-wrap">
+                    <table class="docs-table">
+                        <thead><tr><th>Tài liệu</th><th>Trạng thái</th><th>Chunks</th><th>Thời gian</th><th>Thông báo</th></tr></thead>
+                        <tbody>
+                        @foreach ($processingOperations as $operation)
+                            <tr>
+                                <td>{{ $operation->metadata['document_name'] ?? 'Tài liệu' }}</td>
+                                <td><span class="badge-course">{{ $operation->status }}</span></td>
+                                <td>{{ $operation->result['chunks'] ?? '—' }}</td>
+                                <td>{{ $operation->duration_ms ? number_format($operation->duration_ms / 1000, 1) . ' giây' : '—' }}</td>
+                                <td class="text-danger">{{ $operation->error_message ? Str::limit($operation->error_message, 120) : '—' }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         {{-- Notice --}}
         <div class="notice-card">
             <div class="notice-icon"><i class="fas fa-exclamation-triangle"></i></div>
@@ -738,7 +762,9 @@
                                 @foreach ($courses as $course)
                                     <option value="{{ $course->id }}">{{ $course->title }}</option>
                                 @endforeach
-                                <option value="0">-- Dùng chung toàn hệ thống --</option>
+                                @if (auth()->user()->role === 'admin')
+                                    <option value="0">-- Dùng chung toàn hệ thống --</option>
+                                @endif
                             </select>
                             @error('course_id')
                                 <div class="field-error">{{ $message }}</div>
@@ -773,8 +799,7 @@
                     </div>
                     <div class="progress-note">
                         <i class="fas fa-circle-notch fa-spin" style="margin-top:2px; flex-shrink:0;"></i>
-                        Hệ thống đang phân tích ngữ cảnh và tạo tọa độ Vector. Vui lòng giữ kết nối và không đóng trình
-                        duyệt.
+                        File đang được đưa vào hàng đợi. Sau khi tải lên xong, bạn có thể đóng trình duyệt; worker sẽ tiếp tục xử lý.
                     </div>
                 </div>
             </div>

@@ -1,21 +1,15 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessDocumentPdf;
+use App\Models\AiOperation;
 use Illuminate\Http\Request;
-use App\Services\DocumentProcessingService;
 use App\Models\DocumentChunk;
 use App\Models\Course; // Thêm model Course
 use Illuminate\Support\Facades\DB;
 
 class DocumentController extends Controller
 {
-    protected $docService;
-
-    public function __construct(DocumentProcessingService $docService)
-    {
-        $this->docService = $docService;
-    }
-
     // ==========================================
     // 1. HIỂN THỊ TRANG UPLOAD TÀI LIỆU
     // ==========================================
@@ -32,7 +26,12 @@ class DocumentController extends Controller
 
         // 2. Lấy danh sách tài liệu từ PostgreSQL
         $documents = DocumentChunk::on('pgsql')->select('document_name', 'course_id', DB::raw('MAX(created_at) as created_at'), DB::raw('COUNT(*) as total_chunks'))->groupBy('document_name', 'course_id')->orderBy('created_at', 'desc')->get();
-        return view('documents.upload', compact('documents', 'courses'));
+        $processingOperations = AiOperation::where('feature', 'document_embedding')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->take(20)
+            ->get();
+        return view('documents.upload', compact('documents', 'courses', 'processingOperations'));
     }
 
     // ==========================================
@@ -43,22 +42,34 @@ class DocumentController extends Controller
         // Validate file và khóa học (nếu có)
         $request->validate([
             'file' => 'required|mimes:pdf|max:10240', // Giới hạn 10MB
-            'course_id' => 'required|integer', // Đổi nullable thành required để ép chọn khóa học
+            'course_id' => 'required|integer|min:0',
         ]);
 
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $documentName = $file->getClientOriginalName();
             $courseId = $request->input('course_id');
+            $course = (int) $courseId === 0 ? null : Course::findOrFail($courseId);
+            abort_unless(
+                $request->user()->role === 'admin' || ($course && (int) $course->teacher_id === (int) $request->user()->id),
+                403
+            );
 
             // 1. Lưu file PDF vào hệ thống storage của Laravel
             $path = $file->store('documents', 'local');
-            $fullPath = storage_path('app/private/' . $path);
+            $operation = AiOperation::create([
+                'user_id' => $request->user()->id,
+                'feature' => 'document_embedding',
+                'provider' => 'gemini',
+                'model' => 'gemini-embedding-001',
+                'status' => AiOperation::STATUS_QUEUED,
+                'subject_type' => $course ? Course::class : null,
+                'subject_id' => $course?->id,
+                'metadata' => ['document_name' => $documentName, 'path' => $path],
+            ]);
+            ProcessDocumentPdf::dispatch($operation->id, $path, $documentName, (int) $courseId)->afterCommit();
 
-            // 2. Kích hoạt tiến trình đọc PDF và nhúng Vector
-            $this->docService->processAndStorePdf($fullPath, $documentName, $courseId);
-
-            return back()->with('success', 'Tài liệu đã được tải lên. AI đang xử lý ngữ cảnh!');
+            return back()->with('success', 'Tài liệu đã vào hàng đợi xử lý. Bạn có thể rời trang trong khi worker tạo embedding.');
         }
 
         return back()->with('error', 'Không tìm thấy file để xử lý.');

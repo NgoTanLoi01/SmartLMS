@@ -882,6 +882,12 @@
                                 <i class="fas fa-shield-halved"></i> Audit log
                             </a>
                         </li>
+                        <li>
+                            <a class="nav-link {{ request()->is('system/ai-operations*') ? 'active' : '' }}"
+                                href="{{ route('system.ai-operations.index') }}">
+                                <i class="fas fa-microchip"></i> Theo dõi AI & Queue
+                            </a>
+                        </li>
                     @endif
                 @endif
             </ul>

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Imports\StudentImport;
+use App\Jobs\AnalyzeLearningWithAi;
+use App\Models\AiOperation;
 use App\Models\AssignmentSubmission;
 use App\Models\Assignments;
 use App\Models\AttendanceColumn;
@@ -14,7 +16,6 @@ use App\Models\Lesson;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Services\AuditLogger;
-use App\Services\DeepSeekService;
 use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -180,7 +181,7 @@ class ClassManagementController extends Controller
         return view('classes.progress', compact('classroom', 'availableCourses', 'studentProgress', 'classReport', 'courseReports', 'filters'));
     }
 
-    public function analyzeLearningWithAi(Request $request, DeepSeekService $deepSeekService, $classId)
+    public function analyzeLearningWithAi(Request $request, $classId)
     {
         $classroom = Classroom::with(['students', 'teacher', 'courses'])->findOrFail($classId);
         $this->authorizeClassroomAccess($classroom);
@@ -188,10 +189,12 @@ class ClassManagementController extends Controller
         $courseIds = $request->filled('course_id')
             ? [(int) $request->input('course_id')]
             : $classroom->courses->pluck('id')->all();
+        abort_if(collect($courseIds)->diff($classroom->courses->pluck('id'))->isNotEmpty(), 422, 'Khóa học không thuộc lớp này.');
 
         $students = $classroom->students;
         if ($request->filled('student_id')) {
             $students = $students->where('id', (int) $request->input('student_id'))->values();
+            abort_if($students->isEmpty(), 422, 'Học sinh không thuộc lớp này.');
         }
 
         $snapshotContext = $this->loadSnapshotContext($courseIds, $students);
@@ -216,14 +219,30 @@ class ClassManagementController extends Controller
                 ->values(),
         ];
 
-        $result = $deepSeekService->analyzeLearning($payload);
+        $operation = AiOperation::create([
+            'user_id' => $request->user()->id,
+            'feature' => 'learning_analysis',
+            'provider' => 'deepseek',
+            'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
+            'status' => AiOperation::STATUS_QUEUED,
+            'subject_type' => Classroom::class,
+            'subject_id' => $classroom->id,
+            'metadata' => [
+                'scope' => $payload['scope'],
+                'students_count' => count($payload['students']),
+                'courses_count' => count($payload['courses']),
+            ],
+        ]);
+        AnalyzeLearningWithAi::dispatch($operation->id, $payload)->afterCommit();
 
         AuditLogger::log(
             AuditLogger::AI_LEARNING_ANALYZED,
             $classroom,
             null,
             [
-                'success' => (bool) ($result['success'] ?? false),
+                'success' => true,
+                'queued' => true,
+                'operation_uuid' => $operation->uuid,
                 'scope' => $payload['scope'],
                 'students_count' => count($payload['students']),
                 'courses_count' => count($payload['courses']),
@@ -237,7 +256,12 @@ class ClassManagementController extends Controller
             'AI phân tích tình hình học tập.'
         );
 
-        return response()->json($result, $result['success'] ? 200 : 422);
+        return response()->json([
+            'success' => true,
+            'queued' => true,
+            'operation_id' => $operation->uuid,
+            'status_url' => route('ai-operations.show', $operation->uuid),
+        ], 202);
     }
 
     public function index()
