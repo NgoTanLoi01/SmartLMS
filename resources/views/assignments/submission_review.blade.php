@@ -1308,12 +1308,26 @@
                         ok: r.ok,
                         p
                     })))
-                    .then(({
+                    .then(async ({
                         ok,
                         p
                     }) => {
                         if (!ok || !p.success) throw new Error(p.message ||
                             'AI chưa phân tích được bài làm.');
+
+                        if (p.queued) {
+                            for (let attempt = 0; attempt < 90; attempt++) {
+                                const statusResponse = await fetch(p.status_url, { headers: { 'Accept': 'application/json' } });
+                                const operation = await statusResponse.json();
+                                if (operation.status === 'completed') {
+                                    p = operation.result || {};
+                                    break;
+                                }
+                                if (operation.status === 'failed') throw new Error(operation.message || 'AI chấm bài thất bại.');
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                            }
+                            if (p.queued) throw new Error('AI xử lý quá lâu. Vui lòng kiểm tra lại sau.');
+                        }
 
                         const a = p.analysis || {};
                         const strengths = Array.isArray(a.strengths) ? a.strengths : [];

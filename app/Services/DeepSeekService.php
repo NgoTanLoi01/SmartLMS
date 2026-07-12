@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AiOperation;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -30,6 +31,31 @@ class DeepSeekService
             Log::error('Lỗi quy trình Chatbot: ' . $e->getMessage());
             return 'Không thể kết nối đến máy chủ AI.';
         }
+    }
+
+    public function generateQuizQuestions(string $prompt): array
+    {
+        $response = Http::withToken(config('services.deepseek.key'))
+            ->timeout(120)
+            ->withoutVerifying()
+            ->post(rtrim(config('services.deepseek.base_url', 'https://api.deepseek.com'), '/') . '/v1/chat/completions', [
+                'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
+                'messages' => [
+                    ['role' => 'system', 'content' => 'You are a professional teacher assistant. Support language: Vietnamese. Always return valid JSON only.'],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'response_format' => ['type' => 'json_object'],
+            ]);
+        if ($response->failed()) {
+            throw new \RuntimeException('DeepSeek tạo câu hỏi lỗi HTTP ' . $response->status());
+        }
+        $decoded = $this->decodeJsonResponse($response->json('choices.0.message.content'));
+        $questions = $decoded['questions'] ?? $decoded['data'] ?? $decoded;
+        if (!is_array($questions)) {
+            throw new \RuntimeException('AI trả về danh sách câu hỏi không hợp lệ.');
+        }
+
+        return ['questions' => $questions, 'usage' => $response->json('usage') ?? []];
     }
 
     public function analyzeLearning(array $payload): array
@@ -71,6 +97,7 @@ Quy tắc:
 - Đề xuất hành động cụ thể: nhắc nộp bài, giao bài bổ sung, ôn lại chủ đề/khóa học liên quan.
 PROMPT;
 
+            $startedAt = hrtime(true);
             $response = Http::withToken($apiKey)
                 ->timeout(90)
                 ->withoutVerifying()
@@ -82,6 +109,7 @@ PROMPT;
                     ],
                     'temperature' => 0.2,
                 ]);
+            $this->trackSynchronousResponse('learning_analysis', $response, $startedAt);
 
             if ($response->failed()) {
                 Log::warning('DeepSeek learning analysis failed', [
@@ -170,6 +198,7 @@ Quy tắc:
 - Đây chỉ là gợi ý; giáo viên là người quyết định cuối cùng.
 PROMPT;
 
+            $startedAt = hrtime(true);
             $response = Http::withToken($apiKey)
                 ->timeout(90)
                 ->withoutVerifying()
@@ -181,6 +210,7 @@ PROMPT;
                     ],
                     'temperature' => 0.15,
                 ]);
+            $this->trackSynchronousResponse('assignment_grading', $response, $startedAt);
 
             if ($response->failed()) {
                 Log::warning('DeepSeek assignment grading failed', [
@@ -252,6 +282,7 @@ PROMPT;
             return [
                 'success' => true,
                 'analysis' => $analysis,
+                '_usage' => $response->json('usage') ?? [],
             ];
         } catch (\Exception $e) {
             Log::error('DeepSeek assignment grading error: ' . $e->getMessage());
@@ -361,6 +392,7 @@ PROMPT;
                 'context' => $context,
             ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
 
+            $startedAt = hrtime(true);
             $response = Http::withToken($apiKey)
                 ->timeout(90)
                 ->withoutVerifying()
@@ -372,6 +404,7 @@ PROMPT;
                     ],
                     'temperature' => 0.25,
                 ]);
+            $this->trackSynchronousResponse('teaching_content', $response, $startedAt);
 
             if ($response->failed()) {
                 Log::warning('DeepSeek teaching content failed', [
@@ -454,6 +487,7 @@ Quy tắc:
 - Không bịa yêu cầu đầu ra ngoài dữ liệu người dùng cung cấp.
 PROMPT;
 
+            $startedAt = hrtime(true);
             $response = Http::withToken($apiKey)
                 ->timeout(120)
                 ->withoutVerifying()
@@ -465,6 +499,7 @@ PROMPT;
                     ],
                     'temperature' => 0.35,
                 ]);
+            $this->trackSynchronousResponse('course_plan', $response, $startedAt);
 
             if ($response->failed()) {
                 Log::warning('DeepSeek course plan failed', ['status' => $response->status(), 'body' => $response->body()]);
@@ -545,6 +580,7 @@ PROMPT;
             ];
         }
 
+        $startedAt = hrtime(true);
         $response = Http::withToken($apiKey)
             ->timeout(60)
             ->withoutVerifying()
@@ -553,6 +589,7 @@ PROMPT;
                 'messages' => $finalMessages,
                 'temperature' => 0.3,
             ]);
+        $this->trackSynchronousResponse('chatbot', $response, $startedAt);
 
         return $response->successful() ? $response->json('choices.0.message.content') : 'AI đang bận, thử lại sau nhé!';
     }
@@ -580,6 +617,32 @@ PROMPT;
         }
 
         return null;
+    }
+
+    private function trackSynchronousResponse(string $feature, $response, int $startedAt): void
+    {
+        // Queue jobs already own an AiOperation record and run in console.
+        if (app()->runningInConsole()) {
+            return;
+        }
+
+        $usage = $response->json('usage') ?? [];
+        $operation = new AiOperation([
+            'user_id' => auth()->id(),
+            'feature' => $feature,
+            'provider' => 'deepseek',
+            'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
+            'status' => $response->successful() ? AiOperation::STATUS_COMPLETED : AiOperation::STATUS_FAILED,
+            'prompt_tokens' => (int) ($usage['prompt_tokens'] ?? 0),
+            'completion_tokens' => (int) ($usage['completion_tokens'] ?? 0),
+            'total_tokens' => (int) ($usage['total_tokens'] ?? 0),
+            'duration_ms' => (int) round((hrtime(true) - $startedAt) / 1_000_000),
+            'completed_at' => $response->successful() ? now() : null,
+            'failed_at' => $response->failed() ? now() : null,
+            'error_message' => $response->failed() ? 'DeepSeek HTTP ' . $response->status() : null,
+        ]);
+        $operation->estimated_cost_usd = $operation->estimatedCost($usage);
+        $operation->save();
     }
 
     private function cleanUtf8(string $text): string

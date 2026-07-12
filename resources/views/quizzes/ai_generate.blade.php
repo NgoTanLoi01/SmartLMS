@@ -548,12 +548,28 @@
                     body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
+                let data = await response.json();
 
                 if (!response.ok) {
                     alert("Lỗi: " + (data.error || data.message || "Không thể sinh câu hỏi."));
                     resetUI();
                     return;
+                }
+
+                if (data.queued) {
+                    let completed = false;
+                    for (let attempt = 0; attempt < 90; attempt++) {
+                        const statusResponse = await fetch(data.status_url, { headers: { 'Accept': 'application/json' } });
+                        const operation = await statusResponse.json();
+                        if (operation.status === 'completed') {
+                            data = operation.result || {};
+                            completed = true;
+                            break;
+                        }
+                        if (operation.status === 'failed') throw new Error(operation.message || 'AI tạo câu hỏi thất bại.');
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                    if (!completed) throw new Error('AI xử lý quá lâu. Vui lòng thử lại sau.');
                 }
 
                 generatedQuestions = data.questions ? data.questions : data;

@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Models\AiOperation;
+use App\Models\AssignmentSubmission;
+use App\Services\AssignmentAiGradingService;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Throwable;
+
+class AnalyzeAssignmentSubmission implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    public int $tries = 3;
+    public int $timeout = 180;
+    public array $backoff = [10, 30, 90];
+
+    public function __construct(public int $operationId, public int $submissionId) { $this->onQueue('ai'); }
+
+    public function handle(AssignmentAiGradingService $service): void
+    {
+        $operation = AiOperation::findOrFail($this->operationId);
+        $started = hrtime(true);
+        $operation->update(['status' => AiOperation::STATUS_PROCESSING, 'attempts' => $this->attempts(), 'started_at' => now(), 'error_message' => null]);
+        $output = $service->analyze(AssignmentSubmission::findOrFail($this->submissionId));
+        $usage = $output['usage'];
+        $operation->update([
+            'status' => AiOperation::STATUS_COMPLETED, 'result' => ['success' => true, 'analysis' => $output['analysis']],
+            'prompt_tokens' => (int) ($usage['prompt_tokens'] ?? 0), 'completion_tokens' => (int) ($usage['completion_tokens'] ?? 0),
+            'total_tokens' => (int) ($usage['total_tokens'] ?? 0), 'estimated_cost_usd' => $operation->estimatedCost($usage),
+            'duration_ms' => (int) round((hrtime(true) - $started) / 1_000_000), 'completed_at' => now(),
+        ]);
+    }
+
+    public function failed(?Throwable $e): void
+    {
+        AiOperation::whereKey($this->operationId)->update(['status' => AiOperation::STATUS_FAILED, 'error_message' => mb_substr($e?->getMessage() ?? 'AI grading failed', 0, 4000), 'failed_at' => now()]);
+    }
+}

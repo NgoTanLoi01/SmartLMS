@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\AnalyzeAssignmentSubmission;
+use App\Models\AiOperation;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
 use App\Services\AuditLogger;
-use App\Services\DeepSeekService;
-use App\Services\SubmissionTextExtractor;
 use App\Services\NotificationCenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -166,7 +166,7 @@ class AssignmentController extends Controller
         return back()->with('success', 'Đã lưu điểm và nhận xét!');
     }
 
-    public function analyzeSubmissionWithAi($submissionId, DeepSeekService $deepSeekService, SubmissionTextExtractor $textExtractor)
+    public function analyzeSubmissionWithAi($submissionId)
     {
         $submission = AssignmentSubmission::with(['assignment.course', 'user'])->findOrFail($submissionId);
         $assignment = $submission->assignment;
@@ -183,120 +183,21 @@ class AssignmentController extends Controller
             ], 422);
         }
 
-        $fileTextResult = $submission->file_path ? $textExtractor->extract($submission) : [
-            'success' => false,
-            'text' => '',
-            'source' => null,
-            'message' => null,
-        ];
-
-        $textAnswer = trim((string) $submission->text_answer);
-        $fileText = trim((string) ($fileTextResult['text'] ?? ''));
-
-        if ($textAnswer === '' && $fileText === '') {
+        if (trim((string) $submission->text_answer) === '' && !$submission->file_path) {
             return response()->json([
                 'success' => false,
-                'message' => $fileTextResult['message'] ?: 'AI chưa có nội dung văn bản để phân tích bài nộp này.',
+                'message' => 'AI chưa có nội dung văn bản để phân tích bài nộp này.',
             ], 422);
         }
+        $operation = AiOperation::create([
+            'user_id' => auth()->id(), 'feature' => 'assignment_grading', 'provider' => 'deepseek',
+            'model' => config('services.deepseek.model', 'deepseek-v4-flash'), 'status' => AiOperation::STATUS_QUEUED,
+            'subject_type' => AssignmentSubmission::class, 'subject_id' => $submission->id,
+            'metadata' => ['assignment_id' => $assignment->id, 'student_id' => $submission->user_id],
+        ]);
+        AnalyzeAssignmentSubmission::dispatch($operation->id, $submission->id)->afterCommit();
 
-        $combinedAnswer = trim(implode("\n\n", array_filter([
-            $textAnswer !== '' ? "Nội dung tự luận học sinh nhập:\n{$textAnswer}" : null,
-            $fileText !== '' ? "Nội dung trích xuất từ file {$fileTextResult['source']}:\n{$fileText}" : null,
-        ])));
-
-        $payload = [
-            'assignment' => [
-                'title' => $assignment->title,
-                'type' => $assignment->type ?? 'file',
-                'instructions' => trim(strip_tags($assignment->instructions)),
-                'grading_rubric' => trim((string) $assignment->grading_rubric),
-                'grading_scale' => $assignment->grading_scale ?? 10,
-                'ai_grading_enabled' => (bool) $assignment->ai_grading_enabled,
-                'due_date' => $assignment->due_date?->format('d/m/Y H:i'),
-                'course' => $course->title,
-            ],
-            'student' => [
-                'name' => $submission->user?->name,
-                'email' => $submission->user?->email,
-                'submitted_at' => $submission->formatSubmittedAt('d/m/Y H:i:s'),
-            ],
-            'submission' => [
-                'text_answer' => $combinedAnswer,
-                'has_file' => !empty($submission->file_path),
-                'file_text_extracted' => $fileText !== '',
-                'file_text_source' => $fileTextResult['source'] ?? null,
-                'current_grade' => $submission->grade,
-                'current_feedback' => $submission->feedback,
-            ],
-        ];
-
-        $result = $deepSeekService->analyzeAssignmentSubmission($payload);
-
-        if ($result['success']) {
-            $analysis = $result['analysis'] ?? [];
-            $oldValues = AuditLogger::snapshot($submission, [
-                'ai_suggested_score',
-                'ai_feedback',
-                'ai_rubric_breakdown',
-                'ai_review_flags',
-                'ai_grading_notes',
-                'ai_analyzed_at',
-                'ai_analysis_history',
-            ]);
-
-            $history = collect($submission->ai_analysis_history ?? [])
-                ->prepend([
-                    'analyzed_at' => now()->toDateTimeString(),
-                    'suggested_score' => $analysis['suggested_score'] ?? null,
-                    'feedback' => $analysis['feedback'] ?? null,
-                    'rubric_breakdown' => $analysis['rubric_breakdown'] ?? [],
-                    'strengths' => $analysis['strengths'] ?? [],
-                    'improvements' => $analysis['improvements'] ?? [],
-                    'review_flags' => $analysis['review_flags'] ?? [],
-                    'grading_notes' => $analysis['grading_notes'] ?? null,
-                ])
-                ->take(10)
-                ->values()
-                ->all();
-
-            $submission->update([
-                'ai_suggested_score' => $analysis['suggested_score'] ?? null,
-                'ai_feedback' => $analysis['feedback'] ?? null,
-                'ai_rubric_breakdown' => $analysis['rubric_breakdown'] ?? null,
-                'ai_review_flags' => $analysis['review_flags'] ?? null,
-                'ai_grading_notes' => $analysis['grading_notes'] ?? null,
-                'ai_analyzed_at' => now(),
-                'ai_analysis_history' => $history,
-            ]);
-
-            $result['analysis']['analysis_history_count'] = count($history);
-
-            AuditLogger::log(
-                AuditLogger::AI_ASSIGNMENT_ANALYZED,
-                $submission,
-                $oldValues,
-                AuditLogger::snapshot($submission->fresh(), [
-                    'ai_suggested_score',
-                    'ai_feedback',
-                    'ai_rubric_breakdown',
-                    'ai_review_flags',
-                    'ai_grading_notes',
-                    'ai_analyzed_at',
-                    'ai_analysis_history',
-                ]),
-                [
-                    'assignment_id' => $assignment->id,
-                    'assignment_title' => $assignment->title,
-                    'course_id' => $course->id,
-                    'course_title' => $course->title,
-                    'student_id' => $submission->user_id,
-                ],
-                'AI phân tích bài nộp tự luận.'
-            );
-        }
-
-        return response()->json($result, $result['success'] ? 200 : 500);
+        return response()->json(['success' => true, 'queued' => true, 'operation_id' => $operation->uuid, 'status_url' => route('ai-operations.show', $operation->uuid)], 202);
     }
 
     public function reviewSubmission($submissionId)

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateQuizQuestions;
+use App\Models\AiOperation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
@@ -323,53 +325,18 @@ class QuestionController extends Controller
         4. Mỗi câu hỏi phải có đúng 4 đáp án, correct_index là số từ 0 đến 3.
         5. Không thêm markdown, không thêm chữ giải thích ngoài JSON.";
 
-        $baseUrl = rtrim(config('services.deepseek.base_url', 'https://api.deepseek.com'), '/');
+        $operation = AiOperation::create([
+            'user_id' => $request->user()->id, 'feature' => 'quiz_generation', 'provider' => 'deepseek',
+            'model' => config('services.deepseek.model', 'deepseek-v4-flash'), 'status' => AiOperation::STATUS_QUEUED,
+            'subject_type' => Course::class, 'subject_id' => $course->id,
+            'metadata' => ['quantity' => (int) $request->quantity, 'difficulty' => $request->difficulty, 'source_label' => $sourceLabel],
+        ]);
+        GenerateQuizQuestions::dispatch($operation->id, $prompt, $sourceLabel)->afterCommit();
 
-        try {
-            $responseDeepSeek = Http::withHeaders([
-                'Authorization' => 'Bearer ' . config('services.deepseek.key'),
-                'Content-Type' => 'application/json',
-            ])
-                ->timeout(120)
-                ->post("{$baseUrl}/v1/chat/completions", [
-                    'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => 'You are a professional teacher assistant. Support language: Vietnamese. Always return valid JSON only.',
-                        ],
-                        ['role' => 'user', 'content' => $prompt],
-                    ],
-                    'response_format' => ['type' => 'json_object'],
-                ]);
-
-            if ($responseDeepSeek->failed()) {
-                return response()->json(['error' => 'DeepSeek không phản hồi. Thầy / Cô vui lòng thử lại.'], 500);
-            }
-
-            $aiResult = $responseDeepSeek->json()['choices'][0]['message']['content'] ?? '';
-            $decodedData = json_decode($aiResult, true);
-
-            $finalQuestions = $decodedData;
-            if (isset($decodedData['questions'])) {
-                $finalQuestions = $decodedData['questions'];
-            }
-            if (isset($decodedData['data'])) {
-                $finalQuestions = $decodedData['data'];
-            }
-
-            if (!is_array($finalQuestions)) {
-                return response()->json(['error' => 'AI trả về dữ liệu chưa đúng định dạng. Thầy / Cô vui lòng thử lại.'], 500);
-            }
-
-            return response()->json([
-                'questions' => $finalQuestions,
-                'source_label' => $sourceLabel,
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Lỗi AI Quiz: ' . $e->getMessage());
-            return response()->json(['error' => 'Hệ thống AI đang quá tải. Thầy / Cô hãy thử lại sau ít phút.'], 500);
-        }
+        return response()->json([
+            'success' => true, 'queued' => true, 'operation_id' => $operation->uuid,
+            'status_url' => route('ai-operations.show', $operation->uuid),
+        ], 202);
     }
 
     private function quizAiContext(Request $request, Course $course): array
