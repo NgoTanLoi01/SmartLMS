@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class DocumentProcessingService
 {
-    public function processAndStorePdf($filePath, $documentName, $courseId = null)
+    public function processAndStorePdf($filePath, $documentName, $courseId = null, ?int $uploadedBy = null)
     {
         $parser = new Parser();
         $text = $parser->parseFile($filePath)->getText();
@@ -23,14 +23,15 @@ class DocumentProcessingService
         $connection->table('document_chunks')
             ->where('course_id', $courseId)
             ->where('document_name', $documentName)
+            ->where('uploaded_by', $uploadedBy)
             ->delete();
 
         $stored = 0;
         foreach ($chunks as $chunk) {
             $embedding = $this->getGeminiEmbedding($chunk);
             $connection->insert(
-                'INSERT INTO document_chunks (course_id, document_name, content, embedding, created_at, updated_at) VALUES (?, ?, ?, ?::vector, NOW(), NOW())',
-                [$courseId, $documentName, $chunk, '[' . implode(',', $embedding) . ']']
+                'INSERT INTO document_chunks (course_id, uploaded_by, document_name, content, embedding, created_at, updated_at) VALUES (?, ?, ?, ?, ?::vector, NOW(), NOW())',
+                [$courseId, $uploadedBy, $documentName, $chunk, '[' . implode(',', $embedding) . ']']
             );
             $stored++;
         }

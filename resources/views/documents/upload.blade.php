@@ -38,9 +38,9 @@
         }
 
         .page-wrapper {
-            max-width: 1000px;
+            max-width: 1440px;
             margin: 0 auto;
-            padding: 2rem 1.5rem;
+            padding: 2.25rem 2rem;
         }
 
         /* === PAGE HEADER === */
@@ -429,16 +429,20 @@
 
         table.docs-table {
             width: 100%;
+            min-width: 880px;
             border-collapse: collapse;
+            table-layout: auto;
         }
 
+        table.docs-table.knowledge-table { min-width: 1080px; }
+
         .docs-table thead th {
-            font-size: 0.7rem;
+            font-size: 0.76rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.07em;
             color: var(--text-muted);
-            padding: 0.75rem 1rem;
+            padding: 0.95rem 1.15rem;
             background: var(--surface-2);
             border-bottom: 1px solid var(--border);
             white-space: nowrap;
@@ -467,9 +471,28 @@
         }
 
         .docs-table tbody td {
-            padding: 0.95rem 1rem;
+            padding: 1.15rem 1.15rem;
             vertical-align: middle;
+            font-size: 0.9rem;
         }
+
+        .knowledge-table th:nth-child(1),
+        .knowledge-table td:nth-child(1) { min-width: 290px; width: 30%; }
+
+        .knowledge-table th:nth-child(2),
+        .knowledge-table td:nth-child(2) { min-width: 190px; width: 18%; }
+
+        .knowledge-table th:nth-child(3),
+        .knowledge-table td:nth-child(3) { min-width: 210px; width: 20%; }
+
+        .knowledge-table th:nth-child(4),
+        .knowledge-table td:nth-child(4) { min-width: 110px; }
+
+        .knowledge-table th:nth-child(5),
+        .knowledge-table td:nth-child(5) { min-width: 125px; }
+
+        .knowledge-table th:nth-child(6),
+        .knowledge-table td:nth-child(6) { min-width: 155px; }
 
         .docs-table tbody td:first-child {
             padding-left: 1.5rem;
@@ -493,8 +516,8 @@
         }
 
         .doc-icon {
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             background: var(--danger-light);
             border-radius: var(--radius-sm);
             display: flex;
@@ -505,13 +528,14 @@
 
         .doc-icon i {
             color: var(--danger);
-            font-size: 1rem;
+            font-size: 1.15rem;
         }
 
         .doc-name {
-            font-size: 0.875rem;
+            font-size: 0.95rem;
             font-weight: 600;
             color: var(--text-primary);
+            line-height: 1.45;
         }
 
         /* Badges */
@@ -657,8 +681,8 @@
                 padding: 1rem;
             }
 
-            table.docs-table {
-                min-width: 720px;
+            table.docs-table.knowledge-table {
+                min-width: 1040px;
             }
 
             .docs-table thead th:first-child,
@@ -816,10 +840,11 @@
             </div>
 
             <div class="docs-table-wrap">
-                <table class="docs-table">
+                <table class="docs-table knowledge-table">
                     <thead>
                         <tr>
                             <th>Tên tài liệu</th>
+                            <th>Người tải lên</th>
                             <th>Khóa học</th>
                             <th>Vectors</th>
                             <th>Ngày nạp</th>
@@ -836,10 +861,16 @@
                                     </div>
                                 </td>
                                 <td>
+                                    <span class="date-text">{{ $doc->uploader_name }}</span>
+                                    @if ((int) $doc->uploaded_by === (int) auth()->id())
+                                        <span class="badge-course">Bạn</span>
+                                    @endif
+                                </td>
+                                <td>
                                     @if ($doc->course_id == 0)
                                         <span class="badge-system">Toàn hệ thống</span>
-                                    @elseif ($doc->course)
-                                        <span class="badge-course">{{ $doc->course->title }}</span>
+                                    @elseif ($doc->course_title)
+                                        <span class="badge-course">{{ $doc->course_title }}</span>
                                     @else
                                         <span class="badge-danger">Không khả dụng (ID: {{ $doc->course_id }})</span>
                                     @endif
@@ -854,19 +885,24 @@
                                     <span class="date-text">{{ $doc->created_at->format('d/m/Y') }}</span>
                                 </td>
                                 <td>
-                                    <form action="{{ route('documents.destroy', $doc->document_name) }}" method="POST"
-                                        class="d-inline">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn-delete"
-                                            onclick="return confirm('Xóa tài liệu này? AI sẽ không còn trả lời được nội dung liên quan.')">
-                                            <i class="fas fa-trash-alt"></i> Xóa
-                                        </button>
-                                    </form>
+                                    @if ($doc->can_delete)
+                                        <form action="{{ route('documents.destroy', $doc->document_name) }}" method="POST" class="d-inline">
+                                            @csrf @method('DELETE')
+                                            <input type="hidden" name="course_id" value="{{ $doc->course_id }}">
+                                            <input type="hidden" name="uploaded_by" value="{{ $doc->uploaded_by }}">
+                                            <button type="submit" class="btn-delete"
+                                                onclick="return confirm('Xóa tài liệu này? AI sẽ không còn trả lời được nội dung liên quan.')">
+                                                <i class="fas fa-trash-alt"></i> Xóa
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="text-muted small"><i class="fas fa-lock"></i> Không có quyền xóa</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5">
+                                <td colspan="6">
                                     <div class="empty-state">
                                         <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
                                         <p>Chưa có tài liệu tri thức nào được nạp</p>

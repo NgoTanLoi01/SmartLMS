@@ -20,7 +20,7 @@ class ProcessDocumentPdf implements ShouldQueue
     public int $timeout = 600;
     public array $backoff = [30, 120, 300];
 
-    public function __construct(public int $operationId, public string $path, public string $documentName, public int $courseId)
+    public function __construct(public int $operationId, public string $path, public string $documentName, public int $courseId, public int $uploadedBy)
     {
         $this->onQueue('documents');
     }
@@ -39,7 +39,8 @@ class ProcessDocumentPdf implements ShouldQueue
         $result = $service->processAndStorePdf(
             Storage::disk('local')->path($this->path),
             $this->documentName,
-            $this->courseId
+            $this->courseId,
+            $this->uploadedBy
         );
 
         $operation->update([

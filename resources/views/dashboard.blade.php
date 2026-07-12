@@ -2006,7 +2006,7 @@
                     <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
                 <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--blue">
-                    <span class="teacher-priority-card__icon"><i class="fas fa-book-circle-xmark"></i></span>
+                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-book-bookmark"></i></i></span>
                     <span><span class="teacher-priority-card__label">Lớp chưa có khóa</span><span class="teacher-priority-card__value">{{ $data['classes_without_courses_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Cần gắn nội dung học tập.</span></span>
                     <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>

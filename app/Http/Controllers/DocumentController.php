@@ -6,6 +6,7 @@ use App\Models\AiOperation;
 use Illuminate\Http\Request;
 use App\Models\DocumentChunk;
 use App\Models\Course; // Thêm model Course
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class DocumentController extends Controller
@@ -25,7 +26,23 @@ class DocumentController extends Controller
         }
 
         // 2. Lấy danh sách tài liệu từ PostgreSQL
-        $documents = DocumentChunk::on('pgsql')->select('document_name', 'course_id', DB::raw('MAX(created_at) as created_at'), DB::raw('COUNT(*) as total_chunks'))->groupBy('document_name', 'course_id')->orderBy('created_at', 'desc')->get();
+        $documents = DocumentChunk::on('pgsql')
+            ->select('document_name', 'course_id', 'uploaded_by', DB::raw('MAX(created_at) as created_at'), DB::raw('COUNT(*) as total_chunks'))
+            ->groupBy('document_name', 'course_id', 'uploaded_by')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $uploaders = User::whereIn('id', $documents->pluck('uploaded_by')->filter()->unique())
+            ->get(['id', 'name'])
+            ->keyBy('id');
+        $documentCourses = Course::whereIn('id', $documents->pluck('course_id')->filter())->get(['id', 'title'])->keyBy('id');
+        $documents->each(function ($document) use ($user, $uploaders, $documentCourses) {
+            $document->uploader_name = $document->uploaded_by
+                ? ($uploaders->get($document->uploaded_by)?->name ?? 'Người dùng không còn tồn tại')
+                : 'Tài liệu cũ (chưa xác định)';
+            $document->can_delete = $user->role === 'admin'
+                || ($document->uploaded_by && (int) $document->uploaded_by === (int) $user->id);
+            $document->course_title = $documentCourses->get($document->course_id)?->title;
+        });
         $processingOperations = AiOperation::where('feature', 'document_embedding')
             ->where('user_id', $user->id)
             ->latest()
@@ -67,7 +84,7 @@ class DocumentController extends Controller
                 'subject_id' => $course?->id,
                 'metadata' => ['document_name' => $documentName, 'path' => $path],
             ]);
-            ProcessDocumentPdf::dispatch($operation->id, $path, $documentName, (int) $courseId)->afterCommit();
+            ProcessDocumentPdf::dispatch($operation->id, $path, $documentName, (int) $courseId, (int) $request->user()->id)->afterCommit();
 
             return back()->with('success', 'Tài liệu đã vào hàng đợi xử lý. Bạn có thể rời trang trong khi worker tạo embedding.');
         }
@@ -78,11 +95,27 @@ class DocumentController extends Controller
     // ==========================================
     // 3. XÓA TÀI LIỆU KHỎI BỘ NÃO AI
     // ==========================================
-    public function destroy($name)
+    public function destroy(Request $request, $name)
     {
-        // Thêm on('pgsql') để đảm bảo xóa đúng CSDL Vector, nếu không sẽ lỗi bảng không tồn tại bên MySQL
-        DocumentChunk::on('pgsql')->where('document_name', $name)->delete();
+        $data = $request->validate([
+            'course_id' => 'required|integer|min:0',
+            'uploaded_by' => 'nullable|integer|min:1',
+        ]);
+        $query = DocumentChunk::on('pgsql')
+            ->where('document_name', $name)
+            ->where('course_id', $data['course_id']);
+        array_key_exists('uploaded_by', $data) && $data['uploaded_by'] !== null
+            ? $query->where('uploaded_by', $data['uploaded_by'])
+            : $query->whereNull('uploaded_by');
 
-        return back()->with('success', 'Đã xóa kiến thức của tài liệu: ' . $name);
+        $document = (clone $query)->firstOrFail();
+        abort_unless(
+            $request->user()->role === 'admin'
+                || ($document->uploaded_by && (int) $document->uploaded_by === (int) $request->user()->id),
+            403
+        );
+        $deleted = $query->delete();
+
+        return back()->with('success', "Đã xóa {$deleted} đoạn kiến thức của tài liệu: {$name}");
     }
 }
