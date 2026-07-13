@@ -398,10 +398,10 @@
                 <p class="mb-2">
                     Giai đoạn hiện tại hệ thống chỉ hỗ trợ tạo và tải backup. Việc khôi phục nên chạy bằng lệnh server để tránh bấm nhầm làm ghi đè dữ liệu thật.
                 </p>
-                <pre class="backup-code"><code>gunzip smartlms-db-YYYYMMDD-HHMMSS.sql.gz
-docker compose exec -T db mysql -u lms_user -plms_password lms_db &lt; smartlms-db-YYYYMMDD-HHMMSS.sql</code></pre>
+                <pre class="backup-code"><code>gunzip -c smartlms-db-YYYYMMDD-HHMMSS.sql.gz |
+docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u"$MYSQL_USER" "$MYSQL_DATABASE"'</code></pre>
                 <p class="mb-0 mt-3">
-                    Nếu username/database khác với môi trường thật, thay `lms_user`, `lms_password` và `lms_db` theo `.env`. Trước khi restore nên tạo thêm một bản backup mới của dữ liệu hiện tại.
+                    Lệnh sử dụng credential nội bộ của container và không đưa mật khẩu lên command line. Trước khi restore nên tạo thêm một bản backup mới của dữ liệu hiện tại.
                 </p>
             </div>
         </div>

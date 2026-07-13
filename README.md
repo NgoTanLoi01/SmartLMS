@@ -63,6 +63,7 @@ DevOps    : Docker Compose (Nginx + PHP-FPM + MySQL)
 git clone https://github.com/ngotanloi/lms-system.git
 cd lms-system
 cp .env.example .env
+php scripts/rotate-secrets.php
 ```
 
 **2. Khởi chạy toàn bộ hệ thống**
@@ -77,6 +78,14 @@ docker compose up -d --build
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --seed
 ```
+
+### Cấu hình production an toàn
+
+- Không commit `.env`; Docker build cũng loại `.env` khỏi image qua `.dockerignore`.
+- `docker-compose.yml` yêu cầu `APP_KEY`, mật khẩu database và credential Reverb lấy từ `.env`.
+- MySQL, PostgreSQL và Reverb chỉ mở trong Docker network; lưu lượng ứng dụng/WebSocket đi qua Nginx.
+- Khi rotate trên hệ thống đã có volume đang chạy, dùng `php scripts/rotate-secrets.php --sync-running-databases`, sau đó recreate container bằng `docker compose up -d --force-recreate`.
+- Rotation `APP_KEY` làm mất hiệu lực session/cookie cũ. Luôn backup database trước khi rotation production.
 
 ---
 

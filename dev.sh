@@ -53,7 +53,7 @@ docker compose restart nginx
 log "Đợi Reverb khởi động..."
 MAX_WAIT=30
 COUNT=0
-until docker exec lms-app curl -s http://lms-reverb:8080/apps/123456 > /dev/null 2>&1; do
+until docker exec lms-app sh -c 'curl -s "http://lms-reverb:8080/apps/${REVERB_APP_ID}"' > /dev/null 2>&1; do
     echo -n "."
     sleep 2
     COUNT=$((COUNT + 2))
@@ -75,13 +75,8 @@ docker exec lms-app curl -s http://localhost/up > /dev/null \
     && log "Laravel OK" \
     || warn "Laravel chưa phản hồi"
 
-# Reverb từ host
-curl -s http://localhost:8080/apps/123456 > /dev/null \
-    && log "Reverb (host) OK" \
-    || warn "Reverb (host) chưa phản hồi"
-
 # Reverb từ app container
-docker exec lms-app curl -s http://lms-reverb:8080/apps/123456 > /dev/null \
+docker exec lms-app sh -c 'curl -s "http://lms-reverb:8080/apps/${REVERB_APP_ID}"' > /dev/null \
     && log "Reverb (internal) OK" \
     || warn "Reverb (internal) chưa phản hồi"
 
@@ -99,8 +94,7 @@ echo -e "${GREEN}  SmartLMS đã sẵn sàng! 🚀  ${NC}"
 echo -e "${GREEN}==============================${NC}"
 echo -e "  🌐 App:    https://smartlms.io.vn"
 echo -e "  🔌 WS:     wss://ws.smartlms.io.vn"
-echo -e "  🗄️  MySQL:  localhost:3306"
-echo -e "  🐘 PgSQL:  localhost:5432"
+echo -e "  🔒 MySQL/PgSQL: chỉ truy cập trong Docker network"
 echo -e "  ⚙️  Queue:  ai, documents, default"
 echo ""
 

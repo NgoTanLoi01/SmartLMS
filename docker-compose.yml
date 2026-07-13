@@ -1,23 +1,51 @@
-services:
+x-app-environment: &app-environment
+    APP_NAME: ${APP_NAME:-SmartLMS}
+    APP_ENV: ${APP_ENV:-production}
+    APP_DEBUG: ${APP_DEBUG:-false}
+    APP_URL: ${APP_URL:-https://smartlms.io.vn}
+    APP_KEY: ${APP_KEY:?APP_KEY must be set in .env}
+    APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
+    LOG_CHANNEL: ${LOG_CHANNEL:-stack}
+    LOG_LEVEL: ${LOG_LEVEL:-warning}
+    CACHE_STORE: ${CACHE_STORE:-file}
+    SESSION_DRIVER: ${SESSION_DRIVER:-database}
+    SESSION_ENCRYPT: ${SESSION_ENCRYPT:-true}
+    SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-true}
+    QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
+    DB_QUEUE: ${DB_QUEUE:-default}
+    DB_QUEUE_RETRY_AFTER: ${DB_QUEUE_RETRY_AFTER:-700}
+    BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
+    REVERB_APP_ID: ${REVERB_APP_ID:?REVERB_APP_ID must be set in .env}
+    REVERB_APP_KEY: ${REVERB_APP_KEY:?REVERB_APP_KEY must be set in .env}
+    REVERB_APP_SECRET: ${REVERB_APP_SECRET:?REVERB_APP_SECRET must be set in .env}
+    REVERB_HOST: ${REVERB_INTERNAL_HOST:-lms-reverb}
+    REVERB_PORT: ${REVERB_INTERNAL_PORT:-8080}
+    REVERB_SCHEME: ${REVERB_INTERNAL_SCHEME:-http}
+    DB_CONNECTION: mysql
+    DB_HOST: db
+    DB_PORT: 3306
+    DB_DATABASE: ${DB_DATABASE:-lms_db}
+    DB_USERNAME: ${DB_USERNAME:-lms_user}
+    DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+    DB_VECTOR_HOST: postgres_vector
+    DB_VECTOR_PORT: 5432
+    DB_VECTOR_DATABASE: ${DB_VECTOR_DATABASE:-lms_ai}
+    DB_VECTOR_USERNAME: ${DB_VECTOR_USERNAME:-ai_user}
+    DB_VECTOR_PASSWORD: ${DB_VECTOR_PASSWORD:?DB_VECTOR_PASSWORD must be set in .env}
 
+services:
     nginx:
         image: nginx:stable-alpine
-
         container_name: lms-nginx
-
         ports:
-            - "8000:80"
-
+            - "${APP_PORT:-8000}:80"
         volumes:
-            - ./:/var/www/html
-            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-
+            - ./public:/var/www/html/public:ro
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
         depends_on:
             - app
             - reverb
-
         restart: unless-stopped
-
         deploy:
             resources:
                 limits:
@@ -29,62 +57,18 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-
         container_name: lms-app
-
         working_dir: /var/www/html
-
         volumes:
             - ./:/var/www/html
-
         environment:
-
-            APP_NAME: SmartLMS
-            APP_ENV: local
-            APP_DEBUG: "true"
-            APP_URL: https://smartlms.io.vn
-
-            # ✅ Thêm APP_KEY (bắt buộc cho session/encryption)
-            APP_KEY: base64:+CK2fS1IJxYjGH2DTaKGj1y1a+ZubTxekFxvWdHCPF0=
-
-            CACHE_DRIVER: file
-            SESSION_DRIVER: file
-            QUEUE_CONNECTION: database
-            DB_QUEUE_RETRY_AFTER: 700
-
-            BROADCAST_CONNECTION: reverb
-
-            REVERB_APP_ID: 123456
-            REVERB_APP_KEY: smartlms_key_123
-            REVERB_APP_SECRET: smartlms_secret_123
-
-            # ✅ Trỏ đúng tên container lms-reverb
-            REVERB_HOST: lms-reverb
-            REVERB_PORT: 8080
-            REVERB_SCHEME: http
-
-            DB_CONNECTION: mysql
-            DB_HOST: db
-            DB_PORT: 3306
-            DB_DATABASE: lms_db
-            DB_USERNAME: lms_user
-            DB_PASSWORD: lms_password
-
-            DB_VECTOR_CONNECTION: pgsql
-            DB_VECTOR_HOST: postgres_vector
-            DB_VECTOR_PORT: 5432
-            DB_VECTOR_DATABASE: lms_ai
-            DB_VECTOR_USERNAME: ai_user
-            DB_VECTOR_PASSWORD: ai_password
-
+            <<: *app-environment
         depends_on:
             db:
                 condition: service_healthy
             postgres_vector:
                 condition: service_started
-
         restart: unless-stopped
-
         deploy:
             resources:
                 limits:
@@ -96,56 +80,25 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-
         container_name: lms-queue-worker
         working_dir: /var/www/html
-
         volumes:
             - ./:/var/www/html
-
         environment:
-            APP_NAME: SmartLMS
-            APP_ENV: local
-            APP_DEBUG: "true"
-            APP_URL: https://smartlms.io.vn
-            APP_KEY: base64:+CK2fS1IJxYjGH2DTaKGj1y1a+ZubTxekFxvWdHCPF0=
-
-            CACHE_DRIVER: file
-            SESSION_DRIVER: file
-            QUEUE_CONNECTION: database
-            DB_QUEUE: default
-            DB_QUEUE_RETRY_AFTER: 700
-
-            DB_CONNECTION: mysql
-            DB_HOST: db
-            DB_PORT: 3306
-            DB_DATABASE: lms_db
-            DB_USERNAME: lms_user
-            DB_PASSWORD: lms_password
-
-            DB_VECTOR_CONNECTION: pgsql
-            DB_VECTOR_HOST: postgres_vector
-            DB_VECTOR_PORT: 5432
-            DB_VECTOR_DATABASE: lms_ai
-            DB_VECTOR_USERNAME: ai_user
-            DB_VECTOR_PASSWORD: ai_password
-
+            <<: *app-environment
         command: >
             sh -c "
                 php artisan optimize:clear &&
                 exec php artisan queue:work database --queue=ai,documents,default --tries=3 --timeout=600 --sleep=2 --max-time=3600
             "
-
         depends_on:
             db:
                 condition: service_healthy
             postgres_vector:
                 condition: service_started
-
         restart: unless-stopped
         stop_signal: SIGTERM
         stop_grace_period: 30s
-
         deploy:
             resources:
                 limits:
@@ -157,65 +110,26 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-
         container_name: lms-reverb
-
         working_dir: /var/www/html
-
         volumes:
             - ./:/var/www/html
-
         environment:
-
-            APP_NAME: SmartLMS
-            APP_ENV: local
-            APP_DEBUG: "true"
-            APP_URL: https://smartlms.io.vn
-
-            APP_KEY: base64:+CK2fS1IJxYjGH2DTaKGj1y1a+ZubTxekFxvWdHCPF0=
-
-            BROADCAST_CONNECTION: reverb
-
-            REVERB_APP_ID: 123456
-            REVERB_APP_KEY: smartlms_key_123
-            REVERB_APP_SECRET: smartlms_secret_123
-
-            REVERB_HOST: 0.0.0.0
-            REVERB_PORT: 8080
-            REVERB_SCHEME: http
-
-            CACHE_DRIVER: file
-            SESSION_DRIVER: file
+            <<: *app-environment
             QUEUE_CONNECTION: sync
-
-            DB_CONNECTION: mysql
-            DB_HOST: db
-            DB_PORT: 3306
-            DB_DATABASE: lms_db
-            DB_USERNAME: lms_user
-            DB_PASSWORD: lms_password
-
         command: >
             sh -c "
                 php artisan optimize:clear &&
-                php artisan config:clear &&
-                php artisan cache:clear &&
-                php artisan route:clear &&
-                php artisan view:clear &&
-                php artisan reverb:start --host=0.0.0.0 --port=8080
+                exec php artisan reverb:start --host=0.0.0.0 --port=8080
             "
-
         depends_on:
             db:
                 condition: service_healthy
             app:
                 condition: service_started
-
-        ports:
-            - "8080:8080"
-
+        expose:
+            - "8080"
         restart: unless-stopped
-
         deploy:
             resources:
                 limits:
@@ -225,30 +139,23 @@ services:
 
     db:
         image: mysql:8.0
-
         container_name: lms-db
-
         restart: always
-
-        ports:
-            - "3306:3306"
-
         environment:
-            MYSQL_DATABASE: lms_db
-            MYSQL_USER: lms_user
-            MYSQL_PASSWORD: lms_password
-            MYSQL_ROOT_PASSWORD: root_password
-
+            MYSQL_DATABASE: ${DB_DATABASE:-lms_db}
+            MYSQL_USER: ${DB_USERNAME:-lms_user}
+            MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set in .env}
         volumes:
             - db_data:/var/lib/mysql
-
+        expose:
+            - "3306"
         healthcheck:
             test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
             interval: 10s
             timeout: 5s
             retries: 10
             start_period: 20s
-
         deploy:
             resources:
                 limits:
@@ -258,33 +165,23 @@ services:
 
     postgres_vector:
         image: ankane/pgvector:latest
-
         container_name: lms-vector-db
-
         restart: always
-
-        ports:
-            - "5432:5432"
-
         environment:
-            POSTGRES_DB: lms_ai
-            POSTGRES_USER: ai_user
-            POSTGRES_PASSWORD: ai_password
-
-            # ✅ Tối ưu PostgreSQL cho dev
+            POSTGRES_DB: ${DB_VECTOR_DATABASE:-lms_ai}
+            POSTGRES_USER: ${DB_VECTOR_USERNAME:-ai_user}
+            POSTGRES_PASSWORD: ${DB_VECTOR_PASSWORD:?DB_VECTOR_PASSWORD must be set in .env}
             POSTGRES_INITDB_ARGS: "--encoding=UTF8"
-
         volumes:
             - pg_data:/var/lib/postgresql/data
-
-        # ✅ Giới hạn memory pgvector
+        expose:
+            - "5432"
         command: >
             postgres
             -c shared_buffers=256MB
             -c work_mem=16MB
             -c maintenance_work_mem=64MB
             -c max_connections=50
-
         deploy:
             resources:
                 limits:
