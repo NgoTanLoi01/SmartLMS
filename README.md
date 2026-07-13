@@ -50,6 +50,8 @@ DevOps    : Docker Compose (Nginx + PHP-FPM + MySQL)
 
 ## 📦 Triển Khai Nhanh
 
+> Hiện tại SmartLMS chỉ cung cấp giao diện web dùng session/CSRF. Dự án không public API `/api/*`; khi cần tích hợp mobile hoặc bên thứ ba, API phải được thiết kế riêng với JSON response, Sanctum token scope và test phân quyền.
+
 ### Yêu cầu hệ thống
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) >= 24.x
