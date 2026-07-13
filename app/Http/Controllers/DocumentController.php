@@ -1,13 +1,15 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessDocumentPdf;
 use App\Models\AiOperation;
-use Illuminate\Http\Request;
+use App\Models\Course;
 use App\Models\DocumentChunk;
-use App\Models\Course; // Thêm model Course
-use App\Models\User;
+use App\Models\User; // Thêm model Course
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class DocumentController extends Controller
 {
@@ -48,6 +50,7 @@ class DocumentController extends Controller
             ->latest()
             ->take(20)
             ->get();
+
         return view('documents.upload', compact('documents', 'courses', 'processingOperations'));
     }
 
@@ -67,10 +70,9 @@ class DocumentController extends Controller
             $documentName = $file->getClientOriginalName();
             $courseId = $request->input('course_id');
             $course = (int) $courseId === 0 ? null : Course::findOrFail($courseId);
-            abort_unless(
-                $request->user()->role === 'admin' || ($course && (int) $course->teacher_id === (int) $request->user()->id),
-                403
-            );
+            $course
+                ? Gate::authorize('manageContent', $course)
+                : abort_unless($request->user()->isAdmin(), 403);
 
             // 1. Lưu file PDF vào hệ thống storage của Laravel
             $path = $file->store('documents', 'local');
@@ -109,11 +111,7 @@ class DocumentController extends Controller
             : $query->whereNull('uploaded_by');
 
         $document = (clone $query)->firstOrFail();
-        abort_unless(
-            $request->user()->role === 'admin'
-                || ($document->uploaded_by && (int) $document->uploaded_by === (int) $request->user()->id),
-            403
-        );
+        Gate::authorize('delete', $document);
         $deleted = $query->delete();
 
         return back()->with('success', "Đã xóa {$deleted} đoạn kiến thức của tài liệu: {$name}");

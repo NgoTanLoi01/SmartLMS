@@ -8,6 +8,7 @@ use App\Models\Module;
 use App\Services\DeepSeekService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class CoursePlannerController extends Controller
 {
@@ -91,11 +92,7 @@ class CoursePlannerController extends Controller
 
     private function authorizeManageCourse(Course $course): void
     {
-        $user = auth()->user();
-        abort_unless(
-            $user && ($user->role === 'admin' || ($user->role === 'teacher' && (int) $course->teacher_id === (int) $user->id)),
-            403
-        );
+        Gate::authorize('manageContent', $course);
     }
 
     private function sanitizeLessonContent(string $content): string

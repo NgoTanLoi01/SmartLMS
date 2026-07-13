@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Course extends Model
 {
-    protected $connection = 'mysql';
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_PUBLISHED = 'published';
+
     public const STATUS_HIDDEN = 'hidden';
+
     public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = ['title', 'description', 'teacher_id', 'learning_program_id', 'course_type', 'status', 'published_at', 'available_from'];
@@ -33,7 +35,7 @@ class Course extends Model
 
     public function scopeNotArchived($query)
     {
-        $statusColumn = $query->getModel()->getTable() . '.status';
+        $statusColumn = $query->getModel()->getTable().'.status';
 
         return $query->where(function ($q) use ($statusColumn) {
             $q->whereNull($statusColumn)
@@ -45,7 +47,7 @@ class Course extends Model
     {
         return $this->course_type === 'delivery'
             && $this->status === self::STATUS_PUBLISHED
-            && (!$this->available_from || $this->available_from->lte(now()));
+            && (! $this->available_from || $this->available_from->lte(now()));
     }
 
     public function isTemplate(): bool
@@ -77,6 +79,7 @@ class Course extends Model
     {
         return $this->belongsToMany(Classroom::class, 'class_course', 'course_id', 'class_id');
     }
+
     public function quizzes()
     {
         return $this->hasMany(Quiz::class)->notArchived();
@@ -108,5 +111,4 @@ class Course extends Model
     {
         return $this->hasManyThrough(Lesson::class, Module::class);
     }
-
 }

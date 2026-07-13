@@ -19,7 +19,7 @@ class CoursePolicy
             return true;
         }
 
-        if (!$user->isStudent() || !$course->isVisibleToStudents()) {
+        if (! $user->isStudent() || ! $course->isVisibleToStudents()) {
             return false;
         }
 
@@ -49,6 +49,11 @@ class CoursePolicy
     }
 
     public function manageContent(User $user, Course $course): bool
+    {
+        return $this->update($user, $course);
+    }
+
+    public function manageAttendance(User $user, Course $course): bool
     {
         return $this->update($user, $course);
     }

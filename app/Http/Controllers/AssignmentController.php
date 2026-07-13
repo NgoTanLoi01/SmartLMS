@@ -7,9 +7,11 @@ use App\Models\AiOperation;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Models\Lesson;
 use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use ZipStream\ZipStream;
@@ -78,7 +80,15 @@ class AssignmentController extends Controller
             'available_from' => 'nullable|date',
         ]);
 
-        $data = $request->all();
+        $course = Course::findOrFail($request->integer('course_id'));
+        Gate::authorize('create', [Assignments::class, $course]);
+        $lesson = Lesson::with('module')->findOrFail($request->integer('lesson_id'));
+        abort_unless((int) $lesson->module?->course_id === (int) $course->id, 422, 'Bài học không thuộc khóa học đã chọn.');
+
+        $data = $request->only([
+            'course_id', 'lesson_id', 'type', 'title', 'instructions', 'grading_rubric',
+            'grading_scale', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'available_from',
+        ]);
         $data['grading_scale'] = $data['grading_scale'] ?? 10;
         $data['ai_grading_enabled'] = $request->boolean('ai_grading_enabled');
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
@@ -95,6 +105,7 @@ class AssignmentController extends Controller
                 "assignment:{$assignment->id}:published"
             );
         }
+
         return back()->with('success', 'Đã tạo bài tập thành công!');
     }
 
@@ -102,14 +113,12 @@ class AssignmentController extends Controller
     public function grade(Request $request, $submissionId)
     {
         $submission = AssignmentSubmission::with('assignment.course')->findOrFail($submissionId);
-        if (!$this->canManageAssignmentCourse($submission->assignment->course)) {
-            abort(403, 'Bạn không có quyền chấm bài nộp này.');
-        }
+        Gate::authorize('grade', $submission);
         $scale = $submission->assignment?->grading_scale ?? 10;
         $oldValues = AuditLogger::snapshot($submission, ['grade', 'feedback']);
 
         $request->validate([
-            'grade' => 'required|numeric|min:0|max:' . $scale,
+            'grade' => 'required|numeric|min:0|max:'.$scale,
             'feedback' => 'nullable|string',
             'action' => 'nullable|in:save,save_next',
         ]);
@@ -123,10 +132,10 @@ class AssignmentController extends Controller
             $submission->user_id,
             'grade',
             'Bài tập đã được chấm',
-            "Bài \"{$submission->assignment->title}\" đã có điểm {$submission->grade}/{$scale}" . ($submission->feedback ? ' và nhận xét mới.' : '.'),
+            "Bài \"{$submission->assignment->title}\" đã có điểm {$submission->grade}/{$scale}".($submission->feedback ? ' và nhận xét mới.' : '.'),
             route('students.grades'),
             ['assignment_id' => $submission->assignment_id, 'submission_id' => $submission->id],
-            "grade:submission:{$submission->id}:" . md5($submission->updated_at . '|' . $submission->grade . '|' . $submission->feedback)
+            "grade:submission:{$submission->id}:".md5($submission->updated_at.'|'.$submission->grade.'|'.$submission->feedback)
         );
 
         AuditLogger::log(
@@ -172,18 +181,16 @@ class AssignmentController extends Controller
         $assignment = $submission->assignment;
         $course = $assignment->course;
 
-        if (!$this->canManageAssignmentCourse($course)) {
-            abort(403, 'Bạn không có quyền phân tích bài nộp này.');
-        }
+        Gate::authorize('analyze', $submission);
 
-        if (!$assignment->ai_grading_enabled) {
+        if (! $assignment->ai_grading_enabled) {
             return response()->json([
                 'success' => false,
                 'message' => 'AI hỗ trợ chấm đang tắt cho bài tập này.',
             ], 422);
         }
 
-        if (trim((string) $submission->text_answer) === '' && !$submission->file_path) {
+        if (trim((string) $submission->text_answer) === '' && ! $submission->file_path) {
             return response()->json([
                 'success' => false,
                 'message' => 'AI chưa có nội dung văn bản để phân tích bài nộp này.',
@@ -206,9 +213,7 @@ class AssignmentController extends Controller
         $assignment = $submission->assignment;
         $course = $assignment->course;
 
-        if (!$this->canManageAssignmentCourse($course)) {
-            abort(403, 'Bạn không có quyền xem bài nộp này.');
-        }
+        Gate::authorize('view', $submission);
 
         $assignmentTypeLabel = match ($assignment->type ?? 'file') {
             'essay' => 'Tự luận',
@@ -244,7 +249,7 @@ class AssignmentController extends Controller
                 'submitted_at' => $studentSubmission?->submitted_at,
                 'grade' => $studentSubmission?->grade,
                 'is_current' => $studentSubmission?->id === $submission->id,
-                'status' => !$studentSubmission ? 'missing' : ($studentSubmission->grade === null ? 'pending' : 'graded'),
+                'status' => ! $studentSubmission ? 'missing' : ($studentSubmission->grade === null ? 'pending' : 'graded'),
             ];
         });
         $queueStats = [
@@ -267,13 +272,12 @@ class AssignmentController extends Controller
             'queueStats',
         ));
     }
+
     // 1. Hàm lấy danh sách bài nộp cho Giáo viên (Dùng AJAX để load vào Modal)
     public function listSubmissions($id)
     {
         $assignment = Assignments::with('course.classes.students')->notArchived()->findOrFail($id);
-        if (!$this->canManageAssignmentCourse($assignment->course)) {
-            abort(403, 'Bạn không có quyền xem danh sách bài nộp này.');
-        }
+        Gate::authorize('update', $assignment);
 
         // Lấy danh sách ID học sinh thuộc các lớp có gán khóa học này
         $students = $assignment->course->classes->flatMap->students->unique('id');
@@ -284,6 +288,7 @@ class AssignmentController extends Controller
         // Kết hợp dữ liệu: Học sinh + Bài nộp (nếu có)
         $data = $students->map(function ($student) use ($submissions) {
             $submission = $submissions->get($student->id);
+
             return [
                 'student_name' => $student->name,
                 'student_code' => $student->student_code,
@@ -303,7 +308,7 @@ class AssignmentController extends Controller
             'assignment_title' => $assignment->title,
             'course_title' => $assignment->course->title,
             'total_students' => $students->count(),
-            'submitted_count' => $data->filter(fn ($row) => !empty($row['submission_id']))->count(),
+            'submitted_count' => $data->filter(fn ($row) => ! empty($row['submission_id']))->count(),
             'download_url' => route('assignments.submissions.download', $assignment->id),
             'submissions' => $data,
         ]);
@@ -312,9 +317,7 @@ class AssignmentController extends Controller
     public function downloadSubmissionsArchive(Request $request, $id)
     {
         $assignment = Assignments::with('course')->notArchived()->findOrFail($id);
-        if (!$this->canManageAssignmentCourse($assignment->course)) {
-            abort(403, 'Bạn không có quyền tải các bài nộp này.');
-        }
+        Gate::authorize('update', $assignment);
 
         $validated = $request->validate([
             'mode' => 'required|in:all,ungraded,selected',
@@ -335,7 +338,7 @@ class AssignmentController extends Controller
             return back()->with('error', 'Không có bài nộp phù hợp để tải.');
         }
 
-        $archiveName = 'Bai_nop_' . Str::slug($assignment->title, '_') . '_' . now()->format('Y-m-d_His') . '.zip';
+        $archiveName = 'Bai_nop_'.Str::slug($assignment->title, '_').'_'.now()->format('Y-m-d_His').'.zip';
 
         return response()->streamDownload(function () use ($submissions, $assignment) {
             $zip = new ZipStream(outputStream: fopen('php://output', 'wb'), sendHttpHeaders: false);
@@ -355,12 +358,12 @@ class AssignmentController extends Controller
                         $originalName = $submission->original_filename ?: basename($submission->file_path);
                         $extension = pathinfo($originalName, PATHINFO_EXTENSION);
                         $studentName = Str::slug($student?->name ?: 'hoc_sinh', '_');
-                        $archiveFileName = $studentName . ($extension ? '.' . strtolower($extension) : '');
+                        $archiveFileName = $studentName.($extension ? '.'.strtolower($extension) : '');
                         $archiveFileName = $this->uniqueArchiveName($archiveFileName, $usedNames);
                         $stream = $disk->readStream($submission->file_path);
 
                         if (is_resource($stream)) {
-                            $zip->addFileFromStream(fileName: 'files/' . $archiveFileName, stream: $stream);
+                            $zip->addFileFromStream(fileName: 'files/'.$archiveFileName, stream: $stream);
                             fclose($stream);
                         } else {
                             $archiveFileName = '';
@@ -394,7 +397,7 @@ class AssignmentController extends Controller
         while (isset($usedNames[Str::lower($candidate)])) {
             $extension = pathinfo($name, PATHINFO_EXTENSION);
             $stem = pathinfo($name, PATHINFO_FILENAME);
-            $candidate = $stem . '_' . $counter++ . ($extension ? '.' . $extension : '');
+            $candidate = $stem.'_'.$counter++.($extension ? '.'.$extension : '');
         }
 
         $usedNames[Str::lower($candidate)] = true;
@@ -406,6 +409,7 @@ class AssignmentController extends Controller
     {
         $assignment = Assignments::with('course.classes')->notArchived()->findOrFail($id);
         $user = auth()->user();
+        Gate::authorize('submit', $assignment);
 
         $studentClassIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
         $hasAccess = $assignment->course->classes
@@ -414,7 +418,7 @@ class AssignmentController extends Controller
             ->intersect($studentClassIds)
             ->isNotEmpty();
 
-        if (!$hasAccess || !$assignment->course->isVisibleToStudents() || !$assignment->isVisibleToStudents()) {
+        if (! $hasAccess || ! $assignment->course->isVisibleToStudents() || ! $assignment->isVisibleToStudents()) {
             return back()->withErrors(['Bài tập này chưa được mở cho học sinh.']);
         }
 
@@ -426,12 +430,12 @@ class AssignmentController extends Controller
         $maxSize = $assignment->max_file_size ?? 10240;
         $rules = [];
 
-        $hasExistingFile = $oldSubmission && !empty($oldSubmission->file_path);
+        $hasExistingFile = $oldSubmission && ! empty($oldSubmission->file_path);
 
-        if (in_array($assignment->type, ['file', 'mixed'], true) && !$hasExistingFile) {
-            $rules['file'] = 'required|file|mimes:' . str_replace(' ', '', $allowed) . "|max:{$maxSize}";
+        if (in_array($assignment->type, ['file', 'mixed'], true) && ! $hasExistingFile) {
+            $rules['file'] = 'required|file|mimes:'.str_replace(' ', '', $allowed)."|max:{$maxSize}";
         } else {
-            $rules['file'] = 'nullable|file|mimes:' . str_replace(' ', '', $allowed) . "|max:{$maxSize}";
+            $rules['file'] = 'nullable|file|mimes:'.str_replace(' ', '', $allowed)."|max:{$maxSize}";
         }
 
         if (in_array($assignment->type, ['essay', 'mixed'], true)) {
@@ -462,7 +466,7 @@ class AssignmentController extends Controller
             $fileSize = $file->getSize();
             $extension = $file->getClientOriginalExtension();
             $safeName = Str::slug(pathinfo($originalFilename, PATHINFO_FILENAME)) ?: 'submission';
-            $storedName = $safeName . '-' . now()->format('YmdHis') . '-' . Str::random(8) . ($extension ? '.' . $extension : '');
+            $storedName = $safeName.'-'.now()->format('YmdHis').'-'.Str::random(8).($extension ? '.'.$extension : '');
             $filePath = $file->storeAs("assignments/{$assignment->id}/students/{$user->id}", $storedName, $fileDisk);
         } elseif ($assignment->type === 'essay') {
             $filePath = null;
@@ -495,6 +499,7 @@ class AssignmentController extends Controller
         $submission = AssignmentSubmission::where('id', $id)
             ->where('user_id', auth()->id()) // Chỉ cho phép xóa bài của chính mình
             ->firstOrFail();
+        Gate::authorize('delete', $submission);
 
         // Không cho phép xóa nếu đã có điểm
         if ($submission->grade !== null) {
@@ -509,9 +514,13 @@ class AssignmentController extends Controller
 
         return back()->with('success', 'Đã hủy bài nộp thành công!');
     }
+
     // Hàm xử lý cập nhật bài tập (Sửa)
     public function update(Request $request, $id)
     {
+        $assignment = Assignments::with('course')->findOrFail($id);
+        Gate::authorize('update', $assignment);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'instructions' => 'required|string',
@@ -525,8 +534,8 @@ class AssignmentController extends Controller
             'available_from' => 'nullable|date',
         ]);
 
-        // SỬA CHỖ NÀY
-        $assignment = Assignments::findOrFail($id);
+        $lesson = Lesson::with('module')->findOrFail($validated['lesson_id']);
+        abort_unless((int) $lesson->module?->course_id === (int) $assignment->course_id, 422, 'Bài học không thuộc khóa học của bài tập.');
         $wasPublished = $assignment->status === Assignments::STATUS_PUBLISHED;
         $oldDueDate = $assignment->due_date?->copy();
 
@@ -537,14 +546,14 @@ class AssignmentController extends Controller
 
         $assignment->update($validated);
 
-        if (!$wasPublished && $assignment->status === Assignments::STATUS_PUBLISHED) {
+        if (! $wasPublished && $assignment->status === Assignments::STATUS_PUBLISHED) {
             app(NotificationCenter::class)->notifyCourseStudents(
                 $assignment->course_id, 'assignment', 'Có bài tập mới',
                 "Bài tập \"{$assignment->title}\" vừa được đăng.",
                 route('courses.show', $assignment->course_id), ['assignment_id' => $assignment->id],
                 "assignment:{$assignment->id}:published"
             );
-        } elseif ($wasPublished && $assignment->status === Assignments::STATUS_PUBLISHED && (!$oldDueDate || !$oldDueDate->equalTo($assignment->due_date))) {
+        } elseif ($wasPublished && $assignment->status === Assignments::STATUS_PUBLISHED && (! $oldDueDate || ! $oldDueDate->equalTo($assignment->due_date))) {
             app(NotificationCenter::class)->notifyCourseStudents(
                 $assignment->course_id, 'assignment', 'Hạn nộp bài đã thay đổi',
                 "Bài \"{$assignment->title}\" có hạn nộp mới: {$assignment->due_date->format('H:i d/m/Y')}.",
@@ -560,6 +569,7 @@ class AssignmentController extends Controller
     public function destroy($id)
     {
         $assignment = Assignments::findOrFail($id);
+        Gate::authorize('delete', $assignment);
 
         $assignment->update([
             'status' => Assignments::STATUS_ARCHIVED,
@@ -569,29 +579,20 @@ class AssignmentController extends Controller
         return back()->with('success', 'Đã lưu trữ bài tập. Bài nộp và điểm số vẫn được giữ lại.');
     }
 
-    private function canManageAssignmentCourse(Course $course): bool
-    {
-        $user = auth()->user();
-
-        return $user->role === 'admin' || ($user->role === 'teacher' && $course->teacher_id === $user->id);
-    }
-
     public function downloadSubmissionFile($id)
     {
         $submission = AssignmentSubmission::with(['assignment.course', 'user'])->findOrFail($id);
 
-        if (!$this->canViewSubmission($submission)) {
-            abort(403, 'Bạn không có quyền tải bài nộp này.');
-        }
+        Gate::authorize('view', $submission);
 
-        if (!$submission->file_path) {
+        if (! $submission->file_path) {
             abort(404, 'Bài nộp không có file đính kèm.');
         }
 
         $diskName = $this->submissionDisk($submission);
         $disk = Storage::disk($diskName);
 
-        if (!$disk->exists($submission->file_path)) {
+        if (! $disk->exists($submission->file_path)) {
             abort(404, 'Không tìm thấy file bài nộp.');
         }
 
@@ -605,16 +606,14 @@ class AssignmentController extends Controller
     {
         $submission = AssignmentSubmission::with(['assignment.course', 'user'])->findOrFail($id);
 
-        if (!$this->canViewSubmission($submission)) {
-            abort(403, 'Bạn không có quyền xem bài nộp này.');
-        }
+        Gate::authorize('view', $submission);
 
-        if (!$submission->file_path || !$this->submissionPreviewType($submission)) {
+        if (! $submission->file_path || ! $this->submissionPreviewType($submission)) {
             abort(404, 'File này không hỗ trợ xem trước.');
         }
 
         $disk = Storage::disk($this->submissionDisk($submission));
-        if (!$disk->exists($submission->file_path)) {
+        if (! $disk->exists($submission->file_path)) {
             abort(404, 'Không tìm thấy file bài nộp.');
         }
 
@@ -632,7 +631,7 @@ class AssignmentController extends Controller
             }
         }, 200, [
             'Content-Type' => $this->previewContentType($submission),
-            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+            'Content-Disposition' => 'inline; filename="'.$fileName.'"',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -653,7 +652,7 @@ class AssignmentController extends Controller
 
     private function submissionPreviewType(?AssignmentSubmission $submission): ?string
     {
-        if (!$submission || !$submission->file_path) {
+        if (! $submission || ! $submission->file_path) {
             return null;
         }
 
@@ -695,7 +694,7 @@ class AssignmentController extends Controller
 
     private function deleteSubmissionFile(AssignmentSubmission $submission): void
     {
-        if (!$submission->file_path) {
+        if (! $submission->file_path) {
             return;
         }
 
@@ -703,21 +702,5 @@ class AssignmentController extends Controller
         if ($disk->exists($submission->file_path)) {
             $disk->delete($submission->file_path);
         }
-    }
-
-    private function canViewSubmission(AssignmentSubmission $submission): bool
-    {
-        $user = auth()->user();
-
-        if (!$user) {
-            return false;
-        }
-
-        if ($user->role === 'admin' || $submission->user_id === $user->id) {
-            return true;
-        }
-
-        return $user->role === 'teacher'
-            && $submission->assignment?->course?->teacher_id === $user->id;
     }
 }

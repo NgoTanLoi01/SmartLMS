@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use App\Models\Assignments;
 use App\Models\Lesson;
 use App\Models\Module;
-use Illuminate\Support\Str;
 use App\Services\NotificationCenter;
 use App\Services\StoredAssetReferenceService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class LessonController extends Controller
 {
@@ -26,7 +27,7 @@ class LessonController extends Controller
             'available_from' => 'nullable|date',
         ]);
         $module = Module::with('course')->findOrFail($data['module_id']);
-        $this->authorizeManageCourse($module->course);
+        Gate::authorize('create', [Lesson::class, $module]);
         $data['status'] = $data['status'] ?? 'published';
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
         $data['order'] = Lesson::where('module_id', $module->id)->notArchived()->count() + 1;
@@ -47,6 +48,7 @@ class LessonController extends Controller
                 "lesson:{$lesson->id}:published"
             );
         }
+
         return back()->with('success', 'Đã thêm bài học thành công.');
     }
 
@@ -55,7 +57,7 @@ class LessonController extends Controller
     {
         $lesson = Lesson::findOrFail($id);
         $wasPublished = $lesson->status === Lesson::STATUS_PUBLISHED;
-        $this->authorizeManageCourse($lesson->module->course);
+        Gate::authorize('update', $lesson);
 
         $data = $request->validate([
             'title' => 'required|string',
@@ -67,7 +69,7 @@ class LessonController extends Controller
             'available_from' => 'nullable|date',
         ]);
         $targetModule = Module::with('course')->findOrFail($data['module_id']);
-        $this->authorizeManageCourse($targetModule->course);
+        Gate::authorize('create', [Lesson::class, $targetModule]);
         $data['status'] = $data['status'] ?? $lesson->status;
         $data['published_at'] = $data['status'] === 'published' ? ($lesson->published_at ?? now()) : null;
 
@@ -80,7 +82,7 @@ class LessonController extends Controller
         }
 
         $lesson->update($data);
-        if (!$wasPublished && $lesson->status === Lesson::STATUS_PUBLISHED) {
+        if (! $wasPublished && $lesson->status === Lesson::STATUS_PUBLISHED) {
             app(NotificationCenter::class)->notifyCourseStudents(
                 $targetModule->course, 'lesson', 'Có bài học mới',
                 "Bài học \"{$lesson->title}\" vừa được đăng.",
@@ -88,13 +90,14 @@ class LessonController extends Controller
                 "lesson:{$lesson->id}:published"
             );
         }
+
         return back()->with('success', 'Đã cập nhật bài học.');
     }
 
     public function destroy($id)
     {
         $lesson = Lesson::findOrFail($id);
-        $this->authorizeManageCourse($lesson->module->course);
+        Gate::authorize('delete', $lesson);
         $lesson->update([
             'status' => Lesson::STATUS_ARCHIVED,
             'published_at' => null,
@@ -111,12 +114,13 @@ class LessonController extends Controller
     {
         $lesson = Lesson::with('module.course.classes')->findOrFail($id);
 
-        if (!$lesson->attachment || !$this->canViewLesson($lesson)) {
+        if (! $lesson->attachment) {
             abort(404);
         }
+        Gate::authorize('view', $lesson);
 
         $disk = Storage::disk($lesson->attachment_disk ?: 'public');
-        if (!$disk->exists($lesson->attachment)) {
+        if (! $disk->exists($lesson->attachment)) {
             abort(404, 'Không tìm thấy file bài giảng.');
         }
 
@@ -131,18 +135,7 @@ class LessonController extends Controller
         $user = auth()->user();
         $lesson = Lesson::with('module.course.classes')->findOrFail($id);
 
-        if ($user->role === 'student') {
-            $studentClassIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
-            $hasAccess = $lesson->module->course->classes
-                ->where('status', 'active')
-                ->pluck('id')
-                ->intersect($studentClassIds)
-                ->isNotEmpty();
-
-            if (!$hasAccess || !$lesson->module->course->isVisibleToStudents() || !$lesson->isVisibleToStudents()) {
-                return response()->json(['message' => 'Bài học này chưa được mở.'], 403);
-            }
-        }
+        Gate::authorize('complete', $lesson);
 
         // Cập nhật cột completed_at bằng thời gian hiện tại
         $user->lessons()->syncWithoutDetaching([
@@ -161,7 +154,7 @@ class LessonController extends Controller
         ]);
 
         $module = Module::with('course')->findOrFail($validated['module_id']);
-        $this->authorizeManageCourse($module->course);
+        Gate::authorize('create', [Lesson::class, $module]);
 
         $lessonIds = array_values(array_unique($validated['lesson_ids']));
         $allowedCount = Lesson::where('module_id', $module->id)
@@ -188,7 +181,7 @@ class LessonController extends Controller
         $originalName = $file->getClientOriginalName();
         $extension = $file->getClientOriginalExtension();
         $safeName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) ?: 'lesson-attachment';
-        $storedName = $safeName . '-' . now()->format('YmdHis') . '-' . Str::random(8) . ($extension ? '.' . $extension : '');
+        $storedName = $safeName.'-'.now()->format('YmdHis').'-'.Str::random(8).($extension ? '.'.$extension : '');
 
         return [
             'attachment' => $file->storeAs('lessons/attachments', $storedName, $disk),
@@ -207,47 +200,5 @@ class LessonController extends Controller
                 $lesson->attachment
             );
         }
-    }
-
-    private function canViewLesson(Lesson $lesson): bool
-    {
-        $user = auth()->user();
-        $course = $lesson->module?->course;
-
-        if (!$user || !$course) {
-            return false;
-        }
-
-        if ($user->role === 'admin') {
-            return true;
-        }
-
-        if ($user->role === 'teacher') {
-            return (int) $course->teacher_id === (int) $user->id;
-        }
-
-        if ($user->role === 'student') {
-            $studentClassIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
-
-            return $course->isVisibleToStudents()
-                && $lesson->isVisibleToStudents()
-                && $course->classes
-                    ->where('status', 'active')
-                    ->pluck('id')
-                    ->intersect($studentClassIds)
-                    ->isNotEmpty();
-        }
-
-        return false;
-    }
-
-    private function authorizeManageCourse($course): void
-    {
-        $user = auth()->user();
-
-        abort_unless(
-            $course && $user && ($user->role === 'admin' || ($user->role === 'teacher' && (int) $course->teacher_id === (int) $user->id)),
-            403
-        );
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Assignments;
 use App\Models\Course;
 use App\Models\Question;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class CourseQualityController extends Controller
@@ -118,7 +119,7 @@ class CourseQualityController extends Controller
     {
         $issues = collect();
 
-        if (!$this->hasTrainedDocuments($course->id)) {
+        if (! $this->hasTrainedDocuments($course->id)) {
             $issues->push([
                 'severity' => 'medium',
                 'type' => 'missing_chatbot_documents',
@@ -215,17 +216,7 @@ class CourseQualityController extends Controller
 
     private function authorizeManageCourse(Course $course): void
     {
-        $user = auth()->user();
-
-        if ($user->role === 'admin') {
-            return;
-        }
-
-        if ($user->role === 'teacher' && $course->teacher_id === $user->id) {
-            return;
-        }
-
-        abort(403, 'Bạn không có quyền kiểm tra khóa học này.');
+        Gate::authorize('manageContent', $course);
     }
 
     private function plainText(string $text): string

@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Schedule;
-use App\Models\Course;
-use App\Models\Classroom;
 use App\Imports\ScheduleImport;
+use App\Models\Classroom;
+use App\Models\Course;
+use App\Models\Schedule;
 use App\Services\AuditLogger;
-use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Services\NotificationCenter;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ScheduleController extends Controller
 {
@@ -42,16 +44,16 @@ class ScheduleController extends Controller
 
             foreach ($schedules as $schedule) {
                 // SỬ DỤNG CARBON ĐỂ CHUẨN HÓA CHUỖI NGÀY GIỜ ISO8601
-                $date = \Carbon\Carbon::parse($schedule->schedule_date)->format('Y-m-d');
-                $startTime = \Carbon\Carbon::parse($schedule->start_time)->format('H:i:s');
-                $endTime = \Carbon\Carbon::parse($schedule->end_time)->format('H:i:s');
+                $date = Carbon::parse($schedule->schedule_date)->format('Y-m-d');
+                $startTime = Carbon::parse($schedule->start_time)->format('H:i:s');
+                $endTime = Carbon::parse($schedule->end_time)->format('H:i:s');
                 $hasExamNote = trim((string) ($schedule->note ?? '')) !== '';
 
                 $events[] = [
                     'id' => $schedule->id,
-                    'title' => $schedule->course_title . ' (' . $schedule->class_name . ')' . ($hasExamNote ? ' - ' . $schedule->note : ''),
-                    'start' => $date . 'T' . $startTime,
-                    'end' => $date . 'T' . $endTime,
+                    'title' => $schedule->course_title.' ('.$schedule->class_name.')'.($hasExamNote ? ' - '.$schedule->note : ''),
+                    'start' => $date.'T'.$startTime,
+                    'end' => $date.'T'.$endTime,
                     'extendedProps' => [
                         'class_id' => $schedule->class_id,
                         'course_id' => $schedule->course_id,
@@ -62,6 +64,7 @@ class ScheduleController extends Controller
                     'borderColor' => $hasExamNote ? '#dc2626' : '#0d6efd',
                 ];
             }
+
             return response()->json($events);
         }
 
@@ -78,6 +81,9 @@ class ScheduleController extends Controller
     // HÀM MỚI: Lấy danh sách khóa học thuộc về 1 lớp cụ thể
     public function getCoursesByClass($class_id)
     {
+        $classroom = Classroom::findOrFail($class_id);
+        Gate::authorize('view', $classroom);
+
         $courses = DB::table('class_course')
             ->join('courses', 'class_course.course_id', '=', 'courses.id')
             ->where('class_course.class_id', $class_id)
@@ -90,19 +96,25 @@ class ScheduleController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'class_id' => 'required',
-            'course_id' => 'required',
+        $validated = $request->validate([
+            'class_id' => 'required|exists:classes,id',
+            'course_id' => 'required|exists:courses,id',
             'schedule_date' => 'required|date',
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
+            'room' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:255',
         ]);
 
+        $classroom = Classroom::findOrFail($validated['class_id']);
+        $course = Course::findOrFail($validated['course_id']);
+        Gate::authorize('create', [Schedule::class, $classroom, $course]);
+
         $this->clearCourseExamNoteIfNeeded($request);
 
-        $schedule = Schedule::create(array_merge($request->all(), ['status' => Schedule::STATUS_ACTIVE]));
+        $schedule = Schedule::create(array_merge($validated, ['status' => Schedule::STATUS_ACTIVE]));
         $this->notifyScheduleChange($schedule, 'Lịch học mới', 'Lịch học mới đã được thêm.');
+
         return response()->json(['status' => 'success', 'message' => 'Đã thêm lịch học!']);
     }
 
@@ -158,6 +170,7 @@ class ScheduleController extends Controller
 
                 if ($isDuplicate) {
                     $skipped++;
+
                     continue;
                 }
 
@@ -192,7 +205,7 @@ class ScheduleController extends Controller
         );
 
         if ($copied === 0) {
-            return back()->with('error', "Tất cả lịch trong ngày đích đã tồn tại, không có buổi học mới được sao chép.");
+            return back()->with('error', 'Tất cả lịch trong ngày đích đã tồn tại, không có buổi học mới được sao chép.');
         }
 
         $message = "Đã sao chép {$copied} buổi học sang ngày mới.";
@@ -222,14 +235,14 @@ class ScheduleController extends Controller
             $allowedClassIds = Classroom::where('teacher_id', $user->id)->pluck('id')->all();
         }
 
-        if (!empty($validated['import_class_id'])) {
+        if (! empty($validated['import_class_id'])) {
             $classroom = Classroom::with('courses')->findOrFail($validated['import_class_id']);
 
-            if ($user->role === 'teacher' && !in_array($classroom->id, $allowedClassIds, true)) {
+            if ($user->role === 'teacher' && ! in_array($classroom->id, $allowedClassIds, true)) {
                 return back()->with('error', 'Bạn không có quyền nhập lịch cho lớp này.');
             }
 
-            if (!empty($validated['default_course_id']) && !$classroom->courses->contains('id', (int) $validated['default_course_id'])) {
+            if (! empty($validated['default_course_id']) && ! $classroom->courses->contains('id', (int) $validated['default_course_id'])) {
                 return back()->with('error', 'Khóa học mặc định không thuộc lớp đã chọn.');
             }
         }
@@ -257,12 +270,12 @@ class ScheduleController extends Controller
 
             $unmatchedClasses = collect($import->unmatchedClasses)->unique()->take(3)->values();
             if ($unmatchedClasses->isNotEmpty()) {
-                $message .= ' Lớp chưa khớp: ' . $unmatchedClasses->implode(', ') . '.';
+                $message .= ' Lớp chưa khớp: '.$unmatchedClasses->implode(', ').'.';
             }
 
             $unmatchedSubjects = collect($import->unmatchedSubjects)->unique()->take(3)->values();
             if ($unmatchedSubjects->isNotEmpty()) {
-                $message .= ' Môn chưa khớp: ' . $unmatchedSubjects->implode(', ') . '.';
+                $message .= ' Môn chưa khớp: '.$unmatchedSubjects->implode(', ').'.';
             }
 
             AuditLogger::log(
@@ -286,27 +299,32 @@ class ScheduleController extends Controller
 
             return back()->with($import->importedCount > 0 ? 'success' : 'error', $message);
         } catch (\Exception $e) {
-            return back()->with('error', 'Có lỗi khi nhập lịch: ' . $e->getMessage());
+            return back()->with('error', 'Có lỗi khi nhập lịch: '.$e->getMessage());
         }
     }
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'class_id' => 'required',
-            'course_id' => 'required',
+        $validated = $request->validate([
+            'class_id' => 'required|exists:classes,id',
+            'course_id' => 'required|exists:courses,id',
             'schedule_date' => 'required|date',
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
+            'room' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:255',
             'status' => 'nullable|in:active,hidden,archived',
         ]);
 
-        $schedule = Schedule::findOrFail($id);
+        $schedule = Schedule::with(['classroom', 'course'])->findOrFail($id);
+        Gate::authorize('update', $schedule);
+        $targetClassroom = Classroom::findOrFail($validated['class_id']);
+        $targetCourse = Course::findOrFail($validated['course_id']);
+        Gate::authorize('create', [Schedule::class, $targetClassroom, $targetCourse]);
         $oldValues = AuditLogger::snapshot($schedule);
         $this->clearCourseExamNoteIfNeeded($request, $schedule->id);
-        $schedule->update(array_merge($request->all(), [
-            'status' => $request->input('status', $schedule->status ?? Schedule::STATUS_ACTIVE),
+        $schedule->update(array_merge($validated, [
+            'status' => $validated['status'] ?? $schedule->status ?? Schedule::STATUS_ACTIVE,
         ]));
 
         $this->notifyScheduleChange($schedule, 'Lịch học đã thay đổi', 'Giáo viên vừa cập nhật thời gian hoặc thông tin buổi học.');
@@ -328,7 +346,8 @@ class ScheduleController extends Controller
 
     public function destroy($id)
     {
-        $schedule = Schedule::findOrFail($id);
+        $schedule = Schedule::with(['classroom', 'course'])->findOrFail($id);
+        Gate::authorize('delete', $schedule);
         $oldValues = AuditLogger::snapshot($schedule);
         $schedule->update(['status' => Schedule::STATUS_ARCHIVED]);
 
@@ -366,8 +385,8 @@ class ScheduleController extends Controller
 
     private function notifyScheduleChange(Schedule $schedule, string $title, string $message): void
     {
-        $date = \Carbon\Carbon::parse($schedule->schedule_date)->format('d/m/Y');
-        $time = \Carbon\Carbon::parse($schedule->start_time)->format('H:i');
+        $date = Carbon::parse($schedule->schedule_date)->format('d/m/Y');
+        $time = Carbon::parse($schedule->start_time)->format('H:i');
 
         app(NotificationCenter::class)->notifyClassStudents(
             (int) $schedule->class_id,
@@ -376,7 +395,7 @@ class ScheduleController extends Controller
             "{$message} Thời gian: {$time} ngày {$date}.",
             route('students.schedule'),
             ['schedule_id' => $schedule->id, 'course_id' => $schedule->course_id],
-            "schedule:{$schedule->id}:{$schedule->updated_at->timestamp}:" . md5($title)
+            "schedule:{$schedule->id}:{$schedule->updated_at->timestamp}:".md5($title)
         );
     }
 }

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Quiz;
-use App\Models\QuizAttempt;
 use App\Models\Option;
 use App\Models\Question;
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class QuizAttemptController extends Controller
@@ -97,8 +97,9 @@ class QuizAttemptController extends Controller
         $cacheKey = "quiz_session_{$quiz_id}_{$userId}";
         $sessionData = Cache::get($cacheKey);
 
-        if (!$sessionData) {
+        if (! $sessionData) {
             Log::warning("[QUIZ] User {$userId} nộp bài {$quiz_id} không có session hợp lệ.");
+
             return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Phiên làm bài không hợp lệ hoặc đã hết hạn. Kết quả không được ghi nhận!');
         }
 
@@ -114,7 +115,7 @@ class QuizAttemptController extends Controller
         $answers = $request->input('answers', []);
 
         // [CHỐNG GIAN LẬN] Lọc câu trả lời ngoài đề đã phát
-        $filteredAnswers = array_filter($answers, fn($qid) => in_array((int) $qid, $authorizedIds), ARRAY_FILTER_USE_KEY);
+        $filteredAnswers = array_filter($answers, fn ($qid) => in_array((int) $qid, $authorizedIds), ARRAY_FILTER_USE_KEY);
 
         if (count($filteredAnswers) < count($answers)) {
             Log::warning("[QUIZ] User {$userId} gửi answers ngoài đề cho quiz {$quiz_id}.");
@@ -148,19 +149,13 @@ class QuizAttemptController extends Controller
     {
         $attempt = QuizAttempt::with('quiz.course')->findOrFail($attempt_id);
 
-        $isOwner = auth()->id() === $attempt->user_id;
-        $isTeacher = auth()->id() === $attempt->quiz->course->teacher_id;
-        $isAdmin = auth()->user()->role === 'admin';
-
-        if (!$isOwner && !$isTeacher && !$isAdmin) {
-            abort(403, 'Bạn không có quyền xem bài làm này.');
-        }
+        Gate::authorize('view', $attempt);
 
         $studentAnswers = is_string($attempt->student_answers) ? json_decode($attempt->student_answers, true) : $attempt->student_answers ?? [];
 
         $questionIds = array_keys($studentAnswers);
 
-        $questions = !empty($questionIds) ? Question::with('options')->whereIn('id', $questionIds)->get()->sortBy(fn($q) => array_search($q->id, $questionIds)) : collect([]);
+        $questions = ! empty($questionIds) ? Question::with('options')->whereIn('id', $questionIds)->get()->sortBy(fn ($q) => array_search($q->id, $questionIds)) : collect([]);
 
         return view('quizzes.review', compact('attempt', 'studentAnswers', 'questions'));
     }
@@ -175,7 +170,7 @@ class QuizAttemptController extends Controller
     private function generateExam(Quiz $quiz)
     {
         $bankIds = $quiz->course->questionBanks()->pluck('question_banks.id');
-        $pick = fn($difficulty, $limit) => Question::with('options')
+        $pick = fn ($difficulty, $limit) => Question::with('options')
             ->where(function ($q) use ($quiz, $bankIds) {
                 if ($bankIds->isNotEmpty()) {
                     $q->whereIn('question_bank_id', $bankIds);
@@ -202,25 +197,7 @@ class QuizAttemptController extends Controller
 
     private function authorizeStudentCanAttempt(Quiz $quiz): void
     {
-        if (auth()->user()->role !== 'student') {
-            abort(403, 'Chỉ học sinh mới được làm bài kiểm tra.');
-        }
-
-        if (!$quiz->course->isVisibleToStudents() || !$quiz->isVisibleToStudents()) {
-            abort(403, 'Bài kiểm tra này chưa được mở.');
-        }
-
-        $hasCourseAccess = DB::table('class_user')
-            ->join('class_course', 'class_user.class_id', '=', 'class_course.class_id')
-            ->join('classes', 'class_user.class_id', '=', 'classes.id')
-            ->where('class_user.user_id', auth()->id())
-            ->where('class_course.course_id', $quiz->course_id)
-            ->where('classes.status', 'active')
-            ->exists();
-
-        if (!$hasCourseAccess) {
-            abort(403, 'Bạn không có quyền làm bài kiểm tra này.');
-        }
+        Gate::authorize('attempt', $quiz);
     }
 
     private function loadExamFromSession(array $sessionData)
@@ -235,7 +212,7 @@ class QuizAttemptController extends Controller
             ->map(function ($question) use ($optionIdsByQuestion) {
                 $optionIds = $optionIdsByQuestion[$question->id] ?? [];
 
-                if (!empty($optionIds)) {
+                if (! empty($optionIds)) {
                     $question->setRelation(
                         'options',
                         $question->options->sortBy(fn ($option) => array_search($option->id, $optionIds))->values()
@@ -262,7 +239,7 @@ class QuizAttemptController extends Controller
             $selectedOptionId = $filteredAnswers[$questionId] ?? null;
             $full[$questionId] = $selectedOptionId;
 
-            if (!$selectedOptionId) {
+            if (! $selectedOptionId) {
                 continue;
             }
 
@@ -271,6 +248,7 @@ class QuizAttemptController extends Controller
 
             if ($isCorrect === null) {
                 Log::warning("[QUIZ] User {$userId} gửi option {$selectedOptionId} không thuộc question {$questionId} (quiz {$quizId}).");
+
                 continue;
             }
 

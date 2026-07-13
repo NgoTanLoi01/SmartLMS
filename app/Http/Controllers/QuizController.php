@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Quiz;
+use App\Models\Course;
 use App\Models\Question;
+use App\Models\Quiz;
 use App\Services\NotificationCenter;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class QuizController extends Controller
 {
@@ -21,6 +23,9 @@ class QuizController extends Controller
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
+
+        $course = Course::findOrFail($request->integer('course_id'));
+        Gate::authorize('create', [Quiz::class, $course]);
 
         $quiz = Quiz::create([
             'course_id' => $request->course_id,
@@ -53,9 +58,7 @@ class QuizController extends Controller
     public function show($id)
     {
         $quiz = Quiz::findOrFail($id);
-
-        // Kiểm tra quyền (chỉ giáo viên của khóa học, học sinh của khóa, hoặc admin mới được xem)
-        // ... (Giữ nguyên logic phân quyền của bạn nếu có)
+        Gate::authorize('view', $quiz);
 
         // ==========================================
         // THUẬT TOÁN LẤY ĐỀ NGẪU NHIÊN & XÁO TRỘN
@@ -102,7 +105,9 @@ class QuizController extends Controller
 
     public function destroy($id)
     {
-        Quiz::findOrFail($id)->update([
+        $quiz = Quiz::findOrFail($id);
+        Gate::authorize('delete', $quiz);
+        $quiz->update([
             'status' => Quiz::STATUS_ARCHIVED,
             'published_at' => null,
         ]);
@@ -113,12 +118,10 @@ class QuizController extends Controller
     public function submissions($id)
     {
         $quiz = Quiz::with(['course.teacher', 'attempts.user'])->findOrFail($id);
-
-        if (auth()->id() !== $quiz->course->teacher_id && auth()->user()->role !== 'admin') {
-            abort(403, 'Bạn không có quyền truy cập trang này.');
-        }
+        Gate::authorize('viewSubmissions', $quiz);
 
         $attempts = $quiz->attempts()->orderBy('completed_at', 'desc')->get();
+
         return view('quizzes.submissions', compact('quiz', 'attempts'));
     }
 }

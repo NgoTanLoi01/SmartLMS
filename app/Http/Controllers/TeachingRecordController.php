@@ -8,7 +8,7 @@ use App\Models\Course;
 use App\Models\TeachingRecord;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TeachingRecordController extends Controller
@@ -159,8 +159,8 @@ class TeachingRecordController extends Controller
         $import = new TeachingRecordsImport($teacherId);
         Excel::import($import, $request->file('file'));
 
-        if (!empty($import->missingHeaders)) {
-            return back()->with('error', 'File thiếu cột bắt buộc: ' . implode(', ', $import->missingHeaders) . '.');
+        if (! empty($import->missingHeaders)) {
+            return back()->with('error', 'File thiếu cột bắt buộc: '.implode(', ', $import->missingHeaders).'.');
         }
 
         $message = "Đã nhập {$import->importedCount} dòng giảng dạy.";
@@ -189,7 +189,7 @@ class TeachingRecordController extends Controller
             'planned_sessions' => 'nullable|integer|min:0|max:999',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'required|in:' . implode(',', array_keys(TeachingRecord::statuses())),
+            'status' => 'required|in:'.implode(',', array_keys(TeachingRecord::statuses())),
             'note' => 'nullable|string|max:2000',
         ]);
     }
@@ -203,18 +203,18 @@ class TeachingRecordController extends Controller
             $data['course_id'] = $this->matchCourseId($data['subject_name'], $teacherId);
         }
 
-        if (empty($data['class_id']) && !empty($data['class_name'])) {
+        if (empty($data['class_id']) && ! empty($data['class_name'])) {
             $data['class_id'] = $this->matchClassId($data['class_name'], $teacherId);
         }
 
-        if (!empty($data['course_id'])) {
+        if (! empty($data['course_id'])) {
             $course = Course::find($data['course_id']);
             if ($course && blank($data['subject_name'])) {
                 $data['subject_name'] = $course->title;
             }
         }
 
-        if (!empty($data['class_id'])) {
+        if (! empty($data['class_id'])) {
             $classroom = Classroom::find($data['class_id']);
             if ($classroom && blank($data['class_name'])) {
                 $data['class_name'] = $classroom->name;
@@ -267,12 +267,11 @@ class TeachingRecordController extends Controller
 
     private function authorizeAccess(): void
     {
-        abort_unless(in_array(auth()->user()->role, ['admin', 'teacher'], true), 403);
+        Gate::authorize('create', TeachingRecord::class);
     }
 
     private function authorizeRecord(TeachingRecord $record): void
     {
-        $this->authorizeAccess();
-        abort_if(auth()->user()->role === 'teacher' && $record->teacher_id !== auth()->id(), 403);
+        Gate::authorize('update', $record);
     }
 }

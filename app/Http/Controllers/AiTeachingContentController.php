@@ -7,6 +7,7 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Services\DeepSeekService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class AiTeachingContentController extends Controller
 {
@@ -23,13 +24,13 @@ class AiTeachingContentController extends Controller
             'current_instructions' => 'nullable|string',
         ]);
 
-        if (!empty($data['lesson_id'])) {
+        if (! empty($data['lesson_id'])) {
             $lesson = Lesson::with('module.course')->findOrFail($data['lesson_id']);
             $this->authorizeManageCourse($lesson->module->course);
-        } elseif (!empty($data['module_id'])) {
+        } elseif (! empty($data['module_id'])) {
             $module = Module::with('course')->findOrFail($data['module_id']);
             $this->authorizeManageCourse($module->course);
-        } elseif (!empty($data['course_id'])) {
+        } elseif (! empty($data['course_id'])) {
             $this->authorizeManageCourse(Course::findOrFail($data['course_id']));
         } else {
             abort(422, 'Cần chọn bài học hoặc khóa học nguồn để AI soạn nội dung.');
@@ -42,16 +43,6 @@ class AiTeachingContentController extends Controller
 
     private function authorizeManageCourse(Course $course): void
     {
-        $user = auth()->user();
-
-        if ($user->role === 'admin') {
-            return;
-        }
-
-        if ($user->role === 'teacher' && $course->teacher_id === $user->id) {
-            return;
-        }
-
-        abort(403, 'Bạn không có quyền dùng AI cho khóa học này.');
+        Gate::authorize('manageContent', $course);
     }
 }

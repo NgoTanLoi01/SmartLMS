@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\LearningProgram;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class LearningProgramController extends Controller
 {
     public function index()
     {
-        $this->authorizeProgramManagement();
+        Gate::authorize('create', LearningProgram::class);
 
         $query = LearningProgram::with('teacher')
             ->withCount('courses')
@@ -27,7 +28,7 @@ class LearningProgramController extends Controller
 
     public function show(LearningProgram $program)
     {
-        $this->authorizeProgramOwner($program);
+        Gate::authorize('view', $program);
 
         $program->load([
             'teacher',
@@ -78,7 +79,7 @@ class LearningProgramController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorizeProgramManagement();
+        Gate::authorize('create', LearningProgram::class);
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -96,11 +97,11 @@ class LearningProgramController extends Controller
 
     public function update(Request $request, LearningProgram $program)
     {
-        $this->authorizeProgramOwner($program);
+        Gate::authorize('update', $program);
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:learning_programs,code,' . $program->id,
+            'code' => 'required|string|max:50|unique:learning_programs,code,'.$program->id,
             'description' => 'nullable|string',
             'status' => 'required|in:draft,published,hidden',
         ]);
@@ -112,26 +113,10 @@ class LearningProgramController extends Controller
 
     public function destroy(LearningProgram $program)
     {
-        $this->authorizeProgramOwner($program);
+        Gate::authorize('delete', $program);
 
         $program->delete();
 
         return back()->with('success', 'Đã xóa chương trình học. Các khóa học liên quan vẫn được giữ lại.');
-    }
-
-    private function authorizeProgramManagement(): void
-    {
-        if (!in_array(auth()->user()->role, ['admin', 'teacher'])) {
-            abort(403, 'Bạn không có quyền quản lý chương trình học.');
-        }
-    }
-
-    private function authorizeProgramOwner(LearningProgram $program): void
-    {
-        $this->authorizeProgramManagement();
-
-        if (auth()->user()->role !== 'admin' && $program->teacher_id !== auth()->id()) {
-            abort(403, 'Bạn không có quyền thao tác chương trình học này.');
-        }
     }
 }

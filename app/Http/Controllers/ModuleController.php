@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Module;
 use App\Models\Assignments;
-use App\Models\Lesson;
 use App\Models\Course;
+use App\Models\Lesson;
+use App\Models\Module;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ModuleController extends Controller
 {
@@ -17,7 +18,7 @@ class ModuleController extends Controller
             'title' => 'required|max:255',
         ]);
         $course = Course::findOrFail($request->course_id);
-        $this->authorizeManageCourse($course);
+        Gate::authorize('create', [Module::class, $course]);
 
         Module::create([
             'course_id' => $request->course_id,
@@ -28,18 +29,20 @@ class ModuleController extends Controller
 
         return back()->with('success', 'Đã thêm chương mới thành công!');
     }
+
     public function update(Request $request, $id)
     {
         $module = Module::findOrFail($id);
-        $this->authorizeManageCourse($module->course);
+        Gate::authorize('update', $module);
         $module->update($request->validate(['title' => 'required|max:255']));
+
         return back()->with('success', 'Đã cập nhật chương!');
     }
 
     public function destroy($id)
     {
         $module = Module::with('lessons')->findOrFail($id);
-        $this->authorizeManageCourse($module->course);
+        Gate::authorize('delete', $module);
         $lessonIds = Lesson::where('module_id', $module->id)->pluck('id');
 
         $module->update(['status' => Module::STATUS_ARCHIVED]);
@@ -64,7 +67,7 @@ class ModuleController extends Controller
         ]);
 
         $course = Course::findOrFail($validated['course_id']);
-        $this->authorizeManageCourse($course);
+        Gate::authorize('create', [Module::class, $course]);
 
         $allowedIds = Module::where('course_id', $course->id)
             ->whereIn('id', $validated['module_ids'])
@@ -82,15 +85,5 @@ class ModuleController extends Controller
         }
 
         return response()->json(['message' => 'Đã cập nhật thứ tự chương.']);
-    }
-
-    private function authorizeManageCourse(Course $course): void
-    {
-        $user = auth()->user();
-
-        abort_unless(
-            $user && ($user->role === 'admin' || ($user->role === 'teacher' && (int) $course->teacher_id === (int) $user->id)),
-            403
-        );
     }
 }

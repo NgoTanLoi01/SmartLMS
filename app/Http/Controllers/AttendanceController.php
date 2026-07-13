@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Course;
+use App\Exports\AttendanceExport;
 use App\Models\AttendanceColumn;
 use App\Models\AttendanceData;
-use Illuminate\Http\Request;
-use App\Exports\AttendanceExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Course;
 use App\Services\NotificationCenter;
-use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AttendanceController extends Controller
 {
     public function exportExcel($courseId)
     {
         $course = Course::findOrFail($courseId);
+        Gate::authorize('manageAttendance', $course);
         $students = $course->classes->flatMap->students->unique('id');
         $columns = AttendanceColumn::where('course_id', $courseId)->orderBy('order')->get();
         $rawData = AttendanceData::whereIn('attendance_column_id', $columns->pluck('id'))->get();
@@ -31,27 +34,22 @@ class AttendanceController extends Controller
         $courseFileName = preg_replace('/_+/', '_', $courseFileName);
         $courseFileName = trim($courseFileName, '_-');
         $courseFileName = Str::limit($courseFileName, 120, '');
-        $courseFileName = $courseFileName !== '' ? $courseFileName : 'Khoa_hoc_' . $course->id;
+        $courseFileName = $courseFileName !== '' ? $courseFileName : 'Khoa_hoc_'.$course->id;
 
         return Excel::download(
             new AttendanceExport($course, $students, $columns, $attendanceData),
-            $courseFileName . '.xlsx'
+            $courseFileName.'.xlsx'
         );
     }
+
     public function show($courseId)
     {
         $course = Course::with('classes.students')->findOrFail($courseId);
+        Gate::authorize('view', $course);
         $user = auth()->user();
         $isStudentView = $user->isStudent();
 
         if ($isStudentView) {
-            $isEnrolled = $course->isVisibleToStudents()
-                && $course->classes
-                    ->where('status', 'active')
-                    ->flatMap->students
-                    ->contains('id', $user->id);
-
-            abort_unless($isEnrolled, 403, 'Bạn không tham gia khóa học này.');
             $students = collect([$user]);
         } else {
             $students = $course->classes->flatMap->students->unique('id');
@@ -85,8 +83,12 @@ class AttendanceController extends Controller
 
         return view('attendance.show', compact('course', 'students', 'columns', 'attendanceData', 'attendanceNotes', 'schedules', 'isStudentView'));
     }
+
     public function addColumn(Request $request, $courseId)
     {
+        $course = Course::findOrFail($courseId);
+        Gate::authorize('create', [AttendanceColumn::class, $course]);
+
         $validated = $request->validate([
             'type' => 'required|in:attendance,grade,note',
             'name' => 'nullable|string|max:100',
@@ -97,7 +99,7 @@ class AttendanceController extends Controller
         $lastOrder = 0;
         $schedule = null;
 
-        if ($type === 'attendance' && !empty($validated['schedule_id'])) {
+        if ($type === 'attendance' && ! empty($validated['schedule_id'])) {
             $schedule = DB::table('schedules')
                 ->where('id', $validated['schedule_id'])
                 ->where('course_id', $courseId)
@@ -125,7 +127,7 @@ class AttendanceController extends Controller
             : null;
         $name = trim((string) ($validated['name'] ?? ''));
         if ($type === 'attendance' && $name === '') {
-            $name = $attendanceDate ? \Carbon\Carbon::parse($attendanceDate)->format('d/m/Y') : now()->format('d/m/Y');
+            $name = $attendanceDate ? Carbon::parse($attendanceDate)->format('d/m/Y') : now()->format('d/m/Y');
         }
         if ($type !== 'attendance' && $name === '') {
             return back()->withErrors(['name' => 'Vui lòng nhập tên cột.'])->withInput();
@@ -145,16 +147,23 @@ class AttendanceController extends Controller
 
     public function save(Request $request, $courseId)
     {
+        $course = Course::findOrFail($courseId);
+        Gate::authorize('manageAttendance', $course);
+
         $columns = AttendanceColumn::where('course_id', $courseId)->get()->keyBy('id');
-        $allowedUserIds = Course::with('classes.students')->findOrFail($courseId)
+        $allowedUserIds = $course->load('classes.students')
             ->classes->flatMap->students->pluck('id')->unique();
 
         foreach ($request->input('data', []) as $columnId => $users) {
             $column = $columns->get((int) $columnId);
-            if (!$column) continue;
+            if (! $column) {
+                continue;
+            }
 
             foreach ($users as $userId => $value) {
-                if (!$allowedUserIds->contains((int) $userId)) continue;
+                if (! $allowedUserIds->contains((int) $userId)) {
+                    continue;
+                }
 
                 $savedValue = $column->type === 'attendance' ? $this->normalizeAttendanceStatus($value) : $value;
                 AttendanceData::updateOrCreate(
@@ -212,18 +221,27 @@ class AttendanceController extends Controller
     {
         $normalized = Str::of((string) $value)->lower()->ascii()->trim()->toString();
 
-        if (in_array($normalized, ['absent', 'v', 'vang', 'nghi', '0', 'no', 'false'], true)) return 'absent';
-        if (in_array($normalized, ['late', 'muon', 'di muon'], true)) return 'late';
-        if (in_array($normalized, ['excused', 'phep', 'co phep', 'vang co phep'], true)) return 'excused';
+        if (in_array($normalized, ['absent', 'v', 'vang', 'nghi', '0', 'no', 'false'], true)) {
+            return 'absent';
+        }
+        if (in_array($normalized, ['late', 'muon', 'di muon'], true)) {
+            return 'late';
+        }
+        if (in_array($normalized, ['excused', 'phep', 'co phep', 'vang co phep'], true)) {
+            return 'excused';
+        }
 
         return 'present';
     }
+
     // Xóa cột
     public function deleteColumn($columnId)
     {
         $column = AttendanceColumn::findOrFail($columnId);
+        Gate::authorize('delete', $column);
         // Khi xóa cột, các dữ liệu trong bảng attendance_data sẽ tự động bị xóa do ràng buộc cascade
         $column->delete();
+
         return back()->with('success', 'Đã xóa cột thành công!');
     }
 
@@ -231,9 +249,12 @@ class AttendanceController extends Controller
     public function updateColumn(Request $request, $columnId)
     {
         $column = AttendanceColumn::findOrFail($columnId);
+        Gate::authorize('update', $column);
+        $validated = $request->validate(['name' => 'required|string|max:100']);
         $column->update([
-            'name' => $request->name,
+            'name' => $validated['name'],
         ]);
+
         return response()->json(['success' => true]);
     }
 }

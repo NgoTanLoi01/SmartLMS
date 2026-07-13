@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\QuestionImport;
 use App\Jobs\GenerateQuizQuestions;
 use App\Models\AiOperation;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use App\Models\Question;
-use App\Models\Option;
 use App\Models\Course;
+use App\Models\Option;
+use App\Models\Question;
 use App\Models\QuestionBank;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class QuestionController extends Controller
@@ -66,6 +69,8 @@ class QuestionController extends Controller
 
     public function storeQuestionBank(Request $request)
     {
+        Gate::authorize('create', QuestionBank::class);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -82,7 +87,7 @@ class QuestionController extends Controller
             'teacher_id' => $user->role === 'admin' ? null : $user->id,
         ]);
 
-        if (!empty($courseIds)) {
+        if (! empty($courseIds)) {
             $bank->courses()->syncWithoutDetaching($courseIds);
         }
 
@@ -206,6 +211,7 @@ class QuestionController extends Controller
 
         return back()->with('success', 'Đã lưu trữ câu hỏi. Đáp án và dữ liệu liên quan vẫn được giữ lại!');
     }
+
     // ==========================================
     // 5. IMPORT CÂU HỎI TỪ FILE EXCEL
     // ==========================================
@@ -226,7 +232,7 @@ class QuestionController extends Controller
             $this->authorizeQuestionBank($bank);
             $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
 
-            $import = new \App\Imports\QuestionImport($request->course_id, $bank->id);
+            $import = new QuestionImport($request->course_id, $bank->id);
 
             // Chạy Import
             Excel::import($import, $request->file('file'));
@@ -234,9 +240,10 @@ class QuestionController extends Controller
             return back()->with('success', "Thành công! Đã thêm {$import->importedCount} câu hỏi vào Ngân hàng.");
         } catch (\Exception $e) {
             // Nếu có lỗi hệ thống, báo lỗi đỏ ra màn hình để ta biết đường sửa
-            return back()->with('error', 'Lỗi khi đọc file: ' . $e->getMessage());
+            return back()->with('error', 'Lỗi khi đọc file: '.$e->getMessage());
         }
     }
+
     // ==========================================
     // 6. GIAO DIỆN AI SINH CÂU HỎI
     // ==========================================
@@ -265,6 +272,7 @@ class QuestionController extends Controller
 
         return view('quizzes.ai_generate', compact('courses', 'courseContextOptions'));
     }
+
     // ==========================================
     // 7. LOGIC AI TRUY XUẤT VÀ SOẠN ĐỀ (AJAX)
     // ==========================================
@@ -284,7 +292,7 @@ class QuestionController extends Controller
         $course = Course::with(['modules.lessons'])->findOrFail($request->course_id);
         $this->authorizeCourse($course);
 
-        if ($request->source_type === 'topic' && !$request->filled('topic')) {
+        if ($request->source_type === 'topic' && ! $request->filled('topic')) {
             return response()->json(['error' => 'Thầy / Cô vui lòng nhập chủ đề để AI tạo câu hỏi.'], 422);
         }
 
@@ -356,7 +364,7 @@ class QuestionController extends Controller
         $scope = $request->input('content_scope', 'course');
         $parts = [
             "Khóa học: {$course->title}",
-            'Mô tả khóa học: ' . $this->sanitizeContextText($course->description ?: 'Chưa có mô tả.'),
+            'Mô tả khóa học: '.$this->sanitizeContextText($course->description ?: 'Chưa có mô tả.'),
         ];
         $sourceLabel = 'Nội dung toàn khóa học';
 
@@ -379,7 +387,7 @@ class QuestionController extends Controller
                 }
             }
 
-            if (!$foundLesson) {
+            if (! $foundLesson) {
                 return ['text' => '', 'error' => 'Không tìm thấy bài học đã chọn trong khóa học này.'];
             }
 
@@ -441,16 +449,16 @@ class QuestionController extends Controller
                 ],
             ]);
 
-        if ($responseGemini->failed() || !isset($responseGemini->json()['embedding'])) {
+        if ($responseGemini->failed() || ! isset($responseGemini->json()['embedding'])) {
             $errorData = $responseGemini->json();
             $errorMsg = $errorData['error']['message'] ?? 'Lỗi không xác định từ Gemini API';
-            \Illuminate\Support\Facades\Log::error('Gemini API Error: ', $errorData);
+            Log::error('Gemini API Error: ', $errorData);
 
-            return ['text' => '', 'error' => 'Lỗi tạo Vector (Gemini): ' . $errorMsg];
+            return ['text' => '', 'error' => 'Lỗi tạo Vector (Gemini): '.$errorMsg];
         }
 
         $queryVector = $responseGemini->json()['embedding']['values'];
-        $queryVectorStr = '[' . implode(',', $queryVector) . ']';
+        $queryVectorStr = '['.implode(',', $queryVector).']';
 
         $contextChunks = DB::connection('pgsql')
             ->table('document_chunks')
@@ -519,7 +527,7 @@ class QuestionController extends Controller
             }
         }
 
-        return response()->json(['success' => 'Đã lưu ' . count($request->questions) . ' câu hỏi vào ngân hàng!']);
+        return response()->json(['success' => 'Đã lưu '.count($request->questions).' câu hỏi vào ngân hàng!']);
     }
 
     private function defaultQuestionBankForCourse(int $courseId): QuestionBank
@@ -533,7 +541,7 @@ class QuestionController extends Controller
 
         $bank = QuestionBank::create([
             'name' => $course->title,
-            'description' => 'Ngân hàng câu hỏi dùng chung cho ' . $course->title,
+            'description' => 'Ngân hàng câu hỏi dùng chung cho '.$course->title,
             'teacher_id' => $course->teacher_id,
         ]);
 
@@ -544,54 +552,27 @@ class QuestionController extends Controller
 
     private function authorizeQuestionBank(QuestionBank $bank): void
     {
-        $user = auth()->user();
-
-        if ($user->role === 'admin') {
-            return;
-        }
-
-        $teacherOwnsBank = $bank->teacher_id === $user->id;
-        $teacherOwnsLinkedCourse = $bank->courses()->where('courses.teacher_id', $user->id)->exists();
-
-        if (!$teacherOwnsBank && !$teacherOwnsLinkedCourse) {
-            abort(403, 'Bạn không có quyền sử dụng ngân hàng câu hỏi này.');
-        }
+        Gate::authorize('update', $bank);
     }
 
     private function authorizeQuestionAccess(Question $question): void
     {
-        if (auth()->user()->role === 'admin') {
-            return;
-        }
-
-        if ($question->questionBank) {
-            $this->authorizeQuestionBank($question->questionBank);
-            return;
-        }
-
-        if (!$question->course || $question->course->teacher_id !== auth()->id()) {
-            abort(403, 'Bạn không có quyền thao tác câu hỏi này.');
-        }
+        Gate::authorize('update', $question);
     }
 
     private function authorizeCourse(Course $course): void
     {
-        if (auth()->user()->role !== 'admin' && $course->teacher_id !== auth()->id()) {
-            abort(403, 'Bạn không có quyền sử dụng khóa học này.');
-        }
+        Gate::authorize('manageContent', $course);
     }
 
     private function authorizedCourseIds(array $courseIds): array
     {
         $ids = collect($courseIds)->map(fn ($id) => (int) $id)->filter()->unique()->values();
 
-        if (auth()->user()->role === 'admin') {
-            return $ids->all();
-        }
+        $courses = Course::whereIn('id', $ids)->get()->keyBy('id');
+        abort_unless($courses->count() === $ids->count(), 422, 'Danh sách khóa học không hợp lệ.');
+        $ids->each(fn ($id) => Gate::authorize('manageContent', $courses->get($id)));
 
-        return Course::where('teacher_id', auth()->id())
-            ->whereIn('id', $ids)
-            ->pluck('id')
-            ->all();
+        return $ids->all();
     }
 }

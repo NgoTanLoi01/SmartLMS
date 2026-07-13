@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -176,8 +177,8 @@ class TeachingContractController extends Controller
         $import = new TeachingContractsImport($teacherId);
         Excel::import($import, $request->file('file'));
 
-        if (!empty($import->missingHeaders)) {
-            return back()->with('error', 'File thiếu cột bắt buộc: ' . implode(', ', $import->missingHeaders) . '.');
+        if (! empty($import->missingHeaders)) {
+            return back()->with('error', 'File thiếu cột bắt buộc: '.implode(', ', $import->missingHeaders).'.');
         }
 
         $message = "Đã nhập {$import->importedCount} hợp đồng.";
@@ -222,7 +223,7 @@ class TeachingContractController extends Controller
             'signed_date' => 'nullable|date',
             'total_amount' => 'required|numeric|min:0|max:999999999999',
             'received_amount' => 'nullable|numeric|min:0|max:999999999999|lte:total_amount',
-            'status' => 'required|in:' . implode(',', array_keys(TeachingContract::statuses())),
+            'status' => 'required|in:'.implode(',', array_keys(TeachingContract::statuses())),
             'received_date' => 'nullable|date',
             'evidence_url' => 'nullable|url|max:2000',
             'teaching_record_ids' => 'nullable|array',
@@ -273,12 +274,11 @@ class TeachingContractController extends Controller
 
     private function authorizeAccess(): void
     {
-        abort_unless(in_array(auth()->user()->role, ['admin', 'teacher'], true), 403);
+        Gate::authorize('create', TeachingContract::class);
     }
 
     private function authorizeContract(TeachingContract $contract): void
     {
-        $this->authorizeAccess();
-        abort_if(auth()->user()->role === 'teacher' && $contract->teacher_id !== auth()->id(), 403);
+        Gate::authorize('update', $contract);
     }
 }
