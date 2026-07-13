@@ -6,14 +6,23 @@ use App\Models\SmartNotification;
 use App\Models\User;
 use App\Services\NotificationCenter;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class NotificationCenterTest extends TestCase
 {
+    private bool $isolatedSchemaCreated = false;
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            throw new \RuntimeException('NotificationCenterTest chỉ được phép chạy trên SQLite cô lập.');
+        }
+
+        $this->isolatedSchemaCreated = true;
 
         Schema::create('users', function (Blueprint $table) {
             $table->id();
@@ -42,8 +51,10 @@ class NotificationCenterTest extends TestCase
 
     protected function tearDown(): void
     {
-        Schema::dropIfExists('smart_notifications');
-        Schema::dropIfExists('users');
+        if ($this->isolatedSchemaCreated) {
+            Schema::dropIfExists('smart_notifications');
+            Schema::dropIfExists('users');
+        }
         parent::tearDown();
     }
 

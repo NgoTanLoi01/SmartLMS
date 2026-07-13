@@ -26,6 +26,14 @@ class LearningMaterial extends Model
         'file_size',
         'uploaded_by',
         'status',
+        'storage_status',
+        'last_verified_at',
+        'imported_at',
+    ];
+
+    protected $casts = [
+        'last_verified_at' => 'datetime',
+        'imported_at' => 'datetime',
     ];
 
     public function assignments()
@@ -38,12 +46,44 @@ class LearningMaterial extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
+    public function sources()
+    {
+        return $this->hasMany(LearningMaterialSource::class);
+    }
+
     public function scopeNotArchived($query)
     {
         return $query->where(function ($q) {
             $q->whereNull('status')
                 ->orWhere('status', '!=', self::STATUS_ARCHIVED);
         });
+    }
+
+    public function scopeAccessibleTo($query, User $user)
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        if (!$user->isTeacher()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function ($access) use ($user) {
+            $access->where('uploaded_by', $user->id)
+                ->orWhereHas('sources.course', fn ($course) => $course->where('teacher_id', $user->id))
+                ->orWhereHas('assignments.course', fn ($course) => $course->where('teacher_id', $user->id));
+        });
+    }
+
+    public function accessibleBy(User $user): bool
+    {
+        return self::query()->whereKey($this->id)->accessibleTo($user)->exists();
+    }
+
+    public function ownedBy(User $user): bool
+    {
+        return $user->isAdmin() || (int) $this->uploaded_by === (int) $user->id;
     }
 
     public function isFile(): bool

@@ -13,6 +13,7 @@ use App\Models\Module;
 use App\Models\Question;
 use App\Models\QuizAttempt;
 use App\Models\Quiz;
+use App\Services\StoredAssetReferenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -388,7 +389,10 @@ class CourseController extends Controller
 
         $lessonFiles->each(function ($file) {
             $disk = $file->attachment_disk ?: 'public';
-            rescue(fn () => Storage::disk($disk)->delete($file->attachment), report: false);
+            rescue(
+                fn () => app(StoredAssetReferenceService::class)->deleteIfUnindexed($disk, $file->attachment),
+                report: false
+            );
         });
         $submissionFiles->each(function ($file) {
             $disk = $file->file_disk ?: 'public';

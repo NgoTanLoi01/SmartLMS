@@ -43,6 +43,10 @@ docker exec lms-app php artisan view:clear
 log "Chạy migration..."
 docker exec lms-app php artisan migrate --force
 
+# Nginx có thể đang giữ DNS/IP cũ nếu app hoặc reverb vừa được recreate.
+log "Nạp lại Nginx sau khi các upstream đã sẵn sàng..."
+docker compose restart nginx
+
 # =============================
 # ĐỢI REVERB
 # =============================

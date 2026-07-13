@@ -9,6 +9,7 @@ use App\Models\Lesson;
 use App\Models\Module;
 use Illuminate\Support\Str;
 use App\Services\NotificationCenter;
+use App\Services\StoredAssetReferenceService;
 
 class LessonController extends Controller
 {
@@ -201,7 +202,10 @@ class LessonController extends Controller
     private function deleteAttachment(Lesson $lesson): void
     {
         if ($lesson->attachment) {
-            Storage::disk($lesson->attachment_disk ?: 'public')->delete($lesson->attachment);
+            app(StoredAssetReferenceService::class)->deleteIfUnindexed(
+                $lesson->attachment_disk ?: 'public',
+                $lesson->attachment
+            );
         }
     }
 

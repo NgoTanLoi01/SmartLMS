@@ -16,7 +16,8 @@
     <meta property="og:description"
         content="Nền tảng quản lý giáo dục trực tuyến hỗ trợ huấn luyện AI dựa trên tài liệu học tập.">
     <meta property="og:image" content="{{ asset('favicon-v2.png') }}">
-    <link rel="icon" type="image/png" href="{{ asset('favicon-v2.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('favicon-48.png') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

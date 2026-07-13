@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SyncLegacyLearningMaterials;
+use App\Models\AiOperation;
 use App\Models\Classroom;
 use App\Models\Course;
 use App\Models\LearningMaterial;
@@ -16,7 +18,7 @@ use App\Services\NotificationCenter;
 
 class CourseMaterialController extends Controller
 {
-    public function library()
+    public function library(Request $request)
     {
         $user = auth()->user();
         $query = Course::with(['teacher', 'classes'])->notArchived()->orderBy('title');
@@ -38,7 +40,35 @@ class CourseMaterialController extends Controller
             ])
             ->get();
 
-        return view('courses.materials_index', compact('courses'));
+        $materials = null;
+        $syncOperations = collect();
+        if (!$user->isStudent()) {
+            $materials = LearningMaterial::with(['uploader', 'sources.course'])
+                ->withCount('sources')
+                ->notArchived()
+                ->accessibleTo($user)
+                ->when($request->filled('q'), function ($query) use ($request) {
+                    $search = trim((string) $request->input('q'));
+                    $query->where(function ($match) use ($search) {
+                        $match->where('title', 'like', "%{$search}%")
+                            ->orWhere('original_name', 'like', "%{$search}%");
+                    });
+                })
+                ->when($request->filled('type'), fn ($query) => $query->where('type', $request->input('type')))
+                ->latest('imported_at')
+                ->latest('id')
+                ->paginate(18, ['*'], 'materials_page')
+                ->withQueryString();
+
+            $syncOperations = AiOperation::query()
+                ->where('user_id', $user->id)
+                ->whereIn('feature', ['material_library_scan', 'material_library_sync'])
+                ->latest()
+                ->limit(5)
+                ->get();
+        }
+
+        return view('courses.materials_index', compact('courses', 'materials', 'syncOperations'));
     }
 
     public function index(Course $course)
@@ -61,11 +91,9 @@ class CourseMaterialController extends Controller
         }
 
         $availableMaterials = LearningMaterial::notArchived()
-            ->where(function ($query) use ($course) {
-                $query->where('uploaded_by', auth()->id())
-                    ->orWhereHas('assignments', fn ($q) => $q->where('course_id', $course->id));
-            })
-            ->orderBy('title')
+            ->accessibleTo(auth()->user())
+            ->latest('id')
+            ->limit(30)
             ->get();
 
         return view('courses.materials', [
@@ -130,6 +158,7 @@ class CourseMaterialController extends Controller
         $this->assertCourseLesson($course, $validated['unlock_when_lesson_id'] ?? null);
 
         $material = LearningMaterial::notArchived()->findOrFail($validated['learning_material_id']);
+        abort_unless($material->accessibleBy(auth()->user()), 403);
         $this->createAssignment($course, $material, $validated);
 
         return back()->with('success', 'Đã gắn học liệu có sẵn vào khóa học.');
@@ -187,6 +216,7 @@ class CourseMaterialController extends Controller
     public function destroyMaterial(Course $course, LearningMaterial $material)
     {
         $this->authorizeManage($course);
+        abort_unless($material->ownedBy(auth()->user()), 403);
 
         $material->update(['status' => LearningMaterial::STATUS_ARCHIVED]);
         $material->assignments()->update(['status' => LearningMaterialAssignment::STATUS_ARCHIVED]);
@@ -216,6 +246,61 @@ class CourseMaterialController extends Controller
             $material->file_path,
             $material->original_name ?: basename($material->file_path)
         );
+    }
+
+    public function downloadLibrary(LearningMaterial $material)
+    {
+        abort_unless($material->status !== LearningMaterial::STATUS_ARCHIVED, 404);
+        abort_unless($material->accessibleBy(auth()->user()), 403);
+        abort_unless($material->isFile() && $material->fileExists(), 404, 'Không tìm thấy file học liệu.');
+
+        return Storage::disk($material->disk)->download(
+            $material->file_path,
+            $material->original_name ?: basename($material->file_path)
+        );
+    }
+
+    public function scanLegacy()
+    {
+        return $this->dispatchLegacyOperation(true);
+    }
+
+    public function syncLegacy()
+    {
+        return $this->dispatchLegacyOperation(false);
+    }
+
+    public function searchLibrary(Request $request)
+    {
+        $user = auth()->user();
+        abort_unless($user->isAdmin() || $user->isTeacher(), 403);
+
+        $validated = $request->validate([
+            'q' => 'nullable|string|max:150',
+            'type' => 'nullable|in:pdf,slide,video,website,code,image,document,other',
+        ]);
+        $search = trim((string) ($validated['q'] ?? ''));
+
+        $materials = LearningMaterial::notArchived()
+            ->accessibleTo($user)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($match) use ($search) {
+                    $match->where('title', 'like', "%{$search}%")
+                        ->orWhere('original_name', 'like', "%{$search}%");
+                });
+            })
+            ->when($validated['type'] ?? null, fn ($query, $type) => $query->where('type', $type))
+            ->latest('id')
+            ->limit(30)
+            ->get()
+            ->map(fn (LearningMaterial $material) => [
+                'id' => $material->id,
+                'title' => $material->title,
+                'type' => $material->typeLabel(),
+                'size' => $material->humanSize(),
+            ]);
+
+        return response()->json(['data' => $materials]);
     }
 
     private function createFileMaterial(Request $request, array $data): LearningMaterial
@@ -323,6 +408,37 @@ class CourseMaterialController extends Controller
     private function canManage(Course $course): bool
     {
         return auth()->check() && Gate::allows('update', $course);
+    }
+
+    private function dispatchLegacyOperation(bool $dryRun)
+    {
+        $user = auth()->user();
+        abort_unless($user->isAdmin() || $user->isTeacher(), 403);
+
+        $active = AiOperation::where('user_id', $user->id)
+            ->whereIn('feature', ['material_library_scan', 'material_library_sync'])
+            ->whereIn('status', [AiOperation::STATUS_QUEUED, AiOperation::STATUS_PROCESSING])
+            ->exists();
+
+        if ($active) {
+            return back()->with('error', 'Một tác vụ quét hoặc đồng bộ học liệu đang chạy. Vui lòng chờ hoàn tất.');
+        }
+
+        $operation = AiOperation::create([
+            'user_id' => $user->id,
+            'feature' => $dryRun ? 'material_library_scan' : 'material_library_sync',
+            'provider' => 'storage',
+            'model' => config('filesystems.lesson_attachment_disk', 'public'),
+            'status' => AiOperation::STATUS_QUEUED,
+            'metadata' => ['dry_run' => $dryRun],
+        ]);
+
+        SyncLegacyLearningMaterials::dispatch($operation->id, $user->id, $dryRun);
+
+        return redirect()->route('materials.index')
+            ->with('success', $dryRun
+                ? 'Đã đưa yêu cầu quét file cũ vào hàng đợi.'
+                : 'Đã đưa yêu cầu đồng bộ học liệu cũ vào hàng đợi.');
     }
 
     private function typeOptions(): array

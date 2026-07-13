@@ -388,7 +388,9 @@
                                 <div class="materials-form-grid">
                                     <div class="mf-col-12">
                                         <label class="materials-label">Chọn học liệu</label>
-                                        <select name="learning_material_id" class="form-select materials-input" required>
+                                        <input type="search" id="materialLibrarySearch" class="form-control materials-input mb-2"
+                                            placeholder="Tìm theo tên học liệu hoặc tên file..." autocomplete="off">
+                                        <select name="learning_material_id" id="existingMaterialSelect" class="form-select materials-input" required>
                                             <option value="">-- Chọn học liệu đã upload/link --</option>
                                             @foreach ($availableMaterials as $material)
                                                 <option value="{{ $material->id }}">
@@ -582,3 +584,52 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('materialLibrarySearch');
+            const materialSelect = document.getElementById('existingMaterialSelect');
+            if (!searchInput || !materialSelect) return;
+
+            let searchTimer;
+            let requestController;
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(async function () {
+                    requestController?.abort();
+                    requestController = new AbortController();
+                    materialSelect.disabled = true;
+                    materialSelect.innerHTML = '<option value="">Đang tìm học liệu...</option>';
+
+                    try {
+                        const url = new URL(@json(route('materials.library.search')), window.location.origin);
+                        if (searchInput.value.trim()) url.searchParams.set('q', searchInput.value.trim());
+                        const response = await fetch(url, {
+                            headers: { 'Accept': 'application/json' },
+                            signal: requestController.signal
+                        });
+                        if (!response.ok) throw new Error('Không thể tải danh sách học liệu.');
+                        const payload = await response.json();
+                        materialSelect.innerHTML = '<option value="">-- Chọn học liệu --</option>';
+                        payload.data.forEach(function (material) {
+                            const option = document.createElement('option');
+                            option.value = material.id;
+                            option.textContent = `${material.title} · ${material.type} · ${material.size}`;
+                            materialSelect.appendChild(option);
+                        });
+                        if (!payload.data.length) {
+                            materialSelect.innerHTML = '<option value="">Không tìm thấy học liệu phù hợp</option>';
+                        }
+                    } catch (error) {
+                        if (error.name !== 'AbortError') {
+                            materialSelect.innerHTML = '<option value="">Không thể tải học liệu, vui lòng thử lại</option>';
+                        }
+                    } finally {
+                        materialSelect.disabled = false;
+                    }
+                }, 300);
+            });
+        });
+    </script>
+@endpush

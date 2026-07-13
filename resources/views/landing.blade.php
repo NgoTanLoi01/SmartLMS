@@ -35,8 +35,9 @@
     <meta name="twitter:image" content="{{ asset('favicon-v2.png') }}">
 
     {{-- FAVICON --}}
-    <link rel="icon" type="image/png" href="{{ asset('favicon-v2.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('favicon-v2.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('favicon-48.png') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('favicon-96.png') }}">
 
     {{-- FONTS --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

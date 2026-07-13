@@ -100,6 +100,9 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/courses/{course}/materials/assignments/{assignment}', [CourseMaterialController::class, 'updateAssignment'])->name('courses.materials.assignments.update');
         Route::delete('/courses/{course}/materials/assignments/{assignment}', [CourseMaterialController::class, 'destroyAssignment'])->name('courses.materials.assignments.destroy');
         Route::delete('/courses/{course}/materials/{material}', [CourseMaterialController::class, 'destroyMaterial'])->name('courses.materials.destroy');
+        Route::post('/materials/legacy-scan', [CourseMaterialController::class, 'scanLegacy'])->name('materials.legacy.scan');
+        Route::post('/materials/legacy-sync', [CourseMaterialController::class, 'syncLegacy'])->name('materials.legacy.sync');
+        Route::get('/materials/library-search', [CourseMaterialController::class, 'searchLibrary'])->name('materials.library.search');
         Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
         Route::delete('/courses/{course}/permanent', [CourseController::class, 'permanentDestroy'])
             ->middleware('role:admin')
@@ -110,6 +113,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{course}/materials', [CourseMaterialController::class, 'index'])->name('courses.materials.index');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::get('/materials/{assignment}/download', [CourseMaterialController::class, 'download'])->name('materials.download');
+    Route::get('/materials/library/{material}/download', [CourseMaterialController::class, 'downloadLibrary'])->name('materials.library.download');
 
     // ==========================================
     // 2.5. QUẢN LÝ CHƯƠNG MỤC & BÀI GIẢNG (CURRICULUM)
