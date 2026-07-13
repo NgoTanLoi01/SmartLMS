@@ -100,8 +100,8 @@ function updateEnv(string $contents, array $values): string
 }
 
 /**
- * @param array<string, string> $current
- * @param array<string, string> $rotated
+ * @param  array<string, string>  $current
+ * @param  array<string, string>  $rotated
  */
 function syncRunningDatabases(array $current, array $rotated): void
 {

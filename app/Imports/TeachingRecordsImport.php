@@ -14,25 +14,27 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 class TeachingRecordsImport implements ToCollection
 {
     public int $importedCount = 0;
+
     public int $updatedCount = 0;
+
     public int $invalidCount = 0;
+
     public array $missingHeaders = [];
 
     private ?array $headers = null;
 
-    public function __construct(private readonly int $teacherId)
-    {
-    }
+    public function __construct(private readonly int $teacherId) {}
 
     public function collection(Collection $rows): void
     {
         foreach ($rows as $row) {
             if ($this->headers === null) {
                 $this->headers = $this->detectHeaders($row);
+
                 continue;
             }
 
-            if (!empty($this->missingHeaders)) {
+            if (! empty($this->missingHeaders)) {
                 return;
             }
 
@@ -47,6 +49,7 @@ class TeachingRecordsImport implements ToCollection
 
             if ($subjectName === '') {
                 $this->invalidCount++;
+
                 continue;
             }
 
@@ -87,6 +90,7 @@ class TeachingRecordsImport implements ToCollection
             if ($record) {
                 $record->update($payload);
                 $this->updatedCount++;
+
                 continue;
             }
 

@@ -115,9 +115,9 @@ class StudentScheduleController extends Controller
 
         return [
             'id' => $schedule->id,
-            'title' => $schedule->course_title . ($hasNote ? ' - ' . $schedule->note : ''),
-            'start' => $date . 'T' . $startTime,
-            'end' => $date . 'T' . $endTime,
+            'title' => $schedule->course_title.($hasNote ? ' - '.$schedule->note : ''),
+            'start' => $date.'T'.$startTime,
+            'end' => $date.'T'.$endTime,
             'backgroundColor' => $hasNote ? '#dc2626' : '#2563eb',
             'borderColor' => $hasNote ? '#dc2626' : '#2563eb',
             'extendedProps' => [

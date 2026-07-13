@@ -1,8 +1,40 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{AuthController, DashboardController, UserController, ProfileController, ClassManagementController, CourseController, CoursePlannerController, LearningProgramController, ModuleController, LessonController, AssignmentController, AttendanceController, QuizController, QuestionController, QuizAttemptController, ChatbotController, DocumentController, ScheduleController, StorageHealthController, StudentGradesController, StudentScheduleController, TeachingRecordController, TeachingContractController, OperationalDashboardController, OperationalReportController, AuditLogController, SystemBackupController, AiTeachingContentController, AiOperationController, CourseQualityController, CourseMaterialController, NotificationController};
+use App\Http\Controllers\AiOperationController;
+use App\Http\Controllers\AiTeachingContentController;
+use App\Http\Controllers\AssignmentController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CaroController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ChessController;
+use App\Http\Controllers\ClassManagementController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseMaterialController;
+use App\Http\Controllers\CoursePlannerController;
+use App\Http\Controllers\CourseQualityController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\LearningProgramController;
+use App\Http\Controllers\LessonController;
+use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OperationalDashboardController;
+use App\Http\Controllers\OperationalReportController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\QuizAttemptController;
+use App\Http\Controllers\QuizController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\StorageHealthController;
+use App\Http\Controllers\StudentGradesController;
+use App\Http\Controllers\StudentScheduleController;
+use App\Http\Controllers\SystemBackupController;
+use App\Http\Controllers\TeachingContractController;
+use App\Http\Controllers\TeachingRecordController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -252,17 +284,17 @@ Route::middleware(['auth'])->group(function () {
             Route::prefix('chess')
                 ->name('chess.')
                 ->group(function () {
-                    Route::get('/', [App\Http\Controllers\ChessController::class, 'index'])->name('index');
-                    Route::get('/{roomId}', [App\Http\Controllers\ChessController::class, 'play'])->name('play');
-                    Route::post('/{roomId}/move', [App\Http\Controllers\ChessController::class, 'broadcastMove'])->name('move');
-                    Route::post('/{roomId}/finish', [App\Http\Controllers\ChessController::class, 'finish'])->middleware('auth');
+                    Route::get('/', [ChessController::class, 'index'])->name('index');
+                    Route::get('/{roomId}', [ChessController::class, 'play'])->name('play');
+                    Route::post('/{roomId}/move', [ChessController::class, 'broadcastMove'])->name('move');
+                    Route::post('/{roomId}/finish', [ChessController::class, 'finish'])->middleware('auth');
                 });
             Route::prefix('caro')
                 ->name('caro.')
                 ->group(function () {
-                    Route::get('/', [App\Http\Controllers\CaroController::class, 'index'])->name('index');
-                    Route::get('/{roomId}', [App\Http\Controllers\CaroController::class, 'play'])->name('play');
-                    Route::post('/{roomId}/move', [App\Http\Controllers\CaroController::class, 'broadcastMove'])->name('move');
+                    Route::get('/', [CaroController::class, 'index'])->name('index');
+                    Route::get('/{roomId}', [CaroController::class, 'play'])->name('play');
+                    Route::post('/{roomId}/move', [CaroController::class, 'broadcastMove'])->name('move');
                 });
         });
 

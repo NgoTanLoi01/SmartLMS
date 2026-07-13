@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Course;
 use App\Models\Classroom;
-use Illuminate\Support\Facades\DB;
+use App\Models\Course;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -26,7 +25,7 @@ class DashboardController extends Controller
 
         $data['dashboard_timezone'] = self::DASHBOARD_TIMEZONE;
         $data['dashboard_today'] = $todayDate;
-        $data['dashboard_week_label'] = Carbon::parse($startOfWeek)->format('d/m') . ' - ' . Carbon::parse($endOfWeek)->format('d/m/Y');
+        $data['dashboard_week_label'] = Carbon::parse($startOfWeek)->format('d/m').' - '.Carbon::parse($endOfWeek)->format('d/m/Y');
         // ==========================================
         // 1. DỮ LIỆU CHO ADMIN
         // ==========================================
@@ -434,6 +433,7 @@ class DashboardController extends Controller
                 ->first(fn ($course) => $course->lesson_total > 0 && $course->progress < 100)
                 ?? $data['course_progress']->first();
         }
+
         return view('dashboard', compact('data'));
     }
 
@@ -487,7 +487,7 @@ class DashboardController extends Controller
         }
 
         if ($nextSchedule) {
-            $scheduleStart = Carbon::parse($nextSchedule->schedule_date . ' ' . $nextSchedule->start_time);
+            $scheduleStart = Carbon::parse($nextSchedule->schedule_date.' '.$nextSchedule->start_time);
             $suggestions[] = [
                 'type' => $scheduleStart->isToday() ? 'primary' : 'info',
                 'icon' => 'fas fa-calendar-day',
@@ -513,7 +513,7 @@ class DashboardController extends Controller
                 'type' => 'warning',
                 'icon' => 'fas fa-user-clock',
                 'title' => 'Theo dõi học sinh cần hỗ trợ',
-                'body' => "{$student->name} thuộc {$student->class_name}, điểm TB " . ($student->avg_grade !== null ? round($student->avg_grade, 1) : 'chưa có dữ liệu') . '.',
+                'body' => "{$student->name} thuộc {$student->class_name}, điểm TB ".($student->avg_grade !== null ? round($student->avg_grade, 1) : 'chưa có dữ liệu').'.',
                 'action_label' => 'Xem hồ sơ',
                 'action_url' => route('classes.students.show', ['classId' => $student->class_id, 'studentId' => $student->id]),
             ];

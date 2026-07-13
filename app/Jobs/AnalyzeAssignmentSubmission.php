@@ -15,11 +15,17 @@ use Throwable;
 class AnalyzeAssignmentSubmission implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
     public int $tries = 3;
+
     public int $timeout = 180;
+
     public array $backoff = [10, 30, 90];
 
-    public function __construct(public int $operationId, public int $submissionId) { $this->onQueue('ai'); }
+    public function __construct(public int $operationId, public int $submissionId)
+    {
+        $this->onQueue('ai');
+    }
 
     public function handle(AssignmentAiGradingService $service): void
     {

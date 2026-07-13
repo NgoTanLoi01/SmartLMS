@@ -7,8 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Quiz extends Model
 {
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_PUBLISHED = 'published';
+
     public const STATUS_HIDDEN = 'hidden';
+
     public const STATUS_ARCHIVED = 'archived';
 
     // Cập nhật thêm các cột cấu hình số lượng câu hỏi
@@ -32,7 +35,7 @@ class Quiz extends Model
 
     public function scopeNotArchived($query)
     {
-        $statusColumn = $query->getModel()->getTable() . '.status';
+        $statusColumn = $query->getModel()->getTable().'.status';
 
         return $query->where(function ($q) use ($statusColumn) {
             $q->whereNull($statusColumn)
@@ -43,7 +46,7 @@ class Quiz extends Model
     public function isVisibleToStudents(): bool
     {
         return $this->status === self::STATUS_PUBLISHED
-            && (!$this->available_from || $this->available_from->lte(now()));
+            && (! $this->available_from || $this->available_from->lte(now()));
     }
 
     public function course()

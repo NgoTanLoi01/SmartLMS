@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Events\CaroMoveMade;
+use Illuminate\Http\Request;
 
 class CaroController extends Controller
 {
@@ -20,6 +20,7 @@ class CaroController extends Controller
     public function broadcastMove(Request $request, $roomId)
     {
         broadcast(new CaroMoveMade($roomId, $request->move));
+
         return response()->json(['status' => 'success']);
     }
 }

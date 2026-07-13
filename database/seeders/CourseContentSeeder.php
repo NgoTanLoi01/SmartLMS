@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Course;
-use App\Models\Module;
 use App\Models\Lesson;
+use App\Models\Module;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class CourseContentSeeder extends Seeder
 {

@@ -15,7 +15,7 @@ class SubmissionTextExtractor
 
     public function extract(AssignmentSubmission $submission): array
     {
-        if (!$submission->file_path) {
+        if (! $submission->file_path) {
             return [
                 'success' => false,
                 'text' => '',
@@ -27,7 +27,7 @@ class SubmissionTextExtractor
         $diskName = $submission->file_disk ?: 'public';
         $disk = Storage::disk($diskName);
 
-        if (!$disk->exists($submission->file_path)) {
+        if (! $disk->exists($submission->file_path)) {
             return [
                 'success' => false,
                 'text' => '',
@@ -90,7 +90,7 @@ class SubmissionTextExtractor
     private function extractPdfText(string $content): string
     {
         try {
-            return (new Parser())->parseContent($content)->getText();
+            return (new Parser)->parseContent($content)->getText();
         } catch (\Throwable) {
             return '';
         }
@@ -98,20 +98,20 @@ class SubmissionTextExtractor
 
     private function extractDocxText(string $content): string
     {
-        if (!class_exists(ZipArchive::class)) {
+        if (! class_exists(ZipArchive::class)) {
             return '';
         }
 
         $tempPath = tempnam(sys_get_temp_dir(), 'smartlms-submission-docx-');
 
-        if (!$tempPath) {
+        if (! $tempPath) {
             return '';
         }
 
         try {
             file_put_contents($tempPath, $content);
 
-            $zip = new ZipArchive();
+            $zip = new ZipArchive;
             if ($zip->open($tempPath) !== true) {
                 return '';
             }
@@ -133,7 +133,7 @@ class SubmissionTextExtractor
 
     private function plainText(string $text): string
     {
-        if (!mb_check_encoding($text, 'UTF-8')) {
+        if (! mb_check_encoding($text, 'UTF-8')) {
             $text = @iconv('UTF-8', 'UTF-8//IGNORE', $text) ?: '';
         }
 

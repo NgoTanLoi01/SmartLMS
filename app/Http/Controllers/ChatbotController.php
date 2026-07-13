@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Services\DeepSeekService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class ChatbotController extends Controller
@@ -25,13 +25,13 @@ class ChatbotController extends Controller
             // Kiểm tra mảng messages gửi từ chatbot.blade.php
             $messages = $request->input('messages');
 
-            if (!$messages || !is_array($messages)) {
+            if (! $messages || ! is_array($messages)) {
                 return response()->json(['reply' => 'Dữ liệu tin nhắn không hợp lệ.'], 400);
             }
 
             $lessonContext = $request->input('lesson_context', []);
             $options = [];
-            if (is_array($lessonContext) && !empty($lessonContext['lesson_id'])) {
+            if (is_array($lessonContext) && ! empty($lessonContext['lesson_id'])) {
                 $options['lesson_id'] = (int) $lessonContext['lesson_id'];
                 $options['assist_mode'] = (string) ($lessonContext['assist_mode'] ?? '');
             }
@@ -43,12 +43,12 @@ class ChatbotController extends Controller
                 'reply' => $reply,
             ]);
         } catch (\Exception $e) {
-            Log::error('CHATBOT_ERROR: ' . $e->getMessage());
+            Log::error('CHATBOT_ERROR: '.$e->getMessage());
 
             return response()->json(
                 [
                     'reply' => 'Dạ, hệ thống đang gặp chút sự cố kỹ thuật. Thầy Lợi đang kiểm tra lại ạ!',
-                    'error_detail' => $e->getMessage(), 
+                    'error_detail' => $e->getMessage(),
                 ],
                 500,
             );

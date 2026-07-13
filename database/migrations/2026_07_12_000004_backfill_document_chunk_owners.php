@@ -17,11 +17,11 @@ return new class extends Migration
                 $metadata = json_decode($operation->metadata ?? '{}', true) ?: [];
                 $name = $metadata['document_name'] ?? null;
                 $courseId = (int) ($operation->subject_id ?? 0);
-                if (!$name) {
+                if (! $name) {
                     return;
                 }
 
-                $key = $courseId . '|' . $name;
+                $key = $courseId.'|'.$name;
                 if (isset($seen[$key])) {
                     return;
                 }

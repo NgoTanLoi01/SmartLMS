@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class TeachingRecord extends Model
 {
     public const STATUS_TEACHING = 'teaching';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_PAUSED = 'paused';
+
     public const STATUS_CANCELLED = 'cancelled';
+
     public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
@@ -46,7 +50,7 @@ class TeachingRecord extends Model
 
     public function scopeNotArchived($query)
     {
-        $statusColumn = $query->getModel()->getTable() . '.status';
+        $statusColumn = $query->getModel()->getTable().'.status';
 
         return $query->where(function ($q) use ($statusColumn) {
             $q->whereNull($statusColumn)

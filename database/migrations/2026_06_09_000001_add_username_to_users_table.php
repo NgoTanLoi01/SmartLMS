@@ -31,6 +31,7 @@ return new class extends Migration
             foreach ($students as $student) {
                 if ($student->username) {
                     $usedUsernames[$student->username] = true;
+
                     continue;
                 }
 

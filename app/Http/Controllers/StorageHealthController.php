@@ -23,12 +23,12 @@ class StorageHealthController extends Controller
         $this->authorizeAdmin();
 
         $diskName = $request->input('disk', 'r2');
-        if (!in_array($diskName, ['r2', 'public'], true)) {
+        if (! in_array($diskName, ['r2', 'public'], true)) {
             abort(422, 'Disk không hợp lệ.');
         }
 
-        $path = 'health-checks/smartlms-storage-test-' . now()->format('YmdHis') . '-' . Str::random(8) . '.txt';
-        $content = 'SmartLMS storage test at ' . now()->toDateTimeString();
+        $path = 'health-checks/smartlms-storage-test-'.now()->format('YmdHis').'-'.Str::random(8).'.txt';
+        $content = 'SmartLMS storage test at '.now()->toDateTimeString();
 
         try {
             $disk = Storage::disk($diskName);
@@ -80,11 +80,11 @@ class StorageHealthController extends Controller
 
     private function maskValue(?string $value): string
     {
-        if (!filled($value)) {
+        if (! filled($value)) {
             return 'Chưa cấu hình';
         }
 
-        return Str::limit($value, 8, '') . '...' . Str::substr($value, -6);
+        return Str::limit($value, 8, '').'...'.Str::substr($value, -6);
     }
 
     private function authorizeAdmin(): void

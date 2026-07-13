@@ -5,16 +5,16 @@ namespace App\Http\Controllers;
 use App\Imports\StudentImport;
 use App\Jobs\AnalyzeLearningWithAi;
 use App\Models\AiOperation;
-use App\Models\AssignmentSubmission;
 use App\Models\Assignments;
+use App\Models\AssignmentSubmission;
 use App\Models\AttendanceColumn;
 use App\Models\AttendanceData;
-use App\Models\User;
 use App\Models\Classroom;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
@@ -341,7 +341,7 @@ class ClassManagementController extends Controller
 
         $rules = [
             'name' => 'required|string|max:255',
-            'code' => 'required|string|unique:classes,code,' . $id,
+            'code' => 'required|string|unique:classes,code,'.$id,
             'course_ids' => 'nullable|array',
             'course_ids.*' => 'exists:courses,id',
             'status' => 'nullable|in:active,hidden,archived',
@@ -429,7 +429,7 @@ class ClassManagementController extends Controller
 
             return back()->with('success', 'Đã nhập danh sách học viên từ file Excel thành công!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+            return back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }
     }
 
@@ -590,7 +590,7 @@ class ClassManagementController extends Controller
         $overdueMissingCount = $assignments->filter(function ($assignment) use ($submissions) {
             return $assignment->due_date
                 && Carbon::parse($assignment->due_date)->isPast()
-                && !$submissions->has($assignment->id);
+                && ! $submissions->has($assignment->id);
         })->count();
         $assignmentAverage = $submissions->pluck('grade')->filter(fn ($grade) => $grade !== null)->avg();
 
@@ -602,7 +602,7 @@ class ClassManagementController extends Controller
                 'title' => $assignment->title,
                 'course_title' => $courses->get($assignment->course_id)?->title ?? 'Chưa rõ khóa học',
                 'due_date' => $assignment->due_date,
-                'is_overdue' => $assignment->due_date && Carbon::parse($assignment->due_date)->isPast() && !$submission,
+                'is_overdue' => $assignment->due_date && Carbon::parse($assignment->due_date)->isPast() && ! $submission,
                 'submitted_at' => $submission?->submitted_at,
                 'grade' => $submission?->grade,
                 'feedback' => $submission?->feedback,
@@ -661,12 +661,14 @@ class ClassManagementController extends Controller
         $absenceCount = $attendanceData
             ->filter(function ($entry) use ($attendanceColumns) {
                 $column = $attendanceColumns->get($entry->attendance_column_id);
+
                 return $column?->type === 'attendance' && $this->isAbsentValue($entry->value);
             })
             ->count();
         $notes = $attendanceData
             ->filter(function ($entry) use ($attendanceColumns) {
                 $column = $attendanceColumns->get($entry->attendance_column_id);
+
                 return $column?->type === 'note' && filled($entry->value);
             })
             ->map(function ($entry) use ($attendanceColumns, $courses) {
@@ -705,7 +707,7 @@ class ClassManagementController extends Controller
             $alerts[] = ['level' => 'warning', 'text' => "Có {$absenceCount} lượt vắng/nghỉ"];
         }
 
-        if (!$lastActivityAt && ($assignments->count() > 0 || $quizzes->count() > 0 || $lessonTotal > 0)) {
+        if (! $lastActivityAt && ($assignments->count() > 0 || $quizzes->count() > 0 || $lessonTotal > 0)) {
             $alerts[] = ['level' => 'secondary', 'text' => 'Chưa có hoạt động học tập'];
         }
 
@@ -811,7 +813,7 @@ class ClassManagementController extends Controller
 
     private function isAbsentValue($value): bool
     {
-        if (!filled($value)) {
+        if (! filled($value)) {
             return false;
         }
 

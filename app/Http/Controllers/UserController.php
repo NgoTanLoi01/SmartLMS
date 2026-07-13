@@ -21,7 +21,7 @@ class UserController extends Controller
         })
             ->orderBy('created_at', 'desc')
             ->paginate(20)
-            ->withQueryString(); 
+            ->withQueryString();
 
         return view('users.index', compact('users'));
     }
@@ -40,7 +40,7 @@ class UserController extends Controller
             'role' => 'required|in:admin,teacher,student',
         ]);
 
-        if ($request->role !== 'student' && !$request->filled('email')) {
+        if ($request->role !== 'student' && ! $request->filled('email')) {
             return back()->withErrors(['email' => 'Email là bắt buộc với tài khoản quản trị viên và giáo viên.'])->withInput();
         }
 
@@ -64,9 +64,9 @@ class UserController extends Controller
             'role' => $request->role,
         ]);
 
-        $message = 'Đã tạo tài khoản ' . strtoupper($request->role) . ' thành công!';
+        $message = 'Đã tạo tài khoản '.strtoupper($request->role).' thành công!';
         if ($username) {
-            $message .= ' Tên đăng nhập: ' . $username;
+            $message .= ' Tên đăng nhập: '.$username;
         }
 
         return back()->with('success', $message);
@@ -86,8 +86,10 @@ class UserController extends Controller
         }
 
         $user->delete();
+
         return back()->with('success', 'Đã xóa người dùng thành công.');
     }
+
     public function resetPassword($id)
     {
         if (auth()->user()->role !== 'admin') {

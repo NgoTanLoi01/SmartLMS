@@ -13,9 +13,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class OperationalReportExport implements FromArray, ShouldAutoSize, WithStyles
 {
-    public function __construct(private readonly array $report)
-    {
-    }
+    public function __construct(private readonly array $report) {}
 
     public function array(): array
     {

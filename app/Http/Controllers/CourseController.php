@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Course;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Classroom;
-use App\Models\LearningProgram;
+use App\Models\Course;
 use App\Models\LearningMaterialAssignment;
+use App\Models\LearningProgram;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Question;
-use App\Models\QuizAttempt;
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use App\Services\StoredAssetReferenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +23,6 @@ use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
-
     public function index()
     {
         $user = auth()->user();
@@ -169,7 +168,7 @@ class CourseController extends Controller
             ->get();
 
         $canManageMaterials = Gate::allows('update', $course);
-        if (!$canManageMaterials && auth()->user()->role === 'student') {
+        if (! $canManageMaterials && auth()->user()->role === 'student') {
             $courseMaterialAssignments = $courseMaterialAssignments
                 ->filter(fn ($assignment) => $assignment->visibleToStudent(auth()->user()))
                 ->values();
@@ -196,7 +195,7 @@ class CourseController extends Controller
                     'unlock_lesson_id' => $assignment->unlock_when_lesson_id,
                     'lock_label' => $lockLabel,
                     'status' => $assignment->status,
-                    'is_locked' => !$canManageMaterials && $lockLabel !== null,
+                    'is_locked' => ! $canManageMaterials && $lockLabel !== null,
                     'url' => $material->downloadUrl($assignment),
                     'target' => $material->isLink() ? '_blank' : '_self',
                 ];
@@ -431,7 +430,7 @@ class CourseController extends Controller
 
         $programs = $query->get();
 
-        if ($course?->learning_program_id && !$programs->contains('id', $course->learning_program_id)) {
+        if ($course?->learning_program_id && ! $programs->contains('id', $course->learning_program_id)) {
             $programs->push($course->learningProgram);
         }
 
@@ -451,7 +450,7 @@ class CourseController extends Controller
 
         $courses = $query->get();
 
-        if ($selectedCourseId && !$courses->contains('id', (int) $selectedCourseId)) {
+        if ($selectedCourseId && ! $courses->contains('id', (int) $selectedCourseId)) {
             $courses->push($this->authorizedTemplateCourse($selectedCourseId));
         }
 
@@ -505,7 +504,7 @@ class CourseController extends Controller
 
     private function authorizeProgramSelection($programId, ?Course $course = null): void
     {
-        if (!$programId || auth()->user()->role === 'admin') {
+        if (! $programId || auth()->user()->role === 'admin') {
             return;
         }
 
@@ -517,7 +516,7 @@ class CourseController extends Controller
             ->where('teacher_id', auth()->id())
             ->exists();
 
-        if (!$ownsProgram) {
+        if (! $ownsProgram) {
             abort(403, 'Bạn không có quyền gắn khóa học vào chương trình này.');
         }
     }
@@ -634,13 +633,13 @@ class CourseController extends Controller
             'attachment_disk' => $sourceDisk,
         ];
 
-        if (!$path || !Storage::disk($sourceDisk)->exists($path)) {
+        if (! $path || ! Storage::disk($sourceDisk)->exists($path)) {
             return $result;
         }
 
         $extension = pathinfo($path, PATHINFO_EXTENSION);
-        $filename = Str::uuid() . ($extension ? '.' . $extension : '');
-        $targetPath = 'lessons/attachments/' . $filename;
+        $filename = Str::uuid().($extension ? '.'.$extension : '');
+        $targetPath = 'lessons/attachments/'.$filename;
 
         $contents = Storage::disk($sourceDisk)->get($path);
         Storage::disk($targetDisk)->put($targetPath, $contents);
@@ -669,7 +668,7 @@ class CourseController extends Controller
             ->count();
 
         $assignmentStats = AssignmentSubmission::whereIn('assignment_id', $assignmentIds)
-            ->selectRaw('SUM(CASE WHEN user_id IN (' . ($studentIds->isEmpty() ? 'NULL' : $studentIds->map(fn () => '?')->implode(',')) . ') THEN 1 ELSE 0 END) as submitted_count', $studentIds->all())
+            ->selectRaw('SUM(CASE WHEN user_id IN ('.($studentIds->isEmpty() ? 'NULL' : $studentIds->map(fn () => '?')->implode(',')).') THEN 1 ELSE 0 END) as submitted_count', $studentIds->all())
             ->selectRaw('SUM(CASE WHEN grade IS NULL THEN 1 ELSE 0 END) as pending_count')
             ->first();
         $assignmentSubmitted = (int) ($assignmentStats->submitted_count ?? 0);
@@ -698,5 +697,4 @@ class CourseController extends Controller
             'average_score' => QuizAttempt::whereIn('user_id', $studentIds)->whereIn('quiz_id', $quizIds)->avg('score'),
         ];
     }
-
 }

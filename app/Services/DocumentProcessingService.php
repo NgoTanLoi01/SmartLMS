@@ -2,17 +2,16 @@
 
 namespace App\Services;
 
-use Smalot\PdfParser\Parser;
-use Illuminate\Support\Facades\Http;
-use App\Models\DocumentChunk;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Smalot\PdfParser\Parser;
 
 class DocumentProcessingService
 {
     public function processAndStorePdf($filePath, $documentName, $courseId = null, ?int $uploadedBy = null)
     {
-        $parser = new Parser();
+        $parser = new Parser;
         $text = $parser->parseFile($filePath)->getText();
         if (empty(trim($text))) {
             throw new \RuntimeException('File PDF rỗng hoặc là ảnh scan, không thể tạo embedding.');
@@ -31,7 +30,7 @@ class DocumentProcessingService
             $embedding = $this->getGeminiEmbedding($chunk);
             $connection->insert(
                 'INSERT INTO document_chunks (course_id, uploaded_by, document_name, content, embedding, created_at, updated_at) VALUES (?, ?, ?, ?, ?::vector, NOW(), NOW())',
-                [$courseId, $uploadedBy, $documentName, $chunk, '[' . implode(',', $embedding) . ']']
+                [$courseId, $uploadedBy, $documentName, $chunk, '['.implode(',', $embedding).']']
             );
             $stored++;
         }
@@ -48,6 +47,7 @@ class DocumentProcessingService
     {
         $cleanText = preg_replace('/\s+/', ' ', trim($text));
         $wrapped = wordwrap($cleanText, $chunkSize, '|||');
+
         return explode('|||', $wrapped);
     }
 
@@ -55,7 +55,7 @@ class DocumentProcessingService
     {
         try {
             $apiKey = config('services.gemini.key');
-            if (!$apiKey) {
+            if (! $apiKey) {
                 throw new \RuntimeException('Chưa cấu hình GOOGLE_API_KEY.');
             }
 
@@ -69,16 +69,17 @@ class DocumentProcessingService
                     ],
                 ]);
 
-            if (!$response->successful()) {
-                throw new \RuntimeException('Gemini embedding API lỗi HTTP ' . $response->status());
+            if (! $response->successful()) {
+                throw new \RuntimeException('Gemini embedding API lỗi HTTP '.$response->status());
             }
             $values = $response->json('embedding.values');
-            if (!is_array($values) || $values === []) {
+            if (! is_array($values) || $values === []) {
                 throw new \RuntimeException('Gemini không trả về vector embedding hợp lệ.');
             }
+
             return $values;
         } catch (Exception $e) {
-            throw new \RuntimeException('Lỗi tạo embedding: ' . $e->getMessage(), 0, $e);
+            throw new \RuntimeException('Lỗi tạo embedding: '.$e->getMessage(), 0, $e);
         }
     }
 }

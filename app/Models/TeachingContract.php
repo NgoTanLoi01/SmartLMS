@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class TeachingContract extends Model
 {
     public const STATUS_UNPAID = 'unpaid';
+
     public const STATUS_PARTIAL = 'partial';
+
     public const STATUS_RECEIVED = 'received';
+
     public const STATUS_CANCELLED = 'cancelled';
+
     public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
@@ -44,7 +48,7 @@ class TeachingContract extends Model
 
     public function scopeNotArchived($query)
     {
-        $statusColumn = $query->getModel()->getTable() . '.status';
+        $statusColumn = $query->getModel()->getTable().'.status';
 
         return $query->where(function ($q) use ($statusColumn) {
             $q->whereNull($statusColumn)

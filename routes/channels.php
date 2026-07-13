@@ -12,7 +12,7 @@ Broadcast::channel('chess.{roomId}', function ($user, $roomId) {
     $players = Cache::get($cacheKey, []);
 
     // Phòng đã đủ 2 người VÀ user này chưa từng vào phòng → từ chối
-    if (count($players) >= 2 && !isset($players[$user->id])) {
+    if (count($players) >= 2 && ! isset($players[$user->id])) {
         return null; // 403 - Từ chối
     }
 
@@ -35,7 +35,7 @@ Broadcast::channel('caro.{roomId}', function ($user, $roomId) {
     $players = Cache::get($cacheKey, []);
 
     // Áp dụng logic tương tự cho caro nếu cần
-    if (count($players) >= 2 && !isset($players[$user->id])) {
+    if (count($players) >= 2 && ! isset($players[$user->id])) {
         return null;
     }
 

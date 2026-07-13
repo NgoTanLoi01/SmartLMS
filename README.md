@@ -1,12 +1,13 @@
 # 🎓 SmartLMS — Hệ Thống Quản Lý Học Tập Trực Tuyến
 
-[![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
-[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
+[![CI](https://github.com/NgoTanLoi01/LMS_System/actions/workflows/ci.yml/badge.svg)](https://github.com/NgoTanLoi01/LMS_System/actions/workflows/ci.yml)
+[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.3--8.4-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
 [![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-> Hệ thống quản lý học tập hiện đại — được xây dựng trên nền tảng Laravel 11, đóng gói Docker hoàn chỉnh, với giao diện học tập trực quan.
+> Hệ thống quản lý học tập hiện đại — được xây dựng trên Laravel 13, đóng gói Docker hoàn chỉnh, với giao diện học tập trực quan.
 
 ---
 
@@ -40,10 +41,10 @@
 ## 🛠 Công Nghệ Sử Dụng
 
 ```
-Backend   : Laravel 11 (PHP 8.2+)
-Database  : MySQL 8.0 — tối ưu hóa Index & Relationships
-Frontend  : Bootstrap 5 (Customized) · FontAwesome Pro · JavaScript ES6
-DevOps    : Docker Compose (Nginx + PHP-FPM + MySQL)
+Backend   : Laravel 13 (PHP 8.3–8.4)
+Database  : MySQL 8.0 · PostgreSQL/pgvector
+Frontend  : Bootstrap 5 · Tailwind CSS 4 · Vite 8 · JavaScript ES6
+DevOps    : Docker Compose · Nginx · PHP-FPM · Queue Worker · Reverb
 ```
 
 ---
@@ -55,6 +56,8 @@ DevOps    : Docker Compose (Nginx + PHP-FPM + MySQL)
 ### Yêu cầu hệ thống
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) >= 24.x
+- PHP 8.3–8.4 và Composer 2
+- Node.js 24 và npm
 - Git
 
 ### Các bước cài đặt
@@ -66,6 +69,9 @@ git clone https://github.com/ngotanloi/lms-system.git
 cd lms-system
 cp .env.example .env
 php scripts/rotate-secrets.php
+composer install --no-dev --optimize-autoloader
+npm ci
+npm run build
 ```
 
 **2. Khởi chạy toàn bộ hệ thống**
@@ -74,11 +80,11 @@ php scripts/rotate-secrets.php
 docker compose up -d --build
 ```
 
-**3. Khởi tạo ứng dụng Laravel**
+**3. Khởi tạo database và cache Laravel**
 
 ```bash
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate --seed
+docker compose exec app php artisan migrate --seed --force
+docker compose exec app php artisan optimize
 ```
 
 ### Cấu hình production an toàn
@@ -88,6 +94,25 @@ docker compose exec app php artisan migrate --seed
 - MySQL, PostgreSQL và Reverb chỉ mở trong Docker network; lưu lượng ứng dụng/WebSocket đi qua Nginx.
 - Khi rotate trên hệ thống đã có volume đang chạy, dùng `php scripts/rotate-secrets.php --sync-running-databases`, sau đó recreate container bằng `docker compose up -d --force-recreate`.
 - Rotation `APP_KEY` làm mất hiệu lực session/cookie cũ. Luôn backup database trước khi rotation production.
+
+Hướng dẫn đầy đủ về kiểm tra trước deploy, backup, rollout, health check và rollback nằm tại [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## ✅ Continuous Integration
+
+Workflow `.github/workflows/ci.yml` chạy khi push lên `main`, khi mở/cập nhật pull request và khi chạy thủ công:
+
+- PHPUnit trên PHP 8.4.
+- Laravel Pint trên toàn bộ PHP source.
+- `npm ci` và Vite production build trên Node.js 24.
+
+Trước khi push, nên chạy:
+
+```bash
+php artisan test
+vendor/bin/pint --test
+npm ci
+npm run build
+```
 
 ---
 

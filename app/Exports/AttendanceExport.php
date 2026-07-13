@@ -3,24 +3,29 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-
 use Maatwebsite\Excel\Events\AfterSheet;
-
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AttendanceExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithEvents, WithColumnWidths
+class AttendanceExport implements FromCollection, WithColumnWidths, WithEvents, WithHeadings, WithMapping, WithStyles
 {
-    protected $course, $students, $columns, $attendanceData;
+    protected $course;
+
+    protected $students;
+
+    protected $columns;
+
+    protected $attendanceData;
+
     protected int $rowNumber = 0;
 
     public function __construct($course, $students, $columns, $attendanceData)
@@ -43,7 +48,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
             $headers[] = $col->name;
         }
 
-        return [['TRƯỜNG TRUNG CẤP ÂU VIỆT'], ['BẢNG ĐIỂM DANH & ĐIỂM SỐ CHI TIẾT'], ['Môn học: ' . $this->course->title], ['Ngày xuất: ' . date('d/m/Y H:i')], ['Quy ước: Trống = Có mặt  |  V = Vắng  |  M = Đi muộn  |  P = Có phép'], $headers];
+        return [['TRƯỜNG TRUNG CẤP ÂU VIỆT'], ['BẢNG ĐIỂM DANH & ĐIỂM SỐ CHI TIẾT'], ['Môn học: '.$this->course->title], ['Ngày xuất: '.date('d/m/Y H:i')], ['Quy ước: Trống = Có mặt  |  V = Vắng  |  M = Đi muộn  |  P = Có phép'], $headers];
     }
 
     public function map($student): array
@@ -188,7 +193,9 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
                     foreach ($this->columns as $i => $col) {
                         $colLetter = Coordinate::stringFromColumnIndex($i + 3);
 
-                        if ($col->type !== 'attendance') continue;
+                        if ($col->type !== 'attendance') {
+                            continue;
+                        }
                         $status = $this->normalizeAttendanceStatus($this->attendanceData[$student->id][$col->id] ?? null);
 
                         if ($status === 'absent') {
@@ -231,7 +238,9 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
 
     private function formatExportValue(string $type, $value): string
     {
-        if ($type !== 'attendance') return (string) ($value ?? '');
+        if ($type !== 'attendance') {
+            return (string) ($value ?? '');
+        }
 
         return match ($this->normalizeAttendanceStatus($value)) {
             'absent' => 'V',
@@ -245,9 +254,15 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
     {
         $normalized = strtolower(trim((string) $value));
 
-        if (in_array($normalized, ['absent', 'v', 'vắng', 'vang', 'nghỉ', 'nghi', '0', 'no', 'false'], true)) return 'absent';
-        if (in_array($normalized, ['late', 'm', 'muộn', 'muon', 'đi muộn', 'di muon'], true)) return 'late';
-        if (in_array($normalized, ['excused', 'p', 'phép', 'phep', 'có phép', 'co phep'], true)) return 'excused';
+        if (in_array($normalized, ['absent', 'v', 'vắng', 'vang', 'nghỉ', 'nghi', '0', 'no', 'false'], true)) {
+            return 'absent';
+        }
+        if (in_array($normalized, ['late', 'm', 'muộn', 'muon', 'đi muộn', 'di muon'], true)) {
+            return 'late';
+        }
+        if (in_array($normalized, ['excused', 'p', 'phép', 'phep', 'có phép', 'co phep'], true)) {
+            return 'excused';
+        }
 
         return 'present';
     }

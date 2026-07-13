@@ -15,7 +15,7 @@ class AssignmentAiGradingService
     {
         $submission->loadMissing(['assignment.course', 'user']);
         $assignment = $submission->assignment;
-        if (!$assignment->ai_grading_enabled) {
+        if (! $assignment->ai_grading_enabled) {
             throw new \RuntimeException('AI hỗ trợ chấm đang tắt cho bài tập này.');
         }
 
@@ -48,14 +48,14 @@ class AssignmentAiGradingService
             ],
             'submission' => [
                 'text_answer' => $combined,
-                'has_file' => !empty($submission->file_path),
+                'has_file' => ! empty($submission->file_path),
                 'file_text_extracted' => $fileText !== '',
                 'file_text_source' => $fileResult['source'] ?? null,
                 'current_grade' => $submission->grade,
                 'current_feedback' => $submission->feedback,
             ],
         ]);
-        if (!($result['success'] ?? false)) {
+        if (! ($result['success'] ?? false)) {
             throw new \RuntimeException($result['message'] ?? 'AI chưa phân tích được bài làm.');
         }
 

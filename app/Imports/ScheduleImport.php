@@ -13,12 +13,17 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 class ScheduleImport implements ToCollection
 {
     public int $importedCount = 0;
+
     public int $duplicateCount = 0;
+
     public int $invalidCount = 0;
+
     public array $unmatchedSubjects = [];
+
     public array $unmatchedClasses = [];
 
     private ?array $headers = null;
+
     private Collection $classrooms;
 
     public function __construct(
@@ -29,7 +34,7 @@ class ScheduleImport implements ToCollection
         $query = Classroom::with(['courses' => fn ($query) => $query->notArchived()])
             ->notArchived();
 
-        if (!empty($this->allowedClassIds)) {
+        if (! empty($this->allowedClassIds)) {
             $query->whereIn('id', $this->allowedClassIds);
         }
 
@@ -41,6 +46,7 @@ class ScheduleImport implements ToCollection
         foreach ($rows as $row) {
             if ($this->headers === null) {
                 $this->headers = $this->detectHeaders($row);
+
                 continue;
             }
 
@@ -58,7 +64,7 @@ class ScheduleImport implements ToCollection
             $timeRange = $this->parseTimeRange($timeValue);
             $classrooms = $this->resolveClassrooms($classValue);
 
-            if (!$scheduleDate || !$timeRange || $classrooms->isEmpty()) {
+            if (! $scheduleDate || ! $timeRange || $classrooms->isEmpty()) {
                 $this->invalidCount++;
 
                 if ($classrooms->isEmpty() && trim((string) $classValue) !== '') {
@@ -75,11 +81,11 @@ class ScheduleImport implements ToCollection
             foreach ($classrooms as $classroom) {
                 $courseId = $this->resolveCourseId((string) $subjectValue, $classroom);
 
-                if (!$courseId) {
+                if (! $courseId) {
                     $this->invalidCount++;
 
                     if (trim((string) $subjectValue) !== '') {
-                        $this->unmatchedSubjects[] = trim((string) $subjectValue) . ' / ' . $classroom->name;
+                        $this->unmatchedSubjects[] = trim((string) $subjectValue).' / '.$classroom->name;
                     }
 
                     continue;
@@ -104,6 +110,7 @@ class ScheduleImport implements ToCollection
                     }
 
                     $this->duplicateCount++;
+
                     continue;
                 }
 
@@ -211,14 +218,14 @@ class ScheduleImport implements ToCollection
         $normalized = str_replace(['–', '—', 'đến', 'toi', 'to'], '-', $normalized);
         $normalized = preg_replace('/\s+/', '', $normalized);
 
-        if (!preg_match('/(\d{1,2})(?:[:ghh](\d{1,2}))?-(\d{1,2})(?:[:ghh](\d{1,2}))?/', $normalized, $matches)) {
+        if (! preg_match('/(\d{1,2})(?:[:ghh](\d{1,2}))?-(\d{1,2})(?:[:ghh](\d{1,2}))?/', $normalized, $matches)) {
             return null;
         }
 
         $start = $this->formatTime((int) $matches[1], (int) ($matches[2] ?? 0));
         $end = $this->formatTime((int) $matches[3], (int) ($matches[4] ?? 0));
 
-        if (!$start || !$end || $end <= $start) {
+        if (! $start || ! $end || $end <= $start) {
             return null;
         }
 
@@ -312,7 +319,7 @@ class ScheduleImport implements ToCollection
 
     private function defaultCourseForClass(Classroom $classroom): ?int
     {
-        if (!$this->defaultCourseId) {
+        if (! $this->defaultCourseId) {
             return null;
         }
 

@@ -24,7 +24,7 @@ class BackupService
             'started_at' => $startedAt,
             'metadata' => [
                 'connection' => config('database.default'),
-                'database' => config('database.connections.' . config('database.default') . '.database'),
+                'database' => config('database.connections.'.config('database.default').'.database'),
             ],
         ]);
 
@@ -32,8 +32,8 @@ class BackupService
             $directory = config('backup.local_directory', storage_path('app/backups'));
             File::ensureDirectoryExists($directory);
 
-            $filename = 'smartlms-db-' . $startedAt->format('Ymd-His') . '.sql.gz';
-            $localPath = $directory . DIRECTORY_SEPARATOR . $filename;
+            $filename = 'smartlms-db-'.$startedAt->format('Ymd-His').'.sql.gz';
+            $localPath = $directory.DIRECTORY_SEPARATOR.$filename;
 
             $this->dumpMysqlDatabase($localPath);
 
@@ -75,12 +75,12 @@ class BackupService
         $connectionName = config('database.default');
         $connection = config("database.connections.{$connectionName}");
 
-        if (!in_array($connection['driver'] ?? null, ['mysql', 'mariadb'], true)) {
+        if (! in_array($connection['driver'] ?? null, ['mysql', 'mariadb'], true)) {
             throw new \RuntimeException('Backup hiện chỉ hỗ trợ MySQL/MariaDB.');
         }
 
         $handle = gzopen($targetPath, 'wb9');
-        if (!$handle) {
+        if (! $handle) {
             throw new \RuntimeException('Không thể tạo file backup.');
         }
 
@@ -90,7 +90,7 @@ class BackupService
 
             $this->write($handle, "-- SmartLMS database backup\n");
             $this->write($handle, "-- Database: {$database}\n");
-            $this->write($handle, "-- Generated at: " . now(config('backup.timezone', 'Asia/Ho_Chi_Minh'))->toDateTimeString() . "\n\n");
+            $this->write($handle, '-- Generated at: '.now(config('backup.timezone', 'Asia/Ho_Chi_Minh'))->toDateTimeString()."\n\n");
             $this->write($handle, "SET FOREIGN_KEY_CHECKS=0;\n");
             $this->write($handle, "SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n\n");
 
@@ -99,13 +99,13 @@ class BackupService
                 $create = DB::connection($connectionName)->selectOne("SHOW CREATE TABLE {$quotedTable}");
                 $createSql = array_values((array) $create)[1] ?? null;
 
-                if (!$createSql) {
+                if (! $createSql) {
                     continue;
                 }
 
                 $this->write($handle, "\n-- Table structure for {$quotedTable}\n");
                 $this->write($handle, "DROP TABLE IF EXISTS {$quotedTable};\n");
-                $this->write($handle, $createSql . ";\n\n");
+                $this->write($handle, $createSql.";\n\n");
 
                 $this->write($handle, "-- Data for {$quotedTable}\n");
                 foreach (DB::connection($connectionName)->table($table)->cursor() as $row) {
@@ -114,7 +114,7 @@ class BackupService
                         array_values((array) $row)
                     );
 
-                    $this->write($handle, "INSERT INTO {$quotedTable} VALUES (" . implode(', ', $values) . ");\n");
+                    $this->write($handle, "INSERT INTO {$quotedTable} VALUES (".implode(', ', $values).");\n");
                 }
 
                 $this->write($handle, "\n");
@@ -137,7 +137,7 @@ class BackupService
 
     private function quoteIdentifier(string $identifier): string
     {
-        return '`' . str_replace('`', '``', $identifier) . '`';
+        return '`'.str_replace('`', '``', $identifier).'`';
     }
 
     private function quoteValue(\PDO $pdo, mixed $value): string
@@ -156,7 +156,7 @@ class BackupService
 
     private function resolveUploadDisk(array $options): ?string
     {
-        if (!empty($options['upload_r2'])) {
+        if (! empty($options['upload_r2'])) {
             return 'r2';
         }
 
@@ -166,10 +166,10 @@ class BackupService
     private function uploadToRemoteDisk(string $disk, string $localPath, string $filename): array
     {
         $remoteDirectory = config('backup.remote_directory', 'backups');
-        $remotePath = trim($remoteDirectory . '/' . $filename, '/');
+        $remotePath = trim($remoteDirectory.'/'.$filename, '/');
 
         $stream = fopen($localPath, 'rb');
-        if (!$stream) {
+        if (! $stream) {
             throw new \RuntimeException('Không thể đọc file backup để upload.');
         }
 

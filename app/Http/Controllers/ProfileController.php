@@ -25,7 +25,7 @@ class ProfileController extends Controller
 
         $user = auth()->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['Mật khẩu hiện tại không chính xác. Vui lòng kiểm tra lại!'],
             ]);

@@ -17,7 +17,7 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        if (!$user || !in_array($user->role, $roles, true)) {
+        if (! $user || ! in_array($user->role, $roles, true)) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'Bạn không có quyền thực hiện hành động này.',

@@ -9,12 +9,12 @@ use App\Models\Course;
 use App\Models\LearningMaterial;
 use App\Models\LearningMaterialAssignment;
 use App\Models\Lesson;
+use App\Services\NotificationCenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Services\NotificationCenter;
 
 class CourseMaterialController extends Controller
 {
@@ -42,7 +42,7 @@ class CourseMaterialController extends Controller
 
         $materials = null;
         $syncOperations = collect();
-        if (!$user->isStudent()) {
+        if (! $user->isStudent()) {
             $materials = LearningMaterial::with(['uploader', 'sources.course'])
                 ->withCount('sources')
                 ->notArchived()
@@ -84,7 +84,7 @@ class CourseMaterialController extends Controller
             ->latest()
             ->get();
 
-        if (!$isManager) {
+        if (! $isManager) {
             $assignments = $assignments
                 ->filter(fn ($assignment) => $assignment->visibleToStudent(auth()->user()))
                 ->values();
@@ -190,7 +190,7 @@ class CourseMaterialController extends Controller
             'status' => $validated['status'] ?? LearningMaterialAssignment::STATUS_PUBLISHED,
         ]);
 
-        if (!$wasPublished && $assignment->status === LearningMaterialAssignment::STATUS_PUBLISHED) {
+        if (! $wasPublished && $assignment->status === LearningMaterialAssignment::STATUS_PUBLISHED) {
             $assignment->load('material');
             app(NotificationCenter::class)->notifyCourseStudents(
                 $course, 'material', 'Có học liệu mới',
@@ -229,7 +229,7 @@ class CourseMaterialController extends Controller
         $assignment->load(['material', 'course.classes', 'lesson', 'unlockLesson']);
         Gate::authorize('view', $assignment->course);
 
-        if (!$this->canManage($assignment->course) && !$assignment->visibleToStudent(auth()->user())) {
+        if (! $this->canManage($assignment->course) && ! $assignment->visibleToStudent(auth()->user())) {
             abort(403);
         }
 
@@ -309,7 +309,7 @@ class CourseMaterialController extends Controller
         $originalName = $file->getClientOriginalName();
         $extension = $file->getClientOriginalExtension();
         $safeName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) ?: 'hoc-lieu';
-        $storedName = $safeName . '-' . now()->format('YmdHis') . '-' . Str::random(8) . ($extension ? '.' . $extension : '');
+        $storedName = $safeName.'-'.now()->format('YmdHis').'-'.Str::random(8).($extension ? '.'.$extension : '');
         $disk = config('filesystems.lesson_attachment_disk', config('filesystems.submission_disk', 'public'));
 
         return LearningMaterial::create([
@@ -373,12 +373,12 @@ class CourseMaterialController extends Controller
     {
         $host = parse_url($url, PHP_URL_HOST);
 
-        return $host ? 'Tài nguyên từ ' . preg_replace('/^www\./', '', $host) : 'Tài nguyên tham khảo';
+        return $host ? 'Tài nguyên từ '.preg_replace('/^www\./', '', $host) : 'Tài nguyên tham khảo';
     }
 
     private function assertCourseClass(Course $course, $classId): void
     {
-        if (!$classId) {
+        if (! $classId) {
             return;
         }
 
@@ -387,7 +387,7 @@ class CourseMaterialController extends Controller
 
     private function assertCourseLesson(Course $course, $lessonId): void
     {
-        if (!$lessonId) {
+        if (! $lessonId) {
             return;
         }
 

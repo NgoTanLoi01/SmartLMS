@@ -8,7 +8,6 @@ use App\Models\TeachingRecord;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 
 class OperationalReportController extends Controller
@@ -29,7 +28,7 @@ class OperationalReportController extends Controller
         $this->authorizeAccess();
 
         $report = $this->buildReport($request);
-        $filename = 'Bao_cao_giang_day_thanh_toan_' . now(self::REPORT_TIMEZONE)->format('Ymd_His') . '.xlsx';
+        $filename = 'Bao_cao_giang_day_thanh_toan_'.now(self::REPORT_TIMEZONE)->format('Ymd_His').'.xlsx';
 
         return Excel::download(new OperationalReportExport($report), $filename);
     }
@@ -156,7 +155,7 @@ class OperationalReportController extends Controller
 
     private function applyContractPeriodFilters(Builder $query, array $filters): void
     {
-        if (!$filters['year'] && !$filters['month']) {
+        if (! $filters['year'] && ! $filters['month']) {
             return;
         }
 
@@ -176,11 +175,11 @@ class OperationalReportController extends Controller
     private function periodLabel(array $filters): string
     {
         if ($filters['month'] && $filters['year']) {
-            return 'Tháng ' . $filters['month'] . '/' . $filters['year'];
+            return 'Tháng '.$filters['month'].'/'.$filters['year'];
         }
 
         if ($filters['year']) {
-            return 'Năm ' . $filters['year'];
+            return 'Năm '.$filters['year'];
         }
 
         return 'Tất cả thời gian';
@@ -190,11 +189,11 @@ class OperationalReportController extends Controller
     {
         $path = public_path('smartlms-logo-sharpened.png');
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return null;
         }
 
-        return 'data:image/png;base64,' . base64_encode(file_get_contents($path));
+        return 'data:image/png;base64,'.base64_encode(file_get_contents($path));
     }
 
     private function groupRow(string $label, $teachingRecords, $contracts, string $field): array

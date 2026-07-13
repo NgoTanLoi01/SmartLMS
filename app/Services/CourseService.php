@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Course;
 use App\Models\User;
 
-class CourseService 
+class CourseService
 {
     /**
      * Đăng ký khóa học cho học sinh

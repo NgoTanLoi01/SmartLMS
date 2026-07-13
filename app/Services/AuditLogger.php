@@ -10,16 +10,27 @@ use Illuminate\Support\Facades\Log;
 class AuditLogger
 {
     public const GRADE_UPDATED = 'grade_updated';
+
     public const AI_ASSIGNMENT_ANALYZED = 'ai_assignment_analyzed';
+
     public const AI_LEARNING_ANALYZED = 'ai_learning_analyzed';
+
     public const STUDENTS_IMPORTED = 'students_imported';
+
     public const SCHEDULE_UPDATED = 'schedule_updated';
+
     public const SCHEDULE_ARCHIVED = 'schedule_archived';
+
     public const SCHEDULE_COPIED = 'schedule_copied';
+
     public const SCHEDULE_IMPORTED = 'schedule_imported';
+
     public const CONTRACT_CREATED = 'contract_created';
+
     public const CONTRACT_UPDATED = 'contract_updated';
+
     public const CONTRACT_ARCHIVED = 'contract_archived';
+
     public const CONTRACT_IMPORTED = 'contract_imported';
 
     public static function log(

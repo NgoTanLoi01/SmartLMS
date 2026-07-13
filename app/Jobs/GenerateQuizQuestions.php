@@ -14,11 +14,17 @@ use Throwable;
 class GenerateQuizQuestions implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
     public int $tries = 3;
+
     public int $timeout = 150;
+
     public array $backoff = [10, 30, 90];
 
-    public function __construct(public int $operationId, public string $prompt, public string $sourceLabel) { $this->onQueue('ai'); }
+    public function __construct(public int $operationId, public string $prompt, public string $sourceLabel)
+    {
+        $this->onQueue('ai');
+    }
 
     public function handle(DeepSeekService $deepSeek): void
     {

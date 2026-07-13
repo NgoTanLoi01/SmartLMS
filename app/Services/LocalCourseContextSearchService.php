@@ -17,10 +17,15 @@ use ZipArchive;
 class LocalCourseContextSearchService
 {
     private const RESULT_LIMIT = 5;
+
     private const COURSE_LIMIT = 30;
+
     private const LESSON_LIMIT = 200;
+
     private const ATTACHMENT_READ_LIMIT = 60;
+
     private const ATTACHMENT_TEXT_LIMIT = 12000;
+
     private const CONTEXT_TEXT_LIMIT = 9000;
 
     public function search(string $query, ?User $user = null): string
@@ -50,7 +55,7 @@ class LocalCourseContextSearchService
                     $attachmentText = $this->attachmentText($lesson);
                 }
 
-                $combinedText = trim($lessonText . "\n" . $attachmentText);
+                $combinedText = trim($lessonText."\n".$attachmentText);
                 $score = $this->score($combinedText, $keywords);
 
                 if ($score <= 0) {
@@ -80,7 +85,7 @@ class LocalCourseContextSearchService
 
     public function lessonContext(int $lessonId, ?User $user = null): string
     {
-        if (!$user) {
+        if (! $user) {
             return '';
         }
 
@@ -95,15 +100,15 @@ class LocalCourseContextSearchService
             ->whereHas('module', fn ($query) => $query->whereIn('course_id', $courseIds))
             ->first();
 
-        if (!$lesson || !$lesson->module?->course) {
+        if (! $lesson || ! $lesson->module?->course) {
             return '';
         }
 
-        if ($user->isStudent() && !$lesson->isVisibleToStudents()) {
+        if ($user->isStudent() && ! $lesson->isVisibleToStudents()) {
             return '';
         }
 
-        $content = trim($this->lessonText($lesson) . "\n" . $this->attachmentText($lesson));
+        $content = trim($this->lessonText($lesson)."\n".$this->attachmentText($lesson));
 
         if ($content === '') {
             return '';
@@ -111,16 +116,16 @@ class LocalCourseContextSearchService
 
         return Str::limit(implode("\n", [
             'Bài học hiện tại',
-            'Khóa học: ' . $lesson->module->course->title,
-            'Chương: ' . $lesson->module->title,
-            'Bài học: ' . $lesson->title,
-            'Nội dung bài học: ' . $this->plainText($content),
+            'Khóa học: '.$lesson->module->course->title,
+            'Chương: '.$lesson->module->title,
+            'Bài học: '.$lesson->title,
+            'Nội dung bài học: '.$this->plainText($content),
         ]), self::CONTEXT_TEXT_LIMIT, '');
     }
 
     public function moduleContext(int $moduleId, ?User $user = null): string
     {
-        if (!$user) {
+        if (! $user) {
             return '';
         }
 
@@ -135,13 +140,13 @@ class LocalCourseContextSearchService
             ->whereIn('course_id', $courseIds)
             ->first();
 
-        if (!$module || !$module->course) {
+        if (! $module || ! $module->course) {
             return '';
         }
 
         $lessonTexts = $module->lessons
             ->map(function (Lesson $lesson) {
-                return trim($this->lessonText($lesson) . "\n" . $this->attachmentText($lesson));
+                return trim($this->lessonText($lesson)."\n".$this->attachmentText($lesson));
             })
             ->filter()
             ->implode("\n\n");
@@ -152,9 +157,9 @@ class LocalCourseContextSearchService
 
         return Str::limit(implode("\n", [
             'Chương học nguồn',
-            'Khóa học: ' . $module->course->title,
-            'Chương: ' . $module->title,
-            'Nội dung các bài học: ' . $this->plainText($lessonTexts),
+            'Khóa học: '.$module->course->title,
+            'Chương: '.$module->title,
+            'Nội dung các bài học: '.$this->plainText($lessonTexts),
         ]), self::CONTEXT_TEXT_LIMIT, '');
     }
 
@@ -166,7 +171,7 @@ class LocalCourseContextSearchService
             ->orderByDesc('updated_at')
             ->limit(self::COURSE_LIMIT);
 
-        if (!$user) {
+        if (! $user) {
             return collect();
         }
 
@@ -214,11 +219,11 @@ class LocalCourseContextSearchService
     private function lessonText(Lesson $lesson): string
     {
         return implode("\n", array_filter([
-            'Khóa học: ' . ($lesson->module?->course?->title ?? ''),
-            'Chương: ' . ($lesson->module?->title ?? ''),
-            'Bài học: ' . $lesson->title,
+            'Khóa học: '.($lesson->module?->course?->title ?? ''),
+            'Chương: '.($lesson->module?->title ?? ''),
+            'Bài học: '.$lesson->title,
             $this->plainText((string) $lesson->content),
-            $lesson->attachment_original_name ? 'File bài giảng: ' . $lesson->attachment_original_name : null,
+            $lesson->attachment_original_name ? 'File bài giảng: '.$lesson->attachment_original_name : null,
         ]));
     }
 
@@ -227,11 +232,11 @@ class LocalCourseContextSearchService
         $diskName = $lesson->attachment_disk ?: config('filesystems.lesson_attachment_disk', 'public');
         $path = $lesson->attachment;
 
-        if (!$path) {
+        if (! $path) {
             return '';
         }
 
-        $cacheKey = 'lesson_attachment_text:' . sha1(implode('|', [
+        $cacheKey = 'lesson_attachment_text:'.sha1(implode('|', [
             $diskName,
             $path,
             (string) $lesson->attachment_size,
@@ -242,7 +247,7 @@ class LocalCourseContextSearchService
             try {
                 $disk = Storage::disk($diskName);
 
-                if (!$disk->exists($path)) {
+                if (! $disk->exists($path)) {
                     return '';
                 }
 
@@ -283,7 +288,7 @@ class LocalCourseContextSearchService
     private function extractPdfText(string $content): string
     {
         try {
-            return (new Parser())->parseContent($content)->getText();
+            return (new Parser)->parseContent($content)->getText();
         } catch (\Throwable) {
             return '';
         }
@@ -291,20 +296,20 @@ class LocalCourseContextSearchService
 
     private function extractDocxText(string $content): string
     {
-        if (!class_exists(ZipArchive::class)) {
+        if (! class_exists(ZipArchive::class)) {
             return '';
         }
 
         $tempPath = tempnam(sys_get_temp_dir(), 'smartlms-docx-');
 
-        if (!$tempPath) {
+        if (! $tempPath) {
             return '';
         }
 
         try {
             file_put_contents($tempPath, $content);
 
-            $zip = new ZipArchive();
+            $zip = new ZipArchive;
             if ($zip->open($tempPath) !== true) {
                 return '';
             }
@@ -355,17 +360,17 @@ class LocalCourseContextSearchService
         $context = $matches
             ->map(function (array $match, int $index) {
                 $lines = [
-                    'Nguồn ' . ($index + 1),
-                    'Khóa học: ' . $match['course'],
-                    'Chương: ' . $match['module'],
-                    'Bài học: ' . $match['lesson'],
+                    'Nguồn '.($index + 1),
+                    'Khóa học: '.$match['course'],
+                    'Chương: '.$match['module'],
+                    'Bài học: '.$match['lesson'],
                 ];
 
                 if ($match['attachment']) {
-                    $lines[] = 'File bài giảng: ' . $match['attachment'];
+                    $lines[] = 'File bài giảng: '.$match['attachment'];
                 }
 
-                $lines[] = 'Nội dung liên quan: ' . $match['content'];
+                $lines[] = 'Nội dung liên quan: '.$match['content'];
 
                 return implode("\n", $lines);
             })
@@ -385,7 +390,7 @@ class LocalCourseContextSearchService
         preg_match_all('/[\p{L}\p{N}_-]+/u', $this->normalize($query), $matches);
 
         return collect($matches[0] ?? [])
-            ->filter(fn ($word) => mb_strlen($word) >= 2 && !in_array($word, $stopwords, true))
+            ->filter(fn ($word) => mb_strlen($word) >= 2 && ! in_array($word, $stopwords, true))
             ->unique()
             ->values();
     }
@@ -409,7 +414,7 @@ class LocalCourseContextSearchService
 
     private function cleanUtf8(string $text): string
     {
-        if (!mb_check_encoding($text, 'UTF-8')) {
+        if (! mb_check_encoding($text, 'UTF-8')) {
             $text = @iconv('UTF-8', 'UTF-8//IGNORE', $text) ?: '';
         }
 

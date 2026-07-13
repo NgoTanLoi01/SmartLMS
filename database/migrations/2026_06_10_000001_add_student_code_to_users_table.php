@@ -45,13 +45,13 @@ return new class extends Migration
         $base = Str::slug($name, '') ?: 'hocsinh';
         $base = Str::lower($base);
 
-        if (!isset($usedUsernames[$base]) && !DB::table('users')->where('username', $base)->exists()) {
+        if (! isset($usedUsernames[$base]) && ! DB::table('users')->where('username', $base)->exists()) {
             return $base;
         }
 
         if ($studentCode) {
-            $withCode = $base . '-' . Str::lower($studentCode);
-            if (!isset($usedUsernames[$withCode]) && !DB::table('users')->where('username', $withCode)->exists()) {
+            $withCode = $base.'-'.Str::lower($studentCode);
+            if (! isset($usedUsernames[$withCode]) && ! DB::table('users')->where('username', $withCode)->exists()) {
                 return $withCode;
             }
         }
@@ -67,7 +67,7 @@ return new class extends Migration
 
     private function studentCodeFromEmail(?string $email): ?string
     {
-        if (!$email || !Str::endsWith($email, '@student.smartlms.local')) {
+        if (! $email || ! Str::endsWith($email, '@student.smartlms.local')) {
             return null;
         }
 

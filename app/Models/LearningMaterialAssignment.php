@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class LearningMaterialAssignment extends Model
 {
     public const STATUS_PUBLISHED = 'published';
+
     public const STATUS_HIDDEN = 'hidden';
+
     public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
@@ -61,19 +63,19 @@ class LearningMaterialAssignment extends Model
     public function isPublishedNow(): bool
     {
         return $this->status === self::STATUS_PUBLISHED
-            && (!$this->available_from || $this->available_from->lte(now()))
+            && (! $this->available_from || $this->available_from->lte(now()))
             && $this->material
             && $this->material->status !== LearningMaterial::STATUS_ARCHIVED;
     }
 
     public function visibleToStudent(User $student): bool
     {
-        if (!$this->isPublishedNow()) {
+        if (! $this->isPublishedNow()) {
             return false;
         }
 
         $course = $this->course;
-        if (!$course || !$course->isVisibleToStudents()) {
+        if (! $course || ! $course->isVisibleToStudents()) {
             return false;
         }
 
@@ -86,19 +88,19 @@ class LearningMaterialAssignment extends Model
             ->whereIn('classes.id', $studentClassIds)
             ->exists();
 
-        if (!$hasCourseAccess) {
+        if (! $hasCourseAccess) {
             return false;
         }
 
-        if ($this->class_id && !$studentClassIds->contains((int) $this->class_id)) {
+        if ($this->class_id && ! $studentClassIds->contains((int) $this->class_id)) {
             return false;
         }
 
-        if ($this->lesson && !$this->lesson->isVisibleToStudents()) {
+        if ($this->lesson && ! $this->lesson->isVisibleToStudents()) {
             return false;
         }
 
-        if ($this->unlockLesson && !$this->unlockLesson->isVisibleToStudents()) {
+        if ($this->unlockLesson && ! $this->unlockLesson->isVisibleToStudents()) {
             return false;
         }
 
@@ -112,11 +114,11 @@ class LearningMaterialAssignment extends Model
         }
 
         if ($this->available_from && $this->available_from->isFuture()) {
-            return 'Mở ' . $this->available_from->format('d/m/Y H:i');
+            return 'Mở '.$this->available_from->format('d/m/Y H:i');
         }
 
         if ($this->unlockLesson) {
-            return 'Mở khi tới bài: ' . $this->unlockLesson->title;
+            return 'Mở khi tới bài: '.$this->unlockLesson->title;
         }
 
         return null;

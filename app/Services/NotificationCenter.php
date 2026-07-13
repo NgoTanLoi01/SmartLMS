@@ -57,7 +57,7 @@ class NotificationCenter
         ])->all();
 
         if ($rows) {
-            DB::table((new SmartNotification())->getTable())->insertOrIgnore($rows);
+            DB::table((new SmartNotification)->getTable())->insertOrIgnore($rows);
         }
     }
 }

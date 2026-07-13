@@ -12,7 +12,9 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable; // <--- DÒNG 2: Sử dụng trait này
 
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_TEACHER = 'teacher';
+
     public const ROLE_STUDENT = 'student';
 
     protected $fillable = [
@@ -55,6 +57,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Lesson::class, 'lesson_user')->withPivot('completed_at');
     }
+
     // Một User (Teacher) quản lý nhiều lớp
     public function managedClasses()
     {
@@ -66,6 +69,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Classroom::class, 'class_user', 'user_id', 'class_id');
     }
+
     public function lessons()
     {
         return $this->belongsToMany(Lesson::class, 'lesson_user')->withPivot('completed_at')->withTimestamps();

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Events\MoveMade;
+use Illuminate\Http\Request;
 
 class ChessController extends Controller
 {
@@ -23,9 +23,11 @@ class ChessController extends Controller
 
         return response()->json(['status' => 'Move broadcasted']);
     }
+
     public function finish($roomId)
     {
         Cache::forget("chess_room_{$roomId}_players");
+
         return response()->json(['success' => true]);
     }
 }

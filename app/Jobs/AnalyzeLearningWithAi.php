@@ -16,7 +16,9 @@ class AnalyzeLearningWithAi implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 150;
+
     public array $backoff = [10, 30, 90];
 
     public function __construct(public int $operationId, public array $payload)
@@ -36,7 +38,7 @@ class AnalyzeLearningWithAi implements ShouldQueue
         ]);
 
         $result = $deepSeek->analyzeLearning($this->payload);
-        if (!($result['success'] ?? false)) {
+        if (! ($result['success'] ?? false)) {
             throw new \RuntimeException($result['message'] ?? 'AI learning analysis failed.');
         }
 

@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class DeepSeekService
 {
-    public function __construct(private LocalCourseContextSearchService $contextSearch)
-    {
-    }
+    public function __construct(private LocalCourseContextSearchService $contextSearch) {}
 
     public function sendMessage(array $messages, ?User $user = null, array $options = []): string
     {
@@ -19,7 +17,7 @@ class DeepSeekService
             $lastUserMessage = (string) (end($messages)['content'] ?? '');
             $lessonContext = '';
 
-            if (!empty($options['lesson_id'])) {
+            if (! empty($options['lesson_id'])) {
                 $lessonContext = $this->contextSearch->lessonContext((int) $options['lesson_id'], $user);
             }
 
@@ -28,7 +26,8 @@ class DeepSeekService
 
             return $this->askDeepSeek($messages, $context, $options);
         } catch (\Exception $e) {
-            Log::error('Lỗi quy trình Chatbot: ' . $e->getMessage());
+            Log::error('Lỗi quy trình Chatbot: '.$e->getMessage());
+
             return 'Không thể kết nối đến máy chủ AI.';
         }
     }
@@ -38,7 +37,7 @@ class DeepSeekService
         $response = Http::withToken(config('services.deepseek.key'))
             ->timeout(120)
             ->withoutVerifying()
-            ->post(rtrim(config('services.deepseek.base_url', 'https://api.deepseek.com'), '/') . '/v1/chat/completions', [
+            ->post(rtrim(config('services.deepseek.base_url', 'https://api.deepseek.com'), '/').'/v1/chat/completions', [
                 'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
                 'messages' => [
                     ['role' => 'system', 'content' => 'You are a professional teacher assistant. Support language: Vietnamese. Always return valid JSON only.'],
@@ -47,11 +46,11 @@ class DeepSeekService
                 'response_format' => ['type' => 'json_object'],
             ]);
         if ($response->failed()) {
-            throw new \RuntimeException('DeepSeek tạo câu hỏi lỗi HTTP ' . $response->status());
+            throw new \RuntimeException('DeepSeek tạo câu hỏi lỗi HTTP '.$response->status());
         }
         $decoded = $this->decodeJsonResponse($response->json('choices.0.message.content'));
         $questions = $decoded['questions'] ?? $decoded['data'] ?? $decoded;
-        if (!is_array($questions)) {
+        if (! is_array($questions)) {
             throw new \RuntimeException('AI trả về danh sách câu hỏi không hợp lệ.');
         }
 
@@ -64,14 +63,14 @@ class DeepSeekService
             $apiKey = config('services.deepseek.key');
             $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
 
-            if (!$apiKey) {
+            if (! $apiKey) {
                 return [
                     'success' => false,
                     'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.',
                 ];
             }
 
-            $systemPrompt = <<<PROMPT
+            $systemPrompt = <<<'PROMPT'
 Bạn là AI phân tích học tập cho giáo viên trong hệ thống SmartLMS.
 Hãy phân tích dữ liệu lớp/học sinh bằng tiếng Việt, ngắn gọn, thực tế, ưu tiên hành động.
 
@@ -126,7 +125,7 @@ PROMPT;
             $content = $response->json('choices.0.message.content');
             $analysis = $this->decodeJsonResponse($content);
 
-            if (!$analysis) {
+            if (! $analysis) {
                 return [
                     'success' => false,
                     'message' => 'AI trả về dữ liệu chưa đúng định dạng.',
@@ -140,7 +139,7 @@ PROMPT;
                 '_usage' => $response->json('usage') ?? [],
             ];
         } catch (\Exception $e) {
-            Log::error('DeepSeek learning analysis error: ' . $e->getMessage());
+            Log::error('DeepSeek learning analysis error: '.$e->getMessage());
 
             return [
                 'success' => false,
@@ -155,14 +154,14 @@ PROMPT;
             $apiKey = config('services.deepseek.key');
             $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
 
-            if (!$apiKey) {
+            if (! $apiKey) {
                 return [
                     'success' => false,
                     'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.',
                 ];
             }
 
-            $systemPrompt = <<<PROMPT
+            $systemPrompt = <<<'PROMPT'
 Bạn là trợ lý AI hỗ trợ giáo viên chấm bài tự luận trong hệ thống SmartLMS.
 Nhiệm vụ của bạn là đọc yêu cầu bài tập và bài làm học sinh, sau đó đề xuất điểm và nhận xét để giáo viên duyệt/chỉnh.
 Bài làm có thể gồm nội dung tự luận học sinh nhập trực tiếp và/hoặc văn bản được hệ thống trích xuất từ file PDF, DOCX, TXT, HTML, CSS, JS, PHP, MD.
@@ -227,7 +226,7 @@ PROMPT;
             $content = $response->json('choices.0.message.content');
             $analysis = $this->decodeJsonResponse($content);
 
-            if (!$analysis) {
+            if (! $analysis) {
                 return [
                     'success' => false,
                     'message' => 'AI trả về dữ liệu chưa đúng định dạng.',
@@ -285,7 +284,7 @@ PROMPT;
                 '_usage' => $response->json('usage') ?? [],
             ];
         } catch (\Exception $e) {
-            Log::error('DeepSeek assignment grading error: ' . $e->getMessage());
+            Log::error('DeepSeek assignment grading error: '.$e->getMessage());
 
             return [
                 'success' => false,
@@ -300,7 +299,7 @@ PROMPT;
             $apiKey = config('services.deepseek.key');
             $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
 
-            if (!$apiKey) {
+            if (! $apiKey) {
                 return [
                     'success' => false,
                     'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.',
@@ -308,11 +307,11 @@ PROMPT;
             }
 
             $lessonContext = '';
-            if (!empty($payload['lesson_id'])) {
+            if (! empty($payload['lesson_id'])) {
                 $lessonContext = $this->contextSearch->lessonContext((int) $payload['lesson_id'], $user);
             }
 
-            if ($lessonContext === '' && !empty($payload['module_id'])) {
+            if ($lessonContext === '' && ! empty($payload['module_id'])) {
                 $lessonContext = $this->contextSearch->moduleContext((int) $payload['module_id'], $user);
             }
 
@@ -327,7 +326,7 @@ PROMPT;
             }
 
             $schema = match ($type) {
-                'assignment' => <<<PROMPT
+                'assignment' => <<<'PROMPT'
 {
   "title": "Tên bài tập ngắn gọn",
   "type": "essay|file|mixed",
@@ -336,13 +335,13 @@ PROMPT;
   "grading_rubric": "Tiêu chí chấm điểm theo từng dòng"
 }
 PROMPT,
-                'rubric' => <<<PROMPT
+                'rubric' => <<<'PROMPT'
 {
   "grading_scale": 10,
   "grading_rubric": "Tiêu chí chấm điểm theo từng dòng, có điểm tối đa cho từng tiêu chí"
 }
 PROMPT,
-                'quiz' => <<<PROMPT
+                'quiz' => <<<'PROMPT'
 {
   "title": "Tên quiz ngắn gọn",
   "time_limit": 20,
@@ -352,7 +351,7 @@ PROMPT,
   "topic": "Chủ đề dùng để sinh câu hỏi trong ngân hàng"
 }
 PROMPT,
-                'lesson_summary' => <<<PROMPT
+                'lesson_summary' => <<<'PROMPT'
 {
   "title": "Tiêu đề bài học nếu cần chỉnh lại",
   "content": "<p>Nội dung bài học tóm tắt, rõ ý, có thể dùng trong trình soạn thảo</p>"
@@ -361,7 +360,7 @@ PROMPT,
                 default => null,
             };
 
-            if (!$schema) {
+            if (! $schema) {
                 return [
                     'success' => false,
                     'message' => 'Loại nội dung AI chưa được hỗ trợ.',
@@ -421,7 +420,7 @@ PROMPT;
             $content = $response->json('choices.0.message.content');
             $draft = $this->decodeJsonResponse($content);
 
-            if (!$draft) {
+            if (! $draft) {
                 return [
                     'success' => false,
                     'message' => 'AI trả về bản nháp chưa đúng định dạng.',
@@ -434,7 +433,7 @@ PROMPT;
                 'draft' => $draft,
             ];
         } catch (\Exception $e) {
-            Log::error('DeepSeek teaching content error: ' . $e->getMessage());
+            Log::error('DeepSeek teaching content error: '.$e->getMessage());
 
             return [
                 'success' => false,
@@ -449,7 +448,7 @@ PROMPT;
             $apiKey = config('services.deepseek.key');
             $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
 
-            if (!$apiKey) {
+            if (! $apiKey) {
                 return ['success' => false, 'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.'];
             }
 
@@ -503,11 +502,12 @@ PROMPT;
 
             if ($response->failed()) {
                 Log::warning('DeepSeek course plan failed', ['status' => $response->status(), 'body' => $response->body()]);
+
                 return ['success' => false, 'message' => 'AI chưa tạo được kế hoạch. Vui lòng thử lại.'];
             }
 
             $plan = $this->decodeJsonResponse($response->json('choices.0.message.content'));
-            if (!$plan || empty($plan['modules']) || !is_array($plan['modules'])) {
+            if (! $plan || empty($plan['modules']) || ! is_array($plan['modules'])) {
                 return ['success' => false, 'message' => 'AI trả về kế hoạch chưa đúng định dạng. Vui lòng tạo lại.'];
             }
 
@@ -517,16 +517,19 @@ PROMPT;
                         ->map(function ($lesson) {
                             $section = function (string $heading, $value): string {
                                 $items = is_array($value) ? $value : array_filter([(string) $value]);
-                                if (!$items) return '';
-                                $list = collect($items)->map(fn ($item) => '<li>' . e((string) $item) . '</li>')->implode('');
-                                return '<h3>' . e($heading) . '</h3><ul>' . $list . '</ul>';
+                                if (! $items) {
+                                    return '';
+                                }
+                                $list = collect($items)->map(fn ($item) => '<li>'.e((string) $item).'</li>')->implode('');
+
+                                return '<h3>'.e($heading).'</h3><ul>'.$list.'</ul>';
                             };
 
                             $content = $section('Mục tiêu buổi học', $lesson['objectives'] ?? [])
-                                . $section('Kiến thức trọng tâm', $lesson['key_topics'] ?? [])
-                                . $section('Hoạt động trên lớp', $lesson['activities'] ?? [])
-                                . $section('Kiểm tra cuối buổi', $lesson['assessment'] ?? '')
-                                . $section('Bài tập gợi ý', $lesson['assignment'] ?? '');
+                                .$section('Kiến thức trọng tâm', $lesson['key_topics'] ?? [])
+                                .$section('Hoạt động trên lớp', $lesson['activities'] ?? [])
+                                .$section('Kiểm tra cuối buổi', $lesson['assessment'] ?? '')
+                                .$section('Bài tập gợi ý', $lesson['assignment'] ?? '');
 
                             return ['title' => trim((string) ($lesson['title'] ?? 'Bài học')), 'content' => $content];
                         })->filter(fn ($lesson) => $lesson['title'] !== '')->values()->all();
@@ -534,13 +537,14 @@ PROMPT;
                     return ['title' => trim((string) ($module['title'] ?? 'Chương học')), 'lessons' => $lessons];
                 })->filter(fn ($module) => $module['title'] !== '' && count($module['lessons']) > 0)->values()->all();
 
-            if (!$modules) {
+            if (! $modules) {
                 return ['success' => false, 'message' => 'Kế hoạch AI chưa có chương hoặc bài học hợp lệ.'];
             }
 
             return ['success' => true, 'plan' => ['summary' => (string) ($plan['summary'] ?? ''), 'modules' => $modules]];
         } catch (\Throwable $e) {
-            Log::error('DeepSeek course plan error: ' . $e->getMessage());
+            Log::error('DeepSeek course plan error: '.$e->getMessage());
+
             return ['success' => false, 'message' => 'Không thể kết nối đến AI thiết kế khóa học.'];
         }
     }
@@ -562,11 +566,11 @@ PROMPT;
             $systemContent .= "Chế độ hỗ trợ hiện tại: {$assistMode}.\n";
         }
 
-        if (!empty($context)) {
-            $systemContent .= "Dữ liệu tìm thấy từ bài học và file bài giảng trong SmartLMS:\n" . $context . "\n\n";
-            $systemContent .= "Quy tắc: chỉ dùng dữ liệu trên làm nguồn chính; nếu cần suy luận thêm, hãy nói rõ đó là phần giải thích thêm.";
+        if (! empty($context)) {
+            $systemContent .= "Dữ liệu tìm thấy từ bài học và file bài giảng trong SmartLMS:\n".$context."\n\n";
+            $systemContent .= 'Quy tắc: chỉ dùng dữ liệu trên làm nguồn chính; nếu cần suy luận thêm, hãy nói rõ đó là phần giải thích thêm.';
         } else {
-            $systemContent .= "Hiện không tìm thấy nội dung liên quan trong khóa học/bài giảng của người dùng. Nếu câu hỏi cần dữ liệu khóa học, hãy nói rằng chưa tìm thấy tài liệu phù hợp và gợi ý người dùng hỏi rõ hơn hoặc kiểm tra bài học liên quan.";
+            $systemContent .= 'Hiện không tìm thấy nội dung liên quan trong khóa học/bài giảng của người dùng. Nếu câu hỏi cần dữ liệu khóa học, hãy nói rằng chưa tìm thấy tài liệu phù hợp và gợi ý người dùng hỏi rõ hơn hoặc kiểm tra bài học liên quan.';
         }
 
         // Tạo danh sách tin nhắn cho API DeepSeek
@@ -596,7 +600,7 @@ PROMPT;
 
     private function decodeJsonResponse(?string $content): ?array
     {
-        if (!$content) {
+        if (! $content) {
             return null;
         }
 
@@ -639,7 +643,7 @@ PROMPT;
             'duration_ms' => (int) round((hrtime(true) - $startedAt) / 1_000_000),
             'completed_at' => $response->successful() ? now() : null,
             'failed_at' => $response->failed() ? now() : null,
-            'error_message' => $response->failed() ? 'DeepSeek HTTP ' . $response->status() : null,
+            'error_message' => $response->failed() ? 'DeepSeek HTTP '.$response->status() : null,
         ]);
         $operation->estimated_cost_usd = $operation->estimatedCost($usage);
         $operation->save();
@@ -647,7 +651,7 @@ PROMPT;
 
     private function cleanUtf8(string $text): string
     {
-        if (!mb_check_encoding($text, 'UTF-8')) {
+        if (! mb_check_encoding($text, 'UTF-8')) {
             $text = @iconv('UTF-8', 'UTF-8//IGNORE', $text) ?: '';
         }
 

@@ -17,14 +17,14 @@ class StudentLoginCode
     {
         $base = self::normalizeName($name);
 
-        if (!User::where('username', $base)->exists()) {
+        if (! User::where('username', $base)->exists()) {
             return $base;
         }
 
         $normalizedStudentCode = self::normalizeStudentCode($studentCode);
         if ($normalizedStudentCode) {
-            $withCode = $base . '-' . $normalizedStudentCode;
-            if (!User::where('username', $withCode)->exists()) {
+            $withCode = $base.'-'.$normalizedStudentCode;
+            if (! User::where('username', $withCode)->exists()) {
                 return $withCode;
             }
         }
@@ -55,7 +55,7 @@ class StudentLoginCode
     {
         $localPart = Str::lower(Str::replace('-', '.', $username));
 
-        return $localPart . '@student.smartlms.local';
+        return $localPart.'@student.smartlms.local';
     }
 
     private static function normalizePrefix(string $prefix): string
@@ -68,7 +68,7 @@ class StudentLoginCode
 
     public static function normalizeStudentCode(?string $studentCode): ?string
     {
-        if (!$studentCode) {
+        if (! $studentCode) {
             return null;
         }
 

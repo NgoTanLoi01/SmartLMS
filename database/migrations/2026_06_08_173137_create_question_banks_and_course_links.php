@@ -33,13 +33,13 @@ return new class extends Migration
 
         foreach ($courses as $course) {
             $hasQuestions = DB::table('questions')->where('course_id', $course->id)->exists();
-            if (!$hasQuestions) {
+            if (! $hasQuestions) {
                 continue;
             }
 
             $bankId = DB::table('question_banks')->insertGetId([
                 'name' => $course->title,
-                'description' => 'Ngân hàng câu hỏi được tạo từ khóa học ' . $course->title,
+                'description' => 'Ngân hàng câu hỏi được tạo từ khóa học '.$course->title,
                 'teacher_id' => $course->teacher_id,
                 'created_at' => now(),
                 'updated_at' => now(),

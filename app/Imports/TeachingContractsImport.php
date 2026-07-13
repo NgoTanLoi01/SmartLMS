@@ -12,33 +12,36 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 class TeachingContractsImport implements ToCollection
 {
     public int $importedCount = 0;
+
     public int $updatedCount = 0;
+
     public int $invalidCount = 0;
+
     public array $missingHeaders = [];
 
     private ?array $headers = null;
 
-    public function __construct(private readonly int $teacherId)
-    {
-    }
+    public function __construct(private readonly int $teacherId) {}
 
     public function collection(Collection $rows): void
     {
         foreach ($rows as $row) {
             if ($this->headers === null) {
                 $this->headers = $this->detectHeaders($row);
+
                 continue;
             }
 
-            if (!empty($this->missingHeaders)) {
+            if (! empty($this->missingHeaders)) {
                 return;
             }
 
             $contractNumber = $this->cell($row, 'contract_number');
             if ($contractNumber === '') {
-                if (!$this->isEmptyRow($row)) {
+                if (! $this->isEmptyRow($row)) {
                     $this->invalidCount++;
                 }
+
                 continue;
             }
 
@@ -48,8 +51,8 @@ class TeachingContractsImport implements ToCollection
             $note = $this->cell($row, 'note');
             $evidenceUrl = $this->extractUrl($contractLabel);
 
-            if ($contractLabel !== '' && !$evidenceUrl) {
-                $note = trim($note . "\nHợp đồng: " . $contractLabel);
+            if ($contractLabel !== '' && ! $evidenceUrl) {
+                $note = trim($note."\nHợp đồng: ".$contractLabel);
             }
 
             $payload = [
@@ -71,11 +74,13 @@ class TeachingContractsImport implements ToCollection
             if ($contract) {
                 if ($contract->teacher_id !== $this->teacherId) {
                     $this->invalidCount++;
+
                     continue;
                 }
 
                 $contract->update($payload);
                 $this->updatedCount++;
+
                 continue;
             }
 

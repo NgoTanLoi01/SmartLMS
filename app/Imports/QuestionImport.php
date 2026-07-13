@@ -2,8 +2,8 @@
 
 namespace App\Imports;
 
-use App\Models\Question;
 use App\Models\Option;
+use App\Models\Question;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow; // Thêm thư viện này
@@ -11,7 +11,9 @@ use Maatwebsite\Excel\Concerns\WithStartRow; // Thêm thư viện này
 class QuestionImport implements ToCollection, WithStartRow
 {
     protected $courseId;
+
     protected $questionBankId;
+
     public $importedCount = 0; // Biến đếm số câu thành công
 
     public function __construct($courseId, $questionBankId = null)
@@ -30,7 +32,7 @@ class QuestionImport implements ToCollection, WithStartRow
     {
         foreach ($rows as $row) {
             // Kiểm tra: Bỏ qua nếu cột Nội dung câu hỏi (Cột A) bị rỗng
-            if (!isset($row[0]) || trim($row[0]) === '') {
+            if (! isset($row[0]) || trim($row[0]) === '') {
                 continue;
             }
 
@@ -38,7 +40,7 @@ class QuestionImport implements ToCollection, WithStartRow
 
             // Cột 1: Độ khó (Mặc định là medium nếu bỏ trống)
             $difficulty = isset($row[1]) ? strtolower(trim($row[1])) : 'medium';
-            if (!in_array($difficulty, ['easy', 'medium', 'hard'])) {
+            if (! in_array($difficulty, ['easy', 'medium', 'hard'])) {
                 $difficulty = 'medium';
             }
 
@@ -61,7 +63,7 @@ class QuestionImport implements ToCollection, WithStartRow
 
             // Cột 6: Đáp án đúng (G)
             $correctLetter = isset($row[6]) ? strtoupper(trim($row[6])) : 'A';
-            if (!in_array($correctLetter, ['A', 'B', 'C', 'D'])) {
+            if (! in_array($correctLetter, ['A', 'B', 'C', 'D'])) {
                 $correctLetter = 'A'; // Chống lỗi: Nếu nhập sai, mặc định A là đúng
             }
 

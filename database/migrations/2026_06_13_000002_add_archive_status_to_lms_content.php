@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         foreach (['classes', 'schedules'] as $tableName) {
-            if (!Schema::hasColumn($tableName, 'status')) {
+            if (! Schema::hasColumn($tableName, 'status')) {
                 Schema::table($tableName, function (Blueprint $table) {
                     $table->string('status')->default('active')->after('id');
                 });

@@ -22,18 +22,18 @@ class SmartLmsBackupCommand extends Command
 
         if ($backup->isSuccessful()) {
             $this->info('Backup thành công.');
-            $this->line('File: ' . $backup->filename);
-            $this->line('Dung lượng: ' . $backup->formattedSize());
-            $this->line('Local: ' . $backup->local_path);
+            $this->line('File: '.$backup->filename);
+            $this->line('Dung lượng: '.$backup->formattedSize());
+            $this->line('Local: '.$backup->local_path);
 
             if ($backup->remote_path) {
-                $this->line('R2: ' . $backup->remote_disk . '://' . $backup->remote_path);
+                $this->line('R2: '.$backup->remote_disk.'://'.$backup->remote_path);
             }
 
             return self::SUCCESS;
         }
 
-        $this->error('Backup thất bại: ' . $backup->error_message);
+        $this->error('Backup thất bại: '.$backup->error_message);
 
         return self::FAILURE;
     }

@@ -73,14 +73,14 @@ class SystemBackupController extends Controller
             return back()->with('success', 'Đã tạo backup database thành công.');
         }
 
-        return back()->with('error', 'Backup thất bại: ' . $backup->error_message);
+        return back()->with('error', 'Backup thất bại: '.$backup->error_message);
     }
 
     public function download(Request $request, BackupRun $backup)
     {
         abort_unless($request->user()?->isAdmin(), 403);
 
-        if (!$backup->isSuccessful()) {
+        if (! $backup->isSuccessful()) {
             abort(404);
         }
 

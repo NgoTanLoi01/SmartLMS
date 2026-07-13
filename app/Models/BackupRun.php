@@ -60,6 +60,6 @@ class BackupRun extends Model
             $index++;
         }
 
-        return number_format($bytes, $index === 0 ? 0 : 1, ',', '.') . ' ' . $units[$index];
+        return number_format($bytes, $index === 0 ? 0 : 1, ',', '.').' '.$units[$index];
     }
 }

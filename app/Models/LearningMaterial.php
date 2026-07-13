@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\Storage;
 class LearningMaterial extends Model
 {
     public const SOURCE_FILE = 'file';
+
     public const SOURCE_LINK = 'link';
 
     public const STATUS_PUBLISHED = 'published';
+
     public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
@@ -65,7 +67,7 @@ class LearningMaterial extends Model
             return $query;
         }
 
-        if (!$user->isTeacher()) {
+        if (! $user->isTeacher()) {
             return $query->whereRaw('1 = 0');
         }
 
@@ -119,19 +121,19 @@ class LearningMaterial extends Model
 
     public function humanSize(): string
     {
-        if (!$this->file_size) {
+        if (! $this->file_size) {
             return $this->isLink() ? 'Liên kết' : 'Không rõ dung lượng';
         }
 
         $size = (float) $this->file_size;
         foreach (['B', 'KB', 'MB', 'GB'] as $unit) {
             if ($size < 1024 || $unit === 'GB') {
-                return rtrim(rtrim(number_format($size, $unit === 'B' ? 0 : 1), '0'), '.') . ' ' . $unit;
+                return rtrim(rtrim(number_format($size, $unit === 'B' ? 0 : 1), '0'), '.').' '.$unit;
             }
             $size /= 1024;
         }
 
-        return $this->file_size . ' B';
+        return $this->file_size.' B';
     }
 
     public function typeLabel(): string
