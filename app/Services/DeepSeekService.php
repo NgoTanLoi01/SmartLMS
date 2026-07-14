@@ -9,12 +9,20 @@ use Illuminate\Support\Facades\Log;
 
 class DeepSeekService
 {
-    public function __construct(private LocalCourseContextSearchService $contextSearch) {}
+    public function __construct(
+        private LocalCourseContextSearchService $contextSearch,
+        private PersonalAssistantService $personalAssistant
+    ) {}
 
     public function sendMessage(array $messages, ?User $user = null, array $options = []): string
     {
         try {
             $lastUserMessage = (string) (end($messages)['content'] ?? '');
+
+            if ($user && ($personalAnswer = $this->personalAssistant->answer($lastUserMessage, $user))) {
+                return $personalAnswer;
+            }
+
             $lessonContext = '';
 
             if (! empty($options['lesson_id'])) {
@@ -579,7 +587,7 @@ PROMPT;
         // Chuyển đổi role 'assistant' (nếu có từ JS) thành 'assistant' chuẩn API
         foreach ($historyMessages as $msg) {
             $finalMessages[] = [
-                'role' => $msg['role'] === 'assistant' ? 'assistant' : $msg['role'],
+                'role' => ($msg['role'] ?? 'user') === 'assistant' ? 'assistant' : 'user',
                 'content' => $this->cleanUtf8((string) ($msg['content'] ?? '')),
             ];
         }

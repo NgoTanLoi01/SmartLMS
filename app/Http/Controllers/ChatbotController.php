@@ -21,15 +21,19 @@ class ChatbotController extends Controller
      */
     public function sendMessage(Request $request)
     {
+        $validated = $request->validate([
+            'messages' => ['required', 'array', 'min:1', 'max:30'],
+            'messages.*.role' => ['required', 'string', 'in:user,assistant'],
+            'messages.*.content' => ['required', 'string', 'max:4000'],
+            'lesson_context' => ['nullable', 'array'],
+            'lesson_context.lesson_id' => ['nullable', 'integer'],
+            'lesson_context.assist_mode' => ['nullable', 'string', 'max:100'],
+        ]);
+
         try {
-            // Kiểm tra mảng messages gửi từ chatbot.blade.php
-            $messages = $request->input('messages');
+            $messages = array_slice($validated['messages'], -12);
 
-            if (! $messages || ! is_array($messages)) {
-                return response()->json(['reply' => 'Dữ liệu tin nhắn không hợp lệ.'], 400);
-            }
-
-            $lessonContext = $request->input('lesson_context', []);
+            $lessonContext = $validated['lesson_context'] ?? [];
             $options = [];
             if (is_array($lessonContext) && ! empty($lessonContext['lesson_id'])) {
                 $options['lesson_id'] = (int) $lessonContext['lesson_id'];
@@ -48,7 +52,6 @@ class ChatbotController extends Controller
             return response()->json(
                 [
                     'reply' => 'Dạ, hệ thống đang gặp chút sự cố kỹ thuật. Thầy Lợi đang kiểm tra lại ạ!',
-                    'error_detail' => $e->getMessage(),
                 ],
                 500,
             );

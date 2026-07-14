@@ -935,22 +935,14 @@
                                         'grade' => 'col-grade-h',
                                         default => 'col-note-h',
                                     };
-                                    $attendanceDateLabel = $col->attendance_date?->format('d/m/Y');
-                                    $showAttendanceDate = $attendanceDateLabel
-                                        && trim((string) $col->name) !== $attendanceDateLabel;
                                 @endphp
                                 <th class="{{ $typeClass }}">
                                     <div class="col-header-inner">
                                         <span class="editable-name" @unless ($isStudentView) contenteditable="true"
                                             data-col-id="{{ $col->id }}" onblur="updateColumnName(this)" @endunless>{{ $col->name }}</span>
-                                        @if ($col->type === 'attendance' && ($showAttendanceDate || $col->schedule))
+                                        @if ($col->type === 'attendance' && $col->schedule)
                                             <small class="attendance-column-meta">
-                                                @if ($showAttendanceDate)
-                                                    {{ $attendanceDateLabel }}
-                                                @endif
-                                                @if ($col->schedule)
-                                                    @if ($showAttendanceDate) · @endif{{ substr($col->schedule->start_time, 0, 5) }}
-                                                @endif
+                                                {{ substr($col->schedule->start_time, 0, 5) }}
                                             </small>
                                         @endif
                                         @unless ($isStudentView)

@@ -495,6 +495,39 @@
         animation: cb-fade-in-simple 0.3s ease 0.15s forwards;
     }
 
+    .cb-quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 0 0 2px 36px;
+    }
+
+    .cb-quick-action {
+        appearance: none;
+        background: #fff;
+        border: 1px solid #c7d2fe;
+        border-radius: 999px;
+        color: #4338ca;
+        cursor: pointer;
+        font: inherit;
+        font-size: .72rem;
+        font-weight: 700;
+        padding: 6px 10px;
+        transition: background .15s ease, border-color .15s ease, transform .15s ease;
+    }
+
+    .cb-quick-action:hover {
+        background: #eef2ff;
+        border-color: #818cf8;
+        transform: translateY(-1px);
+    }
+
+    .cb-quick-action:disabled {
+        cursor: wait;
+        opacity: .55;
+        transform: none;
+    }
+
     @keyframes cb-fade-in-simple {
         to {
             opacity: 1;
@@ -916,9 +949,27 @@
         <div class="cb-row ai">
             <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.png') }}" alt=""></div>
             <div class="cb-msg-wrap">
-                <div class="cb-msg ai">Chào bạn! 👋 Mình có thể giúp gì cho bài học của bạn hôm nay?</div>
+                <div class="cb-msg ai">
+                    @if (auth()->user()->isTeacher())
+                        Chào thầy/cô! 👋 Mình có thể tra lịch dạy và các việc cần xử lý hôm nay.
+                    @elseif (auth()->user()->isStudent())
+                        Chào bạn! 👋 Mình có thể tra lịch học, bài tập và hỗ trợ nội dung bài học.
+                    @else
+                        Chào bạn! 👋 Mình có thể hỗ trợ thông tin trong SmartLMS.
+                    @endif
+                </div>
                 <span class="cb-msg-time" id="cbWelcomeTime"></span>
             </div>
+        </div>
+        <div class="cb-quick-actions" aria-label="Câu hỏi gợi ý">
+            @if (auth()->user()->isTeacher())
+                <button type="button" class="cb-quick-action" data-prompt="Lịch dạy hôm nay của tôi">Lịch dạy hôm nay</button>
+                <button type="button" class="cb-quick-action" data-prompt="Bài nào đang chờ tôi chấm?">Bài chờ chấm</button>
+            @elseif (auth()->user()->isStudent())
+                <button type="button" class="cb-quick-action" data-prompt="Lịch học hôm nay của tôi">Lịch học hôm nay</button>
+                <button type="button" class="cb-quick-action" data-prompt="Tôi còn bài tập nào chưa nộp?">Bài tập chưa nộp</button>
+            @endif
+            <button type="button" class="cb-quick-action" data-prompt="Thông báo chưa đọc của tôi">Thông báo của tôi</button>
         </div>
     </div>
 
@@ -1042,6 +1093,7 @@
             input.style.height = 'auto';
             input.disabled = true;
             sendBtn.disabled = true;
+            document.querySelectorAll('.cb-quick-action').forEach(button => button.disabled = true);
 
             appendMessage(message, 'user');
             chatHistory.push({
@@ -1074,11 +1126,15 @@
             } finally {
                 input.disabled = false;
                 sendBtn.disabled = false;
+                document.querySelectorAll('.cb-quick-action').forEach(button => button.disabled = false);
                 input.focus();
             }
         };
 
         sendBtn.addEventListener('click', sendMessage);
+        document.querySelectorAll('.cb-quick-action').forEach(button => {
+            button.addEventListener('click', () => sendMessage(button.dataset.prompt));
+        });
         input.addEventListener('keydown', e => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
