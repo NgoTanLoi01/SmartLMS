@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Du Lịch Việt Nam</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .top-header {
+            background-color: #0dcaf0;
+            color: white;
+            font-weight: bold;
+        }
+
+        .banner {
+            background-color: #f4f6f7;
+            padding: 50px 0;
+        }
+
+        .banner img {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .banner h1 {
+            font-size: 34px;
+            font-weight: bold;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .category-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .destination-card img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+        }
+
+        .tour-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .price {
+            color: red;
+            font-weight: bold;
+        }
+
+        footer {
+            background-color: #0dcaf0;
+            color: white;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .banner h1 {
+                font-size: 28px;
+            }
+
+            .banner img {
+                height: 250px;
+                margin-top: 30px;
+            }
+
+            .destination-card img,
+            .tour-card img {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Thanh tiêu đề -->
+    <header class="top-header py-3">
+        <div class="container">
+            DU LỊCH VIỆT NAM
+        </div>
+    </header>
+
+    <!-- Banner -->
+    <section class="banner">
+        <div class="container">
+            <div class="row align-items-center">
+
+                <div class="col-md-6 text-center">
+                    <h1>KHÁM PHÁ VIỆT NAM</h1>
+
+                    <h3 class="mb-4">
+                        HÀNH TRÌNH ĐẦY TRẢI NGHIỆM
+                    </h3>
+
+                    <a href="#destination" class="btn btn-danger">
+                        XEM NGAY
+                    </a>
+                </div>
+
+                <div class="col-md-6">
+                    <img src="https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80"
+                        alt="Du lịch Việt Nam">
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Danh mục địa điểm -->
+    <section class="py-5">
+        <div class="container">
+
+            <h2 class="section-title">
+                DANH MỤC DU LỊCH
+            </h2>
+
+            <div class="row text-center g-4">
+
+                <div class="col-6 col-md-4 col-lg-2">
+                    <img src="https://images.unsplash.com/photo-1557750255-c76072a7aad1?auto=format&fit=crop&w=400&q=80"
+                        class="category-image" alt="Du lịch biển">
+
+                    <div class="mt-3">
+                        <a href="#" class="btn btn-outline-info btn-sm">
+                            Du lịch biển
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-2">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80"
+                        class="category-image" alt="Du lịch núi">
+
+                    <div class="mt-3">
+                        <a href="#" class="btn btn-outline-info btn-sm">
+                            Du lịch núi
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-2">
+                    <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80"
+                        class="category-image" alt="Du lịch văn hóa">
+
+                    <div class="mt-3">
+                        <a href="#" class="btn btn-outline-info btn-sm">
+                            Văn hóa
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-2">
+                    <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=400&q=80"
+                        class="category-image" alt="Du lịch sinh thái">
+
+                    <div class="mt-3">
+                        <a href="#" class="btn btn-outline-info btn-sm">
+                            Sinh thái
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-2">
+                    <img src="https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=400&q=80"
+                        class="category-image" alt="Du lịch tâm linh">
+
+                    <div class="mt-3">
+                        <a href="#" class="btn btn-outline-info btn-sm">
+                            Tâm linh
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-2">
+                    <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=400&q=80"
+                        class="category-image" alt="Du lịch nghỉ dưỡng">
+
+                    <div class="mt-3">
+                        <a href="#" class="btn btn-outline-info btn-sm">
+                            Nghỉ dưỡng
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Địa điểm nổi bật -->
+    <section class="pb-5" id="destination">
+        <div class="container">
+
+            <h2 class="section-title">
+                ĐỊA ĐIỂM NỔI BẬT
+            </h2>
+
+            <div class="row g-4">
+
+                <!-- Địa điểm 1 -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card destination-card h-100">
+                        <img src="https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=700&q=80"
+                            class="card-img-top" alt="Vịnh Hạ Long">
+
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                Vịnh Hạ Long
+                            </h5>
+
+                            <p class="price">
+                                2.500.000 VNĐ
+                            </p>
+
+                            <a href="#" class="text-primary">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Địa điểm 2 -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card destination-card h-100">
+                        <img src="https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=700&q=80"
+                            class="card-img-top" alt="Đà Nẵng">
+
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                Đà Nẵng
+                            </h5>
+
+                            <p class="price">
+                                3.000.000 VNĐ
+                            </p>
+
+                            <a href="#" class="text-primary">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Địa điểm 3 -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card destination-card h-100">
+                        <img src="https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=700&q=80"
+                            class="card-img-top" alt="Hội An">
+
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                Phố cổ Hội An
+                            </h5>
+
+                            <p class="price">
+                                2.800.000 VNĐ
+                            </p>
+
+                            <a href="#" class="text-primary">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Địa điểm 4 -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card destination-card h-100">
+                        <img src="https://images.unsplash.com/photo-1573790387438-4da905039392?auto=format&fit=crop&w=700&q=80"
+                            class="card-img-top" alt="Đà Lạt">
+
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                Đà Lạt
+                            </h5>
+
+                            <p class="price">
+                                2.200.000 VNĐ
+                            </p>
+
+                            <a href="#" class="text-primary">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Gợi ý tour -->
+    <section class="pb-5">
+        <div class="container">
+
+            <h2 class="section-title">
+                GỢI Ý TOUR DU LỊCH
+            </h2>
+
+            <div class="row g-4">
+
+                <div class="col-md-4">
+                    <div class="card tour-card h-100">
+                        <img src="https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=800&q=80"
+                            class="card-img-top" alt="Tour miền Bắc">
+
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                Tour khám phá miền Bắc
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card tour-card h-100">
+                        <img src="https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80"
+                            class="card-img-top" alt="Tour miền Trung">
+
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                Tour di sản miền Trung
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card tour-card h-100">
+                        <img src="https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?auto=format&fit=crop&w=800&q=80"
+                            class="card-img-top" alt="Tour miền Tây">
+
+                        <div class="card-body text-center">
+                            <h5 class="card-title">
+                                Tour sông nước miền Tây
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Form đăng ký tour -->
+    <section class="pb-5">
+        <div class="container">
+
+            <h2 class="section-title">
+                ĐĂNG KÝ TOUR DU LỊCH
+            </h2>
+
+            <form>
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">
+                            Họ và tên
+                        </label>
+
+                        <input type="text" class="form-control" id="name">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">
+                            Email
+                        </label>
+
+                        <input type="email" class="form-control" id="email">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">
+                            Số điện thoại
+                        </label>
+
+                        <input type="tel" class="form-control" id="phone">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="tour" class="form-label">
+                            Tour muốn đăng ký
+                        </label>
+
+                        <select class="form-select" id="tour">
+                            <option>Chọn tour du lịch</option>
+                            <option>Tour miền Bắc</option>
+                            <option>Tour miền Trung</option>
+                            <option>Tour miền Tây</option>
+                            <option>Tour Đà Lạt</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="note" class="form-label">
+                            Ghi chú
+                        </label>
+
+                        <textarea class="form-control" id="note" rows="4"></textarea>
+                    </div>
+
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-success">
+                            Gửi thông tin
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-4">
+        <div class="container">
+            <div class="row g-4">
+
+                <div class="col-md-4">
+                    <h5>Du Lịch Việt Nam</h5>
+
+                    <p>
+                        Cung cấp các tour du lịch trong nước với
+                        nhiều địa điểm hấp dẫn.
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <h5>Thông tin</h5>
+
+                    <p>Địa chỉ: Trà Vinh</p>
+
+                    <p>Hotline: 0123456789</p>
+
+                    <p>Email: dulich@gmail.com</p>
+                </div>
+
+                <div class="col-md-4">
+                    <h5>Kết nối</h5>
+
+                    <p>
+                        <a href="#">Facebook</a>
+                    </p>
+
+                    <p>
+                        <a href="#">Zalo</a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

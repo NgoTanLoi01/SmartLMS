@@ -581,8 +581,9 @@
                     <div class="cm-field">
                         <label class="cm-label">Tài liệu đính kèm</label>
                         <input type="file" name="attachment" class="cm-ctrl"
+                            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.png,.jpg,.jpeg,.webp"
                             style="padding:0.5rem 0.75rem; cursor:pointer;">
-                        <div class="cm-hint">PDF, Word, ZIP — bỏ trống nếu không có</div>
+                        <div class="cm-hint">PDF, Office, ZIP hoặc ảnh PNG/JPG/WebP — tối đa 20 MB</div>
                     </div>
                 </div>
 
@@ -658,8 +659,9 @@
                     <div class="cm-field">
                         <label class="cm-label">Tài liệu đính kèm mới</label>
                         <input type="file" name="attachment" class="cm-ctrl"
+                            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.png,.jpg,.jpeg,.webp"
                             style="padding:0.5rem 0.75rem; cursor:pointer;">
-                        <div class="cm-hint">Bỏ trống nếu không thay đổi</div>
+                        <div class="cm-hint">PDF, Office, ZIP hoặc ảnh PNG/JPG/WebP — tối đa 20 MB</div>
                     </div>
                 </div>
 

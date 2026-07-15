@@ -18,6 +18,9 @@ curl
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 && docker-php-ext-install pdo_mysql pdo_pgsql pgsql gd zip bcmath pcntl
 
+# Đồng bộ giới hạn upload với validation của Laravel.
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 # Copy Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

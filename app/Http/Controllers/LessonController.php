@@ -14,6 +14,13 @@ use Illuminate\Support\Str;
 
 class LessonController extends Controller
 {
+    private const ATTACHMENT_RULES = [
+        'nullable',
+        'file',
+        'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,zip,png,jpg,jpeg,webp',
+        'max:20480',
+    ];
+
     // 1. Cập nhật hàm store (Thêm mới)
     public function store(Request $request)
     {
@@ -22,10 +29,10 @@ class LessonController extends Controller
             'content' => 'nullable|string',
             'video_url' => 'nullable|url',
             'module_id' => 'required|exists:modules,id',
-            'attachment' => 'nullable|file|max:20480', // Max 20MB
+            'attachment' => self::ATTACHMENT_RULES,
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
-        ]);
+        ], $this->attachmentValidationMessages());
         $module = Module::with('course')->findOrFail($data['module_id']);
         Gate::authorize('create', [Lesson::class, $module]);
         $data['status'] = $data['status'] ?? 'published';
@@ -64,10 +71,10 @@ class LessonController extends Controller
             'content' => 'nullable|string',
             'video_url' => 'nullable|url',
             'module_id' => 'required|exists:modules,id',
-            'attachment' => 'nullable|file|max:20480',
+            'attachment' => self::ATTACHMENT_RULES,
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
-        ]);
+        ], $this->attachmentValidationMessages());
         $targetModule = Module::with('course')->findOrFail($data['module_id']);
         Gate::authorize('create', [Lesson::class, $targetModule]);
         $data['status'] = $data['status'] ?? $lesson->status;
@@ -189,6 +196,15 @@ class LessonController extends Controller
             'attachment_original_name' => $originalName,
             'attachment_mime_type' => $file->getClientMimeType(),
             'attachment_size' => $file->getSize(),
+        ];
+    }
+
+    private function attachmentValidationMessages(): array
+    {
+        return [
+            'attachment.uploaded' => 'Tệp tải lên thất bại. Vui lòng chọn tệp không vượt quá 20 MB.',
+            'attachment.max' => 'Tệp đính kèm không được vượt quá 20 MB.',
+            'attachment.mimes' => 'Tệp đính kèm phải là PDF, Word, PowerPoint, Excel, ZIP hoặc ảnh PNG/JPG/WebP.',
         ];
     }
 
