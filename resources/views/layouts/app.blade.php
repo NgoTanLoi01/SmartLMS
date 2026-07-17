@@ -486,6 +486,7 @@
 
                 const targetUrl = new URL(link.href, window.location.href);
                 if (targetUrl.origin !== window.location.origin) return false;
+                if (/\/download\/?$/.test(targetUrl.pathname)) return false;
                 if (/^\/materials\/[^/]+\/download\/?$/.test(targetUrl.pathname)) return false;
                 if (/^\/lessons\/[^/]+\/attachment\/?$/.test(targetUrl.pathname)) return false;
                 if (/^\/courses\/[^/]+\/attendance\/export\/?$/.test(targetUrl.pathname)) return false;

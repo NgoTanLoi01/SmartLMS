@@ -20,6 +20,7 @@ export default defineConfig({
                 'resources/css/pages/shared-documents.css',
                 'resources/css/pages/submission-review.css',
                 'resources/js/app.js',
+                'resources/js/pages/shared-documents.js',
             ],
             refresh: true,
         }),
