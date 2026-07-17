@@ -27,6 +27,7 @@ use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\SharedDocumentController;
 use App\Http\Controllers\StorageHealthController;
 use App\Http\Controllers\StudentGradesController;
 use App\Http\Controllers\StudentScheduleController;
@@ -146,6 +147,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::get('/materials/{assignment}/download', [CourseMaterialController::class, 'download'])->name('materials.download');
     Route::get('/materials/library/{material}/download', [CourseMaterialController::class, 'downloadLibrary'])->name('materials.library.download');
+
+    Route::middleware('role:admin,teacher')->group(function () {
+        Route::get('/shared-documents', [SharedDocumentController::class, 'index'])->name('shared-documents.index');
+        Route::post('/shared-documents', [SharedDocumentController::class, 'store'])->name('shared-documents.store');
+        Route::patch('/shared-documents/{sharedDocument}', [SharedDocumentController::class, 'update'])->name('shared-documents.update');
+        Route::get('/shared-documents/{sharedDocument}/download', [SharedDocumentController::class, 'download'])->name('shared-documents.download');
+        Route::delete('/shared-documents/{sharedDocument}', [SharedDocumentController::class, 'destroy'])->name('shared-documents.destroy');
+    });
 
     // ==========================================
     // 2.5. QUẢN LÝ CHƯƠNG MỤC & BÀI GIẢNG (CURRICULUM)

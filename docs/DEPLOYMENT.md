@@ -41,6 +41,20 @@ php scripts/rotate-secrets.php
 
 Điền các giá trị riêng của môi trường như `APP_URL`, API key, email, R2 và cấu hình backup. Không commit `.env`.
 
+Kho tài liệu chung sử dụng cùng bucket R2 với bài học/bài tập và được tách bằng tiền tố `shared-documents/`. Cấu hình production tối thiểu:
+
+```dotenv
+SHARED_DOCUMENT_FILESYSTEM_DISK=r2
+R2_ACCESS_KEY_ID=<access-key>
+R2_SECRET_ACCESS_KEY=<secret-key>
+R2_BUCKET=<bucket-name>
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+R2_REGION=auto
+R2_USE_PATH_STYLE_ENDPOINT=false
+```
+
+Bucket nên để private vì tài liệu được tải xuống thông qua controller có Policy kiểm tra quyền, không qua URL công khai.
+
 Cài dependency và tạo frontend assets trước khi khởi động container. Cấu hình Compose hiện tại bind mount mã nguồn từ host, vì vậy `vendor/` và `public/build/` phải tồn tại trên máy triển khai:
 
 ```bash
@@ -57,6 +71,14 @@ docker compose up -d --build
 docker compose exec app php artisan migrate --force
 docker compose exec app php artisan optimize
 ```
+
+Kiểm tra container đã nhận đúng disk cho kho tài liệu:
+
+```bash
+docker compose exec app php artisan tinker --execute="dump(config('filesystems.shared_document_disk'));"
+```
+
+Kết quả mong đợi là `r2`.
 
 MySQL, PostgreSQL và Reverb chỉ được mở trong Docker network. Chỉ Nginx publish cổng ứng dụng ra host.
 
@@ -123,3 +145,4 @@ Không tự động rollback migration có thay đổi dữ liệu. Nếu cần 
 - Reverb lắng nghe tại cổng nội bộ 8080.
 - MySQL/PostgreSQL/Reverb không có host port binding.
 - Luồng upload, chấm bài và tác vụ AI được kiểm tra nhanh nếu bản phát hành liên quan.
+- Giáo viên có thể tải lên rồi tải xuống một tệp thử trong **Tài liệu chung**; giáo viên khác không thể sửa hoặc xóa tệp đó.

@@ -129,6 +129,14 @@
                         <i class="fas fa-folder-open"></i> Kho học liệu
                     </a>
                 </li>
+                @if (Auth::user()->isAdmin() || Auth::user()->isTeacher())
+                    <li>
+                        <a class="nav-link {{ request()->routeIs('shared-documents.*') ? 'active' : '' }}"
+                            href="{{ route('shared-documents.index') }}">
+                            <i class="fas fa-box-archive"></i> Tài liệu chung
+                        </a>
+                    </li>
+                @endif
                 @if (Auth::user()->role === 'student')
                     <li>
                         <a class="nav-link {{ request()->routeIs('students.schedule') ? 'active' : '' }}"

@@ -17,6 +17,7 @@ export default defineConfig({
                 'resources/css/pages/dashboard.css',
                 'resources/css/pages/landing.css',
                 'resources/css/pages/question-bank.css',
+                'resources/css/pages/shared-documents.css',
                 'resources/css/pages/submission-review.css',
                 'resources/js/app.js',
             ],

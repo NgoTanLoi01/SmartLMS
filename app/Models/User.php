@@ -74,4 +74,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Lesson::class, 'lesson_user')->withPivot('completed_at')->withTimestamps();
     }
+
+    public function sharedDocuments()
+    {
+        return $this->hasMany(SharedDocument::class, 'owner_id');
+    }
 }
