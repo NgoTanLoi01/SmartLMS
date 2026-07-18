@@ -12,9 +12,17 @@ use Tests\TestCase;
 
 class AccountLifecycleTest extends TestCase
 {
+    private bool $isolatedSchemaCreated = false;
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            throw new \RuntimeException('AccountLifecycleTest chỉ được phép chạy trên SQLite cô lập.');
+        }
+
+        $this->isolatedSchemaCreated = true;
 
         Schema::create('users', function (Blueprint $table) {
             $table->id();
@@ -74,10 +82,12 @@ class AccountLifecycleTest extends TestCase
 
     protected function tearDown(): void
     {
-        Schema::dropIfExists('smart_notifications');
-        Schema::dropIfExists('audit_logs');
-        Schema::dropIfExists('sessions');
-        Schema::dropIfExists('users');
+        if ($this->isolatedSchemaCreated) {
+            Schema::dropIfExists('smart_notifications');
+            Schema::dropIfExists('audit_logs');
+            Schema::dropIfExists('sessions');
+            Schema::dropIfExists('users');
+        }
 
         parent::tearDown();
     }

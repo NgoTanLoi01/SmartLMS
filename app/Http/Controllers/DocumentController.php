@@ -30,6 +30,7 @@ class DocumentController extends Controller
         // 2. Lấy danh sách tài liệu từ PostgreSQL
         $documents = DocumentChunk::on('pgsql')
             ->select('document_name', 'course_id', 'uploaded_by', DB::raw('MAX(created_at) as created_at'), DB::raw('COUNT(*) as total_chunks'))
+            ->where('is_active', true)
             ->groupBy('document_name', 'course_id', 'uploaded_by')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -80,13 +81,13 @@ class DocumentController extends Controller
                 'user_id' => $request->user()->id,
                 'feature' => 'document_embedding',
                 'provider' => 'gemini',
-                'model' => 'gemini-embedding-001',
+                'model' => config('services.gemini.embedding_model', 'gemini-embedding-001'),
                 'status' => AiOperation::STATUS_QUEUED,
                 'subject_type' => $course ? Course::class : null,
                 'subject_id' => $course?->id,
                 'metadata' => ['document_name' => $documentName, 'path' => $path],
             ]);
-            ProcessDocumentPdf::dispatch($operation->id, $path, $documentName, (int) $courseId, (int) $request->user()->id)->afterCommit();
+            ProcessDocumentPdf::dispatch($operation->id, $path, $documentName, $course?->id, (int) $request->user()->id)->afterCommit();
 
             return back()->with('success', 'Tài liệu đã vào hàng đợi xử lý. Bạn có thể rời trang trong khi worker tạo embedding.');
         }
@@ -104,8 +105,10 @@ class DocumentController extends Controller
             'uploaded_by' => 'nullable|integer|min:1',
         ]);
         $query = DocumentChunk::on('pgsql')
-            ->where('document_name', $name)
-            ->where('course_id', $data['course_id']);
+            ->where('document_name', $name);
+        (int) $data['course_id'] === 0
+            ? $query->where(fn ($scope) => $scope->whereNull('course_id')->orWhere('course_id', 0))
+            : $query->where('course_id', $data['course_id']);
         array_key_exists('uploaded_by', $data) && $data['uploaded_by'] !== null
             ? $query->where('uploaded_by', $data['uploaded_by'])
             : $query->whereNull('uploaded_by');

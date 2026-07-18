@@ -175,7 +175,7 @@ services:
                     memory: 256M
 
     postgres_vector:
-        image: ankane/pgvector:latest
+        image: pgvector/pgvector:0.8.5-pg15
         container_name: lms-vector-db
         restart: always
         environment:

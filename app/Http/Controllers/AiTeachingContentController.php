@@ -18,10 +18,10 @@ class AiTeachingContentController extends Controller
             'course_id' => 'nullable|exists:courses,id',
             'lesson_id' => 'nullable|exists:lessons,id',
             'module_id' => 'nullable|exists:modules,id',
-            'source_text' => 'nullable|string',
+            'source_text' => 'nullable|string|max:20000',
             'teacher_request' => 'nullable|string|max:1000',
             'current_title' => 'nullable|string|max:255',
-            'current_instructions' => 'nullable|string',
+            'current_instructions' => 'nullable|string|max:10000',
         ]);
 
         if (! empty($data['lesson_id'])) {

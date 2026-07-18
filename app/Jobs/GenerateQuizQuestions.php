@@ -21,7 +21,7 @@ class GenerateQuizQuestions implements ShouldQueue
 
     public array $backoff = [10, 30, 90];
 
-    public function __construct(public int $operationId, public string $prompt, public string $sourceLabel)
+    public function __construct(public int $operationId, public string $prompt, public string $sourceLabel, public int $expectedQuantity)
     {
         $this->onQueue('ai');
     }
@@ -31,7 +31,7 @@ class GenerateQuizQuestions implements ShouldQueue
         $operation = AiOperation::findOrFail($this->operationId);
         $started = hrtime(true);
         $operation->update(['status' => AiOperation::STATUS_PROCESSING, 'attempts' => $this->attempts(), 'started_at' => now(), 'error_message' => null]);
-        $output = $deepSeek->generateQuizQuestions($this->prompt);
+        $output = $deepSeek->generateQuizQuestions($this->prompt, $this->expectedQuantity);
         $usage = $output['usage'];
         $operation->update([
             'status' => AiOperation::STATUS_COMPLETED,

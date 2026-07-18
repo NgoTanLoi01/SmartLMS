@@ -49,7 +49,7 @@
 - ✅ **Submission System** — Giao bài, nộp file hoặc tự luận, chấm điểm, phản hồi và quản lý trạng thái bài nộp.
 - ✅ **Quiz & Question Bank** — Ngân hàng câu hỏi, import, tạo đề, làm bài, xem lại và thống kê kết quả.
 - ✅ **AI hỗ trợ giảng dạy** — Lập kế hoạch khóa học, tạo câu hỏi, phân tích lớp và gợi ý chấm bài có giáo viên duyệt.
-- ✅ **RAG & trợ lý cá nhân hóa** — Xử lý tài liệu, tìm kiếm ngữ cảnh khóa học và trả lời theo vai trò/lịch/bài tập của người dùng.
+- ✅ **RAG & trợ lý cá nhân hóa** — Tìm kiếm ngữ nghĩa bằng PostgreSQL/pgvector, giới hạn tài liệu theo quyền khóa học và trả lời kèm tên tài liệu/trang trích dẫn.
 - ✅ **Kho tài liệu chung** — Chia sẻ tài liệu giữa giáo viên trên Cloudflare R2 với quyền sở hữu và phạm vi truy cập.
 
 ---
@@ -112,6 +112,35 @@ docker compose exec app php artisan optimize
 - MySQL, PostgreSQL và Reverb chỉ mở trong Docker network; lưu lượng ứng dụng/WebSocket đi qua Nginx.
 - Khi rotate trên hệ thống đã có volume đang chạy, dùng `php scripts/rotate-secrets.php --sync-running-databases`, sau đó recreate container bằng `docker compose up -d --force-recreate`.
 - Rotation `APP_KEY` làm mất hiệu lực session/cookie cũ. Luôn backup database trước khi rotation production.
+
+### AI, pgvector và OCR
+
+- Tất cả kết nối DeepSeek/Gemini đều xác minh TLS; không sử dụng `withoutVerifying()`.
+- Dữ liệu gửi ra nhà cung cấp AI được loại email/số điện thoại và dùng mã tham chiếu thay cho danh tính học viên ở các luồng phân tích/chấm bài.
+- Endpoint chatbot và sinh nội dung có rate limit riêng. Kết quả JSON từ AI được kiểm tra schema trước khi lưu hoặc trả về nghiệp vụ.
+- Chatbot chỉ truy xuất chunk đang hoạt động và thuộc khóa học người dùng được phép xem. Câu trả lời hiển thị nguồn theo tài liệu, khóa học và số trang.
+- Pipeline PDF tạo toàn bộ embedding ở trạng thái staging, chỉ thay thế phiên bản đang hoạt động trong một transaction sau khi tất cả chunk thành công. PDF scan được OCR bằng Poppler/Tesseract.
+- PostgreSQL dùng image cố định `pgvector/pgvector:0.8.5-pg15`; migration nâng extension `vector` và tạo HNSW cosine dạng `halfvec(3072)` cho các chunk đang hoạt động. Cách này giữ embedding Gemini 3.072 chiều nhưng vẫn nằm trong giới hạn index 4.000 chiều của pgvector. Image ứng dụng đã bao gồm `pdftoppm` và Tesseract ngôn ngữ Việt/Anh, vì vậy phải pull/recreate PostgreSQL và rebuild image ứng dụng khi nâng cấp từ bản cũ.
+
+Các biến cấu hình chính trong `.env`:
+
+```dotenv
+GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+AI_CHAT_RATE_LIMIT=20
+AI_GENERATION_RATE_LIMIT=8
+AI_RAG_RESULT_LIMIT=5
+AI_RAG_CONTEXT_LIMIT=9000
+AI_RAG_MAX_DISTANCE=0.65
+AI_RAG_DISTANCE_MARGIN=0.18
+AI_EMBEDDING_DIMENSIONS=3072
+AI_EMBEDDING_CHUNK_SIZE=1200
+AI_EMBEDDING_CHUNK_OVERLAP=200
+AI_OCR_ENABLED=true
+AI_OCR_LANGUAGES=vie+eng
+AI_OCR_MAX_PAGES=50
+```
+
+`AI_EMBEDDING_DIMENSIONS` phải trùng với kiểu `vector(3072)` của bảng `document_chunks`. Sau khi deploy, chạy migration, rebuild container và làm mới cache cấu hình/route trước khi nạp lại tài liệu.
 
 Hướng dẫn đầy đủ về kiểm tra trước deploy, backup, rollout, health check và rollback nằm tại [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 

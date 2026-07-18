@@ -42,8 +42,7 @@ class AssignmentAiGradingService
                 'course' => $assignment->course->title,
             ],
             'student' => [
-                'name' => $submission->user?->name,
-                'email' => $submission->user?->email,
+                'reference' => 'HOC_VIEN',
                 'submitted_at' => $submission->formatSubmittedAt('d/m/Y H:i:s'),
             ],
             'submission' => [

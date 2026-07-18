@@ -726,13 +726,14 @@
                 </div>
                 <div class="docs-table-wrap">
                     <table class="docs-table">
-                        <thead><tr><th>Tài liệu</th><th>Trạng thái</th><th>Chunks</th><th>Thời gian</th><th>Thông báo</th></tr></thead>
+                        <thead><tr><th>Tài liệu</th><th>Trạng thái</th><th>Chunks</th><th>OCR</th><th>Thời gian</th><th>Thông báo</th></tr></thead>
                         <tbody>
                         @foreach ($processingOperations as $operation)
                             <tr>
                                 <td>{{ $operation->metadata['document_name'] ?? 'Tài liệu' }}</td>
                                 <td><span class="badge-course">{{ $operation->status }}</span></td>
                                 <td>{{ $operation->result['chunks'] ?? '—' }}</td>
+                                <td>{{ isset($operation->result['ocr_used']) ? ($operation->result['ocr_used'] ? 'Có' : 'Không') : '—' }}</td>
                                 <td>{{ $operation->duration_ms ? number_format($operation->duration_ms / 1000, 1) . ' giây' : '—' }}</td>
                                 <td class="text-danger">{{ $operation->error_message ? Str::limit($operation->error_message, 120) : '—' }}</td>
                             </tr>
@@ -751,8 +752,8 @@
                 <p>Nếu file quá lớn (trên 50 trang): Thầy/Cô nên <strong>chia nhỏ file PDF thành từng chương</strong> trước
                     khi upload để AI tìm kiếm chính xác hơn và tránh nghẽn API Google khi tạo Vector.</p>
                 <ul>
-                    <li>Chỉ dùng file PDF dạng văn bản <span class="highlight-danger">(không dùng ảnh quét/scan)</span></li>
-                    <li>Hệ thống sử dụng Gemini Flash để tạo Vector 3072 chiều</li>
+                    <li>Hỗ trợ PDF văn bản và PDF ảnh scan bằng OCR tiếng Việt/Anh; PDF scan xử lý tối đa 50 trang mỗi lần</li>
+                    <li>Hệ thống sử dụng Gemini Embedding để tạo vector 3072 chiều</li>
                     <li><strong>Tài liệu được Train sẽ dùng cho chatbot và ngân hàng câu hỏi</strong></li>
                 </ul>
             </div>

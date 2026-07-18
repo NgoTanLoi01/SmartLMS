@@ -22,7 +22,7 @@ class ProcessDocumentPdf implements ShouldQueue
 
     public array $backoff = [30, 120, 300];
 
-    public function __construct(public int $operationId, public string $path, public string $documentName, public int $courseId, public int $uploadedBy)
+    public function __construct(public int $operationId, public string $path, public string $documentName, public ?int $courseId, public int $uploadedBy)
     {
         $this->onQueue('documents');
     }
@@ -64,5 +64,6 @@ class ProcessDocumentPdf implements ShouldQueue
             'error_message' => mb_substr($exception?->getMessage() ?? 'Unknown document processing failure', 0, 4000),
             'failed_at' => now(),
         ]);
+        Storage::disk('local')->delete($this->path);
     }
 }

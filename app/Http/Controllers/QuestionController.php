@@ -9,16 +9,22 @@ use App\Models\Course;
 use App\Models\Option;
 use App\Models\Question;
 use App\Models\QuestionBank;
+use App\Services\AiResponseValidator;
+use App\Services\GeminiEmbeddingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class QuestionController extends Controller
 {
+    public function __construct(
+        private GeminiEmbeddingService $embeddingService,
+        private AiResponseValidator $responseValidator,
+    ) {}
+
     // ==========================================
     // 1. HIỂN THỊ GIAO DIỆN NGÂN HÀNG CÂU HỎI
     // ==========================================
@@ -285,7 +291,7 @@ class QuestionController extends Controller
             'module_id' => 'nullable|integer',
             'lesson_id' => 'nullable|integer',
             'topic' => 'nullable|string|max:255',
-            'difficulty' => 'required|string',
+            'difficulty' => 'required|string|in:Dễ,Trung bình,Khó',
             'quantity' => 'required|integer|min:1|max:20',
         ]);
 
@@ -339,7 +345,7 @@ class QuestionController extends Controller
             'subject_type' => Course::class, 'subject_id' => $course->id,
             'metadata' => ['quantity' => (int) $request->quantity, 'difficulty' => $request->difficulty, 'source_label' => $sourceLabel],
         ]);
-        GenerateQuizQuestions::dispatch($operation->id, $prompt, $sourceLabel)->afterCommit();
+        GenerateQuizQuestions::dispatch($operation->id, $prompt, $sourceLabel, (int) $request->quantity)->afterCommit();
 
         return response()->json([
             'success' => true, 'queued' => true, 'operation_id' => $operation->uuid,
@@ -431,40 +437,22 @@ class QuestionController extends Controller
 
     private function quizAiDocumentContext(Request $request, Course $course): array
     {
-        // 1. Lấy Vector câu hỏi từ Gemini (Sử dụng API Key Gemini)
-        $apiKeyGemini = env('GOOGLE_API_KEY');
-
-        if (empty($apiKeyGemini)) {
-            return ['text' => '', 'error' => 'Chưa cấu hình API Key của Gemini trong hệ thống.'];
-        }
-
         $searchTopic = trim((string) $request->topic) ?: $course->title;
+        try {
+            $queryVector = $this->embeddingService->embed($searchTopic);
+        } catch (\Throwable $e) {
+            Log::warning('Gemini quiz context embedding failed', ['error' => $e->getMessage()]);
 
-        $responseGemini = Http::timeout(30)
-            ->withoutVerifying()
-            ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={$apiKeyGemini}", [
-                'model' => 'models/gemini-embedding-001',
-                'content' => [
-                    'parts' => [['text' => $searchTopic]],
-                ],
-            ]);
-
-        if ($responseGemini->failed() || ! isset($responseGemini->json()['embedding'])) {
-            $errorData = $responseGemini->json();
-            $errorMsg = $errorData['error']['message'] ?? 'Lỗi không xác định từ Gemini API';
-            Log::error('Gemini API Error: ', $errorData);
-
-            return ['text' => '', 'error' => 'Lỗi tạo Vector (Gemini): '.$errorMsg];
+            return ['text' => '', 'error' => 'Không thể tìm kiếm tài liệu AI lúc này. Vui lòng thử lại sau.'];
         }
-
-        $queryVector = $responseGemini->json()['embedding']['values'];
         $queryVectorStr = '['.implode(',', $queryVector).']';
 
         $contextChunks = DB::connection('pgsql')
             ->table('document_chunks')
             ->select('content')
             ->where('course_id', $course->id)
-            ->orderByRaw('embedding <=> ?::vector', [$queryVectorStr])
+            ->where('is_active', true)
+            ->orderByRaw('embedding::halfvec(3072) <=> ?::halfvec(3072)', [$queryVectorStr])
             ->limit(10)
             ->get();
 
@@ -494,9 +482,15 @@ class QuestionController extends Controller
         $request->validate([
             'course_id' => 'required|exists:courses,id',
             'question_bank_id' => 'nullable|exists:question_banks,id',
-            'difficulty' => 'required',
-            'questions' => 'required|array',
+            'difficulty' => 'required|string|in:Dễ,Trung bình,Khó,easy,medium,hard',
+            'questions' => 'required|array|min:1|max:20',
+            'questions.*.question' => 'required|string|max:2000',
+            'questions.*.options' => 'required|array|size:4',
+            'questions.*.options.*' => 'required|string|max:1000',
+            'questions.*.correct_index' => 'required|integer|min:0|max:3',
+            'questions.*.explanation' => 'nullable|string|max:4000',
         ]);
+        $validatedQuestions = $this->responseValidator->quizQuestions($request->questions, count($request->questions));
 
         // Chuyển đổi nhãn độ khó để khớp với DB (easy, medium, hard)
         $difficultyMap = ['Dễ' => 'easy', 'Trung bình' => 'medium', 'Khó' => 'hard'];
@@ -509,7 +503,7 @@ class QuestionController extends Controller
         $this->authorizeQuestionBank($bank);
         $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
 
-        foreach ($request->questions as $q) {
+        foreach ($validatedQuestions as $q) {
             $question = Question::create([
                 'course_id' => $request->course_id,
                 'question_bank_id' => $bank->id,

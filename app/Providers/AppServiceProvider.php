@@ -37,8 +37,11 @@ use App\Policies\SchedulePolicy;
 use App\Policies\SharedDocumentPolicy;
 use App\Policies\TeachingContractPolicy;
 use App\Policies\TeachingRecordPolicy;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate; // ✅ THÊM DÒNG NÀY
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -52,6 +55,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('ai-chatbot', fn (Request $request) => Limit::perMinute(
+            max(1, (int) config('ai.rate_limits.chat_per_minute', 20))
+        )->by('ai-chatbot:'.($request->user()?->id ?? $request->ip())));
+
+        RateLimiter::for('ai-generation', fn (Request $request) => Limit::perMinute(
+            max(1, (int) config('ai.rate_limits.generation_per_minute', 8))
+        )->by('ai-generation:'.($request->user()?->id ?? $request->ip())));
+
         Gate::policy(Course::class, CoursePolicy::class);
         Gate::policy(Classroom::class, ClassroomPolicy::class);
         Gate::policy(Module::class, ModulePolicy::class);

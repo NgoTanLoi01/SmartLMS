@@ -43,5 +43,7 @@ return [
 
     'gemini' => [
         'key' => env('GOOGLE_API_KEY'),
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+        'embedding_model' => env('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-001'),
     ],
 ];

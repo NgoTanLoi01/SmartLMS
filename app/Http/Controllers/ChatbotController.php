@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\DeepSeekService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ChatbotController extends Controller
 {
@@ -29,6 +30,12 @@ class ChatbotController extends Controller
             'lesson_context.lesson_id' => ['nullable', 'integer'],
             'lesson_context.assist_mode' => ['nullable', 'string', 'max:100'],
         ]);
+
+        if (($validated['messages'][array_key_last($validated['messages'])]['role'] ?? null) !== 'user') {
+            throw ValidationException::withMessages([
+                'messages' => 'Tin nhắn cuối cùng phải do người dùng gửi.',
+            ]);
+        }
 
         try {
             $messages = array_slice($validated['messages'], -12);

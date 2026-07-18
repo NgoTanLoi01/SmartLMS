@@ -11,7 +11,12 @@ zip \
 libzip-dev \
 unzip \
 git \
-curl
+curl \
+poppler-utils \
+tesseract-ocr \
+tesseract-ocr-eng \
+tesseract-ocr-vie \
+&& rm -rf /var/lib/apt/lists/*
 
 # Cài đặt các phần mở rộng PHP
 # Bổ sung pcntl để chạy Reverb (WebSocket)

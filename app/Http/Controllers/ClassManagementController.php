@@ -201,22 +201,22 @@ class ClassManagementController extends Controller
         $studentSummaries = $students
             ->map(fn ($student) => $this->buildStudentSnapshot($classroom, $student, $courseIds, $snapshotContext))
             ->values();
+        $studentReferenceMap = [];
+        $aiStudents = $studentSummaries->map(function ($summary, int $index) use (&$studentReferenceMap) {
+            $reference = sprintf('HOC_VIEN_%03d', $index + 1);
+            $studentReferenceMap[$reference] = $summary['student']->name;
+
+            return $this->formatStudentAiPayload($summary, $reference);
+        })->values();
 
         $payload = [
             'scope' => $request->filled('student_id') ? 'student' : 'class',
-            'class' => [
-                'name' => $classroom->name,
-                'code' => $classroom->code,
-                'teacher' => $classroom->teacher?->name,
-            ],
             'courses' => Course::whereIn('id', $courseIds)
                 ->get(['id', 'title'])
                 ->map(fn ($course) => ['id' => $course->id, 'title' => $course->title])
                 ->values(),
             'class_report' => $this->buildClassProgressReport($studentSummaries),
-            'students' => $studentSummaries
-                ->map(fn ($summary) => $this->formatStudentAiPayload($summary))
-                ->values(),
+            'students' => $aiStudents,
         ];
 
         $operation = AiOperation::create([
@@ -233,7 +233,7 @@ class ClassManagementController extends Controller
                 'courses_count' => count($payload['courses']),
             ],
         ]);
-        AnalyzeLearningWithAi::dispatch($operation->id, $payload)->afterCommit();
+        AnalyzeLearningWithAi::dispatch($operation->id, $payload, $studentReferenceMap)->afterCommit();
 
         AuditLogger::log(
             AuditLogger::AI_LEARNING_ANALYZED,
@@ -474,11 +474,10 @@ class ClassManagementController extends Controller
         ];
     }
 
-    private function formatStudentAiPayload(array $summary): array
+    private function formatStudentAiPayload(array $summary, string $reference): array
     {
         return [
-            'name' => $summary['student']->name,
-            'email' => $summary['student']->email,
+            'student_reference' => $reference,
             'lesson_progress_percent' => $summary['lesson_progress'],
             'lessons_completed' => $summary['lesson_completed'],
             'lessons_total' => $summary['lesson_total'],

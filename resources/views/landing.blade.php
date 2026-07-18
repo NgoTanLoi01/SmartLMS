@@ -18,7 +18,7 @@
     {{-- OPEN GRAPH --}}
     <meta property="og:type" content="website">
     <meta property="og:locale" content="vi_VN">
-    <meta property="og:url" content="https://smartlms.io.vn/">
+    <meta property="og:url" content="{{ route('home') }}">
     <meta property="og:site_name" content="SmartLMS">
     <meta property="og:title" content="SmartLMS – Phần mềm quản lý trung tâm đào tạo miễn phí, tích hợp AI">
     <meta property="og:description"
@@ -84,15 +84,14 @@
 
     @vite('resources/css/pages/landing.css')
 
-    @verbatim
     </head>
 
     <body>
 
         <!-- NAV -->
         <nav>
-            <a class="nav-logo" href="{{ url('/') }}" aria-label="SmartLMS - Trang chủ">
-                <img src="https://smartlms.io.vn/smartlms-logo-nobg.png" alt="SmartLMS Logo">
+            <a class="nav-logo" href="{{ route('home') }}" aria-label="SmartLMS - Trang chủ">
+                <img src="{{ asset('smartlms-logo-nobg.png') }}" alt="SmartLMS Logo">
             </a>
             <ul class="nav-links">
                 <li><a href="#features">Năng lực</a></li>
@@ -100,7 +99,7 @@
                 <li><a href="#how">Triển khai</a></li>
             </ul>
             <div class="nav-right">
-                <a class="nav-cta" href="https://smartlms.io.vn/login">Đăng nhập →</a>
+                <a class="nav-cta" href="{{ route('login') }}">Đăng nhập →</a>
             </div>
         </nav>
 
@@ -120,7 +119,7 @@
                         AI
                         cùng hoạt động trong một luồng thống nhất.</p>
                     <div class="hero-actions">
-                        <a class="btn-primary" href="https://smartlms.io.vn/login">
+                        <a class="btn-primary" href="{{ route('login') }}">
                             Vào SmartLMS
                             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                 stroke-width="2.5">
@@ -380,7 +379,7 @@
                         <span>✓ Học sinh thao tác dễ hơn</span>
                     </p>
                 </div>
-                <a class="btn-white" href="https://smartlms.io.vn/login">Truy cập SmartLMS →</a>
+                <a class="btn-white" href="{{ route('login') }}">Truy cập SmartLMS →</a>
             </div>
         </div>
 
@@ -389,17 +388,11 @@
             <div class="footer-container">
                 <div class="footer-grid">
                     <div class="footer-brand">
-                        <a href="{{ url('/') }}" class="footer-logo">SmartLMS</a>
+                        <a href="{{ route('home') }}" class="footer-logo">SmartLMS</a>
                         <p class="footer-desc">Nền tảng quản lý đào tạo tích hợp AI dành cho trung tâm, giáo viên và học
                             sinh
                             Việt Nam. Rõ luồng, nhẹ thao tác và sẵn sàng mở rộng.</p>
                         <div class="footer-socials">
-                            <a href="#" aria-label="Facebook">
-                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                        d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                                </svg>
-                            </a>
                             <a href="mailto:ngotanloi2424@gmail.com" aria-label="Email">
                                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor" stroke-width="2">
@@ -415,34 +408,34 @@
                         <ul>
                             <li><a href="#features">Tính năng</a></li>
                             <li><a href="#how">Cách hoạt động</a></li>
-                            <li><a href="#">Cập nhật mới</a></li>
-                            <li><a href="#">Lộ trình phát triển</a></li>
+                            <li><a href="#ai-layer">AI trong học tập</a></li>
+                            <li><a href="{{ route('login') }}">Đăng nhập</a></li>
                         </ul>
                     </div>
 
                     <div class="footer-col">
                         <h4>Tài nguyên</h4>
                         <ul>
-                            <li><a href="#">Trung tâm trợ giúp</a></li>
-                            <li><a href="#">Hướng dẫn sử dụng</a></li>
-                            <li><a href="#">Cộng đồng</a></li>
+                            <li><a href="https://github.com/NgoTanLoi01/LMS_System#readme" target="_blank" rel="noopener noreferrer">Hướng dẫn sử dụng</a></li>
+                            <li><a href="#features">Tổng quan tính năng</a></li>
+                            <li><a href="#ai-layer">Khả năng AI</a></li>
                             <li><a href="mailto:ngotanloi2424@gmail.com" aria-label="Email">Liên hệ hỗ trợ</a></li>
                         </ul>
                     </div>
 
                     <div class="footer-col">
-                        <h4>Pháp lý</h4>
+                        <h4>Dự án</h4>
                         <ul>
-                            <li><a href="#">Điều khoản sử dụng</a></li>
-                            <li><a href="#">Chính sách bảo mật</a></li>
-                            <li><a href="#">Giấy phép mở</a></li>
+                            <li><a href="https://github.com/NgoTanLoi01/LMS_System" target="_blank" rel="noopener noreferrer">Mã nguồn GitHub</a></li>
+                            <li><a href="https://github.com/NgoTanLoi01/LMS_System/issues" target="_blank" rel="noopener noreferrer">Báo lỗi / góp ý</a></li>
+                            <li><a href="mailto:ngotanloi2424@gmail.com">Liên hệ quản trị</a></li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="footer-bottom">
                     <span>© 2026 SmartLMS. Được xây dựng tại Việt Nam.</span>
-                    <span><a href="https://smartlms.io.vn">smartlms.io.vn</a> · Phần mềm quản lý đào tạo AI miễn phí</span>
+                    <span><a href="{{ route('home') }}">smartlms.io.vn</a> · Phần mềm quản lý đào tạo AI miễn phí</span>
                 </div>
             </div>
         </footer>
@@ -508,8 +501,6 @@
                 });
             }
         </script>
-    @endverbatim
-
 </body>
 
 </html>

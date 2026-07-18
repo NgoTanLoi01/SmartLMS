@@ -108,7 +108,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
 
         // Quản lý Học sinh trong Lớp học
         Route::get('/classes/{classId}/progress', [ClassManagementController::class, 'showProgress'])->name('classes.progress');
-        Route::post('/classes/{classId}/ai-analysis', [ClassManagementController::class, 'analyzeLearningWithAi'])->name('classes.ai-analysis');
+        Route::post('/classes/{classId}/ai-analysis', [ClassManagementController::class, 'analyzeLearningWithAi'])->middleware('throttle:ai-generation')->name('classes.ai-analysis');
         Route::get('/classes/{classId}/students', [ClassManagementController::class, 'getStudentsByClass'])->name('classes.students.index');
         Route::get('/classes/{classId}/students/{studentId}', [ClassManagementController::class, 'showStudent'])->name('classes.students.show');
         Route::post('/classes/{classId}/students', [ClassManagementController::class, 'storeStudent'])->name('classes.students.store');
@@ -127,7 +127,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::put('/courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::patch('/courses/{course}', [CourseController::class, 'update']);
         Route::post('/courses/{course}/quality-check', [CourseQualityController::class, 'check'])->name('courses.quality-check');
-        Route::post('/courses/{course}/ai-plan/generate', [CoursePlannerController::class, 'generate'])->name('courses.ai-plan.generate');
+        Route::post('/courses/{course}/ai-plan/generate', [CoursePlannerController::class, 'generate'])->middleware('throttle:ai-generation')->name('courses.ai-plan.generate');
         Route::post('/courses/{course}/ai-plan/apply', [CoursePlannerController::class, 'apply'])->name('courses.ai-plan.apply');
         Route::post('/courses/{course}/materials', [CourseMaterialController::class, 'store'])->name('courses.materials.store');
         Route::post('/courses/{course}/materials/attach', [CourseMaterialController::class, 'attachExisting'])->name('courses.materials.attach');
@@ -184,9 +184,9 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::delete('/assignments/{id}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
         Route::get('/assignments/{id}/submissions-list', [AssignmentController::class, 'listSubmissions'])->name('assignments.submissions.list');
         Route::post('/assignments/{id}/submissions/download', [AssignmentController::class, 'downloadSubmissionsArchive'])->name('assignments.submissions.download');
-        Route::post('/submissions/{id}/ai-analysis', [AssignmentController::class, 'analyzeSubmissionWithAi'])->name('assignments.submissions.ai-analysis');
+        Route::post('/submissions/{id}/ai-analysis', [AssignmentController::class, 'analyzeSubmissionWithAi'])->middleware('throttle:ai-generation')->name('assignments.submissions.ai-analysis');
         Route::post('/submissions/{id}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
-        Route::post('/ai/teaching-content/generate', [AiTeachingContentController::class, 'generate'])->name('ai.teaching-content.generate');
+        Route::post('/ai/teaching-content/generate', [AiTeachingContentController::class, 'generate'])->middleware('throttle:ai-generation')->name('ai.teaching-content.generate');
     });
 
     Route::post('/assignments/{id}/submit', [AssignmentController::class, 'submit'])->middleware('role:student')->name('assignments.submit');
@@ -213,7 +213,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     Route::middleware('role:admin,teacher')->group(function () {
         // Các Route AI Generate đặt LÊN TRÊN để tránh xung đột /{id}
         Route::get('/quizzes/ai-generate', [QuestionController::class, 'aiGenerateView'])->name('quizzes.ai_generate');
-        Route::post('/quizzes/ai-generate/process', [QuestionController::class, 'generateQuestions'])->name('quizzes.ai_generate.process');
+        Route::post('/quizzes/ai-generate/process', [QuestionController::class, 'generateQuestions'])->middleware('throttle:ai-generation')->name('quizzes.ai_generate.process');
         Route::post('/quizzes/ai-generate/save', [QuestionController::class, 'saveGeneratedQuestions'])->name('quizzes.ai_generate.save');
 
         // Ngân hàng câu hỏi
@@ -272,13 +272,13 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     // 2.11. HUẤN LUYỆN AI (RAG) & CHATBOT
     // ==========================================
     // API Chatbot
-    Route::post('/chatbot/send', [ChatbotController::class, 'sendMessage'])->name('chatbot.send');
+    Route::post('/chatbot/send', [ChatbotController::class, 'sendMessage'])->middleware('throttle:ai-chatbot')->name('chatbot.send');
 
     // Quản lý tài liệu huấn luyện
     Route::middleware('role:admin,teacher')->group(function () {
         Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
         Route::get('/documents/upload', [DocumentController::class, 'index'])->name('documents.upload');
-        Route::post('/documents/upload', [DocumentController::class, 'store'])->name('documents.store');
+        Route::post('/documents/upload', [DocumentController::class, 'store'])->middleware('throttle:ai-generation')->name('documents.store');
         Route::delete('/documents/{name}', [DocumentController::class, 'destroy'])->name('documents.destroy');
     });
 

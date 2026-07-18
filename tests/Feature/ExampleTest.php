@@ -16,4 +16,17 @@ class ExampleTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_landing_page_renders_real_navigation_links(): void
+    {
+        $response = $this->get(route('home'));
+
+        $response
+            ->assertOk()
+            ->assertDontSee('{{ url', false)
+            ->assertDontSee('href="#"', false)
+            ->assertSee('href="'.route('home').'"', false)
+            ->assertSee('href="'.route('login').'"', false)
+            ->assertSee('src="'.asset('smartlms-logo-nobg.png').'"', false);
+    }
 }

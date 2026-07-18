@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\AiOperation;
+use App\Services\AiPiiSanitizer;
 use App\Services\DeepSeekService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -21,12 +22,12 @@ class AnalyzeLearningWithAi implements ShouldQueue
 
     public array $backoff = [10, 30, 90];
 
-    public function __construct(public int $operationId, public array $payload)
+    public function __construct(public int $operationId, public array $payload, public array $studentReferenceMap = [])
     {
         $this->onQueue('ai');
     }
 
-    public function handle(DeepSeekService $deepSeek): void
+    public function handle(DeepSeekService $deepSeek, AiPiiSanitizer $piiSanitizer): void
     {
         $operation = AiOperation::findOrFail($this->operationId);
         $started = hrtime(true);
@@ -44,6 +45,7 @@ class AnalyzeLearningWithAi implements ShouldQueue
 
         $usage = $result['_usage'] ?? [];
         unset($result['_usage']);
+        $result = $piiSanitizer->restoreReferences($result, $this->studentReferenceMap);
         $operation->update([
             'status' => AiOperation::STATUS_COMPLETED,
             'result' => $result,
