@@ -59,7 +59,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 | 2. CÁC ROUTE YÊU CẦU ĐĂNG NHẬP (AUTH MIDDLEWARE)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'account.active'])->group(function () {
     // ==========================================
     // 2.1. DASHBOARD & PROFILE
     // ==========================================
@@ -92,6 +92,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::patch('/users/{user}/lifecycle', [UserController::class, 'updateLifecycle'])->name('users.lifecycle.update');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('users.resetPassword');
     });
@@ -307,5 +308,4 @@ Route::middleware(['auth'])->group(function () {
                 });
         });
 
-    Broadcast::routes(['middleware' => ['web', 'auth']]);
 });

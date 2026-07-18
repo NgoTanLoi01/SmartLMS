@@ -33,6 +33,8 @@ class AuditLogger
 
     public const CONTRACT_IMPORTED = 'contract_imported';
 
+    public const ACCOUNT_LIFECYCLE_UPDATED = 'account_lifecycle_updated';
+
     public static function log(
         string $action,
         ?Model $auditable = null,

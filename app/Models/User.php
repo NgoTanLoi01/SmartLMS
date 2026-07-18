@@ -23,10 +23,36 @@ class User extends Authenticatable
         'student_code',
         'email',
         'password',
-        'role', // Đảm bảo có role nếu bạn dùng ở bước trước
+        'role',
+        'is_active',
+        'last_login_at',
+        'expires_at',
+        'deactivated_at',
+        'deactivation_reason',
     ];
 
     protected $hidden = ['password', 'remember_token'];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
+            'expires_at' => 'datetime',
+            'deactivated_at' => 'datetime',
+        ];
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at !== null && $this->expires_at->isPast();
+    }
+
+    public function canAccessSystem(): bool
+    {
+        // Treat a missing legacy value as active; production migrations default it to true.
+        return $this->is_active !== false && ! $this->isExpired();
+    }
 
     public function hasRole(string ...$roles): bool
     {

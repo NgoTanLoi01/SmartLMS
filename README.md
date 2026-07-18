@@ -29,12 +29,28 @@
 
 ## 🚀 Tính Năng Đã Hoàn Thành
 
-### Quản lý lõi (Core Management)
+### Tài khoản và vận hành hệ thống
 
-- ✅ **RBAC System** — Phân quyền chặt chẽ: **Admin**, **Teacher**, **Student** thông qua Middleware & Policies
-- ✅ **Course Architecture** — Quản lý khóa học đa cấp: **Course → Module → Lesson**
-- ✅ **Learning Mode** — Trình phát bài học hỗ trợ đa phương tiện (Video, Documents)
-- ✅ **Smart Interaction** — Xử lý logic phía client bằng JavaScript ES6 & Modal tương tác nhanh
+- ✅ **RBAC & Policy** — Phân quyền Admin, Giáo viên, Học viên và cô lập dữ liệu theo chủ sở hữu/lớp học.
+- ✅ **Vòng đời tài khoản** — Kích hoạt, vô hiệu hóa, đặt ngày hết hạn, lưu lý do, theo dõi lần đăng nhập cuối và thu hồi phiên truy cập.
+- ✅ **Thông báo & audit log** — Trung tâm thông báo cá nhân, lịch sử thao tác quản trị và theo dõi tác vụ AI.
+- ✅ **Backup & storage health** — Backup database, lưu bản sao local/R2 và kiểm tra trạng thái kho lưu trữ.
+
+### Quản lý đào tạo
+
+- ✅ **Khóa học đa cấp** — Course → Module → Lesson, trạng thái xuất bản, lịch mở nội dung và học liệu dùng chung.
+- ✅ **Lớp học & học viên** — Phân công giáo viên, nhập danh sách học sinh, hồ sơ học tập và cảnh báo học sinh cần chú ý.
+- ✅ **Lịch học & điểm danh** — Lập/nhân bản/import lịch, điểm danh một chạm và xuất báo cáo Excel.
+- ✅ **Chương trình học** — Quản lý chương trình, khóa học, lớp áp dụng và tiến độ hoàn thành.
+- ✅ **Nghiệp vụ trung tâm** — Theo dõi giảng dạy, hợp đồng, thanh toán, dashboard và báo cáo vận hành.
+
+### Học tập, đánh giá và AI
+
+- ✅ **Submission System** — Giao bài, nộp file hoặc tự luận, chấm điểm, phản hồi và quản lý trạng thái bài nộp.
+- ✅ **Quiz & Question Bank** — Ngân hàng câu hỏi, import, tạo đề, làm bài, xem lại và thống kê kết quả.
+- ✅ **AI hỗ trợ giảng dạy** — Lập kế hoạch khóa học, tạo câu hỏi, phân tích lớp và gợi ý chấm bài có giáo viên duyệt.
+- ✅ **RAG & trợ lý cá nhân hóa** — Xử lý tài liệu, tìm kiếm ngữ cảnh khóa học và trả lời theo vai trò/lịch/bài tập của người dùng.
+- ✅ **Kho tài liệu chung** — Chia sẻ tài liệu giữa giáo viên trên Cloudflare R2 với quyền sở hữu và phạm vi truy cập.
 
 ---
 
@@ -83,9 +99,11 @@ docker compose up -d --build
 **3. Khởi tạo database và cache Laravel**
 
 ```bash
-docker compose exec app php artisan migrate --seed --force
+docker compose exec app php artisan migrate --force
 docker compose exec app php artisan optimize
 ```
+
+`db:seed` chỉ dành cho môi trường phát triển/dữ liệu mẫu. Không chạy seeder mặc định trên production vì có thể tạo tài khoản mẫu.
 
 ### Cấu hình production an toàn
 
@@ -138,9 +156,9 @@ lms-system/
 
 ## 🔮 Lộ Trình Phát Triển
 
-- [ ] Xây dựng module Submission System (nộp bài tập, quản lý file)
-- [ ] Tích hợp AI để hỗ trợ chấm bài tự luận tự động
 - [ ] Tự động cấp chứng chỉ (PDF Certificate) khi hoàn thành khóa học
+- [ ] Email/push notification cho lịch học, hạn bài và kết quả
+- [ ] Multi-tenant cho nhiều trung tâm độc lập
 - [ ] Load Testing đảm bảo hệ thống chịu tải 10000+ người dùng đồng thời
 
 ---

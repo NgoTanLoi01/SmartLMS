@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -10,10 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withBroadcasting(
         __DIR__.'/../routes/channels.php',
-        ['middleware' => ['web']], // QUAN TRỌNG: Đổi từ ['auth:sanctum'] thành ['web']
+        ['middleware' => ['web', 'auth', 'account.active']]
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
+            'account.active' => EnsureAccountIsActive::class,
             'role' => RoleMiddleware::class,
         ]);
     })
