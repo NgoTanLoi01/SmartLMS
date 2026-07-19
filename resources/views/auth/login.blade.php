@@ -129,21 +129,51 @@
 
         /* Mobile Responsive */
         @media (max-width: 991px) {
+            .login-section {
+                min-height: 100dvh;
+            }
+
             .login-illustration {
                 display: none;
             }
 
             .login-form-area {
                 background-color: #f8fafc;
+                min-width: 0;
+                padding: 24px 16px;
             }
 
             .login-card-custom {
                 background: white;
-                padding: 35px;
+                min-width: 0;
+                padding: 32px;
                 border-radius: 24px;
                 box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
             }
+        }
 
+        @media (max-width: 575px) {
+            .login-form-area {
+                align-items: flex-start;
+                padding: 16px 12px;
+            }
+
+            .login-card-custom {
+                padding: 26px 20px;
+            }
+
+            .login-card-custom .logo-brand {
+                height: 58px;
+                margin-bottom: 22px;
+            }
+
+            .welcome-msg {
+                font-size: 1.55rem;
+            }
+
+            .sub-msg {
+                margin-bottom: 28px;
+            }
         }
 
         .footer-links {
@@ -185,24 +215,27 @@
                 <form action="{{ route('login.post') }}" method="POST">
                     @csrf
                     <div class="form-group-custom">
-                        <label>Tên đăng nhập hoặc Email</label>
+                        <label for="loginInput">Tên đăng nhập</label>
                         <div class="position-relative">
-                            <i class="fas fa-user position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
-                            <input type="text" name="login" class="input-custom ps-5"
-                                placeholder="VD: nguyenvana hoặc email giáo viên" required value="{{ old('login') }}"
+                            <i class="fas fa-user position-absolute top-50 translate-middle-y ms-3 text-muted"
+                                aria-hidden="true"></i>
+                            <input type="text" name="login" id="loginInput" class="input-custom ps-5"
+                                placeholder="VD: nguyenvana" required value="{{ old('login') }}"
                                 autocomplete="username">
                         </div>
                     </div>
 
                     <div class="form-group-custom">
-                        <label>Mật khẩu</label>
+                        <label for="passwordInput">Mật khẩu</label>
                         <div class="position-relative">
-                            <i class="fas fa-lock position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+                            <i class="fas fa-lock position-absolute top-50 translate-middle-y ms-3 text-muted"
+                                aria-hidden="true"></i>
                             <input type="password" name="password" id="passwordInput" class="input-custom ps-5 pe-5"
                                 placeholder="••••••••" required autocomplete="current-password">
                             <button type="button" id="togglePassword"
+                                aria-label="Hiện mật khẩu" aria-pressed="false"
                                 class="btn position-absolute top-50 end-0 translate-middle-y me-2 text-muted border-0 shadow-none">
-                                <i class="fas fa-eye-slash" id="eyeIcon"></i>
+                                <i class="fas fa-eye-slash" id="eyeIcon" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -229,6 +262,9 @@
                             // Chuyển đổi kiểu input từ password sang text và ngược lại
                             const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                             password.setAttribute('type', type);
+                            const isVisible = type === 'text';
+                            togglePassword.setAttribute('aria-pressed', String(isVisible));
+                            togglePassword.setAttribute('aria-label', isVisible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
 
                             // Thay đổi icon con mắt
                             eyeIcon.classList.toggle('fa-eye-slash');
@@ -238,7 +274,7 @@
                 </script>
 
                 <div class="footer-links">
-                    &copy; {{ date('Y') }} SmartLMS v1.1.4<br>
+                    &copy; {{ date('Y') }} SmartLMS v1.1.6<br>
                     Phát triển bởi
                     <a href="mailto:ngotanloi2424@gmail.com">
                         <strong>NgoTanLoi</strong>

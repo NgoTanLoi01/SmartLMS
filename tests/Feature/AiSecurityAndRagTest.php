@@ -78,6 +78,77 @@ class AiSecurityAndRagTest extends TestCase
         $this->assertStringNotContainsString('tai-lieu-khong-duoc-trich-dan.pdf', $answer);
     }
 
+    public function test_chatbot_replaces_model_source_sections_with_one_trusted_source_block(): void
+    {
+        config([
+            'services.deepseek.key' => 'test-key',
+            'services.deepseek.base_url' => 'https://deepseek.test',
+            'services.deepseek.model' => 'test-model',
+        ]);
+        Http::fake([
+            'https://deepseek.test/chat/completions' => Http::response([
+                'choices' => [['message' => ['content' => <<<'ANSWER'
+Quy trình gồm năm bước [S1].
+
+Nguồn tham khảo:
+- [S1] Nguồn do mô hình tự tạo · trang 3
+
+Nguồn tham khảo
+- [S1] Nguồn bị lặp
+ANSWER]]],
+                'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 5, 'total_tokens' => 15],
+            ]),
+        ]);
+
+        $personal = Mockery::mock(PersonalAssistantService::class);
+        $personal->shouldReceive('answer')->once()->andReturnNull();
+        $local = Mockery::mock(LocalCourseContextSearchService::class);
+        $local->shouldReceive('search')->once()->andReturn('');
+        $vector = Mockery::mock(VectorCourseContextSearchService::class);
+        $vector->shouldReceive('search')->once()->andReturn([
+            'context' => '[S1] Tài liệu: so-tay.pdf\nQuy trình gồm năm bước.',
+            'sources' => [[
+                'label' => 'S1',
+                'document_name' => 'so-tay.pdf',
+                'course_title' => 'Toàn hệ thống',
+                'pages' => [3],
+            ], [
+                'label' => 'S1',
+                'document_name' => 'so-tay.pdf',
+                'course_title' => 'Toàn hệ thống',
+                'pages' => [3],
+            ]],
+        ]);
+
+        $service = new DeepSeekService(
+            $local,
+            $personal,
+            $vector,
+            new AiResponseValidator,
+            new AiPiiSanitizer,
+        );
+        $user = new User(['name' => 'Học viên', 'email' => 'student@example.com', 'role' => User::ROLE_STUDENT]);
+        $user->id = 10;
+
+        $answer = $service->sendMessage([
+            ['role' => 'user', 'content' => 'Câu hỏi trước'],
+            ['role' => 'assistant', 'content' => "Trả lời trước [S1].\n\n**Nguồn tham khảo**\n- [S1] Nguồn cũ"],
+            ['role' => 'user', 'content' => 'Quy trình gồm những bước nào?'],
+        ], $user);
+
+        $this->assertSame(1, substr_count($answer, '**Nguồn tham khảo**'));
+        $this->assertSame(1, substr_count($answer, 'so-tay.pdf'));
+        $this->assertStringNotContainsString('Nguồn do mô hình tự tạo', $answer);
+        $this->assertStringNotContainsString('Nguồn bị lặp', $answer);
+        $this->assertStringContainsString('trang 3', $answer);
+        Http::assertSent(function ($request) {
+            $assistantMessage = collect($request->data()['messages'] ?? [])
+                ->firstWhere('role', 'assistant');
+
+            return ($assistantMessage['content'] ?? null) === 'Trả lời trước [S1].';
+        });
+    }
+
     public function test_quiz_generation_rejects_invalid_ai_schema(): void
     {
         config([
