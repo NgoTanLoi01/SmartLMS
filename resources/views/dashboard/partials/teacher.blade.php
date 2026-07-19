@@ -12,50 +12,50 @@
             <div class="section-heading anim-2">Việc cần làm hôm nay</div>
             <div class="teacher-priority-grid anim-2">
                 <a href="{{ route('assignments.index') }}" class="teacher-priority-card teacher-priority-card--danger">
-                    <span class="teacher-priority-card__icon"><i class="fas fa-pen"></i></span>
+                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-pen"></i></span>
                     <span>
                         <span class="teacher-priority-card__label">Cần chấm</span>
                         <span class="teacher-priority-card__value">{{ $pendingGrades }}</span>
                         <span class="teacher-priority-card__hint">Bài nộp đang chờ giáo viên phản hồi.</span>
                     </span>
-                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                    <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
                 <a href="{{ route('schedules.index') }}" class="teacher-priority-card teacher-priority-card--blue">
-                    <span class="teacher-priority-card__icon"><i class="fas fa-calendar-day"></i></span>
+                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-calendar-day"></i></span>
                     <span>
                         <span class="teacher-priority-card__label">Lịch hôm nay</span>
                         <span class="teacher-priority-card__value">{{ $todaySchedules }}</span>
                         <span class="teacher-priority-card__hint">Ca dạy cần chuẩn bị trong ngày.</span>
                     </span>
-                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                    <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
                 <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--amber">
-                    <span class="teacher-priority-card__icon"><i class="fas fa-user-clock"></i></span>
+                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-user-clock"></i></span>
                     <span>
                         <span class="teacher-priority-card__label">Cần chú ý</span>
                         <span class="teacher-priority-card__value">{{ $attentionCount }}</span>
                         <span class="teacher-priority-card__hint">Học sinh nên được theo dõi sát hơn.</span>
                     </span>
-                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                    <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
                 <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--green">
-                    <span class="teacher-priority-card__icon"><i class="fas fa-user-graduate"></i></span>
+                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-user-graduate"></i></span>
                     <span>
                         <span class="teacher-priority-card__label">Học sinh</span>
                         <span class="teacher-priority-card__value">{{ $data['total_students'] }}</span>
                         <span class="teacher-priority-card__hint">Học sinh trong các lớp đang phụ trách.</span>
                     </span>
-                    <i class="fas fa-arrow-right teacher-priority-card__arrow"></i>
+                    <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
             </div>
 
             {{-- 2. QUICK ACTIONS --}}
             <div class="teacher-action-strip anim-2">
-                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-plus-circle"></i> Tạo
+                <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fa-solid fa-plus-circle"></i> Tạo
                     bài tập</a>
-                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Mở khóa học</a>
-                <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fas fa-calendar-days"></i> Xem lịch dạy</a>
-                <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-users"></i> Xem lớp</a>
+                <a href="{{ route('courses.index') }}" class="quick-action"><i class="fa-solid fa-book-open"></i> Mở khóa học</a>
+                <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fa-solid fa-calendar-days"></i> Xem lịch dạy</a>
+                <a href="{{ route('classes.index') }}" class="quick-action"><i class="fa-solid fa-users"></i> Xem lớp</a>
             </div>
 
             <div class="teacher-command-grid anim-3">
@@ -72,24 +72,24 @@
                         @endphp
                         <h3 class="teacher-next-class__title">{{ $nextSchedule->course_title }}</h3>
                         <div class="teacher-next-class__meta">
-                            <span><i class="fas fa-school"></i>{{ $nextSchedule->class_name }}</span>
-                            <span><i class="far fa-calendar"></i>{{ $nextStart->format('d/m/Y') }}</span>
-                            <span><i class="far fa-clock"></i>{{ $nextStart->format('H:i') }} -
+                            <span><i class="fa-solid fa-school"></i>{{ $nextSchedule->class_name }}</span>
+                            <span><i class="fa-regular fa-calendar"></i>{{ $nextStart->format('d/m/Y') }}</span>
+                            <span><i class="fa-regular fa-clock"></i>{{ $nextStart->format('H:i') }} -
                                 {{ $nextEnd->format('H:i') }}</span>
-                            <span><i class="fas fa-map-marker-alt"></i>{{ $nextSchedule->room ?? 'Online' }}</span>
+                            <span><i class="fa-solid fa-map-marker-alt"></i>{{ $nextSchedule->room ?? 'Online' }}</span>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ route('courses.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fas fa-book-open"></i> Vào khóa học</a>
-                            <a href="{{ route('attendance.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--ghost"><i class="fas fa-user-check"></i> Điểm danh</a>
-                            <a href="{{ route('courses.show', ['course' => $nextSchedule->course_id, 'presentation' => 1]) }}" class="btn-xs btn-xs--ghost"><i class="fas fa-display"></i> Trình chiếu</a>
+                            <a href="{{ route('courses.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fa-solid fa-book-open"></i> Vào khóa học</a>
+                            <a href="{{ route('attendance.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--ghost"><i class="fa-solid fa-user-check"></i> Điểm danh</a>
+                            <a href="{{ route('courses.show', ['course' => $nextSchedule->course_id, 'presentation' => 1]) }}" class="btn-xs btn-xs--ghost"><i class="fa-solid fa-display"></i> Trình chiếu</a>
                         </div>
                     @else
                         <h3 class="teacher-next-class__title">Chưa có ca dạy sắp tới</h3>
                         <div class="teacher-next-class__meta">
-                            <span><i class="fas fa-check-circle"></i>Không có lịch cần chuẩn bị ngay</span>
+                            <span><i class="fa-solid fa-circle-check"></i>Không có lịch cần chuẩn bị ngay</span>
                         </div>
                         <a href="{{ route('courses.index') }}" class="btn-xs btn-xs--primary">
-                            <i class="fas fa-book-open"></i> Chuẩn bị khóa học
+                            <i class="fa-solid fa-book-open"></i> Chuẩn bị khóa học
                         </a>
                     @endif
                 </div>
@@ -100,19 +100,19 @@
                     @forelse ($prioritySuggestions as $suggestion)
                         <div class="teacher-ai-suggestion teacher-ai-suggestion--{{ $suggestion['type'] ?? 'primary' }}">
                             <span class="teacher-ai-suggestion__icon">
-                                <i class="{{ $suggestion['icon'] ?? 'fas fa-lightbulb' }}"></i>
+                                <i class="{{ $suggestion['icon'] ?? 'fa-solid fa-lightbulb' }}"></i>
                             </span>
                             <div>
                                 <div class="teacher-ai-suggestion__title">{{ $suggestion['title'] }}</div>
                                 <div class="teacher-ai-suggestion__body">{{ $suggestion['body'] }}</div>
                                 <a href="{{ $suggestion['action_url'] }}" class="btn-xs btn-xs--ghost">
-                                    {{ $suggestion['action_label'] }} <i class="fas fa-arrow-right"></i>
+                                    {{ $suggestion['action_label'] }} <i class="fa-solid fa-arrow-right"></i>
                                 </a>
                             </div>
                         </div>
                     @empty
                         <div class="empty-state" style="padding:1.25rem 1rem">
-                            <div class="empty-icon"><i class="fas fa-lightbulb"></i></div>
+                            <div class="empty-icon"><i class="fa-solid fa-lightbulb"></i></div>
                             <p>Chưa có gợi ý mới từ dữ liệu hiện tại.</p>
                         </div>
                     @endforelse
@@ -126,7 +126,7 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--blue"><i class="fas fa-school"></i></span>
+                                <span class="icon-dot idot--blue"><i class="fa-solid fa-school"></i></span>
                                 Lớp phụ trách
                             </h6>
                             <a href="{{ route('classes.index') }}" class="btn-xs btn-xs--primary">Quản lý lớp</a>
@@ -148,11 +148,11 @@
                                         <div class="d-flex flex-wrap gap-2 mt-2">
                                             <a href="{{ route('classes.progress', $class->id) }}"
                                                 class="btn-xs btn-xs--primary">
-                                                <i class="fas fa-chart-line"></i> Tiến độ
+                                                <i class="fa-solid fa-chart-line"></i> Tiến độ
                                             </a>
                                             <a href="{{ route('classes.students.index', $class->id) }}"
                                                 class="btn-xs btn-xs--ghost">
-                                                <i class="fas fa-user-graduate"></i> Học sinh
+                                                <i class="fa-solid fa-user-graduate"></i> Học sinh
                                             </a>
                                         </div>
                                     </div>
@@ -160,7 +160,7 @@
                             @empty
                                 <div class="col-12">
                                     <div class="empty-state">
-                                        <div class="empty-icon"><i class="fas fa-school"></i></div>
+                                        <div class="empty-icon"><i class="fa-solid fa-school"></i></div>
                                         <p>Thầy / Cô chưa được phân công lớp.</p>
                                     </div>
                                 </div>
@@ -172,7 +172,7 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--amber"><i class="fas fa-user-clock"></i></span>
+                                <span class="icon-dot idot--amber"><i class="fa-solid fa-user-clock"></i></span>
                                 Học sinh cần chú ý
                             </h6>
                             <span class="bdg bdg--warning">Theo dõi</span>
@@ -203,7 +203,7 @@
                             </div>
                         @empty
                             <div class="empty-state">
-                                <div class="empty-icon" style="color:var(--success)"><i class="fas fa-check-circle"></i>
+                                <div class="empty-icon" style="color:var(--success)"><i class="fa-solid fa-circle-check"></i>
                                 </div>
                                 <p>Chưa có học sinh cần ưu tiên theo dõi.</p>
                             </div>
@@ -219,7 +219,7 @@
                     <div class="priority-submissions">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--red"><i class="fas fa-inbox"></i></span>
+                                <span class="icon-dot idot--red"><i class="fa-solid fa-inbox"></i></span>
                                 Bài cần chấm ưu tiên
                             </h6>
                             <span class="bdg bdg--danger">{{ $prioritySubmissions->count() }} bài</span>
@@ -256,13 +256,13 @@
                                     </div>
                                     <a href="{{ route('assignments.submissions.review', $sub->id) }}"
                                         class="btn-xs btn-xs--danger">
-                                        <i class="fas fa-pen"></i> Chấm ngay
+                                        <i class="fa-solid fa-pen"></i> Chấm ngay
                                     </a>
                                 </div>
                             @empty
                                 <div class="empty-state">
                                     <div class="empty-icon" style="color:var(--success)"><i
-                                            class="fas fa-check-circle"></i></div>
+                                            class="fa-solid fa-circle-check"></i></div>
                                     <p>Tuyệt vời! Thầy / Cô đã chấm hết bài.</p>
                                 </div>
                             @endforelse
@@ -273,7 +273,7 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--blue"><i class="fas fa-chart-pie"></i></span>
+                                <span class="icon-dot idot--blue"><i class="fa-solid fa-chart-pie"></i></span>
                                 Tiến độ chấm bài
                             </h6>
                         </div>
@@ -291,7 +291,7 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--blue"><i class="fas fa-calendar-alt"></i></span>
+                                <span class="icon-dot idot--blue"><i class="fa-solid fa-calendar-days"></i></span>
                                 Lịch dạy tuần này
                             </h6>
                             <span class="bdg bdg--primary">Tuần này · {{ $data['dashboard_week_label'] ?? '' }}</span>
@@ -376,7 +376,7 @@
                                             <td colspan="4">
                                                 <div class="empty-state">
                                                     <div class="empty-icon">
-                                                        <i class="fas fa-calendar-times"></i>
+                                                        <i class="fa-solid fa-calendar-times"></i>
                                                     </div>
                                                     <p>
                                                         <strong>Chưa có lịch dạy.</strong><br>
@@ -413,7 +413,7 @@
                                     </div>
                                     <div class="d-flex flex-wrap gap-2 align-items-center">
                                         <span class="bdg {{ $isExamSchedule ? 'bdg--danger' : 'bdg--primary' }}">
-                                            <i class="far fa-clock"></i>
+                                            <i class="fa-regular fa-clock"></i>
                                             {{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }}
                                             –
                                             {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}
@@ -432,7 +432,7 @@
                             @empty
                                 <div class="empty-state">
                                     <div class="empty-icon">
-                                        <i class="fas fa-calendar-times"></i>
+                                        <i class="fa-solid fa-calendar-times"></i>
                                     </div>
                                     <p>
                                         <strong>Chưa có lịch dạy.</strong><br>

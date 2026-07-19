@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import '../design-tokens.css';
 
 *,
 *::before,
@@ -7,24 +8,24 @@
 }
 
 :root {
-    --blue-50: #eff6ff;
-    --blue-100: #dbeafe;
+    --blue-50: var(--sl-primary-soft);
+    --blue-100: var(--sl-primary-subtle);
     --blue-500: #3b82f6;
-    --blue-600: #2563eb;
-    --blue-700: #1d4ed8;
+    --blue-600: var(--sl-primary);
+    --blue-700: var(--sl-primary-hover);
     --blue-900: #1e3a8a;
 
-    --amber-50: #fffbeb;
+    --amber-50: var(--sl-warning-soft);
     --amber-100: #fef3c7;
     --amber-400: #fbbf24;
     --amber-500: #f59e0b;
-    --amber-600: #d97706;
+    --amber-600: var(--sl-warning);
     --amber-800: #92400e;
 
-    --purple-50: #f5f3ff;
+    --purple-50: var(--sl-ai-soft);
     --purple-100: #ede9fe;
     --purple-500: #8b5cf6;
-    --purple-600: #7c3aed;
+    --purple-600: var(--sl-ai);
     --purple-800: #5b21b6;
 
     --green-50: #f0fdf4;
@@ -34,30 +35,30 @@
     --green-800: #166534;
     --green-900: #14532d;
 
-    --red-50: #fef2f2;
+    --red-50: var(--sl-danger-soft);
     --red-100: #fee2e2;
     --red-700: #b91c1c;
     --red-800: #991b1b;
 
-    --gray-50: #f9fafb;
+    --gray-50: var(--sl-surface-muted);
     --gray-100: #f3f4f6;
-    --gray-200: #e5e7eb;
-    --gray-300: #d1d5db;
-    --gray-400: #9ca3af;
-    --gray-500: #6b7280;
-    --gray-600: #4b5563;
-    --gray-700: #374151;
-    --gray-900: #111827;
+    --gray-200: var(--sl-border);
+    --gray-300: var(--sl-border-strong);
+    --gray-400: var(--sl-text-subtle);
+    --gray-500: var(--sl-text-muted);
+    --gray-600: var(--sl-text-secondary);
+    --gray-700: var(--sl-text-secondary);
+    --gray-900: var(--sl-text);
 
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
-    --radius-full: 9999px;
+    --radius-sm: var(--sl-radius-xs);
+    --radius-md: var(--sl-radius-sm);
+    --radius-lg: var(--sl-radius-md);
+    --radius-xl: var(--sl-radius-lg);
+    --radius-full: var(--sl-radius-pill);
 
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, .06), 0 1px 4px rgba(0, 0, 0, .04);
-    --shadow-lg: 0 10px 32px rgba(0, 0, 0, .10), 0 2px 8px rgba(0, 0, 0, .05);
+    --shadow-sm: var(--sl-shadow-xs);
+    --shadow-md: var(--sl-shadow-sm);
+    --shadow-lg: var(--sl-shadow-md);
 }
 
 body,
@@ -819,7 +820,7 @@ body,
 }
 
 .quiz-stat-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .06em;
@@ -1663,7 +1664,7 @@ body,
     border: 1px solid transparent;
     border-radius: var(--radius-full);
     display: inline-flex;
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 850;
     gap: 3px;
     letter-spacing: 0;
@@ -2294,7 +2295,7 @@ body,
     border-radius: 999px;
     display: inline-flex;
     flex: 0 0 26px;
-    font-family: "Font Awesome 5 Free";
+    font-family: "Font Awesome 6 Free";
     font-size: 12px;
     font-weight: 900;
     height: 26px;
@@ -2374,7 +2375,7 @@ body,
     color: #16a34a;
     content: "\f00c";
     display: inline-flex;
-    font-family: "Font Awesome 5 Free";
+    font-family: "Font Awesome 6 Free";
     font-size: 11px;
     font-weight: 900;
     height: 22px;
@@ -2467,7 +2468,7 @@ body,
 
 .teacher-mode-title {
     color: #111827;
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--sl-font-sans);
     font-size: 16.5px;
     font-weight: 700;
     margin: 0 0 4px;
@@ -2479,7 +2480,7 @@ body,
 
 .teacher-mode-subtitle {
     color: #64748b;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--sl-font-sans);
     font-size: 13px;
     font-weight: 500;
 }
@@ -2497,7 +2498,7 @@ body,
     border: 0;
     border-radius: 999px;
     color: #64748b;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--sl-font-sans);
     font-size: 13px;
     font-weight: 700;
     padding: 8px 14px;
@@ -2522,7 +2523,7 @@ body,
     border-radius: 12px;
     color: #8a611f;
     display: none;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--sl-font-sans);
     font-size: 13px;
     font-weight: 600;
     gap: 10px;
@@ -2554,7 +2555,7 @@ body,
     border: 1px solid transparent;
     border-radius: 12px;
     display: inline-flex;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--sl-font-sans);
     font-size: 13.5px;
     font-weight: 700;
     gap: 8px;

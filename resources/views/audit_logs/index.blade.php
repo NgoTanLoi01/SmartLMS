@@ -205,7 +205,7 @@
                 <input type="hidden" name="from_date" value="{{ $filters['from_date'] }}">
                 <input type="hidden" name="to_date" value="{{ $filters['to_date'] }}">
                 <button type="submit" class="btn btn-outline-danger rounded-pill px-4">
-                    <i class="fas fa-trash-alt me-1"></i> Xóa log theo bộ lọc
+                    <i class="fa-solid fa-trash-can me-1"></i> Xóa log theo bộ lọc
                 </button>
             </form>
         </div>
@@ -242,10 +242,10 @@
                 </div>
                 <div class="col-12 col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-fill">
-                        <i class="fas fa-filter me-1"></i>Lọc
+                        <i class="fa-solid fa-filter me-1"></i>Lọc
                     </button>
                     <a href="{{ route('audit-logs.index') }}" class="btn btn-light border" title="Đặt lại bộ lọc">
-                        <i class="fas fa-rotate-left"></i>
+                        <i class="fa-solid fa-rotate-left"></i>
                     </a>
                 </div>
             </form>
@@ -323,7 +323,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger text-nowrap">
-                                            <i class="fas fa-trash"></i> Xóa
+                                            <i class="fa-solid fa-trash"></i> Xóa
                                         </button>
                                     </form>
                                 </td>
@@ -332,7 +332,7 @@
                             <tr>
                                 <td colspan="9">
                                     <div class="audit-empty-state">
-                                        <i class="fas fa-shield-halved"></i>
+                                        <i class="fa-solid fa-shield-halved"></i>
                                         <span>Chưa có audit log phù hợp.</span>
                                     </div>
                                 </td>

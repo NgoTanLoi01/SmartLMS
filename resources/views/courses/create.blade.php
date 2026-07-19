@@ -17,7 +17,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white py-3 border-0">
                         <h4 class="fw-bold mb-0 text-primary">
-                            <i class="fas fa-plus-circle me-2"></i>Tạo khóa học mới
+                            <i class="fa-solid fa-plus-circle me-2"></i>Tạo khóa học mới
                         </h4>
                     </div>
                     <div class="card-body p-4">
@@ -132,7 +132,7 @@
 
                             <div class="d-flex align-items-center gap-2 pt-3">
                                 <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">
-                                    <i class="fas fa-save me-2"></i>Lưu khóa học
+                                    <i class="fa-solid fa-save me-2"></i>Lưu khóa học
                                 </button>
                                 <a href="{{ route('courses.index') }}" class="btn btn-light px-4 rounded-pill">Hủy bỏ</a>
                             </div>

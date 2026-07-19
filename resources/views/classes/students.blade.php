@@ -12,7 +12,7 @@
         {{-- Form validation messages --}}
         @if ($errors->any())
             <div class="lms-flash error" role="alert">
-                <i class="fas fa-exclamation-circle"></i>
+                <i class="fa-solid fa-circle-exclamation"></i>
                 <ul style="margin:0; padding-left:16px;">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -27,21 +27,21 @@
             ['label' => $classroom->code],
         ]">
             <x-slot:meta>
-                <span><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+                <span><i class="fa-solid fa-chalkboard-teacher" aria-hidden="true"></i>
                     {{ $classroom->teacher->name }}</span>
-                <span><i class="fas fa-users" aria-hidden="true"></i>
+                <span><i class="fa-solid fa-users" aria-hidden="true"></i>
                     {{ $classroom->students->count() }} học sinh</span>
             </x-slot:meta>
             @if (auth()->user()->role === 'admin' || auth()->id() === $classroom->teacher_id)
                 <x-slot:actions>
                     <a href="{{ route('classes.progress', $classroom->id) }}" class="lms-btn lms-btn-outline">
-                        <i class="fas fa-chart-line"></i> Theo dõi tiến độ
+                        <i class="fa-solid fa-chart-line"></i> Theo dõi tiến độ
                     </a>
                     <button class="lms-btn lms-btn-success" data-bs-toggle="modal" data-bs-target="#importExcelModal">
-                        <i class="fas fa-file-excel"></i> Nhập từ Excel
+                        <i class="fa-solid fa-file-excel"></i> Nhập từ Excel
                     </button>
                     <button class="lms-btn lms-btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-                        <i class="fas fa-user-plus"></i> Thêm học sinh
+                        <i class="fa-solid fa-user-plus"></i> Thêm học sinh
                     </button>
                 </x-slot:actions>
             @endif
@@ -63,7 +63,7 @@
         <div class="lms-card">
             <div class="lms-card-header">
                 <h2 class="lms-card-title">
-                    <i class="fas fa-users"></i> Danh sách học viên
+                    <i class="fa-solid fa-users"></i> Danh sách học viên
                 </h2>
                 <span class="lms-count">{{ ($studentSummaries ?? collect())->count() }} kết quả</span>
             </div>
@@ -73,7 +73,7 @@
                 <div class="lms-filter-group" style="flex:2; min-width:200px;">
                     <label>Tìm kiếm</label>
                     <div class="lms-input-icon">
-                        <i class="fas fa-search"></i>
+                        <i class="fa-solid fa-search"></i>
                         <input type="text" name="search" class="lms-input" style="width:100%;"
                             placeholder="Tên, tên đăng nhập, mã HS hoặc email..." value="{{ $filters['search'] ?? '' }}">
                     </div>
@@ -102,11 +102,11 @@
                 </div>
                 <div class="lms-filter-actions" style="padding-bottom:0;">
                     <button type="submit" class="lms-btn lms-btn-primary" style="height:36px; padding:0 14px;">
-                        <i class="fas fa-filter"></i> Lọc
+                        <i class="fa-solid fa-filter"></i> Lọc
                     </button>
                     <a href="{{ route('classes.students.index', $classroom->id) }}" class="lms-btn-reset"
                         title="Xóa bộ lọc">
-                        <i class="fas fa-rotate-left" style="font-size:13px;"></i>
+                        <i class="fa-solid fa-rotate-left" style="font-size:13px;"></i>
                     </a>
                 </div>
             </form>
@@ -137,12 +137,12 @@
                                             <div class="lms-student-name">{{ $student->name }}</div>
                                             @if ($student->username)
                                                 <div class="lms-student-email">
-                                                    <i class="fas fa-id-badge"></i> {{ $student->username }}
+                                                    <i class="fa-solid fa-id-badge"></i> {{ $student->username }}
                                                 </div>
                                             @endif
                                             @if ($student->student_code)
                                                 <div class="lms-student-email">
-                                                    <i class="fas fa-hashtag"></i> {{ $student->student_code }}
+                                                    <i class="fa-solid fa-hashtag"></i> {{ $student->student_code }}
                                                 </div>
                                             @endif
                                             <div class="lms-student-email">{{ $student->email }}</div>
@@ -153,16 +153,16 @@
                                 {{-- Status --}}
                                 <td>
                                     @if ($summary['needs_attention'])
-                                        <span class="lms-badge lms-badge-danger"><i class="fas fa-circle"
+                                        <span class="lms-badge lms-badge-danger"><i class="fa-solid fa-circle"
                                                 style="font-size:6px;"></i> Cần theo dõi</span>
                                     @else
-                                        <span class="lms-badge lms-badge-success"><i class="fas fa-circle"
+                                        <span class="lms-badge lms-badge-success"><i class="fa-solid fa-circle"
                                                 style="font-size:6px;"></i> Ổn định</span>
                                     @endif
                                     <div class="lms-alerts">
                                         @forelse($summary['alerts'] as $alert)
                                             <div class="lms-alert-item {{ $alert['level'] }}">
-                                                <i class="fas fa-circle-exclamation"></i>
+                                                <i class="fa-solid fa-circle-exclamation"></i>
                                                 <span>{{ $alert['text'] }}</span>
                                             </div>
                                         @empty
@@ -227,7 +227,7 @@
                                     <div class="lms-row-actions">
                                         <a href="{{ route('classes.students.show', ['classId' => $classroom->id, 'studentId' => $student->id]) }}"
                                             class="lms-action-link">
-                                            <i class="fas fa-chart-line" style="font-size:12px;"></i> Hồ sơ
+                                            <i class="fa-solid fa-chart-line" style="font-size:12px;"></i> Hồ sơ
                                         </a>
                                         @if (auth()->user()->role === 'admin' || auth()->id() === $classroom->teacher_id)
                                             <form
@@ -237,7 +237,7 @@
                                                 <button type="submit" class="lms-action-link danger"
                                                     style="background:none; border:none; cursor:pointer; font-family:inherit;"
                                                     onclick="return confirm('Xóa {{ $student->name }} khỏi lớp?')">
-                                                    <i class="fas fa-user-minus" style="font-size:12px;"></i> Xóa
+                                                    <i class="fa-solid fa-user-minus" style="font-size:12px;"></i> Xóa
                                                 </button>
                                             </form>
                                         @endif
@@ -248,7 +248,7 @@
                             <tr>
                                 <td colspan="7">
                                     <div class="lms-empty">
-                                        <span class="lms-empty-icon"><i class="fas fa-user-graduate"></i></span>
+                                        <span class="lms-empty-icon"><i class="fa-solid fa-user-graduate"></i></span>
                                         <h6>Không tìm thấy học sinh phù hợp</h6>
                                         <p>Hãy đổi bộ lọc hoặc thêm học sinh mới để bắt đầu.</p>
                                     </div>
@@ -276,7 +276,7 @@
                 </div>
                 <div class="modal-body" style="padding-top:8px;">
                     <div class="lms-info-box">
-                        <i class="fas fa-info-circle" style="flex-shrink:0; margin-top:1px;"></i>
+                        <i class="fa-solid fa-circle-info" style="flex-shrink:0; margin-top:1px;"></i>
                         <span>Học sinh sẽ được tạo tên đăng nhập từ họ tên. Nếu trùng tên, hệ thống sẽ ghép thêm mã học sinh hoặc số thứ tự.</span>
                     </div>
                     <div class="lms-form-group">
@@ -303,7 +303,7 @@
                 <div class="modal-footer" style="padding-top:16px;">
                     <button type="button" class="lms-btn lms-btn-outline" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="lms-btn lms-btn-primary">
-                        <i class="fas fa-user-plus"></i> Thêm vào lớp
+                        <i class="fa-solid fa-user-plus"></i> Thêm vào lớp
                     </button>
                 </div>
             </form>
@@ -326,7 +326,7 @@
                 </div>
                 <div class="modal-body" style="padding-top:8px;">
                     <div class="lms-warning-box">
-                        <strong style="font-size:13.5px;"><i class="fas fa-circle-info"
+                        <strong style="font-size:13.5px;"><i class="fa-solid fa-circle-info"
                                 style="margin-right:5px;"></i>Hướng dẫn & Quy chuẩn</strong>
                         <ul>
                             <li>Hệ thống đọc từ <strong>Dòng số 2</strong></li>
@@ -337,7 +337,7 @@
                         </ul>
                         <a href="{{ asset('templates/mau_danh_sach_hoc_sinh.xlsx') }}"
                             style="display:inline-flex; align-items:center; gap:6px; margin-top:4px;">
-                            <i class="fas fa-file-excel" style="color:#059669;"></i> Tải file biểu mẫu chuẩn (.xlsx)
+                            <i class="fa-solid fa-file-excel" style="color:#059669;"></i> Tải file biểu mẫu chuẩn (.xlsx)
                         </a>
                     </div>
                     <div class="lms-form-group" style="margin-top:16px; margin-bottom:0;">
@@ -350,7 +350,7 @@
                     <button type="button" class="lms-btn lms-btn-outline" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="lms-btn lms-btn-success"
                         style="background:#059669; color:#fff; border-color:#059669;">
-                        <i class="fas fa-upload"></i> Bắt đầu nhập
+                        <i class="fa-solid fa-upload"></i> Bắt đầu nhập
                     </button>
                 </div>
             </form>

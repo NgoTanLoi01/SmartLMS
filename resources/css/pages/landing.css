@@ -1,21 +1,23 @@
+@import '../design-tokens.css';
+
 :root {
-    --bg: #F5F6FB;
+    --bg: var(--sl-bg);
     --bg-deep: #0A0C16;
-    --surface: #FFFFFF;
+    --surface: var(--sl-surface);
     --surface-glass: rgba(255, 255, 255, 0.55);
     --surface-glass-strong: rgba(255, 255, 255, 0.78);
     --border-glass: rgba(255, 255, 255, 0.6);
     --border-glass-dark: rgba(255, 255, 255, 0.09);
 
-    --ink: #12131C;
-    --ink-soft: #3C3F52;
-    --ink-muted: #6C7086;
+    --ink: var(--sl-text);
+    --ink-soft: var(--sl-text-secondary);
+    --ink-muted: var(--sl-text-muted);
     --ink-on-dark: #EDEEF7;
     --ink-on-dark-muted: rgba(237, 238, 247, 0.62);
 
-    --indigo: #5B5FEF;
-    --indigo-2: #7C6FF0;
-    --indigo-deep: #3E3FBF;
+    --indigo: var(--sl-primary);
+    --indigo-2: var(--sl-primary-hover);
+    --indigo-deep: var(--sl-primary-active);
     --cyan: #3FD8C6;
     --violet: #A78BFA;
     --pink: #F472B6;
@@ -24,16 +26,16 @@
     --grad-primary: linear-gradient(135deg, var(--indigo) 0%, var(--indigo-2) 45%, var(--violet) 100%);
     --grad-border: linear-gradient(135deg, rgba(91, 95, 239, 0.55), rgba(63, 216, 198, 0.4));
 
-    --r-lg: 28px;
-    --r-md: 22px;
-    --r-sm: 16px;
+    --r-lg: var(--sl-radius-xl);
+    --r-md: var(--sl-radius-lg);
+    --r-sm: var(--sl-radius-md);
 
-    --shadow-soft: 0 20px 60px -20px rgba(30, 32, 80, 0.18);
-    --shadow-strong: 0 34px 90px -20px rgba(30, 32, 80, 0.32);
+    --shadow-soft: var(--sl-shadow-md);
+    --shadow-strong: var(--sl-shadow-lg);
     --shadow-glow-indigo: 0 0 60px -10px rgba(91, 95, 239, 0.45);
     --shadow-glow-cyan: 0 0 60px -10px rgba(63, 216, 198, 0.4);
 
-    --ease: cubic-bezier(.22, 1, .36, 1);
+    --ease: var(--sl-ease-emphasized);
     --persp: 1800px;
 }
 
@@ -55,7 +57,7 @@ html {
 }
 
 body {
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: var(--sl-font-sans);
     color: var(--ink);
     background: var(--bg);
     overflow-x: hidden;
@@ -67,7 +69,7 @@ h1,
 h2,
 h3,
 h4 {
-    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-family: var(--sl-font-sans);
     letter-spacing: -0.02em;
     color: var(--ink);
     margin: 0;
@@ -94,7 +96,7 @@ img {
 }
 
 .mono {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--sl-font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     font-size: 0.72rem;
@@ -122,7 +124,7 @@ img {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--sl-font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     font-size: 0.72rem;
@@ -180,6 +182,7 @@ nav.scrolled {
 
 .nav-logo img {
     height: 50px;
+    width: auto;
 }
 
 .nav-links {
@@ -481,7 +484,7 @@ nav.scrolled {
 }
 
 .kicker-value {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--sl-font-sans);
     font-weight: 700;
     font-size: 1.5rem;
     background: var(--grad-primary);
@@ -546,7 +549,7 @@ nav.scrolled {
 }
 
 .command-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--sl-font-mono);
     font-size: 0.7rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -566,7 +569,7 @@ nav.scrolled {
 }
 
 .card-badge {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--sl-font-mono);
     font-size: 0.68rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -597,7 +600,7 @@ nav.scrolled {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--sl-font-mono);
     font-weight: 600;
     font-size: 0.78rem;
     color: var(--indigo-deep);
@@ -674,7 +677,7 @@ nav.scrolled {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--sl-font-mono);
     font-weight: 700;
     font-size: 0.62rem;
     color: var(--indigo-deep);
@@ -713,7 +716,7 @@ nav.scrolled {
 }
 
 .ai-brief__label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--sl-font-mono);
     font-size: 0.66rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -904,7 +907,7 @@ nav.scrolled {
 }
 
 .ai-flow-icon {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--sl-font-sans);
     font-weight: 700;
     font-size: 1rem;
     color: #0A0C16;
@@ -987,7 +990,7 @@ nav.scrolled {
 }
 
 .ai-evidence {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--sl-font-mono);
     font-size: 0.7rem;
     color: var(--cyan);
     letter-spacing: 0.03em;
@@ -1023,7 +1026,7 @@ nav.scrolled {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--sl-font-sans);
     font-weight: 700;
     font-size: 1.25rem;
     color: #fff;
@@ -1162,7 +1165,7 @@ footer {
 }
 
 .footer-logo {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: var(--sl-font-sans);
     font-weight: 700;
     font-size: 1.4rem;
     color: #fff;

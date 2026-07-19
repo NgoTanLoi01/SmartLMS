@@ -18,7 +18,7 @@
             @if (auth()->user()->role === 'admin' || auth()->user()->role === 'teacher')
                 <button class="btn btn-primary rounded-pill px-4 shadow-sm assignments-create-btn" data-bs-toggle="modal"
                     data-bs-target="#addAssignmentModal">
-                    <i class="fas fa-plus me-1"></i> Tạo bài tập mới
+                    <i class="fa-solid fa-plus me-1"></i> Tạo bài tập mới
                 </button>
             @endif
         </div>
@@ -39,21 +39,21 @@
                             <div class="assignment-card-top mb-3">
                                 <div class="assignment-badges">
                                     <div class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-bold small assignment-badge">
-                                        <i class="fas fa-book me-1"></i> {{ $assignment->course->title }}
+                                        <i class="fa-solid fa-book me-1"></i> {{ $assignment->course->title }}
                                     </div>
                                     <div class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small assignment-badge">
-                                        <i class="fas fa-pen-alt me-1"></i> {{ $assignmentTypeLabel }}
+                                        <i class="fa-solid fa-pen me-1"></i> {{ $assignmentTypeLabel }}
                                     </div>
                                 </div>
 
                                 @if (auth()->user()->role === 'student')
                                     @if ($submission)
                                         <div class="badge bg-success rounded-pill px-2 py-1 small">
-                                            <i class="fas fa-check"></i> Đã nộp
+                                            <i class="fa-solid fa-check"></i> Đã nộp
                                         </div>
                                     @else
                                         <div class="badge bg-warning text-dark rounded-pill px-2 py-1 small">
-                                            <i class="fas fa-clock"></i> Chưa nộp
+                                            <i class="fa-solid fa-clock"></i> Chưa nộp
                                         </div>
                                     @endif
                                 @endif
@@ -68,18 +68,18 @@
 
                             <div class="bg-light rounded p-3 mb-3">
                                 <div class="d-flex align-items-center mb-2 small">
-                                    <i class="fas fa-calendar-alt text-danger me-2"></i>
+                                    <i class="fa-solid fa-calendar-days text-danger me-2"></i>
                                     <span class="fw-bold">Hạn nộp:</span>
                                     <span class="ms-1">{{ $assignment->due_date->format('d/m/Y H:i') }}</span>
                                 </div>
                                 @if (($assignment->type ?? 'file') !== 'essay')
                                     <div class="d-flex align-items-start small">
-                                        <i class="fas fa-file-upload text-muted me-2"></i>
+                                        <i class="fa-solid fa-file-arrow-up text-muted me-2"></i>
                                         <span class="text-muted assignment-extensions">Định dạng: {{ $assignment->allowed_extensions }}</span>
                                     </div>
                                 @else
                                     <div class="d-flex align-items-center small">
-                                        <i class="fas fa-align-left text-muted me-2"></i>
+                                        <i class="fa-solid fa-align-left text-muted me-2"></i>
                                         <span class="text-muted">Nhập câu trả lời trực tiếp</span>
                                     </div>
                                 @endif
@@ -112,7 +112,7 @@
                                         data-assignment-id="{{ $assignment->id }}"
                                         data-assignment-title="{{ $assignment->title }}"
                                         data-url="{{ route('assignments.submissions.list', $assignment->id) }}">
-                                        <i class="fas fa-eye me-1"></i> Xem bài nộp
+                                        <i class="fa-solid fa-eye me-1"></i> Xem bài nộp
                                         ({{ $assignment->submissions->count() }})
                                     </button>
                                 @endif
@@ -122,7 +122,7 @@
                 </div>
             @empty
                 <div class="col-12 text-center py-5">
-                    <i class="fas fa-tasks fa-3x text-muted opacity-50 mb-3"></i>
+                    <i class="fa-solid fa-list-check fa-3x text-muted opacity-50 mb-3"></i>
                     <h5 class="text-muted fw-bold">Chưa có bài tập nào được giao</h5>
                 </div>
             @endforelse
@@ -582,7 +582,7 @@
                     anchor.parentNode.insertBefore(alert, anchor);
                 }
                 alert.innerHTML = `
-            <i class="fas fa-exclamation-circle mt-1 flex-shrink-0"></i>
+            <i class="fa-solid fa-circle-exclamation mt-1 flex-shrink-0"></i>
             <div>${message}</div>
             <button type="button" class="btn-close btn-close-sm ms-auto" data-bs-dismiss="alert"></button>
         `;
@@ -636,7 +636,7 @@
                     } catch (error) {
                         submissionsContent.innerHTML = `
                             <div class="alert alert-danger mb-0">
-                                <i class="fas fa-exclamation-circle me-1"></i>${esc(error.message)}
+                                <i class="fa-solid fa-circle-exclamation me-1"></i>${esc(error.message)}
                             </div>`;
                     }
                 });
@@ -651,7 +651,7 @@
                 if (!rows.length) {
                     submissionsContent.innerHTML = `
                         <div class="text-center py-5 text-muted">
-                            <i class="fas fa-users fa-2x mb-3 opacity-50"></i>
+                            <i class="fa-solid fa-users fa-2x mb-3 opacity-50"></i>
                             <div>Chưa có học sinh nào trong lớp của khóa học này.</div>
                         </div>`;
                     return;
@@ -663,7 +663,7 @@
                     <input type="hidden" name="_token" value="${esc(csrf)}">
                     <div class="bulk-download-toolbar">
                         <div>
-                            <div class="fw-bold text-dark small"><i class="fas fa-file-zipper text-primary me-1"></i>Tải bài nộp hàng loạt</div>
+                            <div class="fw-bold text-dark small"><i class="fa-solid fa-file-zipper text-primary me-1"></i>Tải bài nộp hàng loạt</div>
                             <div class="bulk-download-toolbar__hint">File ZIP kèm danh sách CSV tổng hợp.</div>
                         </div>
                         <div class="bulk-download-toolbar__actions">
@@ -673,7 +673,7 @@
                                 <option value="selected">Các học sinh đã chọn</option>
                             </select>
                             <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
-                                <i class="fas fa-download me-1"></i>Tải ZIP
+                                <i class="fa-solid fa-download me-1"></i>Tải ZIP
                             </button>
                         </div>
                     </div>
@@ -700,17 +700,17 @@
                                         </td>
                                         <td>
                                             ${row.submission_id
-                                                ? '<span class="submission-status done"><i class="fas fa-check me-1"></i>Đã nộp</span>'
-                                                : '<span class="submission-status pending"><i class="fas fa-clock me-1"></i>Chưa nộp</span>'}
+                                                ? '<span class="submission-status done"><i class="fa-solid fa-check me-1"></i>Đã nộp</span>'
+                                                : '<span class="submission-status pending"><i class="fa-solid fa-clock me-1"></i>Chưa nộp</span>'}
                                         </td>
                                         <td>${esc(row.submitted_at || '-')}</td>
                                         <td>${row.grade !== null && row.grade !== undefined ? esc(row.grade) : '-'}</td>
                                         <td class="text-end">
                                             ${row.submission_id ? `
                                                 <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                                    ${row.file_url ? `<a href="${esc(row.file_url)}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fas fa-file me-1"></i>File</a>` : ''}
+                                                    ${row.file_url ? `<a href="${esc(row.file_url)}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fa-solid fa-file me-1"></i>File</a>` : ''}
                                                     <a href="${esc(row.review_url)}" class="btn btn-sm btn-primary rounded-pill">
-                                                        <i class="fas fa-pen-to-square me-1"></i>Chấm bài
+                                                        <i class="fa-solid fa-pen-to-square me-1"></i>Chấm bài
                                                     </a>
                                                 </div>
                                             ` : '<span class="text-muted small">Chưa có bài làm</span>'}
@@ -730,21 +730,21 @@
                                         <div class="text-muted small text-break">${esc(row.student_email || '')}</div>
                                     </div>
                                     ${row.submission_id
-                                        ? '<span class="submission-status done flex-shrink-0"><i class="fas fa-check me-1"></i>Đã nộp</span>'
-                                        : '<span class="submission-status pending flex-shrink-0"><i class="fas fa-clock me-1"></i>Chưa nộp</span>'}
+                                        ? '<span class="submission-status done flex-shrink-0"><i class="fa-solid fa-check me-1"></i>Đã nộp</span>'
+                                        : '<span class="submission-status pending flex-shrink-0"><i class="fa-solid fa-clock me-1"></i>Chưa nộp</span>'}
                                 </div>
                                 <div class="small text-muted mb-1">
-                                    <i class="fas fa-clock me-1"></i>${esc(row.submitted_at || 'Chưa có thời gian nộp')}
+                                    <i class="fa-solid fa-clock me-1"></i>${esc(row.submitted_at || 'Chưa có thời gian nộp')}
                                 </div>
                                 <div class="small text-muted mb-3">
-                                    <i class="fas fa-star me-1"></i>Điểm: ${row.grade !== null && row.grade !== undefined ? esc(row.grade) : '-'}
+                                    <i class="fa-solid fa-star me-1"></i>Điểm: ${row.grade !== null && row.grade !== undefined ? esc(row.grade) : '-'}
                                 </div>
                                 ${row.submission_id ? `
                                     <div class="d-grid gap-2">
                                         <a href="${esc(row.review_url)}" class="btn btn-sm btn-primary rounded-pill">
-                                            <i class="fas fa-pen-to-square me-1"></i>Chấm bài
+                                            <i class="fa-solid fa-pen-to-square me-1"></i>Chấm bài
                                         </a>
-                                        ${row.file_url ? `<a href="${esc(row.file_url)}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fas fa-file me-1"></i>Xem file</a>` : ''}
+                                        ${row.file_url ? `<a href="${esc(row.file_url)}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fa-solid fa-file me-1"></i>Xem file</a>` : ''}
                                     </div>
                                 ` : '<div class="text-muted small">Chưa có bài làm</div>'}
                             </div>

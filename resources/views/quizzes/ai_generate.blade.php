@@ -4,9 +4,9 @@
     <style>
         /* --- CUSTOM CSS FOR AI GENERATOR PAGE --- */
         :root {
-            --ai-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --ai-gradient-btn: linear-gradient(135deg, #00bcd4 0%, #2196f3 100%);
-            --ai-bg-light: #f4f7f9;
+            --ai-gradient: linear-gradient(135deg, var(--sl-primary) 0%, var(--sl-ai) 100%);
+            --ai-gradient-btn: linear-gradient(135deg, var(--sl-primary) 0%, var(--sl-primary-hover) 100%);
+            --ai-bg-light: var(--sl-bg);
         }
 
         body {
@@ -30,8 +30,8 @@
 
         .form-control.ai-input:focus,
         .form-select.ai-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            border-color: var(--sl-primary);
+            box-shadow: var(--sl-focus-ring);
         }
 
         /* Generate Button */
@@ -207,7 +207,7 @@
                 <div class="card shadow border-0 card-ai-config mb-4 sticky-top" style="top: 20px;">
                     <div class="card-header py-3">
                         <h6 class="mb-0 fw-bold text-white d-flex align-items-center">
-                            <i class="fas fa-robot me-2"></i> Cấu hình AI
+                            <i class="fa-solid fa-robot me-2"></i> Cấu hình AI
                         </h6>
                     </div>
                     <div class="card-body p-4">
@@ -221,7 +221,7 @@
                                     @endforeach
                                 </select>
                                 <div class="form-text mt-2 d-flex align-items-center">
-                                    <i class="fas fa-info-circle me-1 text-primary"></i>
+                                    <i class="fa-solid fa-circle-info me-1 text-primary"></i>
                                     AI có thể dùng nội dung bài học, tài liệu upload hoặc chủ đề nhập tay.
                                 </div>
                             </div>
@@ -309,7 +309,7 @@
 
                             <button type="submit" class="btn btn-primary btn-ai-generate w-100 py-3 fw-bold shadow-sm"
                                 id="btnGenerate">
-                                <i class="fas fa-microchip me-2"></i> SINH CÂU HỎI
+                                <i class="fa-solid fa-microchip me-2"></i> SINH CÂU HỎI
                             </button>
                         </form>
                     </div>
@@ -317,7 +317,7 @@
 
                 <div class="alert border-0 rounded-4 p-4 shadow-sm" style="background: rgba(102, 126, 234, 0.05);">
                     <div class="d-flex">
-                        <div class="me-3 text-primary h5 mb-0"><i class="fas fa-lightbulb"></i></div>
+                        <div class="me-3 text-primary h5 mb-0"><i class="fa-solid fa-lightbulb"></i></div>
                         <div>
                             <h6 class="fw-bold text-dark mb-1">Mẹo nhỏ từ AI</h6>
                             <p class="small text-muted mb-0">
@@ -336,7 +336,7 @@
                     <div class="card border-0 shadow-sm text-center py-5 rounded-4" id="emptyState">
                         <div class="card-body py-5">
                             <div class="ai-pulse mx-auto mb-4">
-                                <i class="fas fa-wand-magic-sparkles"></i>
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
                             </div>
                             <h5 class="text-gradient fw-bold">Sẵn sàng sáng tạo!</h5>
                             <p class="text-muted small mt-2">Chỉ cần cấu hình bên trái, AI sẽ giúp Thầy/Cô soạn đề thi trong
@@ -357,10 +357,10 @@
                     <div id="questionPreviewList" class="d-none">
                         <div
                             class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded-4 shadow-sm">
-                            <h5 class="fw-bold mb-0 text-gradient"><i class="fas fa-list-check me-2"></i>Kết quả sinh ra
+                            <h5 class="fw-bold mb-0 text-gradient"><i class="fa-solid fa-list-check me-2"></i>Kết quả sinh ra
                             </h5>
                             <button class="btn btn-primary btn-save-all fw-bold shadow-sm" id="btnSaveAll">
-                                <i class="fas fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG
+                                <i class="fa-solid fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG
                             </button>
                         </div>
 
@@ -380,7 +380,7 @@
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <span class="badge q-badge q-title">Câu 1</span>
                     <button class="btn btn-sm btn-outline-secondary border-0 btn-remove-q" title="Bỏ câu này">
-                        <i class="fas fa-trash-alt text-danger"></i>
+                        <i class="fa-solid fa-trash-can text-danger"></i>
                     </button>
                 </div>
 
@@ -402,7 +402,7 @@
                 </div>
 
                 <div class="explanation-box small d-flex align-items-start">
-                    <i class="fas fa-lightbulb text-warning me-2 mt-1"></i>
+                    <i class="fa-solid fa-lightbulb text-warning me-2 mt-1"></i>
                     <div>
                         <strong>Giải thích:</strong> <span class="explanation">...</span>
                     </div>
@@ -524,7 +524,7 @@
 
             const btnGenerate = document.getElementById('btnGenerate');
             btnGenerate.disabled = true;
-            btnGenerate.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> ĐANG XỬ LÝ...';
+            btnGenerate.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> ĐANG XỬ LÝ...';
 
             const payload = {
                 course_id: courseSelect.value,
@@ -594,7 +594,7 @@
                 resetUI();
             } finally {
                 btnGenerate.disabled = false;
-                btnGenerate.innerHTML = '<i class="fas fa-microchip me-2"></i> SINH CÂU HỎI';
+                btnGenerate.innerHTML = '<i class="fa-solid fa-microchip me-2"></i> SINH CÂU HỎI';
             }
         });
 
@@ -631,7 +631,7 @@
                     // Highlight đáp án đúng
                     if (optIndex === q.correct_index) {
                         optionDiv.classList.add('is-correct');
-                        optionDiv.innerHTML += ' <i class="fas fa-check-circle float-end"></i>';
+                        optionDiv.innerHTML += ' <i class="fa-solid fa-circle-check float-end"></i>';
                     }
                 });
 
@@ -674,7 +674,7 @@
             if (generatedQuestions.length === 0) return;
 
             const btnSave = this;
-            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang lưu...';
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Đang lưu...';
             btnSave.disabled = true;
 
             const payload = {
@@ -702,13 +702,13 @@
                     window.location.href = "{{ route('questions.index') }}";
                 } else {
                     alert("Lỗi khi lưu: " + (data.message || "Vui lòng kiểm tra lại."));
-                    btnSave.innerHTML = '<i class="fas fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG';
+                    btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG';
                     btnSave.disabled = false;
                 }
             } catch (error) {
                 console.error(error);
                 alert("Lỗi kết nối khi lưu dữ liệu.");
-                btnSave.innerHTML = '<i class="fas fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG';
+                btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG';
                 btnSave.disabled = false;
             }
         });
@@ -721,7 +721,7 @@
 
             const btnGenerate = document.getElementById('btnGenerate');
             btnGenerate.disabled = false;
-            btnGenerate.innerHTML = '<i class="fas fa-microchip me-2"></i> SINH CÂU HỎI';
+            btnGenerate.innerHTML = '<i class="fa-solid fa-microchip me-2"></i> SINH CÂU HỎI';
         }
     </script>
 @endsection

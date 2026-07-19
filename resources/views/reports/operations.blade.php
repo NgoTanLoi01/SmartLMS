@@ -202,11 +202,11 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a href="{{ route('reports.operations.export', $query) }}" class="btn btn-success rounded-pill px-4">
-                <i class="fas fa-file-excel me-2"></i>Xuất Excel
+                <i class="fa-solid fa-file-excel me-2"></i>Xuất Excel
             </a>
             <a href="{{ route('reports.operations.print', $query) }}" target="_blank"
                 class="btn btn-outline-danger rounded-pill px-4">
-                <i class="fas fa-file-pdf me-2"></i>Xuất PDF
+                <i class="fa-solid fa-file-pdf me-2"></i>Xuất PDF
             </a>
         </div>
     </div>
@@ -260,17 +260,17 @@
             </div>
             <div class="col-12 col-lg-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-fill">
-                    <i class="fas fa-filter me-1"></i>Lọc
+                    <i class="fa-solid fa-filter me-1"></i>Lọc
                 </button>
                 <a href="{{ route('reports.operations') }}" class="btn btn-light border" title="Đặt lại bộ lọc">
-                    <i class="fas fa-rotate-left"></i>
+                    <i class="fa-solid fa-rotate-left"></i>
                 </a>
             </div>
         </div>
     </form>
 
     <div class="report-time-note">
-        <i class="fas fa-clock mt-1"></i>
+        <i class="fa-solid fa-clock mt-1"></i>
         <div>
             <strong>Tiêu chí thời gian:</strong>
             giảng dạy lọc theo ngày bắt đầu môn học. Thanh toán đã nhận lọc theo ngày nhận tiền;
@@ -281,37 +281,37 @@
     <div class="row g-3 mb-3">
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label"><i class="fas fa-chalkboard-teacher"></i>Môn đã dạy</div>
+                <div class="report-stat__label"><i class="fa-solid fa-chalkboard-teacher"></i>Môn đã dạy</div>
                 <div class="report-stat__value text-primary">{{ $summary['completed_subjects_count'] }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label"><i class="fas fa-book"></i>Tổng môn</div>
+                <div class="report-stat__label"><i class="fa-solid fa-book"></i>Tổng môn</div>
                 <div class="report-stat__value">{{ $summary['subjects_count'] }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label"><i class="fas fa-calendar-check"></i>Số buổi</div>
+                <div class="report-stat__label"><i class="fa-solid fa-calendar-check"></i>Số buổi</div>
                 <div class="report-stat__value text-success">{{ $summary['total_sessions'] }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label"><i class="fas fa-coins"></i>Tổng tiền</div>
+                <div class="report-stat__label"><i class="fa-solid fa-coins"></i>Tổng tiền</div>
                 <div class="report-stat__value">{{ $money($summary['total_contract_amount']) }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label"><i class="fas fa-circle-check"></i>Đã nhận</div>
+                <div class="report-stat__label"><i class="fa-solid fa-circle-check"></i>Đã nhận</div>
                 <div class="report-stat__value text-success">{{ $money($summary['received_amount']) }}</div>
             </div>
         </div>
         <div class="col-6 col-xl-2">
             <div class="report-stat">
-                <div class="report-stat__label"><i class="fas fa-circle-exclamation"></i>Chưa nhận</div>
+                <div class="report-stat__label"><i class="fa-solid fa-circle-exclamation"></i>Chưa nhận</div>
                 <div class="report-stat__value text-danger">{{ $money($summary['remaining_amount']) }}</div>
             </div>
         </div>
@@ -330,7 +330,7 @@
 
     <div class="report-card">
         <div class="report-card__head">
-            <h2 class="report-card__title"><i class="fas fa-chalkboard text-primary"></i>Chi tiết giảng dạy</h2>
+            <h2 class="report-card__title"><i class="fa-solid fa-chalkboard text-primary"></i>Chi tiết giảng dạy</h2>
             <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">{{ $teachingRecords->count() }}
                 dòng</span>
         </div>
@@ -363,7 +363,7 @@
                         <tr>
                             <td colspan="6">
                                 <div class="empty-state">
-                                    <i class="fas fa-inbox"></i>
+                                    <i class="fa-solid fa-inbox"></i>
                                     <span>Không có dữ liệu giảng dạy.</span>
                                 </div>
                             </td>
@@ -376,7 +376,7 @@
 
     <div class="report-card">
         <div class="report-card__head">
-            <h2 class="report-card__title"><i class="fas fa-file-invoice-dollar text-success"></i>Chi tiết thanh toán</h2>
+            <h2 class="report-card__title"><i class="fa-solid fa-file-invoice-dollar text-success"></i>Chi tiết thanh toán</h2>
             <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">{{ $contracts->count() }} hợp
                 đồng</span>
         </div>
@@ -408,7 +408,7 @@
                         <tr>
                             <td colspan="6">
                                 <div class="empty-state">
-                                    <i class="fas fa-inbox"></i>
+                                    <i class="fa-solid fa-inbox"></i>
                                     <span>Không có dữ liệu thanh toán.</span>
                                 </div>
                             </td>

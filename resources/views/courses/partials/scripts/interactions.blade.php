@@ -26,7 +26,7 @@
             if (currentLessonIndex !== -1) {
                 btnComplete.classList.toggle('d-none', !isStudentCourseUser);
                 btnComplete.classList.replace('btn-secondary', 'btn-success');
-                btnComplete.innerHTML = '<i class="fas fa-check-circle me-1"></i> Hoàn thành bài học';
+                btnComplete.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Hoàn thành bài học';
                 btnComplete.disabled = false;
             }
         }
@@ -106,7 +106,7 @@
                 const icon = document.createElement('span');
                 icon.className = 'lesson-material-icon';
                 const iconInner = document.createElement('i');
-                iconInner.className = `fas ${material.icon || 'fa-file-lines'}`;
+                iconInner.className = `fa-solid ${material.icon || 'fa-file-lines'}`;
                 icon.appendChild(iconInner);
 
                 const content = document.createElement('span');
@@ -186,7 +186,7 @@
                 const icon = document.createElement('span');
                 icon.className = 'lesson-resource-link__icon';
                 const iconInner = document.createElement('i');
-                iconInner.className = 'fas fa-link';
+                iconInner.className = 'fa-solid fa-link';
                 icon.appendChild(iconInner);
 
                 const content = document.createElement('span');
@@ -263,7 +263,7 @@
         function showReorderToast(message = 'Đã lưu thứ tự nội dung') {
             const toast = document.getElementById('reorder-toast');
             if (!toast) return;
-            toast.innerHTML = `<i class="fas fa-check me-1"></i>${message}`;
+            toast.innerHTML = `<i class="fa-solid fa-check me-1"></i>${message}`;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 1800);
         }
@@ -331,7 +331,7 @@
             externalContainer.classList.add('d-none');
             if (iframe) iframe.src = '';
 
-            // ✅ THÊM: Reset attachment container
+            // Reset attachment container
             const attachCont = document.getElementById('lesson-attachment-container');
             if (attachCont) attachCont.classList.add('d-none');
             if (lessonMaterialContainer) lessonMaterialContainer.classList.add('d-none');
@@ -508,13 +508,13 @@
                     lockedAlert.id = 'overdue-locked-alert';
                     lockedAlert.className = 'alert alert-danger mb-0 border-0 shadow-sm text-center mt-3';
                     lockedAlert.innerHTML =
-                        '<i class="fas fa-lock fa-2x mb-2 text-danger"></i><h6 class="fw-bold text-danger">Đã hết thời gian nộp bài</h6><p class="small mb-0 text-danger">Rất tiếc, bạn đã bỏ lỡ bài tập này hoặc không thể sửa đổi do đã quá hạn.</p>';
+                        '<i class="fa-solid fa-lock fa-2x mb-2 text-danger"></i><h6 class="fw-bold text-danger">Đã hết thời gian nộp bài</h6><p class="small mb-0 text-danger">Rất tiếc, bạn đã bỏ lỡ bài tập này hoặc không thể sửa đổi do đã quá hạn.</p>';
                     uploadArea.appendChild(lockedAlert);
                 }
 
                 if (status === 'submitted') {
                     badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-success';
-                    badge.innerHTML = '<i class="fas fa-check me-1"></i> Đã nộp';
+                    badge.innerHTML = '<i class="fa-solid fa-check me-1"></i> Đã nộp';
 
                     if (submittedArea && uploadArea) {
                         submittedArea.classList.remove('d-none');
@@ -529,7 +529,7 @@
                         if (deleteForm) deleteForm.classList.add('d-none');
                         if (gradedWarning) {
                             gradedWarning.innerHTML =
-                                '<i class="fas fa-lock me-1"></i>Đã hết hạn nộp. Bạn không thể sửa hoặc hủy bài nộp nữa.';
+                                '<i class="fa-solid fa-lock me-1"></i>Đã hết hạn nộp. Bạn không thể sửa hoặc hủy bài nộp nữa.';
                             gradedWarning.classList.remove('d-none', 'text-success');
                             gradedWarning.classList.add('text-danger');
                         }
@@ -547,12 +547,12 @@
 
                     if (isOverdue) {
                         badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-danger';
-                        badge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Quá hạn';
+                        badge.innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i> Quá hạn';
                         if (submitForm) submitForm.classList.add('d-none');
                         if (lockedAlert) lockedAlert.classList.remove('d-none');
                     } else {
                         badge.className = 'badge rounded-pill px-3 py-2 fs-6 bg-warning text-dark';
-                        badge.innerHTML = '<i class="fas fa-clock me-1"></i> Chưa nộp';
+                        badge.innerHTML = '<i class="fa-solid fa-clock me-1"></i> Chưa nộp';
                         if (submitForm) submitForm.classList.remove('d-none');
                         if (lockedAlert) lockedAlert.classList.add('d-none');
                     }
@@ -565,7 +565,7 @@
                     if (submissionActions) submissionActions.classList.add('d-none');
                     if (gradedWarning) {
                         gradedWarning.innerHTML =
-                            '<i class="fas fa-lock me-1"></i>Giáo viên đã chấm điểm, bạn không thể sửa hoặc xóa bài.';
+                            '<i class="fa-solid fa-lock me-1"></i>Giáo viên đã chấm điểm, bạn không thể sửa hoặc xóa bài.';
                         gradedWarning.classList.remove('d-none', 'text-danger');
                         gradedWarning.classList.add('text-success');
                     }
@@ -621,19 +621,19 @@
             axios.post(`/lessons/${currentLessonId}/complete`)
                 .then(response => {
                     this.classList.replace('btn-success', 'btn-secondary');
-                    this.innerHTML = '<i class="fas fa-check me-1"></i> Đã hoàn thành';
+                    this.innerHTML = '<i class="fa-solid fa-check me-1"></i> Đã hoàn thành';
                     this.disabled = true;
 
                     const icon = document.getElementById('icon-lesson-' + currentLessonId);
-                    if (icon && !icon.classList.contains('fa-check-circle')) {
-                        icon.className = 'fas fa-check-circle text-success me-2 flex-shrink-0 lesson-icon';
+                    if (icon && !icon.classList.contains('fa-circle-check')) {
+                        icon.className = 'fa-solid fa-circle-check text-success me-2 flex-shrink-0 lesson-icon';
                         const lessonLink = document.querySelector(`.sidebar-scroll .lesson-item[data-id="${currentLessonId}"]`);
                         const statusRow = lessonLink ? lessonLink.querySelector('.sidebar-status-row') : null;
                         if (statusRow) {
                             const firstPill = statusRow.querySelector('.sidebar-status-pill');
                             if (firstPill) {
                                 firstPill.className = 'sidebar-status-pill done';
-                                firstPill.innerHTML = '<i class="fas fa-check"></i>Đã xong';
+                                firstPill.innerHTML = '<i class="fa-solid fa-check"></i>Đã xong';
                             }
                         }
                         currentCompletedCount++;
@@ -696,7 +696,7 @@
 
                             let reviewButton = sub.submission_id ?
                                 `<a href="/submissions/${sub.submission_id}/review" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye me-1"></i>Xem & chấm
+                                    <i class="fa-solid fa-eye me-1"></i>Xem & chấm
                                 </a>` :
                                 '<span class="text-muted small">---</span>';
 
@@ -715,7 +715,7 @@
                     })
                     .catch(error => {
                         tableBody.innerHTML =
-                            `<tr><td colspan="4" class="text-center text-danger py-5"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Lỗi: ${error.message}</td></tr>`;
+                            `<tr><td colspan="4" class="text-center text-danger py-5"><i class="fa-solid fa-triangle-exclamation fa-2x mb-2"></i><br>Lỗi: ${error.message}</td></tr>`;
                     });
             });
         });
@@ -807,7 +807,7 @@
                         if (scoreText) scoreText.innerText = score;
                         if (actionArea) actionArea.classList.add('d-none');
                         if (mainIcon) {
-                            mainIcon.className = 'fas fa-check-circle fa-5x mb-4 text-success';
+                            mainIcon.className = 'fa-solid fa-circle-check fa-5x mb-4 text-success';
                             mainIcon.style.color = '';
                         }
 
@@ -827,7 +827,7 @@
                         if (completedMsg) completedMsg.classList.add('d-none');
 
                         if (mainIcon) {
-                            mainIcon.className = 'fas fa-stopwatch fa-5x mb-4';
+                            mainIcon.className = 'fa-solid fa-stopwatch fa-5x mb-4';
                             mainIcon.style.color = '#6f42c1';
                         }
                     }

@@ -65,7 +65,7 @@
         <div class="quiz-review-header d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <a href="{{ route('courses.show', $attempt->quiz->course_id) }}"
                 class="btn btn-white shadow-sm rounded-pill px-4 fw-bold text-primary d-inline-flex align-items-center">
-                <i class="fas fa-arrow-left me-2"></i> Trở về khóa học
+                <i class="fa-solid fa-arrow-left me-2"></i> Trở về khóa học
             </a>
             <h4 class="fw-bold text-dark mb-0">Chi tiết bài làm</h4>
         </div>
@@ -78,7 +78,7 @@
                     class="fs-1 fw-bold {{ $attempt->score >= 5 ? 'text-success' : 'text-danger' }}">{{ $attempt->score }}</span>
                 <span class="fs-5 text-muted fw-bold"> / 10 Điểm</span>
             </div>
-            <p class="text-muted mt-3 mb-0 small fw-bold"><i class="fas fa-clock me-1"></i> Giời gian làm bài:
+            <p class="text-muted mt-3 mb-0 small fw-bold"><i class="fa-solid fa-clock me-1"></i> Giời gian làm bài:
                 {{ \Carbon\Carbon::parse($attempt->completed_at)->format('H:i - d/m/Y') }}</p>
         </div>
 
@@ -105,7 +105,7 @@
                     </h5>
 
                     @if (!$selectedOptionId)
-                        <span class="badge bg-secondary mt-2"><i class="fas fa-exclamation-circle me-1"></i> Chưa trả
+                        <span class="badge bg-secondary mt-2"><i class="fa-solid fa-circle-exclamation me-1"></i> Chưa trả
                             lời</span>
                     @endif
 
@@ -130,7 +130,7 @@
                                     $border = 'border-success';
                                     $textColor = 'text-success fw-bold';
                                     $badge =
-                                        '<span class="badge bg-success ms-auto"><i class="fas fa-check me-1"></i> Đã chọn đúng</span>';
+                                        '<span class="badge bg-success ms-auto"><i class="fa-solid fa-check me-1"></i> Đã chọn đúng</span>';
                                     $radioClass = 'radio-correct';
                                 } elseif ($isCorrect && !$isSelected) {
                                     // Đáp án đúng (nhưng học sinh không chọn)
@@ -144,7 +144,7 @@
                                     $border = 'border-danger';
                                     $textColor = 'text-danger fw-bold';
                                     $badge =
-                                        '<span class="badge bg-danger ms-auto"><i class="fas fa-times me-1"></i> Đã chọn (Sai)</span>';
+                                        '<span class="badge bg-danger ms-auto"><i class="fa-solid fa-times me-1"></i> Đã chọn (Sai)</span>';
                                     $radioClass = 'radio-wrong';
                                 }
                             @endphp

@@ -158,14 +158,14 @@
                     @csrf
                     <input type="hidden" name="disk" value="r2">
                     <button type="submit" class="storage-btn">
-                        <i class="fas fa-cloud-upload-alt"></i> Test R2
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Test R2
                     </button>
                 </form>
                 <form method="POST" action="{{ route('system.storage.test') }}">
                     @csrf
                     <input type="hidden" name="disk" value="public">
                     <button type="submit" class="storage-btn secondary">
-                        <i class="fas fa-folder-open"></i> Test local
+                        <i class="fa-solid fa-folder-open"></i> Test local
                     </button>
                 </form>
             </div>
@@ -193,7 +193,7 @@
             <div class="storage-card">
                 <div class="storage-label">Trạng thái R2</div>
                 <span class="storage-badge {{ $summary['r2_ready'] ? 'ok' : 'warn' }}">
-                    <i class="fas {{ $summary['r2_ready'] ? 'fa-check-circle' : 'fa-exclamation-triangle' }}"></i>
+                    <i class="fa-solid {{ $summary['r2_ready'] ? 'fa-circle-check' : 'fa-triangle-exclamation' }}"></i>
                     {{ $summary['r2_ready'] ? 'Đã cấu hình đủ' : 'Thiếu cấu hình' }}
                 </span>
                 <div class="storage-muted">

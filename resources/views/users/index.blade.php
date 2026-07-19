@@ -132,7 +132,7 @@
                 <form action="{{ route('users.index') }}" method="GET"
                     class="user-filter-form input-group rounded-pill overflow-hidden shadow-sm"
                     style="background: white; border: 1px solid #dee2e6;">
-                    <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fas fa-search"></i></span>
+                    <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fa-solid fa-search"></i></span>
                     <input type="text" name="search" class="form-control border-0 shadow-none px-2"
                         placeholder="Tìm tên, tên đăng nhập, mã HS hoặc email..." value="{{ request('search') }}"
                         style="width: 220px; font-size: 0.9rem;">
@@ -151,17 +151,17 @@
                         <option value="expired" @selected(request('status') === 'expired')>Đã hết hạn</option>
                     </select>
                     <button class="btn bg-white border-0 text-primary" type="submit" title="Áp dụng bộ lọc">
-                        <i class="fas fa-filter"></i>
+                        <i class="fa-solid fa-filter"></i>
                     </button>
                     @if (request()->filled('search') || request()->filled('role') || request()->filled('status'))
                         <a href="{{ route('users.index') }}" class="btn bg-white border-0 text-muted" title="Xóa bộ lọc"><i
-                                class="fas fa-times"></i></a>
+                                class="fa-solid fa-times"></i></a>
                     @endif
                 </form>
 
                 <button class="btn btn-primary rounded-pill px-4 shadow-sm text-nowrap" data-bs-toggle="modal"
                     data-bs-target="#addUserModal">
-                    <i class="fas fa-user-plus me-1"></i> Cấp tài khoản mới
+                    <i class="fa-solid fa-user-plus me-1"></i> Cấp tài khoản mới
                 </button>
             </div>
         </div>
@@ -252,7 +252,7 @@
                                             data-active="{{ $user->is_active ? '1' : '0' }}"
                                             data-expires-at="{{ $user->expires_at?->format('Y-m-d\TH:i') }}"
                                             data-reason="{{ $user->deactivation_reason }}">
-                                            <i class="fas fa-user-shield"></i> Vòng đời
+                                            <i class="fa-solid fa-user-shield"></i> Vòng đời
                                         </button>
 
                                         @if (auth()->id() !== $user->id)
@@ -262,7 +262,7 @@
                                                 <button type="submit"
                                                     class="btn btn-link text-danger p-0 text-decoration-none shadow-none me-2"
                                                     onclick="return confirm('Bạn có chắc chắn muốn xóa tài khoản này?')">
-                                                    <i class="fas fa-trash-alt"></i> Xóa
+                                                    <i class="fa-solid fa-trash-can"></i> Xóa
                                                 </button>
                                             </form>
                                         @else
@@ -276,7 +276,7 @@
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-outline-warning shadow-sm"
                                                     title="Cấp lại mật khẩu">
-                                                    <i class="fas fa-key"></i> Reset
+                                                    <i class="fa-solid fa-key"></i> Reset
                                                 </button>
                                             </form>
                                         @endif
@@ -285,7 +285,7 @@
                             @empty
                                 <tr>
                                     <td colspan="7" class="text-center py-5 text-muted">
-                                        <i class="fas fa-user-slash fa-3x mb-3 opacity-25"></i>
+                                        <i class="fa-solid fa-user-slash fa-3x mb-3 opacity-25"></i>
                                         <p>Không tìm thấy người dùng nào phù hợp.</p>
                                     </td>
                                 </tr>

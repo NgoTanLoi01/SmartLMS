@@ -317,10 +317,10 @@
                 </select>
             </div>
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-filter me-1"></i>Lọc
+                <i class="fa-solid fa-filter me-1"></i>Lọc
             </button>
             <a href="{{ route('students.schedule') }}" class="btn btn-light border">
-                <i class="fas fa-rotate-left"></i>
+                <i class="fa-solid fa-rotate-left"></i>
             </a>
         </form>
 
@@ -350,7 +350,7 @@
         <div class="ss-layout">
             <div class="ss-panel">
                 <div class="ss-panel-head">
-                    <h2 class="ss-panel-title"><i class="fas fa-calendar text-primary"></i>Lịch học</h2>
+                    <h2 class="ss-panel-title"><i class="fa-solid fa-calendar text-primary"></i>Lịch học</h2>
                     <span class="badge bg-danger-subtle text-danger rounded-pill">Đỏ: có ghi chú/thi</span>
                 </div>
                 <div class="ss-calendar-wrap">
@@ -361,11 +361,11 @@
             <div class="d-flex flex-column gap-3">
                 <div class="ss-panel">
                     <div class="ss-panel-head">
-                        <h2 class="ss-panel-title"><i class="fas fa-clock text-primary"></i>Hôm nay</h2>
+                        <h2 class="ss-panel-title"><i class="fa-solid fa-clock text-primary"></i>Hôm nay</h2>
                     </div>
                     @if ($todaySchedules->isEmpty())
                         <div class="ss-empty">
-                            <i class="fas fa-mug-hot"></i>
+                            <i class="fa-solid fa-mug-hot"></i>
                             Hôm nay chưa có lịch học.
                         </div>
                     @else
@@ -379,11 +379,11 @@
 
                 <div class="ss-panel">
                     <div class="ss-panel-head">
-                        <h2 class="ss-panel-title"><i class="fas fa-list-check text-success"></i>Lịch sắp tới</h2>
+                        <h2 class="ss-panel-title"><i class="fa-solid fa-list-check text-success"></i>Lịch sắp tới</h2>
                     </div>
                     @if ($upcomingSchedules->isEmpty())
                         <div class="ss-empty">
-                            <i class="fas fa-calendar-xmark"></i>
+                            <i class="fa-solid fa-calendar-xmark"></i>
                             Chưa có lịch học sắp tới.
                         </div>
                     @else
@@ -397,11 +397,11 @@
 
                 <div class="ss-panel">
                     <div class="ss-panel-head">
-                        <h2 class="ss-panel-title"><i class="fas fa-triangle-exclamation text-danger"></i>Ngày cần chú ý</h2>
+                        <h2 class="ss-panel-title"><i class="fa-solid fa-triangle-exclamation text-danger"></i>Ngày cần chú ý</h2>
                     </div>
                     @if ($examSchedules->isEmpty())
                         <div class="ss-empty">
-                            <i class="fas fa-circle-check"></i>
+                            <i class="fa-solid fa-circle-check"></i>
                             Chưa có ghi chú thi kết thúc môn sắp tới.
                         </div>
                     @else
@@ -430,7 +430,7 @@
                         <div><strong>Thời gian:</strong> <span id="scheduleDetailTime"></span></div>
                         <div><strong>Phòng học:</strong> <span id="scheduleDetailRoom"></span></div>
                         <div id="scheduleDetailNoteWrap" class="text-danger fw-bold d-none">
-                            <i class="fas fa-triangle-exclamation me-1"></i><span id="scheduleDetailNote"></span>
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i><span id="scheduleDetailNote"></span>
                         </div>
                     </div>
                 </div>

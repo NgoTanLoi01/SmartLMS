@@ -165,10 +165,10 @@
         <div class="d-flex gap-2 flex-wrap">
             <a href="{{ route('reports.operations', ['month' => $filters['month'], 'year' => $filters['year'], 'teacher_id' => $filters['teacher_id']]) }}"
                 class="btn btn-outline-primary rounded-pill px-4">
-                <i class="fas fa-chart-column me-2"></i>Xem báo cáo
+                <i class="fa-solid fa-chart-column me-2"></i>Xem báo cáo
             </a>
             <a href="{{ route('payments.index') }}" class="btn btn-primary rounded-pill px-4">
-                <i class="fas fa-file-invoice-dollar me-2"></i>Thanh toán
+                <i class="fa-solid fa-file-invoice-dollar me-2"></i>Thanh toán
             </a>
         </div>
     </div>
@@ -203,10 +203,10 @@
             </div>
             <div class="col-12 col-lg-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-fill">
-                    <i class="fas fa-filter me-1"></i>Lọc
+                    <i class="fa-solid fa-filter me-1"></i>Lọc
                 </button>
                 <a href="{{ route('operations.dashboard') }}" class="btn btn-light border">
-                    <i class="fas fa-rotate-left"></i>
+                    <i class="fa-solid fa-rotate-left"></i>
                 </a>
             </div>
         </div>
@@ -215,7 +215,7 @@
     <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 col-xl-3">
             <div class="ops-stat" style="--ops-accent: #2563eb;">
-                <div class="ops-stat__icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div class="ops-stat__icon"><i class="fa-solid fa-chalkboard-teacher"></i></div>
                 <div class="ops-stat__label">Buổi dạy trong tháng</div>
                 <div class="ops-stat__value">{{ $stats['month_sessions'] }}</div>
                 <div class="ops-stat__note">{{ $stats['month_subjects'] }} môn bắt đầu trong {{ $periodLabel }}</div>
@@ -223,7 +223,7 @@
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="ops-stat" style="--ops-accent: #16a34a;">
-                <div class="ops-stat__icon"><i class="fas fa-check-circle"></i></div>
+                <div class="ops-stat__icon"><i class="fa-solid fa-circle-check"></i></div>
                 <div class="ops-stat__label">Hợp đồng đã nhận</div>
                 <div class="ops-stat__value">{{ $stats['received_contracts'] }}</div>
                 <div class="ops-stat__note">{{ $money($stats['received_amount']) }} đã nhận trong tháng</div>
@@ -231,7 +231,7 @@
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="ops-stat" style="--ops-accent: #dc2626;">
-                <div class="ops-stat__icon"><i class="fas fa-hourglass-half"></i></div>
+                <div class="ops-stat__icon"><i class="fa-solid fa-hourglass-half"></i></div>
                 <div class="ops-stat__label">Tiền còn chờ</div>
                 <div class="ops-stat__value">{{ $money($stats['pending_amount']) }}</div>
                 <div class="ops-stat__note">{{ $stats['pending_contracts'] }} hợp đồng còn chưa nhận đủ</div>
@@ -239,7 +239,7 @@
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="ops-stat" style="--ops-accent: #f59e0b;">
-                <div class="ops-stat__icon"><i class="fas fa-building"></i></div>
+                <div class="ops-stat__icon"><i class="fa-solid fa-building"></i></div>
                 <div class="ops-stat__label">Trung tâm nhiều lớp nhất</div>
                 <div class="ops-stat__value">{{ $stats['top_center_name'] ?: '--' }}</div>
                 <div class="ops-stat__note">{{ $stats['top_center_classes'] }} lớp trong {{ $periodLabel }}</div>

@@ -2,37 +2,35 @@
 
 @push('styles')
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
         :root {
-            --primary: #4F46E5;
-            --primary-light: #EEF2FF;
-            --primary-mid: #818CF8;
-            --accent: #06B6D4;
-            --accent-light: #ECFEFF;
-            --surface: #FFFFFF;
-            --surface-2: #F8FAFC;
-            --surface-3: #F1F5F9;
-            --border: #E2E8F0;
-            --border-strong: #CBD5E1;
-            --text-primary: #0F172A;
-            --text-secondary: #475569;
-            --text-muted: #94A3B8;
-            --danger: #EF4444;
-            --danger-light: #FEF2F2;
-            --warning: #F59E0B;
-            --warning-light: #FFFBEB;
-            --success: #10B981;
-            --success-light: #ECFDF5;
-            --radius: 12px;
-            --radius-sm: 8px;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-            --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            --primary: var(--sl-primary);
+            --primary-light: var(--sl-primary-soft);
+            --primary-mid: var(--sl-primary-border);
+            --accent: var(--sl-ai);
+            --accent-light: var(--sl-ai-soft);
+            --surface: var(--sl-surface);
+            --surface-2: var(--sl-surface-muted);
+            --surface-3: var(--sl-bg);
+            --border: var(--sl-border);
+            --border-strong: var(--sl-border-strong);
+            --text-primary: var(--sl-text);
+            --text-secondary: var(--sl-text-secondary);
+            --text-muted: var(--sl-text-subtle);
+            --danger: var(--sl-danger);
+            --danger-light: var(--sl-danger-soft);
+            --warning: var(--sl-warning);
+            --warning-light: var(--sl-warning-soft);
+            --success: var(--sl-success);
+            --success-light: var(--sl-success-soft);
+            --radius: var(--sl-radius-sm);
+            --radius-sm: var(--sl-radius-xs);
+            --shadow-sm: var(--sl-shadow-xs);
+            --shadow: var(--sl-shadow-sm);
+            --shadow-lg: var(--sl-shadow-md);
         }
 
         body {
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: var(--sl-font-sans);
             background: #F8FAFC;
             color: var(--text-primary);
         }
@@ -54,7 +52,7 @@
         .header-icon-wrap {
             width: 56px;
             height: 56px;
-            background: linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--sl-ai) 100%);
             border-radius: var(--radius);
             display: flex;
             align-items: center;
@@ -198,7 +196,7 @@
             border: 1.5px solid var(--border);
             border-radius: var(--radius-sm);
             padding: 0.7rem 1rem;
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: var(--sl-font-sans);
             font-size: 0.88rem;
             color: var(--text-primary);
             transition: border-color 0.18s, box-shadow 0.18s;
@@ -232,7 +230,7 @@
             border: 1.5px dashed var(--border-strong);
             border-radius: var(--radius-sm);
             padding: 0.65rem 1rem;
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: var(--sl-font-sans);
             font-size: 0.85rem;
             color: var(--text-secondary);
             transition: border-color 0.18s, background 0.18s;
@@ -247,11 +245,11 @@
         /* Submit button */
         .btn-submit {
             width: 100%;
-            background: linear-gradient(135deg, var(--primary) 0%, #6D28D9 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--sl-ai) 100%);
             border: none;
             border-radius: var(--radius-sm);
             padding: 0.9rem 1.5rem;
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: var(--sl-font-sans);
             font-size: 0.9rem;
             font-weight: 700;
             color: #fff;
@@ -336,7 +334,7 @@
             font-size: 0.8rem;
             font-weight: 700;
             color: var(--primary);
-            font-family: 'JetBrains Mono', monospace;
+            font-family: var(--sl-font-mono);
         }
 
         .progress-track {
@@ -583,7 +581,7 @@
             display: inline-flex;
             align-items: center;
             gap: 0.3rem;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: var(--sl-font-mono);
         }
 
         .badge-vectors i {
@@ -593,7 +591,7 @@
         .date-text {
             font-size: 0.8rem;
             color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
+            font-family: var(--sl-font-mono);
         }
 
         .btn-delete {
@@ -711,7 +709,7 @@
         {{-- Header --}}
         <div class="page-header">
             <div class="header-icon-wrap">
-                <i class="fas fa-brain"></i>
+                <i class="fa-solid fa-brain"></i>
             </div>
             <div>
                 <h3>Huấn luyện Trí tuệ Nhân tạo</h3>
@@ -722,7 +720,7 @@
         @if ($processingOperations->isNotEmpty())
             <div class="card-panel">
                 <div class="table-header">
-                    <div class="table-title"><i class="fas fa-list-check"></i> Hàng đợi xử lý gần đây</div>
+                    <div class="table-title"><i class="fa-solid fa-list-check"></i> Hàng đợi xử lý gần đây</div>
                 </div>
                 <div class="docs-table-wrap">
                     <table class="docs-table">
@@ -746,7 +744,7 @@
 
         {{-- Notice --}}
         <div class="notice-card">
-            <div class="notice-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="notice-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
             <div>
                 <h6>Lưu ý trước khi Train</h6>
                 <p>Nếu file quá lớn (trên 50 trang): Thầy/Cô nên <strong>chia nhỏ file PDF thành từng chương</strong> trước
@@ -763,7 +761,7 @@
         <div class="card-panel">
             <div class="card-panel-body">
                 <div class="section-label">
-                    <i class="fas fa-cloud-upload-alt"></i>
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
                     Tải lên tài liệu mới
                 </div>
 
@@ -808,7 +806,7 @@
                     </div>
 
                     <button type="submit" class="btn-submit" id="btnUpload">
-                        <i class="fas fa-rocket"></i>
+                        <i class="fa-solid fa-rocket"></i>
                         BẮT ĐẦU TRÍCH XUẤT KIẾN THỨC
                     </button>
                 </form>
@@ -823,7 +821,7 @@
                         <div class="progress-bar" id="progressBar"></div>
                     </div>
                     <div class="progress-note">
-                        <i class="fas fa-circle-notch fa-spin" style="margin-top:2px; flex-shrink:0;"></i>
+                        <i class="fa-solid fa-circle-notch fa-spin" style="margin-top:2px; flex-shrink:0;"></i>
                         File đang được đưa vào hàng đợi. Sau khi tải lên xong, bạn có thể đóng trình duyệt; worker sẽ tiếp tục xử lý.
                     </div>
                 </div>
@@ -834,7 +832,7 @@
         <div class="card-panel">
             <div class="table-header">
                 <div class="table-title">
-                    <i class="fas fa-database"></i>
+                    <i class="fa-solid fa-database"></i>
                     Kho tri thức đã huấn luyện
                 </div>
                 <span class="doc-count-badge">{{ $documents->count() }} tài liệu</span>
@@ -857,7 +855,7 @@
                             <tr>
                                 <td>
                                     <div class="doc-name-cell">
-                                        <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
+                                        <div class="doc-icon"><i class="fa-solid fa-file-pdf"></i></div>
                                         <span class="doc-name">{{ $doc->document_name }}</span>
                                     </div>
                                 </td>
@@ -878,7 +876,7 @@
                                 </td>
                                 <td>
                                     <span class="badge-vectors">
-                                        <i class="fas fa-vector-square"></i>
+                                        <i class="fa-solid fa-vector-square"></i>
                                         {{ $doc->total_chunks }}
                                     </span>
                                 </td>
@@ -893,11 +891,11 @@
                                             <input type="hidden" name="uploaded_by" value="{{ $doc->uploaded_by }}">
                                             <button type="submit" class="btn-delete"
                                                 onclick="return confirm('Xóa tài liệu này? AI sẽ không còn trả lời được nội dung liên quan.')">
-                                                <i class="fas fa-trash-alt"></i> Xóa
+                                                <i class="fa-solid fa-trash-can"></i> Xóa
                                             </button>
                                         </form>
                                     @else
-                                        <span class="text-muted small"><i class="fas fa-lock"></i> Không có quyền xóa</span>
+                                        <span class="text-muted small"><i class="fa-solid fa-lock"></i> Không có quyền xóa</span>
                                     @endif
                                 </td>
                             </tr>
@@ -905,7 +903,7 @@
                             <tr>
                                 <td colspan="6">
                                     <div class="empty-state">
-                                        <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+                                        <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
                                         <p>Chưa có tài liệu tri thức nào được nạp</p>
                                     </div>
                                 </td>
@@ -928,7 +926,7 @@
 
             btn.disabled = true;
             btn.innerHTML =
-                '<span class="fas fa-circle-notch fa-spin" style="margin-right:.5rem"></span> Hệ thống đang xử lý...';
+                '<span class="fa-solid fa-circle-notch fa-spin" style="margin-right:.5rem"></span> Hệ thống đang xử lý...';
             container.style.display = 'block';
 
             const messages = [

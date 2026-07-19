@@ -15,7 +15,7 @@
             <div class="mt-4">
                 <p id="turn-info" class="fw-bold fs-5 text-primary">Đang khởi tạo...</p>
                 {{-- <button class="btn btn-outline-secondary rounded-pill px-4" onclick="location.reload()">
-                    <i class="fas fa-sync-alt me-1"></i> Làm mới
+                    <i class="fa-solid fa-rotate me-1"></i> Làm mới
                 </button> --}}
                 <a href="{{ route('tools.caro.index') }}" class="btn btn-light rounded-pill px-4">Thoát phòng</a>
             </div>
@@ -246,7 +246,7 @@
                         else break;
                     }
 
-                    if (count === 5) return true; // ✅ Đúng 5, không phải >= 5
+                    if (count === 5) return true; // Đúng 5, không phải >= 5
                 }
                 return false;
             }

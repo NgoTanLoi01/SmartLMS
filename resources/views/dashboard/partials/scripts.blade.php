@@ -3,7 +3,7 @@
             document.addEventListener("DOMContentLoaded", function() {
                 const base = {
                     chart: {
-                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        fontFamily: "'Be Vietnam Pro', sans-serif",
                         toolbar: {
                             show: false
                         }

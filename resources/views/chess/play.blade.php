@@ -98,7 +98,7 @@
 
                         <!-- Nút thoát sau khi kết thúc -->
                         <button id="finish-exit-btn" class="btn btn-danger rounded-pill px-4 d-none">
-                            <i class="fas fa-sign-out-alt me-2"></i>
+                            <i class="fa-solid fa-right-from-bracket me-2"></i>
                             Thoát trận
                         </button>
 
@@ -108,7 +108,7 @@
 
             <div class="col-lg-4 mb-4">
                 <div class="card border-0 shadow-sm rounded-4 p-3 mb-4">
-                    <h6 class="fw-bold text-primary mb-3"><i class="fas fa-history me-2"></i>Lịch sử nước đi</h6>
+                    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-history me-2"></i>Lịch sử nước đi</h6>
                     <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
                         <table class="table table-sm table-hover text-center" id="historyTable">
                             <thead class="table-light">
@@ -126,7 +126,7 @@
 
                 <div class="card border-0 shadow-sm rounded-4 p-3">
                     <h6 class="fw-bold text-success mb-3">
-                        <i class="fas fa-book-open me-2"></i>Hướng dẫn chơi cờ vua
+                        <i class="fa-solid fa-book-open me-2"></i>Hướng dẫn chơi cờ vua
                     </h6>
 
                     <div class="accordion accordion-flush" id="chessRules">
@@ -362,23 +362,23 @@
                 if (game.in_checkmate()) {
                     let winner = game.turn() === 'w' ? 'Quân Đen' : 'Quân Trắng';
                     title = 'Chiếu Bí!';
-                    text = `${winner} đã giành chiến thắng! 🏆`;
+                    text = `${winner} đã giành chiến thắng!`;
                     icon = 'success';
                 } else if (game.in_draw()) {
                     title = 'Hòa Cờ!';
-                    text = 'Hai bên bất phân thắng bại 🤝';
+                    text = 'Hai bên bất phân thắng bại.';
                     icon = 'info';
                 } else if (game.in_stalemate()) {
                     title = 'Hết Nước Đi!';
-                    text = 'Ván cờ kết thúc hòa 🤝';
+                    text = 'Ván cờ kết thúc hòa.';
                     icon = 'warning';
                 } else if (game.in_threefold_repetition()) {
                     title = 'Hòa Cờ!';
-                    text = 'Lặp lại nước đi 3 lần 🔄';
+                    text = 'Lặp lại nước đi 3 lần.';
                     icon = 'info';
                 } else if (game.insufficient_material()) {
                     title = 'Không Đủ Quân!';
-                    text = 'Không đủ quân để chiếu bí 🤝';
+                    text = 'Không đủ quân để chiếu bí.';
                     icon = 'info';
                 }
 
@@ -540,7 +540,7 @@
                 // HERE
                 // =========================
                 .here((users) => {
-                    console.log("👥 Người chơi:", users);
+                    console.log("Người chơi:", users);
 
                     // Lưu danh sách player thật
                     confirmedPlayers = users.map(u => u.id);
@@ -550,11 +550,11 @@
                     if (otherUsers.length > 0) {
                         myColor = 'black';
                         board.orientation('black');
-                        console.log("⚫ Bạn là ĐEN");
+                        console.log("Bạn là ĐEN");
                     } else {
                         myColor = 'white';
                         board.orientation('white');
-                        console.log("⚪ Bạn là TRẮNG");
+                        console.log("Bạn là TRẮNG");
                     }
 
                     updateStatus(users.length);
@@ -589,9 +589,9 @@
                 .leaving((user) => {
                     console.log(user.name + " rời phòng");
 
-                    // ✅ Bỏ qua nếu người thoát không phải player thật
+                    // Bỏ qua nếu người thoát không phải player thật
                     if (!confirmedPlayers.includes(user.id)) {
-                        console.log("🚫 Người ngoài thoát, bỏ qua.");
+                        console.log("Người ngoài thoát, bỏ qua.");
                         return;
                     }
 
@@ -614,7 +614,7 @@
                 // RECEIVE MOVE
                 // =========================
                 .listen('.MoveMade', (e) => {
-                    console.log("🔥 Nhận nước đi:", e);
+                    console.log("Nhận nước đi:", e);
 
                     removeHighlights();
                     if (isGameFinished) return;
@@ -629,12 +629,12 @@
                 // ERROR – PHÒNG ĐÃ ĐẦY
                 // =========================
                 .error((error) => {
-                    console.error("❌ Lỗi kết nối phòng:", error);
+                    console.error("Lỗi kết nối phòng:", error);
 
                     if (error.status === 403) {
                         Swal.fire({
                             icon: 'error',
-                            title: '🔒 Phòng đã đầy!',
+                            title: 'Phòng đã đầy!',
                             text: 'Phòng này đã có đủ 2 người chơi. Bạn không thể vào.',
                             confirmButtonText: 'Quay lại',
                             confirmButtonColor: '#dc3545',

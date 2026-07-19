@@ -5,25 +5,25 @@
 @push('styles')
     <style>
         :root {
-            --qp-purple: #6f42c1;
-            --qp-purple-light: #f3effe;
-            --qp-purple-mid: #ede9fb;
-            --qp-border: #e8e3f5;
-            --qp-easy: #16a34a;
-            --qp-easy-bg: #f0fdf4;
-            --qp-easy-border: #bbf7d0;
-            --qp-med: #d97706;
-            --qp-med-bg: #fffbeb;
-            --qp-med-border: #fde68a;
-            --qp-hard: #dc2626;
-            --qp-hard-bg: #fef2f2;
-            --qp-hard-border: #fecaca;
-            --qp-text: #1e1b4b;
-            --qp-muted: #6b7280;
-            --qp-surface: #ffffff;
-            --qp-bg: #f5f3ff;
-            --qp-radius: 14px;
-            --qp-shadow: 0 1px 4px rgba(111, 66, 193, 0.07), 0 4px 16px rgba(111, 66, 193, 0.06);
+            --qp-purple: var(--sl-primary);
+            --qp-purple-light: var(--sl-primary-soft);
+            --qp-purple-mid: var(--sl-primary-subtle);
+            --qp-border: var(--sl-border);
+            --qp-easy: var(--sl-success);
+            --qp-easy-bg: var(--sl-success-soft);
+            --qp-easy-border: var(--sl-success-border);
+            --qp-med: var(--sl-warning);
+            --qp-med-bg: var(--sl-warning-soft);
+            --qp-med-border: var(--sl-warning-border);
+            --qp-hard: var(--sl-danger);
+            --qp-hard-bg: var(--sl-danger-soft);
+            --qp-hard-border: var(--sl-danger-border);
+            --qp-text: var(--sl-text);
+            --qp-muted: var(--sl-text-muted);
+            --qp-surface: var(--sl-surface);
+            --qp-bg: var(--sl-bg);
+            --qp-radius: var(--sl-radius-md);
+            --qp-shadow: var(--sl-shadow-sm);
         }
 
         /* ── Layout ── */
@@ -611,23 +611,23 @@
 
             {{-- Back --}}
             <a href="{{ route('courses.show', $quiz->course_id) }}" class="qp-back">
-                <i class="fas fa-arrow-left"></i> Quay lại khóa học
+                <i class="fa-solid fa-arrow-left"></i> Quay lại khóa học
             </a>
 
             {{-- Page header --}}
             <div class="qp-page-header">
                 <div>
                     <h1 class="qp-page-title">
-                        <i class="fas fa-eye me-2" style="font-size:1.2rem; opacity:.7;"></i>{{ $quiz->title }}
+                        <i class="fa-solid fa-eye me-2" style="font-size:1.2rem; opacity:.7;"></i>{{ $quiz->title }}
                     </h1>
                     <div class="qp-page-meta">
-                        <span><i class="fas fa-clock me-1"></i> Thời gian: <strong>{{ $quiz->time_limit }}
+                        <span><i class="fa-solid fa-clock me-1"></i> Thời gian: <strong>{{ $quiz->time_limit }}
                                 phút</strong></span>
-                        <span><i class="fas fa-list-ol me-1"></i> Tổng câu: <strong>{{ $total }} câu</strong></span>
+                        <span><i class="fa-solid fa-list-ol me-1"></i> Tổng câu: <strong>{{ $total }} câu</strong></span>
                     </div>
                 </div>
                 <button onclick="window.location.reload()" class="qp-reload-btn">
-                    <i class="fas fa-sync-alt"></i> Tải đề ngẫu nhiên khác
+                    <i class="fa-solid fa-rotate"></i> Tải đề ngẫu nhiên khác
                 </button>
             </div>
 
@@ -638,28 +638,28 @@
                 <aside class="qp-sidebar">
                     <div class="qp-card">
                         <div class="qp-card-head">
-                            <i class="fas fa-layer-group"></i> Cấu trúc đề thi
+                            <i class="fa-solid fa-layer-group"></i> Cấu trúc đề thi
                         </div>
                         <div class="qp-card-body">
 
                             <div class="qp-alert">
-                                <i class="fas fa-info-circle me-1"></i>
+                                <i class="fa-solid fa-circle-info me-1"></i>
                                 Chế độ <strong>Ngân hàng câu hỏi</strong> đang hoạt động. Mỗi học sinh nhận đề khác nhau
                                 theo cấu trúc này.
                             </div>
 
                             <div class="qp-stat-row">
-                                <span class="qp-stat-label"><i class="fas fa-smile me-1" style="color:var(--qp-easy)"></i>
+                                <span class="qp-stat-label"><i class="fa-solid fa-smile me-1" style="color:var(--qp-easy)"></i>
                                     Dễ</span>
                                 <span class="qp-badge easy">{{ $quiz->easy_count }} câu</span>
                             </div>
                             <div class="qp-stat-row">
-                                <span class="qp-stat-label"><i class="fas fa-meh me-1" style="color:var(--qp-med)"></i>
+                                <span class="qp-stat-label"><i class="fa-solid fa-meh me-1" style="color:var(--qp-med)"></i>
                                     Trung bình</span>
                                 <span class="qp-badge medium">{{ $quiz->medium_count }} câu</span>
                             </div>
                             <div class="qp-stat-row">
-                                <span class="qp-stat-label"><i class="fas fa-frown me-1" style="color:var(--qp-hard)"></i>
+                                <span class="qp-stat-label"><i class="fa-solid fa-frown me-1" style="color:var(--qp-hard)"></i>
                                     Khó</span>
                                 <span class="qp-badge hard">{{ $quiz->hard_count }} câu</span>
                             </div>
@@ -686,7 +686,7 @@
 
                             <a href="{{ route('questions.index', ['course_id' => $quiz->course_id]) }}"
                                 class="qp-manage-btn">
-                                <i class="fas fa-database"></i> Quản lý Ngân hàng câu hỏi
+                                <i class="fa-solid fa-database"></i> Quản lý Ngân hàng câu hỏi
                             </a>
                         </div>
                     </div>
@@ -697,7 +697,7 @@
                     <div class="qp-card">
                         <div class="qp-main-head">
                             <div class="qp-main-head-title">
-                                <i class="fas fa-file-alt" style="color:var(--qp-muted); font-size:1rem;"></i>
+                                <i class="fa-solid fa-file-lines" style="color:var(--qp-muted); font-size:1rem;"></i>
                                 Bản xem trước đề thi
                             </div>
                             <span class="qp-count-chip">{{ $total }} câu hỏi</span>
@@ -727,7 +727,7 @@
                                             {{ $question->question_text }}
                                         </div>
                                         <span class="qp-diff-tag {{ $diff }}">
-                                            <i class="fas {{ $diffIcon }}"></i> {{ $diffLabel }}
+                                            <i class="fa-solid {{ $diffIcon }}"></i> {{ $diffLabel }}
                                         </span>
                                     </div>
 
@@ -739,7 +739,7 @@
                                                 <div class="qp-option-label">{{ $labels[$loop->index] ?? '' }}</div>
                                                 <span class="qp-option-text">{{ $option->option_text }}</span>
                                                 @if ($option->is_correct)
-                                                    <i class="fas fa-check-circle qp-check-icon"></i>
+                                                    <i class="fa-solid fa-circle-check qp-check-icon"></i>
                                                 @endif
                                             </div>
                                         @endforeach
@@ -750,7 +750,7 @@
 
                                 <div class="qp-empty">
                                     <div class="qp-empty-icon">
-                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
                                     </div>
                                     <h5>Không đủ câu hỏi trong Ngân hàng!</h5>
                                     <p>
@@ -759,7 +759,7 @@
                                     </p>
                                     <a href="{{ route('questions.index', ['course_id' => $quiz->course_id]) }}"
                                         class="qp-add-btn">
-                                        <i class="fas fa-plus"></i> Thêm câu hỏi ngay
+                                        <i class="fa-solid fa-plus"></i> Thêm câu hỏi ngay
                                     </a>
                                 </div>
 

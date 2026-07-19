@@ -1,0 +1,66 @@
+:root {
+    /* Brand */
+    --sl-primary: #2563eb;
+    --sl-primary-hover: #1d4ed8;
+    --sl-primary-active: #1e40af;
+    --sl-primary-soft: #eff6ff;
+    --sl-primary-subtle: #dbeafe;
+    --sl-primary-border: #bfdbfe;
+    --sl-primary-rgb: 37, 99, 235;
+
+    /* Semantic colors */
+    --sl-success: #059669;
+    --sl-success-soft: #ecfdf5;
+    --sl-success-border: #a7f3d0;
+    --sl-warning: #d97706;
+    --sl-warning-soft: #fffbeb;
+    --sl-warning-border: #fde68a;
+    --sl-danger: #dc2626;
+    --sl-danger-soft: #fef2f2;
+    --sl-danger-border: #fecaca;
+    --sl-info: #0284c7;
+    --sl-info-soft: #f0f9ff;
+    --sl-info-border: #bae6fd;
+    --sl-ai: #7c3aed;
+    --sl-ai-soft: #f5f3ff;
+    --sl-ai-border: #ddd6fe;
+
+    /* Surfaces and content */
+    --sl-bg: #f6f8fc;
+    --sl-surface: #ffffff;
+    --sl-surface-muted: #f8fafc;
+    --sl-surface-raised: #ffffff;
+    --sl-border: #e2e8f0;
+    --sl-border-strong: #cbd5e1;
+    --sl-text: #0f172a;
+    --sl-text-secondary: #334155;
+    --sl-text-muted: #64748b;
+    --sl-text-subtle: #94a3b8;
+
+    /* Shape */
+    --sl-radius-xs: 6px;
+    --sl-radius-sm: 10px;
+    --sl-radius-md: 14px;
+    --sl-radius-lg: 20px;
+    --sl-radius-xl: 28px;
+    --sl-radius-pill: 999px;
+
+    /* Elevation */
+    --sl-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --sl-shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.07);
+    --sl-shadow-md: 0 12px 32px rgba(15, 23, 42, 0.10);
+    --sl-shadow-lg: 0 24px 64px rgba(15, 23, 42, 0.14);
+    --sl-shadow-primary: 0 10px 26px rgba(var(--sl-primary-rgb), 0.24);
+    --sl-focus-ring: 0 0 0 3px rgba(var(--sl-primary-rgb), 0.14);
+
+    /* Typography */
+    --sl-font-sans: 'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --sl-font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Motion */
+    --sl-duration-fast: 150ms;
+    --sl-duration-base: 220ms;
+    --sl-duration-slow: 360ms;
+    --sl-ease-standard: cubic-bezier(.2, 0, 0, 1);
+    --sl-ease-emphasized: cubic-bezier(.22, 1, .36, 1);
+}

@@ -17,7 +17,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white py-3 border-0">
                         <h4 class="fw-bold mb-0">
-                            <i class="fas fa-edit me-2"></i>Chỉnh sửa khóa học
+                            <i class="fa-solid fa-edit me-2"></i>Chỉnh sửa khóa học
                         </h4>
                     </div>
                     <div class="card-body p-4">
@@ -87,7 +87,7 @@
 
                             <div class="d-flex align-items-center gap-2 pt-3">
                                 <button type="submit" class="btn btn-warning px-4 rounded-pill fw-bold text-white">
-                                    <i class="fas fa-sync-alt me-2"></i>Cập nhật thay đổi
+                                    <i class="fa-solid fa-rotate me-2"></i>Cập nhật thay đổi
                                 </button>
                                 <a href="{{ route('courses.index') }}" class="btn btn-light px-4 rounded-pill">Hủy bỏ</a>
                             </div>

@@ -42,8 +42,9 @@
     {{-- FONTS --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     {{-- STRUCTURED DATA --}}
     @verbatim
@@ -91,7 +92,7 @@
         <!-- NAV -->
         <nav>
             <a class="nav-logo" href="{{ route('home') }}" aria-label="SmartLMS - Trang chủ">
-                <img src="{{ asset('smartlms-logo-nobg.png') }}" alt="SmartLMS Logo">
+                <img src="{{ asset('smartlms-logo-nobg.webp') }}" alt="SmartLMS Logo" width="800" height="200">
             </a>
             <ul class="nav-links">
                 <li><a href="#features">Năng lực</a></li>
@@ -99,7 +100,7 @@
                 <li><a href="#how">Triển khai</a></li>
             </ul>
             <div class="nav-right">
-                <a class="nav-cta" href="{{ route('login') }}">Đăng nhập →</a>
+                <a class="nav-cta" href="{{ route('login') }}">Đăng nhập <x-ui.icon name="arrow-right" /></a>
             </div>
         </nav>
 
@@ -131,13 +132,13 @@
                     </div>
                     <div class="trust-bar">
                         <div class="trust-item">
-                            <div class="trust-icon">✓</div>Giáo viên thao tác nhanh
+                            <div class="trust-icon"><x-ui.icon name="check" /></div>Giáo viên thao tác nhanh
                         </div>
                         <div class="trust-item">
-                            <div class="trust-icon">✓</div>Học sinh học rõ luồng
+                            <div class="trust-icon"><x-ui.icon name="check" /></div>Học sinh học rõ luồng
                         </div>
                         <div class="trust-item">
-                            <div class="trust-icon">✓</div>AI hiểu nội dung khóa học
+                            <div class="trust-icon"><x-ui.icon name="check" /></div>AI hiểu nội dung khóa học
                         </div>
                     </div>
                     <div class="hero-kicker">
@@ -241,41 +242,41 @@
 
             <div class="features-grid">
                 <div class="feature-card fade-in tilt">
-                    <div class="feature-icon" style="background:#eff6ff">🤖</div>
+                    <div class="feature-icon" style="background:var(--sl-primary-soft);color:var(--sl-primary)"><x-ui.icon name="ai" /></div>
                     <h3 class="feature-title">AI trợ giảng theo từng bài học</h3>
                     <p class="feature-desc">Học sinh hỏi ngay trong bài đang học, AI trả lời dựa trên nội dung khóa học và
                         giúp giải thích lại dễ hiểu hơn.</p>
                 </div>
                 <div class="feature-card fade-in tilt" style="transition-delay:.08s">
-                    <div class="feature-icon" style="background:#f0fdf4">📚</div>
+                    <div class="feature-icon" style="background:var(--sl-success-soft);color:var(--sl-success)"><x-ui.icon name="book" /></div>
                     <h3 class="feature-title">Soạn nội dung nhanh hơn</h3>
                     <p class="feature-desc">Giáo viên có thể tạo bài tập, quiz, rubric và gợi ý tiêu chí đánh giá từ nội
                         dung
                         bài học.</p>
                 </div>
                 <div class="feature-card fade-in tilt" style="transition-delay:.16s">
-                    <div class="feature-icon" style="background:#fef9ec">🏫</div>
+                    <div class="feature-icon" style="background:var(--sl-warning-soft);color:var(--sl-warning)"><x-ui.icon name="class" /></div>
                     <h3 class="feature-title">Dashboard thao tác nhanh</h3>
                     <p class="feature-desc">Hiển thị lớp sắp dạy, bài cần chấm ưu tiên và các gợi ý cần làm dựa trên dữ
                         liệu
                         thật.</p>
                 </div>
                 <div class="feature-card fade-in tilt" style="transition-delay:.24s">
-                    <div class="feature-icon" style="background:#fdf2f8">📋</div>
+                    <div class="feature-icon" style="background:var(--sl-danger-soft);color:var(--sl-danger)"><x-ui.icon name="assignment" /></div>
                     <h3 class="feature-title">Luồng khóa học dễ thao tác</h3>
                     <p class="feature-desc">Học sinh tiếp tục học, làm quiz, nộp bài và xem trạng thái rõ ràng hơn trong
                         cùng
                         một màn hình.</p>
                 </div>
                 <div class="feature-card fade-in tilt" style="transition-delay:.32s">
-                    <div class="feature-icon" style="background:#f0f4ff">🎮</div>
+                    <div class="feature-icon" style="background:var(--sl-ai-soft);color:var(--sl-ai)"><x-ui.icon name="game" /></div>
                     <h3 class="feature-title">AI chấm bài có giáo viên duyệt</h3>
                     <p class="feature-desc">AI phân tích bài nộp, so sánh rubric, chỉ ra điểm mạnh/yếu và đề xuất nhận xét
                         để
                         giáo viên quyết định.</p>
                 </div>
                 <div class="feature-card fade-in tilt" style="transition-delay:.4s">
-                    <div class="feature-icon" style="background:#f0fdfa">👥</div>
+                    <div class="feature-icon" style="background:var(--sl-info-soft);color:var(--sl-info)"><x-ui.icon name="students" /></div>
                     <h3 class="feature-title">Kiểm tra chất lượng khóa học</h3>
                     <p class="feature-desc">Phát hiện bài học quá ngắn, quiz thiếu câu hỏi, bài tập chưa có rubric hoặc nội
                         dung chưa đủ để AI trả lời.</p>
@@ -374,9 +375,9 @@
                 <div class="banner-content">
                     <h2>Sẵn sàng đưa trung tâm của bạn lên một nhịp vận hành mới?</h2>
                     <p>
-                        <span>✓ Quản lý lớp học</span>
-                        <span>✓ AI hỗ trợ giáo viên</span>
-                        <span>✓ Học sinh thao tác dễ hơn</span>
+                        <span><x-ui.icon name="check" /> Quản lý lớp học</span>
+                        <span><x-ui.icon name="check" /> AI hỗ trợ giáo viên</span>
+                        <span><x-ui.icon name="check" /> Học sinh thao tác dễ hơn</span>
                     </p>
                 </div>
                 <a class="btn-white" href="{{ route('login') }}">Truy cập SmartLMS →</a>

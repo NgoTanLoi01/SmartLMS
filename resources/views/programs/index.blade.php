@@ -78,13 +78,13 @@
         </div>
         <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal"
             data-bs-target="#createProgramModal">
-            <i class="fas fa-plus me-2"></i>Thêm chương trình
+            <i class="fa-solid fa-plus me-2"></i>Thêm chương trình
         </button>
     </div>
 
     @if ($errors->any())
         <div class="alert alert-danger border-0 rounded-3">
-            <i class="fas fa-exclamation-circle me-2"></i>{{ $errors->first() }}
+            <i class="fa-solid fa-circle-exclamation me-2"></i>{{ $errors->first() }}
         </div>
     @endif
 
@@ -111,7 +111,7 @@
                                 <div class="program-desc">{{ $program->description ?: 'Chưa có mô tả.' }}</div>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="program-code"><i class="fas fa-hashtag"></i>{{ $program->code }}</span>
+                                <span class="program-code"><i class="fa-solid fa-hashtag"></i>{{ $program->code }}</span>
                             </td>
                             <td class="px-4 py-3">
                                 <span class="fw-semibold">{{ $program->courses_count }}</span>
@@ -133,18 +133,18 @@
                                 <div class="program-actions">
                                     <a href="{{ route('programs.show', $program->id) }}"
                                         class="btn btn-sm btn-outline-secondary rounded-pill">
-                                        <i class="fas fa-eye me-1"></i>Xem
+                                        <i class="fa-solid fa-eye me-1"></i>Xem
                                     </a>
                                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill"
                                         data-bs-toggle="modal" data-bs-target="#editProgramModal{{ $program->id }}">
-                                        <i class="fas fa-edit me-1"></i>Sửa
+                                        <i class="fa-solid fa-edit me-1"></i>Sửa
                                     </button>
                                     <form action="{{ route('programs.destroy', $program->id) }}" method="POST"
                                         onsubmit="return confirm('Xóa chương trình này? Các khóa học đã gắn sẽ được giữ lại.');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
-                                            <i class="fas fa-trash-alt me-1"></i>Xóa
+                                            <i class="fa-solid fa-trash-can me-1"></i>Xóa
                                         </button>
                                     </form>
                                 </div>
@@ -154,7 +154,7 @@
                     @empty
                         <tr>
                             <td colspan="{{ auth()->user()->role === 'admin' ? 6 : 5 }}" class="text-center py-5 text-muted">
-                                <i class="fas fa-sitemap fa-3x mb-3 opacity-25"></i>
+                                <i class="fa-solid fa-sitemap fa-3x mb-3 opacity-25"></i>
                                 <p class="mb-0">Chưa có chương trình học nào.</p>
                             </td>
                         </tr>

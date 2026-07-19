@@ -3,9 +3,6 @@
 @section('title', 'Xem bài nộp')
 
 @push('styles')
-    <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
     @vite('resources/css/pages/submission-review.css')
 @endpush
 
@@ -15,7 +12,7 @@
 
             {{-- BACK --}}
             <a href="{{ route('courses.show', $course->id) }}" class="back-link">
-                <i class="fas fa-chevron-left"></i> Quay lại khóa học
+                <i class="fa-solid fa-chevron-left"></i> Quay lại khóa học
             </a>
 
             {{-- HEADER --}}
@@ -24,20 +21,20 @@
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         <span class="bdg bdg--primary">{{ $assignmentTypeLabel }}</span>
                         @if ($submission->grade !== null)
-                            <span class="bdg bdg--success"><i class="fas fa-check-circle"></i> Đã chấm</span>
+                            <span class="bdg bdg--success"><i class="fa-solid fa-circle-check"></i> Đã chấm</span>
                         @else
-                            <span class="bdg bdg--warning"><i class="fas fa-hourglass-half"></i> Chưa chấm</span>
+                            <span class="bdg bdg--warning"><i class="fa-solid fa-hourglass-half"></i> Chưa chấm</span>
                         @endif
                     </div>
                     <h1 class="srp-header__title">{{ $assignment->title }}</h1>
                     <div class="srp-header__meta mt-1">
-                        <span><i class="fas fa-book me-1" style="color:var(--brand)"></i>{{ $course->title }}</span>
+                        <span><i class="fa-solid fa-book me-1" style="color:var(--brand)"></i>{{ $course->title }}</span>
                         @if ($assignment->lesson)
                             <span class="sep">·</span>
                             <span>{{ $assignment->lesson->title }}</span>
                         @endif
                         <span class="sep">·</span>
-                        <span><i class="fas fa-calendar-alt me-1"></i>Hạn:
+                        <span><i class="fa-solid fa-calendar-days me-1"></i>Hạn:
                             {{ $assignment->due_date?->format('d/m/Y H:i') ?? '---' }}</span>
                     </div>
                 </div>
@@ -49,7 +46,7 @@
                         <option value="ungraded">Chỉ bài chưa chấm</option>
                     </select>
                     <button type="submit" class="btn-download-zip">
-                        <i class="fas fa-file-zipper"></i>
+                        <i class="fa-solid fa-file-zipper"></i>
                         Tải bài nộp (.zip)
                     </button>
                 </form>
@@ -64,7 +61,7 @@
                         <h2 class="grading-queue__title">Danh sách học sinh</h2>
                         <div class="grading-queue__stats">{{ $queueStats['pending'] }} chờ chấm · {{ $queueStats['graded'] }} đã chấm</div>
                         <div class="grading-queue__search">
-                            <i class="fas fa-search"></i>
+                            <i class="fa-solid fa-search"></i>
                             <input type="search" id="queueSearch" placeholder="Tìm học sinh...">
                         </div>
                         <div class="grading-queue__filters" role="group" aria-label="Lọc trạng thái">
@@ -106,7 +103,7 @@
                     <div class="panel">
                         <div class="panel__head">
                             <div class="panel__label">
-                                <span class="icon-dot idot--blue"><i class="fas fa-file-alt"></i></span>
+                                <span class="icon-dot idot--blue"><i class="fa-solid fa-file-lines"></i></span>
                                 Yêu cầu bài tập
                             </div>
                         </div>
@@ -121,7 +118,7 @@
                     <div class="panel" style="margin-top:1rem">
                         <div class="panel__head">
                             <div class="panel__label">
-                                <span class="icon-dot idot--violet"><i class="fas fa-list-check"></i></span>
+                                <span class="icon-dot idot--violet"><i class="fa-solid fa-list-check"></i></span>
                                 Tiêu chí chấm điểm
                             </div>
                             <span class="bdg bdg--muted">Thang {{ $assignment->grading_scale ?? 10 }} điểm</span>
@@ -131,7 +128,7 @@
                                 <div class="instruction-box" style="white-space:pre-wrap;">{{ $assignment->grading_rubric }}</div>
                             @else
                                 <div class="ai-notice">
-                                    <i class="fas fa-info-circle"></i>
+                                    <i class="fa-solid fa-circle-info"></i>
                                     <span>Bài tập này chưa có rubric cụ thể. AI vẫn có thể phân tích, nhưng chỉ dùng yêu cầu bài tập để tạo tiêu chí tạm.</span>
                                 </div>
                             @endif
@@ -142,18 +139,18 @@
                     <div class="panel" style="margin-top:1rem">
                         <div class="panel__head">
                             <div class="panel__label">
-                                <span class="icon-dot idot--green"><i class="fas fa-pen-nib"></i></span>
+                                <span class="icon-dot idot--green"><i class="fa-solid fa-pen-nib"></i></span>
                                 Bài làm học sinh
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <div class="submit-meta">
-                                    <i class="fas fa-clock"></i>
+                                    <i class="fa-solid fa-clock"></i>
                                     Nộp lúc {{ $submission->formatSubmittedAt('H:i:s · d/m/Y') ?? '---' }}
                                 </div>
                                 @if ($fileUrl)
                                     <a href="{{ $fileUrl }}" target="_blank" class="bdg bdg--primary"
                                         style="text-decoration:none;padding:.3em .9em">
-                                        <i class="fas fa-download"></i> Tải file
+                                        <i class="fa-solid fa-download"></i> Tải file
                                     </a>
                                 @endif
                             </div>
@@ -161,7 +158,7 @@
                         <div class="panel__body">
                             @if ($fileUrl)
                                 <div class="file-card mb-3">
-                                    <div class="file-card__icon"><i class="fas fa-paperclip"></i></div>
+                                    <div class="file-card__icon"><i class="fa-solid fa-paperclip"></i></div>
                                     <div>
                                         <div class="file-card__name">{{ $fileName ?? 'File bài làm đã đính kèm' }}</div>
                                         <div class="file-card__hint">
@@ -178,7 +175,7 @@
                                     <div class="file-preview mb-3">
                                         <div class="file-preview__head">
                                             <div class="file-preview__title">
-                                                <i class="fas fa-eye"></i>
+                                                <i class="fa-solid fa-eye"></i>
                                                 <span>Xem trước bài nộp</span>
                                                 <span class="file-preview__name">{{ $fileName }}</span>
                                             </div>
@@ -194,7 +191,7 @@
                                     </div>
                                 @else
                                     <div class="file-preview-empty mb-3">
-                                        <i class="fas fa-circle-info"></i>
+                                        <i class="fa-solid fa-circle-info"></i>
                                         <div>
                                             Hệ thống hiện xem trước trực tiếp cho PDF, ảnh và HTML. Với Word/ZIP, giáo viên
                                             cần tải file để kiểm tra.
@@ -207,7 +204,7 @@
                                 <div class="answer-box">{{ $submission->text_answer }}</div>
                             @else
                                 <div class="answer-empty">
-                                    <i class="fas fa-file-slash"></i>
+                                    <i class="fa-solid fa-file-slash"></i>
                                     <div>
                                         <strong>Không có nội dung tự luận</strong><br>
                                         Vui lòng kiểm tra file đính kèm nếu có.
@@ -243,18 +240,18 @@
                                 @endphp
                                 @if (!$assignment->ai_grading_enabled)
                                     <div class="ai-notice">
-                                        <i class="fas fa-info-circle"></i>
+                                        <i class="fa-solid fa-circle-info"></i>
                                         <span>AI hỗ trợ chấm đang tắt cho bài tập này.</span>
                                     </div>
                                 @elseif (trim((string) $submission->text_answer) || $submission->file_path)
                                     <button type="button" id="aiAnalyzeBtn" class="btn-ai"
                                         data-submission-id="{{ $submission->id }}">
-                                        <span class="ai-icon"><i class="fas fa-robot"></i></span>
+                                        <span class="ai-icon"><i class="fa-solid fa-robot"></i></span>
                                         {{ $submission->ai_analyzed_at ? 'AI phân tích lại' : 'AI phân tích bài làm' }}
                                     </button>
                                     @if ($submission->file_path)
                                         <div class="ai-notice mt-2">
-                                            <i class="fas fa-file-lines"></i>
+                                            <i class="fa-solid fa-file-lines"></i>
                                             <span>AI sẽ thử đọc nội dung file PDF, DOCX, TXT, HTML, CSS, JS, PHP hoặc MD nếu có thể.</span>
                                         </div>
                                     @endif
@@ -328,7 +325,7 @@
                                             <div class="ai-actions">
                                                 <button type="button" class="btn-ai-apply" id="useAiFeedbackBtn"
                                                     data-feedback="{{ e($submission->ai_feedback ?? '') }}">
-                                                    <i class="fas fa-comment-dots me-1"></i>Dùng nhận xét AI
+                                                    <i class="fa-solid fa-comment-dots me-1"></i>Dùng nhận xét AI
                                                 </button>
                                             </div>
                                             @if (!empty($submission->ai_analysis_history) && count($submission->ai_analysis_history) > 1)
@@ -340,7 +337,7 @@
                                     </div>
                                 @else
                                     <div class="ai-notice">
-                                        <i class="fas fa-info-circle"></i>
+                                        <i class="fa-solid fa-circle-info"></i>
                                         <span>Bài nộp chưa có nội dung tự luận hoặc file để AI phân tích.</span>
                                     </div>
                                 @endif
@@ -367,11 +364,11 @@
 
                                 <div class="grading-actions">
                                     <button type="submit" name="action" value="save_next" class="btn-save btn-save-next">
-                                        <i class="fas fa-forward"></i>
+                                        <i class="fa-solid fa-forward"></i>
                                         Lưu & bài tiếp theo
                                     </button>
                                     <button type="submit" name="action" value="save" class="btn-save">
-                                        <i class="fas fa-check-circle"></i>
+                                        <i class="fa-solid fa-circle-check"></i>
                                         Chỉ lưu bài này
                                     </button>
                                 </div>
@@ -525,7 +522,7 @@
                         ).join('') + `
                             <div class="ai-actions">
                                 <button type="button" class="btn-ai-apply" id="useAiFeedbackBtn">
-                                    <i class="fas fa-comment-dots me-1"></i>Dùng nhận xét AI
+                                    <i class="fa-solid fa-comment-dots me-1"></i>Dùng nhận xét AI
                                 </button>
                             </div>`;
                     })

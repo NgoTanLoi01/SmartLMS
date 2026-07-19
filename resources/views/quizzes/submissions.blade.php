@@ -8,10 +8,10 @@
             <div>
                 <a href="{{ route('courses.show', $quiz->course_id) }}"
                    class="btn btn-outline-primary rounded-pill mb-2 px4 shadow-sm align-items-center back-to-course-btn">
-                    <i class="fas fa-arrow-left me-1"></i> Quay lại khóa học
+                    <i class="fa-solid fa-arrow-left me-1"></i> Quay lại khóa học
                 </a>
                 <h3 class="fw-bold mb-0 text-dark">
-                    <i class="fas fa-chart-bar text-success me-2"></i>Bảng điểm: {{ $quiz->title }}
+                    <i class="fa-solid fa-chart-bar text-success me-2"></i>Bảng điểm: {{ $quiz->title }}
                 </h3>
             </div>
             <div class="text-end text-muted small">
@@ -52,14 +52,14 @@
                                     <td class="px-4 text-end">
                                         <a href="{{ route('quizzes.review', $attempt->id) }}"
                                             class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
-                                            <i class="fas fa-eye me-1"></i> Xem chi tiết
+                                            <i class="fa-solid fa-eye me-1"></i> Xem chi tiết
                                         </a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
                                     <td colspan="5" class="text-center py-5 text-muted">
-                                        <i class="fas fa-folder-open fa-3x mb-3 opacity-50"></i>
+                                        <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-50"></i>
                                         <p class="mb-0">Chưa có học sinh nào nộp bài.</p>
                                     </td>
                                 </tr>

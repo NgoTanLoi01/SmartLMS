@@ -12,31 +12,31 @@
             <section class="document-hero">
                 <div class="document-hero-top">
                     <div>
-                        <span class="document-kicker"><i class="fas fa-folder-open"></i> Tài liệu chung</span>
+                        <span class="document-kicker"><i class="fa-solid fa-folder-open"></i> Tài liệu chung</span>
                         <h1>Kho tài liệu dành cho giáo viên</h1>
                         <p>Lưu trữ, sắp xếp và chia sẻ giáo án, biểu mẫu, Word, Excel, PowerPoint, PDF và HTML trên
                             Cloudflare R2.</p>
                     </div>
                     <button class="document-upload-button" type="button" data-bs-toggle="modal"
                         data-bs-target="#uploadDocumentModal">
-                        <i class="fas fa-cloud-arrow-up"></i> Tải tài liệu lên
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Tải tài liệu lên
                     </button>
                 </div>
 
                 <div class="document-stats" aria-label="Thống kê tài liệu">
                     <a href="{{ route('shared-documents.index') }}"
                         class="document-stat {{ !request('scope') ? 'active' : '' }}">
-                        <span class="document-stat-icon blue"><i class="fas fa-layer-group"></i></span>
+                        <span class="document-stat-icon blue"><i class="fa-solid fa-layer-group"></i></span>
                         <span><strong data-document-count="{{ $totalDocuments }}">{{ $totalDocuments }}</strong><small>TẤT CẢ CÓ THỂ TRUY CẬP</small></span>
                     </a>
                     <a href="{{ route('shared-documents.index', ['scope' => 'mine']) }}"
                         class="document-stat {{ request('scope') === 'mine' ? 'active' : '' }}">
-                        <span class="document-stat-icon violet"><i class="fas fa-user-lock"></i></span>
+                        <span class="document-stat-icon violet"><i class="fa-solid fa-user-lock"></i></span>
                         <span><strong data-document-count="{{ $myDocuments }}">{{ $myDocuments }}</strong><small>TÀI LIỆU CỦA TÔI</small></span>
                     </a>
                     <a href="{{ route('shared-documents.index', ['scope' => 'shared']) }}"
                         class="document-stat {{ request('scope') === 'shared' ? 'active' : '' }}">
-                        <span class="document-stat-icon green"><i class="fas fa-user-group"></i></span>
+                        <span class="document-stat-icon green"><i class="fa-solid fa-user-group"></i></span>
                         <span><strong data-document-count="{{ $sharedDocuments }}">{{ $sharedDocuments }}</strong><small>ĐƯỢC GIÁO VIÊN CHIA SẺ</small></span>
                     </a>
                 </div>
@@ -44,7 +44,7 @@
 
             @if ($errors->any())
                 <div class="alert alert-danger document-alert">
-                    <i class="fas fa-circle-exclamation"></i>
+                    <i class="fa-solid fa-circle-exclamation"></i>
                     <div><strong>Chưa thể tải tài liệu.</strong><br>{{ $errors->first() }}</div>
                 </div>
             @endif
@@ -57,7 +57,7 @@
                                 <input type="hidden" name="scope" value="{{ request('scope') }}">
                             @endif
                             <label class="document-search">
-                                <i class="fas fa-magnifying-glass"></i>
+                                <i class="fa-solid fa-magnifying-glass"></i>
                                 <input type="search" name="q" value="{{ request('q') }}"
                                     placeholder="Tìm theo tên hoặc mô tả…" aria-label="Tìm kiếm tài liệu">
                             </label>
@@ -75,7 +75,7 @@
                                         {{ strtoupper($extension) }}</option>
                                 @endforeach
                             </select>
-                            <button type="submit"><i class="fas fa-filter"></i> Lọc</button>
+                            <button type="submit"><i class="fa-solid fa-filter"></i> Lọc</button>
                             @if (request()->hasAny(['q', 'folder', 'extension']))
                                 <a href="{{ route('shared-documents.index', array_filter(['scope' => request('scope')])) }}"
                                     class="document-filter-clear">Xóa lọc</a>
@@ -84,19 +84,19 @@
 
                         <div class="document-view-toggle" role="group" aria-label="Chế độ hiển thị tài liệu">
                             <button type="button" class="active" data-document-view="grid" aria-pressed="true"
-                                title="Xem dạng lưới"><i class="fas fa-grip"></i><span>Lưới</span></button>
+                                title="Xem dạng lưới"><i class="fa-solid fa-grip"></i><span>Lưới</span></button>
                             <button type="button" data-document-view="list" aria-pressed="false"
-                                title="Xem dạng danh sách"><i class="fas fa-list"></i><span>Danh sách</span></button>
+                                title="Xem dạng danh sách"><i class="fa-solid fa-list"></i><span>Danh sách</span></button>
                         </div>
                     </div>
 
                     @if ($folders->isNotEmpty())
                         <div class="document-folder-row">
-                            <span><i class="fas fa-folder-tree"></i> Thư mục</span>
+                            <span><i class="fa-solid fa-folder-tree"></i> Thư mục</span>
                             @foreach ($folders->take(8) as $folder)
                                 <a href="{{ route('shared-documents.index', ['folder' => $folder]) }}"
                                     class="{{ request('folder') === $folder ? 'active' : '' }}">
-                                    <i class="fas fa-folder"></i>{{ $folder }}
+                                    <i class="fa-solid fa-folder"></i>{{ $folder }}
                                 </a>
                             @endforeach
                         </div>
@@ -105,7 +105,7 @@
 
                 @if ($documents->isEmpty())
                     <div class="document-empty">
-                        <span><i class="fas fa-folder-open"></i></span>
+                        <span><i class="fa-solid fa-folder-open"></i></span>
                         <h2>Chưa có tài liệu phù hợp</h2>
                         <p>
                             @if (request()->hasAny(['q', 'folder', 'extension']))
@@ -123,22 +123,22 @@
                             <article class="document-card">
                                 <div class="document-card-top">
                                     <span class="document-file-icon type-{{ $document->extension ?: 'file' }}">
-                                        <i class="fas {{ $document->iconClass() }}"></i>
+                                        <i class="fa-solid {{ $document->iconClass() }}"></i>
                                     </span>
                                     @if ($document->created_at->greaterThanOrEqualTo(now()->subDays(3)))
                                         <span class="document-new-badge" title="Đăng trong 3 ngày gần đây"><i
-                                                class="fas fa-sparkles"></i> Mới</span>
+                                                class="fa-solid fa-sparkles"></i> Mới</span>
                                     @endif
                                     @can('update', $document)
                                         <div class="dropdown ms-auto">
                                             <button class="document-menu" type="button" data-bs-toggle="dropdown"
                                                 aria-expanded="false" aria-label="Thao tác tài liệu">
-                                                <i class="fas fa-ellipsis"></i>
+                                                <i class="fa-solid fa-ellipsis"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li><button class="dropdown-item" type="button" data-bs-toggle="modal"
                                                         data-bs-target="#editDocumentModal{{ $document->id }}"><i
-                                                            class="fas fa-pen"></i> Chỉnh sửa</button></li>
+                                                            class="fa-solid fa-pen"></i> Chỉnh sửa</button></li>
                                                 <li>
                                                     <hr class="dropdown-divider">
                                                 </li>
@@ -149,7 +149,7 @@
                                                         @csrf
                                                         @method('DELETE')
                                                         <button class="dropdown-item text-danger" type="submit"><i
-                                                                class="fas fa-trash"></i> Xóa tài liệu</button>
+                                                                class="fa-solid fa-trash"></i> Xóa tài liệu</button>
                                                     </form>
                                                 </li>
                                             </ul>
@@ -162,9 +162,9 @@
                                     <p>{{ $document->description ?: 'Không có mô tả.' }}</p>
                                     <div class="document-meta">
                                         @if ($document->folder)
-                                            <span><i class="fas fa-folder"></i>{{ $document->folder }}</span>
+                                            <span><i class="fa-solid fa-folder"></i>{{ $document->folder }}</span>
                                         @endif
-                                        <span><i class="fas fa-hard-drive"></i>{{ $document->humanSize() }}</span>
+                                        <span><i class="fa-solid fa-hard-drive"></i>{{ $document->humanSize() }}</span>
                                     </div>
                                 </div>
 
@@ -177,14 +177,14 @@
                                     </div>
                                     <span class="document-visibility {{ $document->visibility }}">
                                         <i
-                                            class="fas {{ $document->visibility === 'private' ? 'fa-lock' : 'fa-user-group' }}"></i>
+                                            class="fa-solid {{ $document->visibility === 'private' ? 'fa-lock' : 'fa-user-group' }}"></i>
                                         {{ $document->visibility === 'private' ? 'Riêng tư' : 'Giáo viên' }}
                                     </span>
                                 </div>
 
                                 <a class="document-download" href="{{ route('shared-documents.download', $document) }}"
                                     data-no-page-transition data-file-download>
-                                    <i class="fas fa-download"></i> Tải xuống
+                                    <i class="fa-solid fa-download"></i> Tải xuống
                                 </a>
                             </article>
 
@@ -257,11 +257,11 @@
                 <div class="modal-body">
                     <div class="document-dropzone" id="documentDropzone" role="button" tabindex="0"
                         aria-label="Kéo thả hoặc chọn tài liệu để tải lên">
-                        <i class="fas fa-cloud-arrow-up"></i>
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
                         <strong>Kéo thả tài liệu vào đây</strong>
                         <span>Word, Excel, PowerPoint, PDF, HTML, TXT, CSV, ZIP hoặc hình ảnh · tối đa 20 MB/file</span>
                         <button type="button" class="document-file-picker" id="documentFilePicker"><i
-                                class="fas fa-plus"></i> Chọn tài liệu</button>
+                                class="fa-solid fa-plus"></i> Chọn tài liệu</button>
                         <input type="file" name="files[]" id="documentFilesInput" multiple required
                             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.html,.htm,.txt,.csv,.zip,.jpg,.jpeg,.png,.webp"
                             hidden>
@@ -282,12 +282,12 @@
                         <textarea name="description" rows="3" maxlength="2000"
                             placeholder="Nội dung hoặc mục đích sử dụng của tài liệu">{{ old('description') }}</textarea>
                     </label>
-                    <p class="document-security-note"><i class="fas fa-shield-halved"></i> File được lưu trong bucket
+                    <p class="document-security-note"><i class="fa-solid fa-shield-halved"></i> File được lưu trong bucket
                         riêng tư. Người dùng phải đăng nhập và có quyền mới tải xuống được.</p>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-light"
                         data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary"><i
-                            class="fas fa-cloud-arrow-up me-1"></i>Tải lên R2</button></div>
+                            class="fa-solid fa-cloud-arrow-up me-1"></i>Tải lên R2</button></div>
             </form>
         </div>
     </div>

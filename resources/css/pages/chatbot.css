@@ -1,16 +1,18 @@
+@import '../design-tokens.css';
+
 :root {
-    --cb-primary: #2563eb;
-    --cb-primary-dark: #1d4ed8;
-    --cb-primary-light: #eff6ff;
-    --cb-surface: #ffffff;
-    --cb-surface-alt: #f8fafc;
-    --cb-border: #e2e8f0;
-    --cb-text: #0f172a;
-    --cb-text-muted: #64748b;
-    --cb-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
-    --cb-shadow-btn: 0 4px 14px rgba(37, 99, 235, 0.4);
-    --cb-radius: 16px;
-    --cb-radius-msg: 18px;
+    --cb-primary: var(--sl-primary);
+    --cb-primary-dark: var(--sl-primary-hover);
+    --cb-primary-light: var(--sl-primary-soft);
+    --cb-surface: var(--sl-surface);
+    --cb-surface-alt: var(--sl-surface-muted);
+    --cb-border: var(--sl-border);
+    --cb-text: var(--sl-text);
+    --cb-text-muted: var(--sl-text-muted);
+    --cb-shadow: var(--sl-shadow-md);
+    --cb-shadow-btn: var(--sl-shadow-primary);
+    --cb-radius: var(--sl-radius-md);
+    --cb-radius-msg: var(--sl-radius-lg);
 }
 
 /* ── Toggler ── */
@@ -43,7 +45,7 @@
     transform: scale(0.9) rotate(2deg);
 }
 
-/* Pulse ring khi chưa mở */
+/* Giữ nút chatbot tĩnh khi chờ người dùng tương tác. */
 .cb-toggler::before {
     content: '';
     position: absolute;
@@ -51,14 +53,12 @@
     border-radius: 50%;
     border: 2px solid var(--cb-primary);
     opacity: 0;
-    animation: cb-pulse 2.5s ease-out infinite;
 }
 
 .cb-toggler.has-pulse::before {
     opacity: 1;
 }
 
-/* Vòng pulse thứ 2 lệch nhịp để tạo hiệu ứng sóng lan tỏa */
 .cb-toggler::after {
     content: '';
     position: absolute;
@@ -66,29 +66,10 @@
     border-radius: 50%;
     border: 2px solid var(--cb-primary);
     opacity: 0;
-    animation: cb-pulse 2.5s ease-out infinite;
-    animation-delay: 1.25s;
 }
 
 .cb-toggler.has-pulse::after {
     opacity: 1;
-}
-
-@keyframes cb-pulse {
-    0% {
-        transform: scale(1);
-        opacity: 0.6;
-    }
-
-    70% {
-        transform: scale(1.5);
-        opacity: 0;
-    }
-
-    100% {
-        transform: scale(1.5);
-        opacity: 0;
-    }
 }
 
 /* Icon toggle */
@@ -123,26 +104,13 @@
     background: #ef4444;
     color: #fff;
     border-radius: 50%;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid #fff;
     display: none;
-    animation: cb-badge-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes cb-badge-pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.18);
-    }
 }
 
 /* ── Cửa sổ chat ── */
@@ -190,28 +158,13 @@
 /* ── Header ── */
 .cb-header {
     background: linear-gradient(120deg, #172554 0%, #1d4ed8 45%, #6d28d9 80%, #1d4ed8 100%);
-    background-size: 220% 220%;
-    animation: cb-header-shimmer 8s ease infinite;
+    background-size: 100% 100%;
     padding: 16px 18px;
     display: flex;
     align-items: center;
     gap: 12px;
     flex-shrink: 0;
     user-select: none;
-}
-
-@keyframes cb-header-shimmer {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
 }
 
 .cb-avatar {
@@ -261,19 +214,6 @@
     background: #4ade80;
     flex-shrink: 0;
     box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
-    animation: cb-status-breathe 2s ease-in-out infinite;
-}
-
-@keyframes cb-status-breathe {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 0 0 5px rgba(74, 222, 128, 0.12);
-    }
 }
 
 .cb-header-actions {
@@ -625,19 +565,6 @@
     border-color: var(--cb-primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     background: var(--cb-surface);
-    animation: cb-input-glow 1.6s ease-in-out infinite;
-}
-
-@keyframes cb-input-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    50% {
-        box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.16);
-    }
 }
 
 .cb-input:disabled {
@@ -708,7 +635,6 @@
 }
 
 .cb-mascot {
-    animation: cbMascotIdle 3.6s ease-in-out infinite;
     background: transparent;
     border-radius: inherit;
     display: block;
@@ -727,56 +653,48 @@
 }
 
 .cb-mascot__blink {
-    animation: cbMascotBlink 6.4s infinite;
+    animation: cb-mascot-blink 6.2s ease-in-out infinite;
     background:
         linear-gradient(#8be9fd, #8be9fd) left 13% center / 31% 2px no-repeat,
         linear-gradient(#8be9fd, #8be9fd) right 13% center / 31% 2px no-repeat,
         #20284c;
     border-radius: 999px;
     height: 8%;
-    left: 30%;
+    left: 34%;
     opacity: 0;
+    pointer-events: none;
     position: absolute;
-    top: 44%;
+    top: 41%;
+    transform: scaleY(.2);
+    transform-origin: center;
     width: 40%;
+    z-index: 2;
 }
 
-@keyframes cbMascotBlink {
-
+@keyframes cb-mascot-blink {
     0%,
-    38%,
-    41%,
     43%,
-    71%,
-    74%,
+    48%,
     100% {
         opacity: 0;
-        transform: scaleY(.15);
+        transform: scaleY(.2);
     }
 
-    39%,
-    40%,
-    42%,
-    72%,
-    73% {
+    44%,
+    46% {
         opacity: 1;
         transform: scaleY(1);
     }
 }
 
-@keyframes cbMascotIdle {
-
+@keyframes cb-mascot-idle {
     0%,
     100% {
-        transform: translateY(2px) rotate(-1deg) scale(1);
+        transform: translateY(0) rotate(0deg);
     }
 
-    35% {
-        transform: translateY(-5px) rotate(1.5deg) scale(1.025);
-    }
-
-    62% {
-        transform: translateY(-2px) rotate(-.5deg) scale(1.01);
+    50% {
+        transform: translateY(-4px) rotate(1deg);
     }
 }
 
@@ -803,10 +721,12 @@
 }
 
 .cb-toggler .cb-mascot {
+    animation: cb-mascot-idle 4.8s ease-in-out infinite;
     filter: drop-shadow(0 10px 12px rgba(49, 46, 129, .28));
     height: auto;
     inset: 0;
     position: absolute;
+    transform-origin: center bottom;
     width: auto;
 }
 

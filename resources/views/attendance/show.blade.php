@@ -10,7 +10,7 @@
         {{-- ── TOOLBAR ── --}}
         <div class="att-toolbar">
             <div class="att-title-block">
-                <h5><i class="fas fa-clipboard-check"></i> Điểm danh & Điểm số</h5>
+                <h5><i class="fa-solid fa-clipboard-check"></i> Điểm danh & Điểm số</h5>
                 <small>{{ $course->title }}{{ $isStudentView ? ' · Dữ liệu của bạn' : '' }}</small>
             </div>
 
@@ -18,15 +18,15 @@
                 @unless ($isStudentView)
                 <div class="att-primary-actions">
                     <div class="att-search">
-                        <i class="fas fa-search"></i>
+                        <i class="fa-solid fa-search"></i>
                         <input type="text" id="filterName" placeholder="Tìm tên học sinh...">
                     </div>
                     <a href="{{ route('attendance.export', $course->id) }}" class="chip-btn chip-green"
                         data-no-page-transition data-file-download>
-                        <i class="fas fa-file-excel"></i> Xuất Excel
+                        <i class="fa-solid fa-file-excel"></i> Xuất Excel
                     </a>
                     <button type="button" class="chip-btn chip-green" id="markAllPresentBtn">
-                        <i class="fas fa-user-check"></i> Buổi mới nhất: tất cả có mặt
+                        <i class="fa-solid fa-user-check"></i> Buổi mới nhất: tất cả có mặt
                     </button>
                 </div>
 
@@ -51,7 +51,7 @@
                         @endforeach
                     </select>
                     <button type="submit" class="chip-btn chip-blue">
-                        <i class="fas fa-plus"></i> Thêm cột
+                        <i class="fa-solid fa-plus"></i> Thêm cột
                     </button>
                 </form>
 
@@ -86,7 +86,7 @@
                                             </small>
                                         @endif
                                         @unless ($isStudentView)
-                                        <i class="fas fa-times btn-delete-col"
+                                        <i class="fa-solid fa-times btn-delete-col"
                                             onclick="deleteColumn({{ $col->id }}, '{{ addslashes($col->name) }}')"></i>
                                         @endunless
                                     </div>
@@ -131,14 +131,14 @@
                                                     name="data[{{ $col->id }}][{{ $student->id }}]" value="{{ $status }}">
                                                 <button type="button" class="attendance-status-btn status-{{ $status }}"
                                                     data-status="{{ $status }}" @disabled($isStudentView)>
-                                                    <i class="fas fa-{{ $statusIcons[$status] ?? 'check' }}"></i>
+                                                    <i class="fa-solid fa-{{ $statusIcons[$status] ?? 'check' }}"></i>
                                                     <span>{{ $statusLabels[$status] ?? 'Có mặt' }}</span>
                                                 </button>
                                                 <input type="hidden" id="{{ $noteId }}"
                                                     name="notes[{{ $col->id }}][{{ $student->id }}]" value="{{ $note }}">
                                                 <button type="button" class="attendance-note-btn {{ $note ? 'has-note' : '' }}"
                                                     data-note-input="{{ $noteId }}" title="{{ $note ?: 'Thêm ghi chú' }}" @disabled($isStudentView)>
-                                                    <i class="fas fa-note-sticky"></i>
+                                                    <i class="fa-solid fa-note-sticky"></i>
                                                 </button>
                                             </div>
                                         @else
@@ -153,7 +153,7 @@
                             <tr>
                                 <td colspan="{{ count($columns) + 2 }}">
                                     <div class="att-empty">
-                                        <i class="fas fa-user-slash d-block"></i>
+                                        <i class="fa-solid fa-user-slash d-block"></i>
                                         <p>Chưa có học sinh nào trong khóa học này</p>
                                     </div>
                                 </td>
@@ -166,12 +166,12 @@
             {{-- ── FOOTER ── --}}
             <div class="att-footer">
                 <div class="att-hint">
-                    <i class="fas fa-{{ $isStudentView ? 'circle-info' : 'lightbulb' }}"></i>
+                    <i class="fa-solid fa-{{ $isStudentView ? 'circle-info' : 'lightbulb' }}"></i>
                     {{ $isStudentView ? 'Dữ liệu do giáo viên cập nhật và chỉ bạn có thể xem dòng này.' : 'Click vào tên cột để đổi tên. Hover vào cột để xóa.' }}
                 </div>
                 @unless ($isStudentView)
                 <button type="submit" class="btn-save">
-                    <i class="fas fa-save"></i> Lưu bảng điểm
+                    <i class="fa-solid fa-save"></i> Lưu bảng điểm
                 </button>
                 @endunless
             </div>
@@ -186,7 +186,7 @@
     </form>
 
     {{-- Save flash --}}
-    <div class="save-flash" id="saveFlash"><i class="fas fa-check-circle"></i> Đã lưu thành công!</div>
+    <div class="save-flash" id="saveFlash"><i class="fa-solid fa-circle-check"></i> Đã lưu thành công!</div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
@@ -241,7 +241,7 @@
             input.value = status;
             button.dataset.status = status;
             button.className = `attendance-status-btn status-${status}`;
-            button.querySelector('i').className = `fas ${state.icon}`;
+            button.querySelector('i').className = `fa-solid ${state.icon}`;
             button.querySelector('span').textContent = state.label;
         }
 

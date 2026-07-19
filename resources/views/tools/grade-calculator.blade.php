@@ -5,8 +5,8 @@
 @section('content')
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --bg-light: #f4f7f9;
+            --primary-gradient: linear-gradient(135deg, var(--sl-primary) 0%, var(--sl-ai) 100%);
+            --bg-light: var(--sl-bg);
         }
 
         body {
@@ -51,8 +51,8 @@
 
         .grade-table .form-control:focus {
             background: #fff;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            border-color: var(--sl-primary);
+            box-shadow: var(--sl-focus-ring);
         }
 
         .grade-table .form-control.input-subject {
@@ -145,7 +145,7 @@
         <div class="card card-main shadow-sm">
             <div class="card-header py-4 px-4 border-0">
                 <h4 class="fw-bold mb-1 d-flex align-items-center">
-                    <i class="fas fa-graduation-cap me-3"></i> Công cụ tính điểm Trung cấp nghề
+                    <i class="fa-solid fa-graduation-cap me-3"></i> Công cụ tính điểm Trung cấp nghề
                 </h4>
                 <p class="mb-0 opacity-75 small">Hỗ trợ tính điểm nhanh theo quy chế đào tạo nghề</p>
             </div>
@@ -176,13 +176,13 @@
                                         <td><input type="number" class="form-control thi" step="0.1" min="0"
                                                 max="10" placeholder="8.5"></td>
                                         <td><button class="btn-remove-row text-danger" onclick="removeRow(this)"><i
-                                                    class="fas fa-times-circle"></i></button></td>
+                                                    class="fa-solid fa-circle-xmark"></i></button></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         <button class="btn btn-outline-primary btn-sm rounded-pill px-4 py-2 shadow-sm" onclick="addRow()">
-                            <i class="fas fa-plus me-2"></i> Thêm môn học
+                            <i class="fa-solid fa-plus me-2"></i> Thêm môn học
                         </button>
                     </div>
 
@@ -190,7 +190,7 @@
                     <div class="col-xl-4">
                         <div class="result-panel bg-white p-4 h-100 border shadow-sm">
                             <h6 class="fw-bold mb-4 d-flex align-items-center text-dark">
-                                <i class="fas fa-chart-pie me-2 text-primary"></i>Kết quả học kỳ
+                                <i class="fa-solid fa-chart-pie me-2 text-primary"></i>Kết quả học kỳ
                             </h6>
 
                             <div class="d-flex justify-content-between mb-2 align-items-center">
@@ -209,18 +209,18 @@
                             <div class="text-center mb-4">
                                 <button class="btn btn-primary btn-calculate w-100 mb-2 py-3 fw-bold shadow-sm"
                                     onclick="calculateGrades()">
-                                    <i class="fas fa-bolt me-2"></i> TÍNH ĐIỂM NGAY
+                                    <i class="fa-solid fa-bolt me-2"></i> TÍNH ĐIỂM NGAY
                                 </button>
                                 <button class="btn btn-outline-secondary w-100 py-2 rounded-pill small border-0"
                                     onclick="showClearConfirm()">
-                                    <i class="fas fa-eraser me-2"></i> XÓA TRẮNG
+                                    <i class="fa-solid fa-eraser me-2"></i> XÓA TRẮNG
                                 </button>
                             </div>
 
                             <div class="mt-4 pt-3 border-top">
                                 <p class="fw-bold small mb-3 text-muted text-uppercase"
                                     style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                                    <i class="fas fa-info-circle me-1"></i> Bảng quy đổi & Xếp loại
+                                    <i class="fa-solid fa-circle-info me-1"></i> Bảng quy đổi & Xếp loại
                                 </p>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-hover ref-table border-0 mb-0">
@@ -283,7 +283,7 @@
                                     </table>
                                 </div>
                                 <div class="alert alert-warning p-2 mt-3 border-0 rounded-3" style="font-size: 0.75rem;">
-                                    <i class="fas fa-exclamation-triangle me-1"></i> Áp dụng theo <strong>TT
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Áp dụng theo <strong>TT
                                         04/2022/TT-BLĐTBXH</strong> cho hệ Trung cấp nghề.
                                 </div>
                             </div>
@@ -300,7 +300,7 @@
             <div class="modal-content border-0 shadow" style="border-radius: 16px;">
                 <div class="modal-body text-center p-4">
                     <div class="mb-3">
-                        <i class="fas fa-exclamation-circle text-warning fa-3x"></i>
+                        <i class="fa-solid fa-circle-exclamation text-warning fa-3x"></i>
                     </div>
                     <h5 class="fw-bold">Xóa toàn bộ dữ liệu?</h5>
                     <p class="text-muted small mb-4">Hành động này không thể hoàn tác. Toàn bộ môn học sẽ bị làm mới.</p>
@@ -323,7 +323,7 @@
                 <td><input type="text" class="form-control hs1" placeholder="9, 8"></td>
                 <td><input type="text" class="form-control hs2" placeholder="7, 8"></td>
                 <td><input type="number" class="form-control thi" step="0.1" min="0" max="10" placeholder="8.5"></td>
-                <td><button class="btn-remove-row text-danger" onclick="removeRow(this)"><i class="fas fa-times-circle"></i></button></td>
+                <td><button class="btn-remove-row text-danger" onclick="removeRow(this)"><i class="fa-solid fa-circle-xmark"></i></button></td>
             </tr>`;
             document.querySelector('#subjectTable tbody').insertAdjacentHTML('beforeend', row);
         }

@@ -194,7 +194,7 @@
 
     .record-item__badge {
         flex-shrink: 0;
-        font-size: 10.5px;
+        font-size: 11px;
         font-weight: 700;
         padding: 2px 8px;
         border-radius: 999px;
@@ -244,7 +244,7 @@
     .sel-chip__remove {
         cursor: pointer;
         color: #93c5fd;
-        font-size: 10px;
+        font-size: 11px;
         line-height: 1;
         background: none;
         border: none;
@@ -323,7 +323,7 @@
 
         <div class="record-picker-wrap" id="recordPickerWrap_{{ $contract?->id ?? 'new' }}">
             <div class="record-picker-search">
-                <i class="fas fa-magnifying-glass"></i>
+                <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" placeholder="Tìm theo tên môn, lớp, trung tâm..." class="rp-search-input">
             </div>
             <div class="record-picker-stats">
@@ -366,7 +366,7 @@
             @foreach ($teachingRecords->whereIn('id', $selectedRecordIds) as $record)
                 <span class="sel-chip" data-id="{{ $record->id }}">
                     {{ $record->subject_name }}
-                    <button type="button" class="sel-chip__remove" title="Bỏ chọn">✕</button>
+                    <button type="button" class="sel-chip__remove" title="Bỏ chọn" aria-label="Bỏ chọn"><x-ui.icon name="close" /></button>
                 </span>
             @endforeach
         </div>
@@ -422,7 +422,7 @@
                 chip.className = 'sel-chip';
                 chip.dataset.id = id;
                 chip.innerHTML =
-                    `${name}<button type="button" class="sel-chip__remove" title="Bỏ chọn">✕</button>`;
+                    `${name}<button type="button" class="sel-chip__remove" title="Bỏ chọn" aria-label="Bỏ chọn"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>`;
                 chip.querySelector('button').addEventListener('click', () => {
                     const cb = item.querySelector('input');
                     cb.checked = false;

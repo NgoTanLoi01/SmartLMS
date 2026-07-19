@@ -17,13 +17,13 @@
     <style>
         /* ── Design tokens ── */
         :root {
-            --p-surface: #ffffff;
-            --p-border: #e8edf3;
-            --p-ink: #0f1c2e;
-            --p-muted: #6b7a8d;
-            --p-accent: #2563eb;
-            --p-radius: 12px;
-            --p-shadow: 0 1px 3px rgba(15, 28, 46, .06), 0 4px 12px rgba(15, 28, 46, .05);
+            --p-surface: var(--sl-surface);
+            --p-border: var(--sl-border);
+            --p-ink: var(--sl-text);
+            --p-muted: var(--sl-text-muted);
+            --p-accent: var(--sl-primary);
+            --p-radius: var(--sl-radius-sm);
+            --p-shadow: var(--sl-shadow-sm);
         }
 
         .pp {
@@ -466,10 +466,10 @@
             </div>
             <div class="d-flex gap-2 flex-wrap pp-header-actions">
                 <button type="button" class="btn-pp-import" data-bs-toggle="modal" data-bs-target="#importPaymentModal">
-                    <i class="fas fa-file-import"></i>Import Excel/CSV
+                    <i class="fa-solid fa-file-import"></i>Import Excel/CSV
                 </button>
                 <button type="button" class="btn-pp-add" data-bs-toggle="modal" data-bs-target="#createPaymentModal">
-                    <i class="fas fa-plus"></i>Thêm hợp đồng
+                    <i class="fa-solid fa-plus"></i>Thêm hợp đồng
                 </button>
             </div>
         </div>
@@ -477,12 +477,12 @@
         {{-- Alerts --}}
         @if (session('success'))
             <div class="alert alert-success border-0 rounded-3 mb-4 d-flex align-items-center gap-2">
-                <i class="fas fa-check-circle"></i><span>{{ session('success') }}</span>
+                <i class="fa-solid fa-circle-check"></i><span>{{ session('success') }}</span>
             </div>
         @endif
         @if ($errors->any())
             <div class="alert alert-danger border-0 rounded-3 mb-4 d-flex align-items-center gap-2">
-                <i class="fas fa-exclamation-circle"></i><span>{{ $errors->first() }}</span>
+                <i class="fa-solid fa-circle-exclamation"></i><span>{{ $errors->first() }}</span>
             </div>
         @endif
 
@@ -534,11 +534,11 @@
                 <div class="col-12 col-lg-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-fill rounded-3"
                         style="font-size:13px;font-weight:600">
-                        <i class="fas fa-filter me-1"></i>Lọc
+                        <i class="fa-solid fa-filter me-1"></i>Lọc
                     </button>
                     <a href="{{ route('payments.index') }}" class="btn btn-light border rounded-3" style="font-size:13px"
                         title="Đặt lại">
-                        <i class="fas fa-rotate-left"></i>
+                        <i class="fa-solid fa-rotate-left"></i>
                     </a>
                 </div>
             </div>
@@ -566,12 +566,12 @@
                             <tr>
                                 <td>
                                     <div class="contract-id">
-                                        <i class="fas fa-file-contract"
+                                        <i class="fa-solid fa-file-contract"
                                             style="font-size:11px"></i>{{ $contract->contract_number }}
                                     </div>
                                     @if (auth()->user()->role === 'admin')
                                         <div class="pp-note">
-                                            <i class="fas fa-user-tie"
+                                            <i class="fa-solid fa-user-tie"
                                                 style="font-size:10px;margin-right:3px"></i>{{ $contract->teacher?->name ?? 'N/A' }}
                                         </div>
                                     @endif
@@ -601,7 +601,7 @@
                                     @if ($contract->evidence_url)
                                         <a href="{{ $contract->evidence_url }}" target="_blank" rel="noopener"
                                             class="evidence-link">
-                                            <i class="fas fa-arrow-up-right-from-square" style="font-size:10px"></i>Xem
+                                            <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px"></i>Xem
                                         </a>
                                     @else
                                         <span style="font-size:12px;color:#94a3b8">Chưa có</span>
@@ -610,7 +610,7 @@
                                 <td style="min-width:220px">
                                     @forelse ($contract->teachingRecords->take(3) as $record)
                                         <span class="record-chip">
-                                            <i class="fas fa-chalkboard-teacher"
+                                            <i class="fa-solid fa-chalkboard-teacher"
                                                 style="font-size:9px"></i>{{ $record->subject_name }}
                                         </span>
                                     @empty
@@ -625,14 +625,14 @@
                                     <div class="pp-actions">
                                         <button type="button" class="pp-btn-edit" data-bs-toggle="modal"
                                             data-bs-target="#editPaymentModal{{ $contract->id }}">
-                                            <i class="fas fa-pen-to-square"></i>Sửa
+                                            <i class="fa-solid fa-pen-to-square"></i>Sửa
                                         </button>
                                         <form action="{{ route('payments.destroy', $contract->id) }}" method="POST"
                                             onsubmit="return confirm('Xóa hợp đồng thanh toán này?');" style="margin:0">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="pp-btn-del">
-                                                <i class="fas fa-trash-alt"></i>Xóa
+                                                <i class="fa-solid fa-trash-can"></i>Xóa
                                             </button>
                                         </form>
                                     </div>
@@ -642,7 +642,7 @@
                             <tr>
                                 <td colspan="9">
                                     <div class="pp-empty">
-                                        <div class="pp-empty-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                                        <div class="pp-empty-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                                         <p>Chưa có hợp đồng thanh toán.</p>
                                     </div>
                                 </td>
@@ -705,7 +705,7 @@
                             required>
                     </div>
                     <div class="alert border-0 rounded-3 small mb-0" style="background:#eff6ff;color:#1e40af">
-                        <i class="fas fa-circle-info me-2"></i>File cần có các cột:
+                        <i class="fa-solid fa-circle-info me-2"></i>File cần có các cột:
                         <strong>Số hợp đồng, Ngày ký, Tổng tiền VND, Trạng thái, Ngày nhận, Hợp đồng, Ghi chú</strong>.
                         Cột <strong>Hợp đồng</strong> sẽ lưu vào link minh chứng nếu là URL, nếu không sẽ lưu vào ghi chú.
                     </div>

@@ -1,44 +1,46 @@
+@import '../design-tokens.css';
+
 :root {
-    --brand: #4f7fff;
-    --brand-dark: #2952e3;
-    --brand-light: #eef3ff;
-    --brand-glow: rgba(79, 127, 255, 0.18);
-    --accent: #8b5cf6;
-    --accent-light: #f3efff;
-    --success: #10b981;
-    --success-light: #ecfdf5;
-    --warning: #f59e0b;
-    --warning-light: #fffbeb;
-    --danger: #f43f5e;
-    --danger-light: #fff1f4;
-    --info: #06b6d4;
-    --info-light: #ecfeff;
+    --brand: var(--sl-primary);
+    --brand-dark: var(--sl-primary-hover);
+    --brand-light: var(--sl-primary-soft);
+    --brand-glow: rgba(var(--sl-primary-rgb), 0.18);
+    --accent: var(--sl-ai);
+    --accent-light: var(--sl-ai-soft);
+    --success: var(--sl-success);
+    --success-light: var(--sl-success-soft);
+    --warning: var(--sl-warning);
+    --warning-light: var(--sl-warning-soft);
+    --danger: var(--sl-danger);
+    --danger-light: var(--sl-danger-soft);
+    --info: var(--sl-info);
+    --info-light: var(--sl-info-soft);
 
-    --surface: #ffffff;
-    --surface-2: #f7f9fc;
-    --surface-3: #eef2f9;
-    --border: rgba(0, 0, 0, .07);
-    --border-strong: rgba(0, 0, 0, .12);
-    --text: #0d1b2a;
-    --text-2: #374151;
-    --text-muted: #6b7280;
-    --text-light: #9ca3af;
+    --surface: var(--sl-surface);
+    --surface-2: var(--sl-surface-muted);
+    --surface-3: var(--sl-primary-soft);
+    --border: var(--sl-border);
+    --border-strong: var(--sl-border-strong);
+    --text: var(--sl-text);
+    --text-2: var(--sl-text-secondary);
+    --text-muted: var(--sl-text-muted);
+    --text-light: var(--sl-text-subtle);
 
-    --radius-xs: 6px;
-    --radius-sm: 10px;
-    --radius: 16px;
-    --radius-lg: 22px;
-    --radius-xl: 28px;
+    --radius-xs: var(--sl-radius-xs);
+    --radius-sm: var(--sl-radius-sm);
+    --radius: var(--sl-radius-md);
+    --radius-lg: var(--sl-radius-lg);
+    --radius-xl: var(--sl-radius-xl);
 
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, .05);
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, .06), 0 0 1px rgba(0, 0, 0, .04);
-    --shadow: 0 4px 20px rgba(0, 0, 0, .07), 0 1px 4px rgba(0, 0, 0, .04);
-    --shadow-md: 0 8px 32px rgba(0, 0, 0, .09), 0 2px 8px rgba(0, 0, 0, .05);
-    --shadow-lg: 0 16px 48px rgba(0, 0, 0, .11), 0 4px 16px rgba(0, 0, 0, .06);
-    --shadow-brand: 0 8px 32px rgba(79, 127, 255, .22);
+    --shadow-xs: var(--sl-shadow-xs);
+    --shadow-sm: var(--sl-shadow-sm);
+    --shadow: var(--sl-shadow-sm);
+    --shadow-md: var(--sl-shadow-md);
+    --shadow-lg: var(--sl-shadow-lg);
+    --shadow-brand: var(--sl-shadow-primary);
 
-    --font: 'Be Vietnam Pro', sans-serif;
-    --font-mono: 'DM Mono', monospace;
+    --font: var(--sl-font-sans);
+    --font-mono: var(--sl-font-mono);
 }
 
 *,

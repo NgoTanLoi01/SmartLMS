@@ -16,15 +16,15 @@
                         @endphp
                         <h3 class="teacher-next-class__title">{{ $studentNextSchedule->course_title }}</h3>
                         <div class="teacher-next-class__meta">
-                            <span><i class="fas fa-school"></i>{{ $studentNextSchedule->class_name }}</span>
-                            <span><i class="far fa-calendar"></i>{{ $studentNextStart->format('d/m/Y') }}</span>
-                            <span><i class="far fa-clock"></i>{{ $studentNextStart->format('H:i') }} - {{ $studentNextEnd->format('H:i') }}</span>
-                            <span><i class="fas fa-location-dot"></i>{{ $studentNextSchedule->room ?? 'Online' }}</span>
+                            <span><i class="fa-solid fa-school"></i>{{ $studentNextSchedule->class_name }}</span>
+                            <span><i class="fa-regular fa-calendar"></i>{{ $studentNextStart->format('d/m/Y') }}</span>
+                            <span><i class="fa-regular fa-clock"></i>{{ $studentNextStart->format('H:i') }} - {{ $studentNextEnd->format('H:i') }}</span>
+                            <span><i class="fa-solid fa-location-dot"></i>{{ $studentNextSchedule->room ?? 'Online' }}</span>
                         </div>
-                        <a href="{{ route('courses.show', $studentNextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fas fa-arrow-right"></i> Mở khóa học</a>
+                        <a href="{{ route('courses.show', $studentNextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fa-solid fa-arrow-right"></i> Mở khóa học</a>
                     @else
                         <h3 class="teacher-next-class__title">Chưa có lịch học sắp tới</h3>
-                        <div class="teacher-next-class__meta"><span><i class="fas fa-calendar-check"></i>Em có thể tiếp tục bài học đang dở.</span></div>
+                        <div class="teacher-next-class__meta"><span><i class="fa-solid fa-calendar-check"></i>Em có thể tiếp tục bài học đang dở.</span></div>
                     @endif
                 </div>
 
@@ -34,9 +34,9 @@
                         <h3 class="teacher-ai-panel__title">{{ $continueCourse->title }}</h3>
                         <div class="progress-line mb-2"><span style="width:{{ $continueCourse->progress }}%"></span></div>
                         <div class="text-muted small mb-3">Đã hoàn thành {{ $continueCourse->lesson_completed }}/{{ $continueCourse->lesson_total }} bài · {{ $continueCourse->progress }}%</div>
-                        <a href="{{ route('courses.show', $continueCourse->id) }}" class="btn-xs btn-xs--primary">Tiếp tục học <i class="fas fa-arrow-right"></i></a>
+                        <a href="{{ route('courses.show', $continueCourse->id) }}" class="btn-xs btn-xs--primary">Tiếp tục học <i class="fa-solid fa-arrow-right"></i></a>
                     @else
-                        <div class="empty-state" style="padding:1.25rem 1rem"><div class="empty-icon"><i class="fas fa-book-open"></i></div><p>Chưa có khóa học để tiếp tục.</p></div>
+                        <div class="empty-state" style="padding:1.25rem 1rem"><div class="empty-icon"><i class="fa-solid fa-book-open"></i></div><p>Chưa có khóa học để tiếp tục.</p></div>
                     @endif
                 </div>
             </div>
@@ -44,7 +44,7 @@
             <div class="row g-3 mb-4 anim-3">
                 <div class="col-12 col-md-4">
                     <div class="stat-card stat-card--blue">
-                        <div class="stat-card__icon"><i class="fas fa-book-open"></i></div>
+                        <div class="stat-card__icon"><i class="fa-solid fa-book-open"></i></div>
                         <div class="stat-card__body">
                             <div class="stat-card__label">Khóa học đang học</div>
                             <div class="stat-card__value">{{ $data['total_courses'] }}</div>
@@ -53,7 +53,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <div class="stat-card stat-card--amber">
-                        <div class="stat-card__icon"><i class="fas fa-file-signature"></i></div>
+                        <div class="stat-card__icon"><i class="fa-solid fa-file-signature"></i></div>
                         <div class="stat-card__body">
                             <div class="stat-card__label">Bài tập còn thiếu</div>
                             <div class="stat-card__value">{{ $data['missing_assignments_count'] ?? 0 }}</div>
@@ -62,7 +62,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <div class="stat-card stat-card--violet">
-                        <div class="stat-card__icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="stat-card__icon"><i class="fa-solid fa-clipboard-list"></i></div>
                         <div class="stat-card__body">
                             <div class="stat-card__label">Quiz chưa làm</div>
                             <div class="stat-card__value">{{ $data['pending_quizzes_count'] ?? 0 }}</div>
@@ -76,7 +76,7 @@
                     <div class="col-12">
                         <div class="panel">
                             <div class="panel__header">
-                                <h6 class="panel__title"><span class="icon-dot idot--green"><i class="fas fa-comment-dots"></i></span>Điểm và nhận xét mới</h6>
+                                <h6 class="panel__title"><span class="icon-dot idot--green"><i class="fa-solid fa-comment-dots"></i></span>Điểm và nhận xét mới</h6>
                                 <a href="{{ route('students.grades') }}" class="btn-xs btn-xs--primary">Xem tất cả</a>
                             </div>
                             <div class="row g-0">
@@ -113,7 +113,7 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--amber"><i class="fas fa-clock"></i></span>
+                                <span class="icon-dot idot--amber"><i class="fa-solid fa-clock"></i></span>
                                 Deadline & Bài kiểm tra
                             </h6>
                         </div>
@@ -129,11 +129,11 @@
                                         <span class="bdg bdg--warning mb-1">Bài tập</span>
                                         <div class="todo-item__label">{{ $dl->title }}</div>
                                         <div class="todo-item__sub"><i
-                                                class="fas fa-book me-1"></i>{{ $dl->course_title ?? 'N/A' }}</div>
+                                                class="fa-solid fa-book me-1"></i>{{ $dl->course_title ?? 'N/A' }}</div>
                                     </div>
                                     <div style="text-align:right;flex-shrink:0">
                                         <div class="todo-item__deadline">
-                                            <i class="fas fa-hourglass-half me-1"></i>
+                                            <i class="fa-solid fa-hourglass-half me-1"></i>
                                             {{ \Carbon\Carbon::parse($dl->due_date)->format('H:i - d/m/Y') }}
                                         </div>
                                         <a href="{{ route('courses.show', $dl->course_id ?? 0) }}"
@@ -149,11 +149,11 @@
                                         <div class="todo-item__label" style="color:var(--brand)">{{ $quiz->title }}
                                         </div>
                                         <div class="todo-item__sub"><i
-                                                class="fas fa-book me-1"></i>{{ $quiz->course_title ?? 'N/A' }}</div>
+                                                class="fa-solid fa-book me-1"></i>{{ $quiz->course_title ?? 'N/A' }}</div>
                                     </div>
                                     <div style="text-align:right;flex-shrink:0">
                                         <div class="todo-item__time-limit">
-                                            <i class="fas fa-stopwatch me-1"></i>{{ $quiz->time_limit }} phút
+                                            <i class="fa-solid fa-stopwatch me-1"></i>{{ $quiz->time_limit }} phút
                                         </div>
                                         <a href="{{ route('courses.show', $quiz->course_id ?? 0) }}"
                                             class="btn-xs btn-xs--primary">Làm ngay</a>
@@ -164,7 +164,7 @@
                             @if (count($deadlines) === 0 && count($quizzes) === 0)
                                 <div class="empty-state">
                                     <div class="empty-icon" style="color:var(--success)"><i
-                                            class="fas fa-glass-cheers"></i></div>
+                                            class="fa-solid fa-glass-cheers"></i></div>
                                     <p>Tuyệt vời! Bạn đã hoàn thành hết các nhiệm vụ.</p>
                                 </div>
                             @endif
@@ -178,7 +178,7 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--blue"><i class="fas fa-chart-line"></i></span>
+                                <span class="icon-dot idot--blue"><i class="fa-solid fa-chart-line"></i></span>
                                 Tiến độ khóa học của tôi
                             </h6>
                             <a href="{{ route('courses.index') }}" class="btn-xs btn-xs--primary">Vào học</a>
@@ -209,7 +209,7 @@
                             @empty
                                 <div class="col-12">
                                     <div class="empty-state">
-                                        <div class="empty-icon"><i class="fas fa-book-open"></i></div>
+                                        <div class="empty-icon"><i class="fa-solid fa-book-open"></i></div>
                                         <p>Bạn chưa được gán khóa học.</p>
                                     </div>
                                 </div>
@@ -224,7 +224,7 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--green"><i class="fas fa-calendar-check"></i></span>
+                                <span class="icon-dot idot--green"><i class="fa-solid fa-calendar-check"></i></span>
                                 Lịch học tuần này
                             </h6>
                             <span class="bdg bdg--success">Tuần này · {{ $data['dashboard_week_label'] ?? '' }}</span>
@@ -286,7 +286,7 @@
                                         <tr>
                                             <td colspan="4">
                                                 <div class="empty-state">
-                                                    <div class="empty-icon"><i class="fas fa-calendar-times"></i></div>
+                                                    <div class="empty-icon"><i class="fa-solid fa-calendar-times"></i></div>
                                                     <p><strong>Chưa có lịch học.</strong><br>Lịch học sẽ hiển thị tại đây.
                                                     </p>
                                                 </div>
@@ -305,7 +305,7 @@
                     <div class="panel">
                         <div class="panel__header">
                             <h6 class="panel__title">
-                                <span class="icon-dot idot--violet"><i class="fas fa-chart-bar"></i></span>
+                                <span class="icon-dot idot--violet"><i class="fa-solid fa-chart-bar"></i></span>
                                 Điểm các bài kiểm tra gần đây
                             </h6>
                         </div>
@@ -314,7 +314,7 @@
                                 <div id="studentChart"></div>
                             @else
                                 <div class="empty-state">
-                                    <div class="empty-icon"><i class="fas fa-chart-bar"></i></div>
+                                    <div class="empty-icon"><i class="fa-solid fa-chart-bar"></i></div>
                                     <p>Bạn chưa làm bài kiểm tra nào.</p>
                                 </div>
                             @endif

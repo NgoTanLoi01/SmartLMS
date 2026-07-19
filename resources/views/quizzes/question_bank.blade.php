@@ -8,25 +8,25 @@
     {{-- ── Page Header ── --}}
     <div class="page-header">
         <div>
-            <h1 class="page-title"><i class="fas fa-database"
+            <h1 class="page-title"><i class="fa-solid fa-database"
                     style="color:#2563eb; font-size:18px; margin-right:10px;"></i>Ngân hàng câu hỏi</h1>
             <p class="page-subtitle">Quản lý kho câu hỏi trắc nghiệm dùng để trộn đề thi ngẫu nhiên</p>
         </div>
         <div class="btn-group-actions">
             <button class="btn-act btn-act-ghost" data-bs-toggle="modal" data-bs-target="#addQuestionBankModal">
-                <i class="fas fa-layer-group"></i> Tạo bank
+                <i class="fa-solid fa-layer-group"></i> Tạo bank
             </button>
             <button class="btn-act btn-act-ghost" data-bs-toggle="modal" data-bs-target="#attachQuestionBankModal">
-                <i class="fas fa-link"></i> Gắn bank
+                <i class="fa-solid fa-link"></i> Gắn bank
             </button>
             <button class="btn-act btn-act-ghost-green" data-bs-toggle="modal" data-bs-target="#importQuestionModal">
-                <i class="fas fa-file-excel"></i> Nhập từ Excel
+                <i class="fa-solid fa-file-excel"></i> Nhập từ Excel
             </button>
             <a href="{{ route('quizzes.ai_generate') }}" class="btn-act btn-act-ghost">
-                <i class="fas fa-magic"></i> Tạo bằng AI
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo bằng AI
             </a>
             <button class="btn-act btn-act-primary" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
-                <i class="fas fa-plus"></i> Thêm câu hỏi
+                <i class="fa-solid fa-plus"></i> Thêm câu hỏi
             </button>
         </div>
     </div>
@@ -67,15 +67,15 @@
             <div class="filter-label" style="margin-bottom:8px;">Thống kê</div>
             <div class="stat-chips">
                 <span class="stat-chip chip-easy">
-                    <i class="fas fa-circle" style="font-size:7px;"></i>
+                    <i class="fa-solid fa-circle" style="font-size:7px;"></i>
                     Dễ: {{ $questions->where('difficulty', 'easy')->count() }}
                 </span>
                 <span class="stat-chip chip-medium">
-                    <i class="fas fa-circle" style="font-size:7px;"></i>
+                    <i class="fa-solid fa-circle" style="font-size:7px;"></i>
                     Trung bình: {{ $questions->where('difficulty', 'medium')->count() }}
                 </span>
                 <span class="stat-chip chip-hard">
-                    <i class="fas fa-circle" style="font-size:7px;"></i>
+                    <i class="fa-solid fa-circle" style="font-size:7px;"></i>
                     Khó: {{ $questions->where('difficulty', 'hard')->count() }}
                 </span>
             </div>
@@ -105,7 +105,7 @@
                                 <div class="q-text">{{ Str::limit($question->question_text, 80) }}</div>
                                 @php $correctOpt = $question->options->where('is_correct', true)->first(); @endphp
                                 <div class="q-answer">
-                                    <i class="fas fa-check-circle"></i>
+                                    <i class="fa-solid fa-circle-check"></i>
                                     {{ $correctOpt ? Str::limit($correctOpt->option_text, 45) : 'Chưa có đáp án đúng' }}
                                 </div>
                             </td>
@@ -120,7 +120,7 @@
                             </td>
                             <td>
                                 <div class="teacher-chip">
-                                    <div class="teacher-avatar-sm"><i class="fas fa-user-tie" style="font-size:10px;"></i>
+                                    <div class="teacher-avatar-sm"><i class="fa-solid fa-user-tie" style="font-size:10px;"></i>
                                     </div>
                                     {{ $question->questionBank->teacher->name ?? $question->course->teacher->name ?? 'N/A' }}
                                 </div>
@@ -144,14 +144,14 @@
                                         data-text="{{ htmlspecialchars($question->question_text) }}"
                                         data-options="{{ $question->options->sortBy('id')->values()->toJson() }}"
                                         title="Sửa">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fa-solid fa-edit"></i>
                                     </button>
                                     <form action="{{ route('questions.destroyBank', $question->id) }}" method="POST"
                                         style="display:inline;">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="action-btn danger"
                                             onclick="return confirm('Lưu trữ câu hỏi này? Đáp án và dữ liệu liên quan vẫn được giữ lại.')" title="Lưu trữ">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -160,7 +160,7 @@
                     @empty
                         <tr class="empty-row">
                             <td colspan="7">
-                                <i class="fas fa-box-open"></i>
+                                <i class="fa-solid fa-box-open"></i>
                                 <p>Kho câu hỏi trống. Hãy thêm câu hỏi mới!</p>
                             </td>
                         </tr>
@@ -183,7 +183,7 @@
                 <form action="{{ route('questions.banks.store') }}" method="POST">
                     @csrf
                     <div class="modal-header">
-                        <h5 class="modal-title"><i class="fas fa-layer-group"></i>Tạo ngân hàng câu hỏi</h5>
+                        <h5 class="modal-title"><i class="fa-solid fa-layer-group"></i>Tạo ngân hàng câu hỏi</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -205,7 +205,7 @@
                                 @endforeach
                             </select>
                             <div class="info-note mt-2">
-                                <i class="fas fa-info-circle"></i>
+                                <i class="fa-solid fa-circle-info"></i>
                                 Một ngân hàng có thể dùng chung cho nhiều khóa học/lớp.
                             </div>
                         </div>
@@ -228,7 +228,7 @@
                 <form action="{{ route('questions.banks.attach') }}" method="POST">
                     @csrf
                     <div class="modal-header">
-                        <h5 class="modal-title"><i class="fas fa-link"></i>Gắn bank với khóa học</h5>
+                        <h5 class="modal-title"><i class="fa-solid fa-link"></i>Gắn bank với khóa học</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -267,7 +267,7 @@
                 <form action="{{ route('questions.storeBank') }}" method="POST">
                     @csrf
                     <div class="modal-header">
-                        <h5 class="modal-title"><i class="fas fa-pen-square"></i>Thêm câu hỏi mới</h5>
+                        <h5 class="modal-title"><i class="fa-solid fa-pen-square"></i>Thêm câu hỏi mới</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -321,7 +321,7 @@
                         @endfor
 
                         <div class="info-note">
-                            <i class="fas fa-info-circle" style="margin-top:1px; flex-shrink:0;"></i>
+                            <i class="fa-solid fa-circle-info" style="margin-top:1px; flex-shrink:0;"></i>
                             Khi học sinh làm bài, thứ tự 4 đáp án sẽ được xáo trộn ngẫu nhiên.
                         </div>
                     </div>
@@ -343,7 +343,7 @@
                 <form action="" method="POST" id="editQuestionForm">
                     @csrf @method('PUT')
                     <div class="modal-header">
-                        <h5 class="modal-title"><i class="fas fa-edit"></i>Chỉnh sửa câu hỏi</h5>
+                        <h5 class="modal-title"><i class="fa-solid fa-edit"></i>Chỉnh sửa câu hỏi</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -410,7 +410,7 @@
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" style="color:#16a34a;">
-                            <i class="fas fa-file-upload" style="color:#16a34a;"></i>Nhập câu hỏi từ file
+                            <i class="fa-solid fa-file-arrow-up" style="color:#16a34a;"></i>Nhập câu hỏi từ file
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>

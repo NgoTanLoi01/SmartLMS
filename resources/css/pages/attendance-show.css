@@ -1,25 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+@import '../design-tokens.css';
 
 :root {
-    --surface: #FFFFFF;
-    --surface-2: #F9FAFB;
-    --surface-3: #F3F4F6;
-    --border: #E5E7EB;
-    --border-md: #D1D5DB;
-    --text-1: #111827;
-    --text-2: #374151;
-    --text-3: #6B7280;
-    --text-4: #9CA3AF;
+    --surface: var(--sl-surface);
+    --surface-2: var(--sl-surface-muted);
+    --surface-3: var(--sl-bg);
+    --border: var(--sl-border);
+    --border-md: var(--sl-border-strong);
+    --text-1: var(--sl-text);
+    --text-2: var(--sl-text-secondary);
+    --text-3: var(--sl-text-muted);
+    --text-4: var(--sl-text-subtle);
 
-    --blue-50: #EFF6FF;
-    --blue-100: #DBEAFE;
+    --blue-50: var(--sl-primary-soft);
+    --blue-100: var(--sl-primary-subtle);
     --blue-500: #3B82F6;
-    --blue-600: #2563EB;
+    --blue-600: var(--sl-primary);
 
-    --amber-50: #FFFBEB;
+    --amber-50: var(--sl-warning-soft);
     --amber-100: #FEF3C7;
     --amber-500: #F59E0B;
-    --amber-600: #D97706;
+    --amber-600: var(--sl-warning);
 
     --green-50: #F0FDF4;
     --green-100: #DCFCE7;
@@ -27,15 +28,15 @@
     --green-600: #16A34A;
     --green-700: #15803D;
 
-    --red-50: #FEF2F2;
-    --red-500: #EF4444;
+    --red-50: var(--sl-danger-soft);
+    --red-500: var(--sl-danger);
 
-    --violet-50: #F5F3FF;
-    --violet-500: #8B5CF6;
+    --violet-50: var(--sl-ai-soft);
+    --violet-500: var(--sl-ai);
 
-    --r-sm: 8px;
-    --r-md: 12px;
-    --r-lg: 16px;
+    --r-sm: var(--sl-radius-xs);
+    --r-md: var(--sl-radius-sm);
+    --r-lg: var(--sl-radius-md);
 }
 
 *,
@@ -618,7 +619,7 @@ thead .col-name {
     cursor: pointer;
     display: inline-flex;
     font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 800;
     gap: 4px;
     justify-content: center;
@@ -647,9 +648,9 @@ thead .col-name {
 }
 .attendance-note-btn.has-note { background:#f5f3ff; border-color:#ddd6fe; color:#7c3aed; }
 .attendance-note-btn:disabled { opacity:.75; }
-.attendance-column-meta { color:var(--text-4); display:block; font-size:9px; font-weight:600; margin-top:3px; white-space:nowrap; }
+.attendance-column-meta { color:var(--text-4); display:block; font-size: 11px; font-weight:600; margin-top:3px; white-space:nowrap; }
 .attendance-legend { align-items:center; display:flex; flex-wrap:wrap; gap:6px; }
-.attendance-legend span { border-radius:999px; font-size:10px; font-weight:800; padding:4px 8px; }
+.attendance-legend span { border-radius:999px; font-size: 11px; font-weight:800; padding:4px 8px; }
 .attendance-only-field[hidden] { display:none !important; }
 
 @media (max-width: 1599.98px) {
@@ -800,16 +801,16 @@ thead .col-name {
     }
 
     .attendance-status-btn {
-        font-size: 9px;
+        font-size: 11px;
         gap: 3px;
         min-height: 28px;
         min-width: 66px;
         padding: 4px 6px;
     }
 
-    .attendance-status-btn i { font-size: 9px; }
+    .attendance-status-btn i { font-size: 11px; }
     .attendance-note-btn { border-radius: 7px; height: 26px; width: 26px; }
-    .attendance-column-meta { font-size: 8px; }
+    .attendance-column-meta { font-size: 11px; }
     .col-header-inner { min-width: 96px; padding: .4rem 1rem .4rem .3rem; }
 
     .btn-delete-col {

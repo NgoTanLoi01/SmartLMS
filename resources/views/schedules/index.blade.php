@@ -458,7 +458,7 @@
 
         {{-- Header --}}
         <div class="sch-header">
-            <h1><i class="fas fa-calendar-alt"></i>Lịch giảng dạy</h1>
+            <h1><i class="fa-solid fa-calendar-days"></i>Lịch giảng dạy</h1>
             <p>Nhấp vào ô trống để thêm, nhấp vào lịch để sửa hoặc xóa</p>
         </div>
 
@@ -470,7 +470,7 @@
         {{-- Copy panel --}}
         <div class="sch-panel">
             <div class="sch-panel-head">
-                <div class="sch-panel-icon"><i class="fas fa-copy"></i></div>
+                <div class="sch-panel-icon"><i class="fa-solid fa-copy"></i></div>
                 <div>
                     <p class="sch-panel-title">Sao chép lịch theo ngày</p>
                     <p class="sch-panel-sub">Chọn ngày đã có lịch và dán sang một ngày khác</p>
@@ -489,7 +489,7 @@
                         value="{{ old('target_date') }}" required>
                 </div>
                 <button type="submit" class="sch-btn sch-btn-primary">
-                    <i class="fas fa-clone"></i> Sao chép
+                    <i class="fa-solid fa-clone"></i> Sao chép
                 </button>
             </form>
         </div>
@@ -497,7 +497,7 @@
         {{-- Import panel --}}
         <div class="sch-panel">
             <div class="sch-panel-head">
-                <div class="sch-panel-icon"><i class="fas fa-file-import"></i></div>
+                <div class="sch-panel-icon"><i class="fa-solid fa-file-import"></i></div>
                 <div>
                     <p class="sch-panel-title">Nhập lịch từ Excel</p>
                     <p class="sch-panel-sub">
@@ -532,7 +532,7 @@
                         required>
                 </div>
                 <button type="submit" class="sch-btn sch-btn-primary">
-                    <i class="fas fa-upload"></i> Nhập lịch
+                    <i class="fa-solid fa-upload"></i> Nhập lịch
                 </button>
             </form>
         </div>
@@ -551,7 +551,7 @@
 
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">
-                        <i class="fas fa-calendar-plus"></i>Thêm lịch học mới
+                        <i class="fa-solid fa-calendar-plus"></i>Thêm lịch học mới
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
@@ -609,12 +609,12 @@
 
                 <div class="modal-footer">
                     <button type="button" class="sch-btn sch-btn-danger d-none" id="btnDelete">
-                        <i class="fas fa-archive"></i> Lưu trữ lịch
+                        <i class="fa-solid fa-archive"></i> Lưu trữ lịch
                     </button>
                     <div class="footer-r">
                         <button type="button" class="sch-btn sch-btn-ghost" data-bs-dismiss="modal">Hủy</button>
                         <button type="button" class="sch-btn sch-btn-primary" id="btnSave">
-                            <i class="fas fa-check"></i> Lưu lịch
+                            <i class="fa-solid fa-check"></i> Lưu lịch
                         </button>
                     </div>
                 </div>
@@ -654,7 +654,7 @@
                 select: function(info) {
                     resetForm();
                     document.getElementById('modalTitle').innerHTML =
-                        '<i class="fas fa-calendar-plus"></i>Thêm lịch học mới';
+                        '<i class="fa-solid fa-calendar-plus"></i>Thêm lịch học mới';
                     document.getElementById('btnDelete').classList.add('d-none');
 
                     const dateStr = info.startStr.split('T')[0];
@@ -672,7 +672,7 @@
                     const ev = info.event;
                     document.getElementById('schedule_id').value = ev.id;
                     document.getElementById('modalTitle').innerHTML =
-                        '<i class="fas fa-calendar-edit"></i>Cập nhật lịch học';
+                        '<i class="fa-solid fa-calendar-edit"></i>Cập nhật lịch học';
                     document.getElementById('btnDelete').classList.remove('d-none');
 
                     document.getElementById('class_id').value = ev.extendedProps.class_id;

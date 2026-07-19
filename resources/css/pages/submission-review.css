@@ -1,35 +1,37 @@
+@import '../design-tokens.css';
+
 :root {
-    --brand: #4f7fff;
-    --brand-dark: #2952e3;
-    --brand-light: #eef3ff;
-    --accent: #8b5cf6;
-    --success: #10b981;
-    --success-light: #ecfdf5;
-    --warning: #f59e0b;
-    --warning-light: #fffbeb;
-    --danger: #f43f5e;
-    --danger-light: #fff1f4;
+    --brand: var(--sl-primary);
+    --brand-dark: var(--sl-primary-hover);
+    --brand-light: var(--sl-primary-soft);
+    --accent: var(--sl-ai);
+    --success: var(--sl-success);
+    --success-light: var(--sl-success-soft);
+    --warning: var(--sl-warning);
+    --warning-light: var(--sl-warning-soft);
+    --danger: var(--sl-danger);
+    --danger-light: var(--sl-danger-soft);
 
-    --surface: #ffffff;
-    --surface-2: #f7f9fc;
-    --surface-3: #eef2f9;
-    --border: #e5e9f0;
-    --border-strong: #d1d9e6;
-    --text: #0d1b2a;
-    --text-2: #374151;
-    --text-muted: #6b7280;
-    --text-light: #9ca3af;
+    --surface: var(--sl-surface);
+    --surface-2: var(--sl-surface-muted);
+    --surface-3: var(--sl-bg);
+    --border: var(--sl-border);
+    --border-strong: var(--sl-border-strong);
+    --text: var(--sl-text);
+    --text-2: var(--sl-text-secondary);
+    --text-muted: var(--sl-text-muted);
+    --text-light: var(--sl-text-subtle);
 
-    --radius-sm: 10px;
-    --radius: 16px;
-    --radius-lg: 20px;
+    --radius-sm: var(--sl-radius-sm);
+    --radius: var(--sl-radius-md);
+    --radius-lg: var(--sl-radius-lg);
 
-    --shadow-sm: 0 1px 4px rgba(0, 0, 0, .05);
-    --shadow: 0 4px 20px rgba(0, 0, 0, .07), 0 1px 4px rgba(0, 0, 0, .04);
-    --shadow-md: 0 8px 32px rgba(0, 0, 0, .09), 0 2px 8px rgba(0, 0, 0, .05);
+    --shadow-sm: var(--sl-shadow-xs);
+    --shadow: var(--sl-shadow-sm);
+    --shadow-md: var(--sl-shadow-md);
 
-    --font: 'Plus Jakarta Sans', sans-serif;
-    --font-mono: 'DM Mono', monospace;
+    --font: var(--sl-font-sans);
+    --font-mono: var(--sl-font-mono);
 }
 
 *,

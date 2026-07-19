@@ -3,9 +3,6 @@
 @section('title', 'Bảng điều khiển')
 
 @push('styles')
-    <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
     @vite('resources/css/pages/dashboard.css')
 @endpush
 
@@ -38,18 +35,18 @@
                     @endif
                 </p>
                 <div class="lms-hero__date">
-                    <i class="far fa-calendar-alt"></i>
+                    <i class="fa-regular fa-calendar-days"></i>
                     {{ \Carbon\Carbon::now()->translatedFormat('l, d/m/Y') }}
                 </div>
             </div>
             <div class="lms-hero__side">
                 <div class="hero-motion-icons" aria-hidden="true">
-                    <span class="hero-motion-icon"><i class="fas fa-book-open"></i></span>
-                    <span class="hero-motion-icon"><i class="fas fa-lightbulb"></i></span>
-                    <span class="hero-motion-icon"><i class="fas fa-graduation-cap"></i></span>
-                    <span class="hero-motion-icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="hero-motion-icon"><i class="fa-solid fa-book-open"></i></span>
+                    <span class="hero-motion-icon"><i class="fa-solid fa-lightbulb"></i></span>
+                    <span class="hero-motion-icon"><i class="fa-solid fa-graduation-cap"></i></span>
+                    <span class="hero-motion-icon"><i class="fa-solid fa-chart-line"></i></span>
                 </div>
-                <img src="{{ asset('gretting-img.png') }}" alt="">
+                <img src="{{ asset('gretting-img.webp') }}" alt="" width="368" height="224">
             </div>
         </section>
 
@@ -57,18 +54,18 @@
             {{-- QUICK ACTIONS --}}
             <div class="quick-actions anim-2">
                 @if ($role === 'admin')
-                    <a href="{{ route('users.index') }}" class="quick-action"><i class="fas fa-users-cog"></i> Quản lý người
+                    <a href="{{ route('users.index') }}" class="quick-action"><i class="fa-solid fa-users-gear"></i> Quản lý người
                         dùng</a>
-                    <a href="{{ route('classes.index') }}" class="quick-action"><i class="fas fa-school"></i> Quản lý
+                    <a href="{{ route('classes.index') }}" class="quick-action"><i class="fa-solid fa-school"></i> Quản lý
                         lớp</a>
-                    <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Quản lý
+                    <a href="{{ route('courses.index') }}" class="quick-action"><i class="fa-solid fa-book-open"></i> Quản lý
                         khóa
                         học</a>
-                    <a href="{{ route('documents.upload') }}" class="quick-action"><i class="fas fa-robot"></i> Huấn luyện
+                    <a href="{{ route('documents.upload') }}" class="quick-action"><i class="fa-solid fa-robot"></i> Huấn luyện
                         AI</a>
                 @else
-                    <a href="{{ route('courses.index') }}" class="quick-action"><i class="fas fa-book-open"></i> Vào học</a>
-                    <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fas fa-paper-plane"></i> Bài
+                    <a href="{{ route('courses.index') }}" class="quick-action"><i class="fa-solid fa-book-open"></i> Vào học</a>
+                    <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fa-solid fa-paper-plane"></i> Bài
                         tập</a>
                 @endif
             </div>

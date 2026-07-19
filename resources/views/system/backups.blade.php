@@ -231,7 +231,7 @@
                 <form method="POST" action="{{ route('system.backups.store') }}">
                     @csrf
                     <button type="submit" class="backup-btn">
-                        <i class="fas fa-database"></i> Backup ngay
+                        <i class="fa-solid fa-database"></i> Backup ngay
                     </button>
                 </form>
 
@@ -239,7 +239,7 @@
                     @csrf
                     <input type="hidden" name="upload_r2" value="1">
                     <button type="submit" class="backup-btn secondary">
-                        <i class="fas fa-cloud-upload-alt"></i> Backup + upload R2
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Backup + upload R2
                     </button>
                 </form>
             </div>
@@ -247,13 +247,13 @@
 
         @if (session('success'))
             <div class="alert-success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+                <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
             </div>
         @endif
 
         @if (session('error'))
             <div class="alert-error">
-                <i class="fas fa-triangle-exclamation"></i> {{ session('error') }}
+                <i class="fa-solid fa-triangle-exclamation"></i> {{ session('error') }}
             </div>
         @endif
 
@@ -275,7 +275,7 @@
             <div class="backup-card">
                 <div class="backup-label">Backup tự động</div>
                 <span class="backup-badge {{ $summary['schedule_enabled'] ? 'success' : 'neutral' }}">
-                    <i class="fas {{ $summary['schedule_enabled'] ? 'fa-check-circle' : 'fa-clock' }}"></i>
+                    <i class="fa-solid {{ $summary['schedule_enabled'] ? 'fa-circle-check' : 'fa-clock' }}"></i>
                     {{ $summary['schedule_enabled'] ? 'Đã bật' : 'Chưa bật' }}
                 </span>
                 <div class="backup-muted">Giờ chạy: {{ $summary['schedule_time'] }}</div>
@@ -284,7 +284,7 @@
             <div class="backup-card">
                 <div class="backup-label">Cloudflare R2</div>
                 <span class="backup-badge {{ $summary['r2_ready'] ? 'success' : 'failed' }}">
-                    <i class="fas fa-cloud"></i>
+                    <i class="fa-solid fa-cloud"></i>
                     {{ $summary['r2_ready'] ? 'Sẵn sàng' : 'Chưa đủ cấu hình' }}
                 </span>
                 <div class="backup-muted">{{ $summary['r2_bucket'] ?: 'Chưa cấu hình bucket' }}</div>
@@ -295,7 +295,7 @@
             <div class="backup-panel">
                 <div class="backup-panel-header">
                     <h2 class="backup-panel-title text-danger">
-                        <i class="fas fa-triangle-exclamation me-2"></i> Backup lỗi gần nhất
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i> Backup lỗi gần nhất
                     </h2>
                     <span class="backup-muted">
                         {{ $latestFailed->finished_at?->timezone(config('backup.timezone'))->format('H:i d/m/Y') }}
@@ -336,11 +336,11 @@
                                 <td>
                                     <span class="backup-badge {{ $backup->status }}">
                                         @if ($backup->status === 'success')
-                                            <i class="fas fa-check-circle"></i> Thành công
+                                            <i class="fa-solid fa-circle-check"></i> Thành công
                                         @elseif ($backup->status === 'failed')
-                                            <i class="fas fa-times-circle"></i> Lỗi
+                                            <i class="fa-solid fa-circle-xmark"></i> Lỗi
                                         @else
-                                            <i class="fas fa-spinner"></i> Đang chạy
+                                            <i class="fa-solid fa-spinner"></i> Đang chạy
                                         @endif
                                     </span>
                                     @if ($backup->error_message)
@@ -359,7 +359,7 @@
                                 <td>
                                     @if ($backup->remote_path)
                                         <span class="backup-badge success">
-                                            <i class="fas fa-cloud"></i> {{ strtoupper($backup->remote_disk) }}
+                                            <i class="fa-solid fa-cloud"></i> {{ strtoupper($backup->remote_disk) }}
                                         </span>
                                         <div class="backup-muted">{{ $backup->remote_path }}</div>
                                     @else
@@ -369,7 +369,7 @@
                                 <td>
                                     @if ($backup->isSuccessful())
                                         <a class="backup-btn secondary" href="{{ route('system.backups.download', $backup) }}">
-                                            <i class="fas fa-download"></i> Tải
+                                            <i class="fa-solid fa-download"></i> Tải
                                         </a>
                                     @else
                                         <span class="backup-muted">---</span>

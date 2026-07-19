@@ -2,7 +2,7 @@
 @section('content')
     <div class="container py-5 text-center">
         <div class="card border-0 shadow-sm p-5 rounded-4 mx-auto" style="max-width: 500px;">
-            <i class="fas fa-chess-knight fa-4x text-primary mb-4"></i>
+            <i class="fa-solid fa-chess-knight fa-4x text-primary mb-4"></i>
             <h2 class="fw-bold">Cờ Vua</h2>
 
             <div class="mt-4">

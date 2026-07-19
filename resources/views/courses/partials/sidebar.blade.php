@@ -29,7 +29,7 @@
             {{-- Module header --}}
             <div class="module-header-wrapper d-flex align-items-center position-relative">
                 @if ($isManager)
-                    <i class="fas fa-grip-vertical drag-handle ms-2" title="Kéo để sắp xếp chương"></i>
+                    <i class="fa-solid fa-grip-vertical drag-handle ms-2" title="Kéo để sắp xếp chương"></i>
                 @endif
 
                 <button class="accordion-button {{ $moduleIndex == 0 ? '' : 'collapsed' }} flex-grow-1 shadow-none"
@@ -51,15 +51,15 @@
                                             stroke-linecap="round" />
                                     </svg>
                                     @if ($moduleAllDone)
-                                        <i class="fas fa-check"
-                                            style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#16a34a;"></i>
+                                        <i class="fa-solid fa-check"
+                                            style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size: 11px;color:#16a34a;"></i>
                                     @endif
                                 </div>
                             @else
                                 <div
                                     style="width:20px;height:20px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                                     <span
-                                        style="font-size:10px;font-weight:800;color:#2563eb;">{{ $moduleIndex + 1 }}</span>
+                                        style="font-size: 11px;font-weight:800;color:#2563eb;">{{ $moduleIndex + 1 }}</span>
                                 </div>
                             @endif
 
@@ -78,7 +78,7 @@
                         <a href="javascript:void(0)" class="btn-action btn-edit edit-module-btn"
                             data-id="{{ $module->id }}" data-title="{{ $module->title }}" data-bs-toggle="modal"
                             data-bs-target="#editModuleModal" title="Sửa chương">
-                            <i class="fas fa-edit"></i>
+                            <i class="fa-solid fa-edit"></i>
                         </a>
                         <form action="{{ route('modules.destroy', $module->id) }}" method="POST"
                             class="d-inline mb-0">
@@ -86,7 +86,7 @@
                             <button type="submit" class="btn-action btn-delete border-0 bg-transparent"
                                 onclick="return confirm('Lưu trữ chương này? Bài học và bài tập liên quan sẽ được ẩn nhưng dữ liệu vẫn được giữ lại.')"
                                 title="Xóa chương">
-                                <i class="fas fa-trash"></i>
+                                <i class="fa-solid fa-trash"></i>
                             </button>
                         </form>
                     </div>
@@ -126,7 +126,7 @@
                                 data-lesson-id="{{ $lesson->id }}" style="min-width:0;">
 
                                 @if ($isManager)
-                                    <i class="fas fa-grip-vertical drag-handle ms-2" title="Kéo để sắp xếp bài học"></i>
+                                    <i class="fa-solid fa-grip-vertical drag-handle ms-2" title="Kéo để sắp xếp bài học"></i>
                                 @endif
 
                                 <a href="javascript:void(0)"
@@ -144,13 +144,13 @@
                                         style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
                                         background:{{ $isCompleted ? '#dcfce7' : ($isVideo ? '#eff6ff' : '#f3f4f6') }};">
                                         @if ($isCompleted)
-                                            <i class="fas fa-check" style="font-size:11px;color:#16a34a;"
+                                            <i class="fa-solid fa-check" style="font-size:11px;color:#16a34a;"
                                                 id="icon-lesson-{{ $lesson->id }}"></i>
                                         @elseif ($isVideo)
-                                            <i class="fas fa-play" style="font-size:10px;color:#2563eb;"
+                                            <i class="fa-solid fa-play" style="font-size: 11px;color:#2563eb;"
                                                 id="icon-lesson-{{ $lesson->id }}"></i>
                                         @else
-                                            <i class="fas fa-file-alt" style="font-size:11px;color:#6b7280;"
+                                            <i class="fa-solid fa-file-lines" style="font-size:11px;color:#6b7280;"
                                                 id="icon-lesson-{{ $lesson->id }}"></i>
                                         @endif
                                     </div>
@@ -165,21 +165,21 @@
                                             <div class="sidebar-status-row">
                                                 @if ($isCompleted)
                                                     <span class="sidebar-status-pill done"><i
-                                                            class="fas fa-check"></i>Đã xong</span>
+                                                            class="fa-solid fa-check"></i>Đã xong</span>
                                                 @else
                                                     <span class="sidebar-status-pill pending"><i
-                                                            class="far fa-circle"></i>Chưa học</span>
+                                                            class="fa-regular fa-circle"></i>Chưa học</span>
                                                 @endif
                                                 @if ($pendingAssignmentCount > 0)
                                                     <span class="sidebar-status-pill assignment">
                                                         <i
-                                                            class="fas fa-file-signature"></i>{{ $pendingAssignmentCount }}
+                                                            class="fa-solid fa-file-signature"></i>{{ $pendingAssignmentCount }}
                                                         bài tập
                                                     </span>
                                                 @endif
                                                 @if ($durLabel)
                                                     <span class="sidebar-status-pill pending">
-                                                        <i class="far fa-clock"></i>{{ $durLabel }}
+                                                        <i class="fa-regular fa-clock"></i>{{ $durLabel }}
                                                     </span>
                                                 @endif
                                             </div>
@@ -190,16 +190,16 @@
                                                 class="lesson-dur-text d-flex align-items-center gap-1 flex-wrap mt-1">
                                                 <span
                                                     class="badge bg-{{ $lesson->status === 'published' ? 'success' : ($lesson->status === 'hidden' ? 'secondary' : 'warning text-dark') }}"
-                                                    style="font-size:10px;">
+                                                    style="font-size: 11px;">
                                                     {{ strtoupper($lesson->status ?? 'published') }}
                                                 </span>
                                                 @if ($lesson->available_from && $lesson->available_from->gt($currentTime))
-                                                    <span style="font-size:10px;color:#6b7280;">Mở:
+                                                    <span style="font-size: 11px;color:#6b7280;">Mở:
                                                         {{ $lesson->available_from->format('d/m H:i') }}</span>
                                                 @endif
                                                 @if ($durLabel)
-                                                    <span style="font-size:10px;color:#9ca3af;"><i
-                                                            class="far fa-clock me-1"></i>{{ $durLabel }}</span>
+                                                    <span style="font-size: 11px;color:#9ca3af;"><i
+                                                            class="fa-regular fa-clock me-1"></i>{{ $durLabel }}</span>
                                                 @endif
                                             </div>
                                         @endif
@@ -216,7 +216,7 @@
                                             data-available-from="{{ $lesson->available_from?->format('Y-m-d\TH:i') }}"
                                             data-bs-toggle="modal" data-bs-target="#editLessonModal"
                                             title="Sửa bài học">
-                                            <i class="fas fa-edit"></i>
+                                            <i class="fa-solid fa-edit"></i>
                                         </a>
                                         <form action="{{ route('lessons.destroy', $lesson->id) }}" method="POST"
                                             class="d-inline mb-0">
@@ -224,7 +224,7 @@
                                             <button type="submit"
                                                 class="btn-action btn-delete border-0 bg-transparent"
                                                 onclick="return confirm('Lưu trữ bài học này?')" title="Xóa bài học">
-                                                <i class="fas fa-times"></i>
+                                                <i class="fa-solid fa-times"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -270,12 +270,12 @@
                                             style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
                                             background:{{ $submission ? '#dcfce7' : ($assignmentOverdue ? '#fee2e2' : '#fef3c7') }};">
                                             @if ($submission)
-                                                <i class="fas fa-check" style="font-size:10px;color:#16a34a;"></i>
+                                                <i class="fa-solid fa-check" style="font-size: 11px;color:#16a34a;"></i>
                                             @elseif ($assignmentOverdue)
-                                                <i class="fas fa-lock" style="font-size:10px;color:#b91c1c;"></i>
+                                                <i class="fa-solid fa-lock" style="font-size: 11px;color:#b91c1c;"></i>
                                             @else
-                                                <i class="fas fa-file-signature"
-                                                    style="font-size:10px;color:#d97706;"></i>
+                                                <i class="fa-solid fa-file-signature"
+                                                    style="font-size: 11px;color:#d97706;"></i>
                                             @endif
                                         </div>
 
@@ -288,20 +288,20 @@
                                                 <div class="sidebar-status-row">
                                                     @if ($submission)
                                                         <span class="sidebar-status-pill done"><i
-                                                                class="fas fa-check"></i>Đã nộp</span>
+                                                                class="fa-solid fa-check"></i>Đã nộp</span>
                                                     @elseif ($assignmentOverdue)
                                                         <span class="sidebar-status-pill overdue"><i
-                                                                class="fas fa-lock"></i>Quá hạn</span>
+                                                                class="fa-solid fa-lock"></i>Quá hạn</span>
                                                     @else
                                                         <span class="sidebar-status-pill assignment"><i
-                                                                class="fas fa-paper-plane"></i>Cần nộp</span>
+                                                                class="fa-solid fa-paper-plane"></i>Cần nộp</span>
                                                     @endif
                                                     <span
                                                         class="sidebar-status-pill pending">{{ $assignmentTypeLabel }}</span>
                                                     @if ($assignment->due_date && !$submission)
                                                         <span
                                                             class="sidebar-status-pill {{ $assignmentOverdue ? 'overdue' : 'pending' }}">
-                                                            <i class="fas fa-clock"></i>
+                                                            <i class="fa-solid fa-clock"></i>
                                                             {{ $assignmentOverdue ? 'Hết hạn' : 'Hạn ' . $assignment->due_date->format('d/m') }}
                                                         </span>
                                                     @endif
@@ -309,11 +309,11 @@
                                             @else
                                                 <div class="lesson-dur-text mt-1">
                                                     <span class="badge bg-info text-dark"
-                                                        style="font-size:10px;">{{ $assignmentTypeLabel }}</span>
+                                                        style="font-size: 11px;">{{ $assignmentTypeLabel }}</span>
                                                     @if ($isManager)
                                                         <span
                                                             class="badge bg-{{ $assignment->status === 'published' ? 'success' : ($assignment->status === 'hidden' ? 'secondary' : 'warning text-dark') }}"
-                                                            style="font-size:10px;">
+                                                            style="font-size: 11px;">
                                                             {{ strtoupper($assignment->status ?? 'published') }}
                                                         </span>
                                                     @endif
@@ -338,7 +338,7 @@
                                                 data-status="{{ $assignment->status ?? 'published' }}"
                                                 data-available-from="{{ $assignment->available_from?->format('Y-m-d\TH:i') }}"
                                                 title="Sửa bài tập">
-                                                <i class="fas fa-edit"></i>
+                                                <i class="fa-solid fa-edit"></i>
                                             </a>
                                             <form action="{{ route('assignments.destroy', $assignment->id) }}"
                                                 method="POST" class="d-inline mb-0">
@@ -346,7 +346,7 @@
                                                 <button type="submit"
                                                     class="btn-action btn-delete border-0 bg-transparent"
                                                     onclick="return confirm('Lưu trữ bài tập này?')" title="Xóa">
-                                                    <i class="fas fa-archive"></i>
+                                                    <i class="fa-solid fa-archive"></i>
                                                 </button>
                                             </form>
                                             <a href="javascript:void(0)"
@@ -354,7 +354,7 @@
                                                 style="background:#eff6ff;border:1px solid #bfdbfe;"
                                                 data-id="{{ $assignment->id }}" data-bs-toggle="modal"
                                                 data-bs-target="#viewSubmissionsModal" title="Chấm điểm">
-                                                <i class="fas fa-users-cog"></i>
+                                                <i class="fa-solid fa-users-gear"></i>
                                             </a>
                                         </div>
                                     @endif
@@ -364,7 +364,7 @@
                         @empty
                             <div class="course-empty-state">
                                 <div class="course-empty-state__icon">
-                                    <i class="fas fa-file-lines"></i>
+                                    <i class="fa-solid fa-file-lines"></i>
                                 </div>
                                 <div class="course-empty-state__title">Chưa có bài học</div>
                                 <p class="course-empty-state__desc">Chương này chưa có nội dung học tập.</p>
@@ -377,7 +377,7 @@
     @empty
         <div class="course-empty-state">
             <div class="course-empty-state__icon">
-                <i class="fas fa-folder-open"></i>
+                <i class="fa-solid fa-folder-open"></i>
             </div>
             <div class="course-empty-state__title">Chưa có nội dung</div>
             <p class="course-empty-state__desc">Khóa học chưa có chương hoặc bài học nào.</p>
@@ -400,7 +400,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <div
                                 style="width:20px;height:20px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <i class="fas fa-stopwatch" style="font-size:9px;color:#7c3aed;"></i>
+                                <i class="fa-solid fa-stopwatch" style="font-size: 11px;color:#7c3aed;"></i>
                             </div>
                             <span class="module-title-text" style="color:#6f42c1;">Bài kiểm tra</span>
                         </div>
@@ -439,9 +439,9 @@
                                         style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
                                         background:{{ $attempt ? '#dcfce7' : '#ede9fe' }};">
                                         @if ($attempt)
-                                            <i class="fas fa-check" style="font-size:11px;color:#16a34a;"></i>
+                                            <i class="fa-solid fa-check" style="font-size:11px;color:#16a34a;"></i>
                                         @else
-                                            <i class="fas fa-stopwatch" style="font-size:10px;color:#7c3aed;"></i>
+                                            <i class="fa-solid fa-stopwatch" style="font-size: 11px;color:#7c3aed;"></i>
                                         @endif
                                     </div>
 
@@ -454,15 +454,15 @@
                                             <div class="sidebar-status-row">
                                                 @if ($attempt)
                                                     <span class="sidebar-status-pill done"><i
-                                                            class="fas fa-check"></i>Đã làm</span>
+                                                            class="fa-solid fa-check"></i>Đã làm</span>
                                                     <span
                                                         class="sidebar-status-pill pending">{{ $attempt->score }}/10
                                                         điểm</span>
                                                 @else
                                                     <span class="sidebar-status-pill quiz"><i
-                                                            class="fas fa-stopwatch"></i>Cần làm</span>
+                                                            class="fa-solid fa-stopwatch"></i>Cần làm</span>
                                                     <span class="sidebar-status-pill pending"><i
-                                                            class="far fa-clock"></i>{{ $quiz->time_limit }}
+                                                            class="fa-regular fa-clock"></i>{{ $quiz->time_limit }}
                                                         phút</span>
                                                 @endif
                                             </div>
@@ -472,15 +472,15 @@
                                                 class="lesson-dur-text mt-1 d-flex align-items-center gap-1 flex-wrap">
                                                 <span
                                                     class="badge bg-{{ $quiz->status === 'published' ? 'success' : ($quiz->status === 'hidden' ? 'secondary' : 'warning text-dark') }}"
-                                                    style="font-size:10px;">
+                                                    style="font-size: 11px;">
                                                     {{ strtoupper($quiz->status ?? 'published') }}
                                                 </span>
                                                 @if ($quiz->available_from && $quiz->available_from->gt($currentTime))
-                                                    <span style="font-size:10px;color:#6b7280;">Mở:
+                                                    <span style="font-size: 11px;color:#6b7280;">Mở:
                                                         {{ $quiz->available_from->format('d/m H:i') }}</span>
                                                 @endif
-                                                <span style="font-size:10px;color:#9ca3af;"><i
-                                                        class="far fa-clock me-1"></i>{{ $quiz->time_limit }}
+                                                <span style="font-size: 11px;color:#9ca3af;"><i
+                                                        class="fa-regular fa-clock me-1"></i>{{ $quiz->time_limit }}
                                                     phút</span>
                                             </div>
                                         @endif
@@ -491,14 +491,14 @@
                                     <div class="action-buttons d-flex pe-2 gap-1">
                                         <a href="{{ route('quizzes.submissions', $quiz->id) }}"
                                             class="btn-action text-white d-flex align-items-center px-2"
-                                            style="background:#198754;width:auto;text-decoration:none;border-radius:6px;font-size:10px;font-weight:700;gap:3px;"
+                                            style="background:#198754;width:auto;text-decoration:none;border-radius:6px;font-size: 11px;font-weight:700;gap:3px;"
                                             title="Xem điểm">
-                                            <i class="fas fa-chart-bar"></i> Điểm
+                                            <i class="fa-solid fa-chart-bar"></i> Điểm
                                         </a>
                                         <a href="{{ route('quizzes.show', $quiz->id) }}"
                                             class="btn-action text-white" style="background:#7c3aed;"
                                             title="Soạn câu hỏi">
-                                            <i class="fas fa-list-ul"></i>
+                                            <i class="fa-solid fa-list-ul"></i>
                                         </a>
                                         <form action="{{ route('quizzes.destroy', $quiz->id) }}" method="POST"
                                             class="d-inline mb-0">
@@ -506,7 +506,7 @@
                                             <button type="submit"
                                                 class="btn-action btn-delete border-0 bg-transparent"
                                                 onclick="return confirm('Lưu trữ bài kiểm tra này?')" title="Xóa">
-                                                <i class="fas fa-trash"></i>
+                                                <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </form>
                                     </div>

@@ -11,14 +11,14 @@
         .login-section {
             min-height: 100vh;
             display: flex;
-            background-color: #f8fafc;
+            background-color: var(--sl-surface-muted);
             margin: 0;
         }
 
         /* Bên trái: Hình ảnh minh họa & Welcome */
         .login-illustration {
             flex: 1.2;
-            background: #ecf2fe;
+            background: var(--sl-primary-soft);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -43,7 +43,7 @@
         /* Bên phải: Form đăng nhập */
         .login-form-area {
             flex: 1;
-            background: white;
+            background: var(--sl-surface);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -57,18 +57,20 @@
 
         .login-card-custom .logo-brand {
             height: 70px;
+            max-width: 100%;
             margin-bottom: 30px;
+            width: auto;
         }
 
         .welcome-msg {
             font-size: 1.8rem;
             font-weight: 700;
-            color: #1e293b;
+            color: var(--sl-text);
             margin-bottom: 8px;
         }
 
         .sub-msg {
-            color: #64748b;
+            color: var(--sl-text-muted);
             margin-bottom: 35px;
         }
 
@@ -82,32 +84,32 @@
             font-size: 0.9rem;
             margin-bottom: 8px;
             display: block;
-            color: #334155;
+            color: var(--sl-text-secondary);
         }
 
         .input-custom {
             width: 100%;
             padding: 14px 16px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 12px;
+            border: 1.5px solid var(--sl-border);
+            border-radius: var(--sl-radius-sm);
             transition: all 0.3s;
             background-color: #fcfcfd;
         }
 
         .input-custom:focus {
             outline: none;
-            border-color: #1a3a5a;
-            background-color: white;
-            box-shadow: 0 0 0 4px rgba(26, 58, 90, 0.05);
+            border-color: var(--sl-primary);
+            background-color: var(--sl-surface);
+            box-shadow: var(--sl-focus-ring);
         }
 
         .btn-submit-custom {
             width: 100%;
             padding: 14px;
-            background-color: #1a3a5a;
+            background-color: var(--sl-primary);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--sl-radius-sm);
             font-weight: 700;
             font-size: 1rem;
             margin-top: 10px;
@@ -115,16 +117,16 @@
         }
 
         .btn-submit-custom:hover {
-            background-color: #122b44;
+            background-color: var(--sl-primary-hover);
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(26, 58, 90, 0.15);
+            box-shadow: var(--sl-shadow-primary);
         }
 
         .footer-links {
             margin-top: 30px;
             text-align: center;
             font-size: 0.9rem;
-            color: #64748b;
+            color: var(--sl-text-muted);
         }
 
         /* Mobile Responsive */
@@ -138,17 +140,17 @@
             }
 
             .login-form-area {
-                background-color: #f8fafc;
+                background-color: var(--sl-surface-muted);
                 min-width: 0;
                 padding: 24px 16px;
             }
 
             .login-card-custom {
-                background: white;
+                background: var(--sl-surface);
                 min-width: 0;
                 padding: 32px;
-                border-radius: 24px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+                border-radius: var(--sl-radius-lg);
+                box-shadow: var(--sl-shadow-md);
             }
         }
 
@@ -195,20 +197,20 @@
 
     <div class="login-section">
         <div class="login-illustration">
-            <img src="auth-img1.png" alt="Education Illustration">
+            <img src="{{ asset('auth-img1.webp') }}" alt="Minh họa học viên SmartLMS" width="574" height="349">
         </div>
 
         <div class="login-form-area">
             <div class="login-card-custom">
                 <div class="text-center">
-                    <img src="{{ asset('smartlms-logo-sharpened.png') }}" class="logo-brand" alt="Logo">
-                    <h1 class="welcome-msg">Chào mừng! 👋</h1>
+                    <img src="{{ asset('smartlms-logo-sharpened.webp') }}" class="logo-brand" alt="SmartLMS" width="800" height="200">
+                    <h1 class="welcome-msg">Chào mừng! <x-ui.icon name="sparkles" class="text-primary" /></h1>
                     <p class="sub-msg">Vui lòng nhập thông tin để truy cập hệ thống.</p>
                 </div>
 
                 @if ($errors->any())
                     <div class="alert alert-danger border-0 small mb-4" style="border-radius: 12px;">
-                        <i class="fas fa-exclamation-circle me-2"></i> {{ $errors->first() }}
+                        <i class="fa-solid fa-circle-exclamation me-2"></i> {{ $errors->first() }}
                     </div>
                 @endif
 
@@ -217,7 +219,7 @@
                     <div class="form-group-custom">
                         <label for="loginInput">Tên đăng nhập</label>
                         <div class="position-relative">
-                            <i class="fas fa-user position-absolute top-50 translate-middle-y ms-3 text-muted"
+                            <i class="fa-solid fa-user position-absolute top-50 translate-middle-y ms-3 text-muted"
                                 aria-hidden="true"></i>
                             <input type="text" name="login" id="loginInput" class="input-custom ps-5"
                                 placeholder="VD: nguyenvana" required value="{{ old('login') }}"
@@ -228,14 +230,14 @@
                     <div class="form-group-custom">
                         <label for="passwordInput">Mật khẩu</label>
                         <div class="position-relative">
-                            <i class="fas fa-lock position-absolute top-50 translate-middle-y ms-3 text-muted"
+                            <i class="fa-solid fa-lock position-absolute top-50 translate-middle-y ms-3 text-muted"
                                 aria-hidden="true"></i>
                             <input type="password" name="password" id="passwordInput" class="input-custom ps-5 pe-5"
                                 placeholder="••••••••" required autocomplete="current-password">
                             <button type="button" id="togglePassword"
                                 aria-label="Hiện mật khẩu" aria-pressed="false"
                                 class="btn position-absolute top-50 end-0 translate-middle-y me-2 text-muted border-0 shadow-none">
-                                <i class="fas fa-eye-slash" id="eyeIcon" aria-hidden="true"></i>
+                                <i class="fa-solid fa-eye-slash" id="eyeIcon" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -248,7 +250,7 @@
                     </div>
 
                     <button type="submit" class="btn-submit-custom">
-                        Đăng nhập ngay <i class="fas fa-arrow-right ms-2"></i>
+                        Đăng nhập ngay <i class="fa-solid fa-arrow-right ms-2"></i>
                     </button>
                 </form>
 

@@ -16,14 +16,14 @@
     <style>
         /* ── Design tokens ── */
         :root {
-            --t-bg: #f6f8fb;
-            --t-surface: #ffffff;
-            --t-border: #e8edf3;
-            --t-ink: #0f1c2e;
-            --t-muted: #6b7a8d;
-            --t-accent: #2563eb;
-            --t-radius: 12px;
-            --t-shadow: 0 1px 3px rgba(15, 28, 46, .06), 0 4px 12px rgba(15, 28, 46, .05);
+            --t-bg: var(--sl-bg);
+            --t-surface: var(--sl-surface);
+            --t-border: var(--sl-border);
+            --t-ink: var(--sl-text);
+            --t-muted: var(--sl-text-muted);
+            --t-accent: var(--sl-primary);
+            --t-radius: var(--sl-radius-sm);
+            --t-shadow: var(--sl-shadow-sm);
         }
 
         /* ── Page shell ── */
@@ -429,10 +429,10 @@
             </div>
             <div class="d-flex gap-2 flex-wrap tp-header-actions">
                 <button type="button" class="btn-tp-import" data-bs-toggle="modal" data-bs-target="#importTeachingModal">
-                    <i class="fas fa-file-import"></i>Import Excel/CSV
+                    <i class="fa-solid fa-file-import"></i>Import Excel/CSV
                 </button>
                 <button type="button" class="btn-tp-add" data-bs-toggle="modal" data-bs-target="#createTeachingModal">
-                    <i class="fas fa-plus"></i>Thêm dòng giảng dạy
+                    <i class="fa-solid fa-plus"></i>Thêm dòng giảng dạy
                 </button>
             </div>
         </div>
@@ -440,12 +440,12 @@
         {{-- Alerts --}}
         @if (session('success'))
             <div class="alert alert-success border-0 rounded-3 mb-4 d-flex align-items-center gap-2">
-                <i class="fas fa-check-circle"></i><span>{{ session('success') }}</span>
+                <i class="fa-solid fa-circle-check"></i><span>{{ session('success') }}</span>
             </div>
         @endif
         @if ($errors->any())
             <div class="alert alert-danger border-0 rounded-3 mb-4 d-flex align-items-center gap-2">
-                <i class="fas fa-exclamation-circle"></i><span>{{ $errors->first() }}</span>
+                <i class="fa-solid fa-circle-exclamation"></i><span>{{ $errors->first() }}</span>
             </div>
         @endif
 
@@ -515,11 +515,11 @@
                 <div class="col-12 col-md-6 col-lg-1 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-fill rounded-3"
                         style="font-size:13px;font-weight:600">
-                        <i class="fas fa-filter me-1"></i>Lọc
+                        <i class="fa-solid fa-filter me-1"></i>Lọc
                     </button>
                     <a href="{{ route('teaching.index') }}" class="btn btn-light border rounded-3" style="font-size:13px"
                         title="Đặt lại">
-                        <i class="fas fa-rotate-left"></i>
+                        <i class="fa-solid fa-rotate-left"></i>
                     </a>
                 </div>
             </div>
@@ -551,7 +551,7 @@
                                     @endif
                                     @if (auth()->user()->role === 'admin')
                                         <div class="cell-note" style="margin-top:3px">
-                                            <i class="fas fa-user-tie"
+                                            <i class="fa-solid fa-user-tie"
                                                 style="font-size:10px;margin-right:3px"></i>{{ $record->teacher?->name ?? 'N/A' }}
                                         </div>
                                     @endif
@@ -581,12 +581,12 @@
                                 <td>
                                     @if ($record->course_id || $record->class_id)
                                         <span class="tp-badge tp-badge--linked">
-                                            <i class="fas fa-link" style="font-size:9px"></i>
+                                            <i class="fa-solid fa-link" style="font-size:9px"></i>
                                             {{ collect([$record->course_id ? 'Course' : null, $record->class_id ? 'Class' : null])->filter()->join(' + ') }}
                                         </span>
                                     @else
                                         <span class="tp-badge tp-badge--unlinked">
-                                            <i class="fas fa-unlink" style="font-size:9px"></i>Chưa khớp
+                                            <i class="fa-solid fa-unlink" style="font-size:9px"></i>Chưa khớp
                                         </span>
                                     @endif
                                 </td>
@@ -594,14 +594,14 @@
                                     <div class="tp-actions">
                                         <button type="button" class="tp-btn-edit" data-bs-toggle="modal"
                                             data-bs-target="#editTeachingModal{{ $record->id }}">
-                                            <i class="fas fa-pen-to-square"></i>Sửa
+                                            <i class="fa-solid fa-pen-to-square"></i>Sửa
                                         </button>
                                         <form action="{{ route('teaching.destroy', $record->id) }}" method="POST"
                                             onsubmit="return confirm('Xóa dòng giảng dạy này?');" style="margin:0">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="tp-btn-del">
-                                                <i class="fas fa-trash-alt"></i>Xóa
+                                                <i class="fa-solid fa-trash-can"></i>Xóa
                                             </button>
                                         </form>
                                     </div>
@@ -611,7 +611,7 @@
                             <tr>
                                 <td colspan="8">
                                     <div class="tp-empty">
-                                        <div class="tp-empty-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                                        <div class="tp-empty-icon"><i class="fa-solid fa-chalkboard-teacher"></i></div>
                                         <p>Chưa có dữ liệu giảng dạy.</p>
                                     </div>
                                 </td>
@@ -673,7 +673,7 @@
                             required>
                     </div>
                     <div class="alert alert-info border-0 rounded-3 small mb-0" style="background:#eff6ff;color:#1e40af">
-                        <i class="fas fa-circle-info me-2"></i>File cần có các cột:
+                        <i class="fa-solid fa-circle-info me-2"></i>File cần có các cột:
                         <strong>Tên môn học, Lớp, Trung tâm, Khóa, Số buổi, Ngày bắt đầu, Ngày kết thúc, Trạng thái, Ghi
                             chú</strong>.
                     </div>

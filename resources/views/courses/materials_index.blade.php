@@ -1,12 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
     <style>
         .materials-index {
             --ml-ink: #10162b;
@@ -25,7 +19,7 @@
             --ml-red-soft: #fbe7e5;
             --ml-radius-lg: 20px;
             --ml-radius-md: 14px;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: var(--sl-font-sans);
             background: var(--ml-bg);
             min-height: calc(100vh - 70px);
             padding: 28px 0 56px;
@@ -78,7 +72,7 @@
 
         .materials-index-title {
             color: var(--ml-ink);
-            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-family: var(--sl-font-sans);
             font-size: clamp(26px, 3.6vw, 38px);
             font-weight: 700;
             letter-spacing: -.01em;
@@ -111,7 +105,7 @@
 
         .materials-stat-num {
             color: var(--ml-ink);
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: var(--sl-font-sans);
             font-size: 26px;
             font-weight: 700;
             line-height: 1;
@@ -147,7 +141,7 @@
             align-items: center;
             color: var(--ml-ink);
             display: flex;
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: var(--sl-font-sans);
             font-size: 18px;
             font-weight: 700;
             gap: 8px;
@@ -258,7 +252,7 @@
             border-radius: 999px;
             display: inline-flex;
             flex-shrink: 0;
-            font-size: 10.5px;
+            font-size: 11px;
             font-weight: 700;
             gap: 5px;
             padding: 5px 10px;
@@ -443,7 +437,7 @@
             border-radius: 999px;
             color: #475569;
             display: inline-flex;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             padding: 4px 9px;
         }
@@ -528,7 +522,7 @@
 
         .materials-course-title {
             color: var(--ml-ink);
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: var(--sl-font-sans);
             font-size: 17px;
             font-weight: 700;
             line-height: 1.35;
@@ -661,7 +655,7 @@
         <div class="container materials-index-shell">
             <div class="materials-index-hero">
                 <div class="materials-index-hero-top">
-                    <div class="materials-index-kicker"><i class="fas fa-folder-open"></i> Kho học liệu</div>
+                    <div class="materials-index-kicker"><i class="fa-solid fa-folder-open"></i> Kho học liệu</div>
                     <h1 class="materials-index-title">Chọn khóa học để quản lý học liệu</h1>
                     <p class="materials-index-subtitle">
                         Mỗi khóa học có một kho riêng để quản lý file PDF, slide, link video, website tham khảo và file code
@@ -700,7 +694,7 @@
                 <section class="materials-sync-panel">
                     <div class="materials-section-head mb-0">
                         <div>
-                            <h2 class="materials-section-title"><i class="fas fa-cloud-arrow-down text-primary"></i>Đồng bộ
+                            <h2 class="materials-section-title"><i class="fa-solid fa-cloud-arrow-down text-primary"></i>Đồng bộ
                                 file cũ</h2>
                             <p class="materials-section-note">Quét file bài học và ảnh R2 trong nội dung. Bài nộp học viên,
                                 backup và file hệ thống không được đưa vào kho.</p>
@@ -709,14 +703,14 @@
                             <form method="POST" action="{{ route('materials.legacy.scan') }}">
                                 @csrf
                                 <button class="materials-action materials-action--ghost" type="submit">
-                                    <i class="fas fa-magnifying-glass"></i> Quét và xem trước
+                                    <i class="fa-solid fa-magnifying-glass"></i> Quét và xem trước
                                 </button>
                             </form>
                             <form method="POST" action="{{ route('materials.legacy.sync') }}"
                                 onsubmit="return confirm('Đồng bộ các file hợp lệ vào kho học liệu? File trên R2 sẽ không bị sao chép.');">
                                 @csrf
                                 <button class="materials-action materials-action--primary" type="submit">
-                                    <i class="fas fa-rotate"></i> Đồng bộ vào kho
+                                    <i class="fa-solid fa-rotate"></i> Đồng bộ vào kho
                                 </button>
                             </form>
                         </div>
@@ -780,16 +774,16 @@
                             @endforeach
                         </select>
                         <button class="materials-action materials-action--primary" type="submit"><i
-                                class="fas fa-filter"></i> Lọc</button>
+                                class="fa-solid fa-filter"></i> Lọc</button>
                         @if (request('q') || request('type'))
                             <a class="materials-filter-clear" href="{{ route('materials.index') }}"><i
-                                    class="fas fa-xmark"></i> Xóa lọc</a>
+                                    class="fa-solid fa-xmark"></i> Xóa lọc</a>
                         @endif
                     </form>
 
                     @if ($materials->isEmpty())
                         <div class="materials-empty">
-                            <span class="materials-empty-icon"><i class="fas fa-inbox"></i></span>
+                            <span class="materials-empty-icon"><i class="fa-solid fa-inbox"></i></span>
                             <div class="materials-empty-title">Chưa có học liệu phù hợp</div>
                             <div class="materials-empty-sub">Thử đổi từ khóa hoặc định dạng tìm kiếm, hoặc chạy “Quét và xem
                                 trước” ở trên để tìm file cũ đưa vào kho.</div>
@@ -801,7 +795,7 @@
                                 <article class="materials-asset" data-type="{{ $material->type ?? 'other' }}">
                                     <div class="materials-asset-top">
                                         <span class="materials-asset-icon"><i
-                                                class="fas {{ $material->iconClass() }}"></i></span>
+                                                class="fa-solid {{ $material->iconClass() }}"></i></span>
                                         <div class="min-w-0">
                                             <h3 class="materials-asset-title">{{ $material->title }}</h3>
                                             <div class="materials-asset-meta">
@@ -814,7 +808,7 @@
                                     </div>
                                     <div class="materials-source"
                                         title="{{ $sourceCourse?->title ?? $material->original_name }}">
-                                        <i class="fas fa-book me-1"></i>
+                                        <i class="fa-solid fa-book me-1"></i>
                                         {{ $sourceCourse?->title ?? ($material->original_name ?: 'Học liệu dùng chung') }}
                                     </div>
                                     <div class="materials-asset-footer">
@@ -825,7 +819,7 @@
                                         @else
                                             <a class="materials-action materials-action--download"
                                                 href="{{ route('materials.library.download', $material) }}"><i
-                                                    class="fas fa-download"></i> Tải</a>
+                                                    class="fa-solid fa-download"></i> Tải</a>
                                         @endif
                                     </div>
                                 </article>
@@ -846,14 +840,14 @@
 
             @if ($courses->isEmpty())
                 <div class="materials-empty">
-                    <span class="materials-empty-icon"><i class="fas fa-folder-open"></i></span>
+                    <span class="materials-empty-icon"><i class="fa-solid fa-folder-open"></i></span>
                     <div class="materials-empty-title">Chưa có khóa học nào khả dụng</div>
                 </div>
             @else
                 <div class="materials-course-grid">
                     @foreach ($courses as $course)
                         <a class="materials-course-card" href="{{ route('courses.materials.index', $course->id) }}">
-                            <span class="materials-course-icon"><i class="fas fa-book-open"></i></span>
+                            <span class="materials-course-icon"><i class="fa-solid fa-book-open"></i></span>
                             <div>
                                 <h2 class="materials-course-title">{{ $course->title }}</h2>
                                 <div class="materials-course-meta">
@@ -865,7 +859,7 @@
                             </div>
                             <div class="materials-course-footer">
                                 <span class="materials-count">{{ $course->materials_count }} học liệu</span>
-                                <span class="materials-open">Mở kho <i class="fas fa-arrow-right"></i></span>
+                                <span class="materials-open">Mở kho <i class="fa-solid fa-arrow-right"></i></span>
                             </div>
                         </a>
                     @endforeach

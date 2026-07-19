@@ -236,10 +236,10 @@
                 </select>
             </div>
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-filter me-1"></i>Lọc
+                <i class="fa-solid fa-filter me-1"></i>Lọc
             </button>
             <a href="{{ route('students.grades') }}" class="btn btn-light border">
-                <i class="fas fa-rotate-left"></i>
+                <i class="fa-solid fa-rotate-left"></i>
             </a>
         </form>
 
@@ -268,12 +268,12 @@
 
         <div class="grades-panel">
             <div class="grades-panel-head">
-                <h2 class="grades-panel-title"><i class="fas fa-file-pen text-primary"></i>Bài tập đã nộp</h2>
+                <h2 class="grades-panel-title"><i class="fa-solid fa-file-pen text-primary"></i>Bài tập đã nộp</h2>
                 <span class="badge bg-primary-subtle text-primary rounded-pill">{{ $assignmentSubmissions->count() }} bài</span>
             </div>
             @if ($assignmentSubmissions->isEmpty())
                 <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
+                    <i class="fa-solid fa-inbox"></i>
                     Chưa có bài tập nào được nộp trong phạm vi đang xem.
                 </div>
             @else
@@ -333,12 +333,12 @@
 
         <div class="grades-panel">
             <div class="grades-panel-head">
-                <h2 class="grades-panel-title"><i class="fas fa-clipboard-check text-success"></i>Quiz đã làm</h2>
+                <h2 class="grades-panel-title"><i class="fa-solid fa-clipboard-check text-success"></i>Quiz đã làm</h2>
                 <span class="badge bg-success-subtle text-success rounded-pill">{{ $quizAttempts->count() }} lượt</span>
             </div>
             @if ($quizAttempts->isEmpty())
                 <div class="empty-state">
-                    <i class="fas fa-clipboard-question"></i>
+                    <i class="fa-solid fa-clipboard-question"></i>
                     Chưa có quiz nào được hoàn thành trong phạm vi đang xem.
                 </div>
             @else
@@ -377,11 +377,11 @@
 
         <div class="grades-panel">
             <div class="grades-panel-head">
-                <h2 class="grades-panel-title"><i class="fas fa-comment-dots text-info"></i>Nhận xét gần đây</h2>
+                <h2 class="grades-panel-title"><i class="fa-solid fa-comment-dots text-info"></i>Nhận xét gần đây</h2>
             </div>
             @if ($recentFeedback->isEmpty())
                 <div class="empty-state">
-                    <i class="fas fa-message"></i>
+                    <i class="fa-solid fa-message"></i>
                     Chưa có nhận xét nào từ giáo viên.
                 </div>
             @else

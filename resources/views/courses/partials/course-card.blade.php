@@ -1,21 +1,21 @@
 <div class="course-card {{ $course->isTemplate() ? 'course-card-template' : '' }}">
     <div class="card-thumb">
-        <i class="fas {{ $course->isTemplate() ? 'fa-layer-group' : 'fa-laptop-code' }} thumb-icon"></i>
+        <i class="fa-solid {{ $course->isTemplate() ? 'fa-layer-group' : 'fa-laptop-code' }} thumb-icon"></i>
 
         @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
             <div class="dropdown">
                 <button class="card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-ellipsis-v"></i>
+                    <i class="fa-solid fa-ellipsis-v"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end card-dropdown">
                     <li>
                         <a class="dropdown-item" href="{{ route('courses.edit', $course->id) }}">
-                            <i class="fas fa-edit" style="color:#f59e0b;"></i> Sửa khóa học
+                            <i class="fa-solid fa-edit" style="color:#f59e0b;"></i> Sửa khóa học
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="{{ route('courses.create', ['template_course_id' => $course->id]) }}">
-                            <i class="fas fa-copy" style="color:#2563eb;"></i>
+                            <i class="fa-solid fa-copy" style="color:#2563eb;"></i>
                             {{ $course->isTemplate() ? 'Tạo khóa từ mẫu' : 'Dùng làm mẫu' }}
                         </a>
                     </li>
@@ -30,7 +30,7 @@
                                     @csrf @method('DELETE')
                                     <button type="submit" class="dropdown-item text-danger"
                                         style="background:none; border:none; width:100%; text-align:left;">
-                                        <i class="fas fa-trash-can"></i> Xóa vĩnh viễn
+                                        <i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn
                                     </button>
                                 </form>
                             </li>
@@ -42,7 +42,7 @@
                                 @csrf @method('DELETE')
                                 <button type="submit" class="dropdown-item text-danger"
                                     style="background:none; border:none; width:100%; text-align:left;">
-                                    <i class="fas fa-archive"></i> Lưu trữ khóa học
+                                    <i class="fa-solid fa-archive"></i> Lưu trữ khóa học
                                 </button>
                             </form>
                         </li>
@@ -55,18 +55,18 @@
     <div class="card-body-inner">
         @if ($course->isTemplate())
             <div class="card-badge card-badge-template">
-                <i class="fas fa-layer-group" style="font-size:10px;"></i> Khóa mẫu
+                <i class="fa-solid fa-layer-group" style="font-size:10px;"></i> Khóa mẫu
             </div>
         @else
             <div class="card-badge">
-                <i class="fas fa-users" style="font-size:10px;"></i>
+                <i class="fa-solid fa-users" style="font-size:10px;"></i>
                 {{ $course->classes->first()->name ?? 'Chưa gắn lớp' }}
             </div>
         @endif
 
         @if ($course->learningProgram)
             <div class="card-badge" style="background:#f0fdf4;color:#15803d;">
-                <i class="fas fa-sitemap" style="font-size:10px;"></i>
+                <i class="fa-solid fa-sitemap" style="font-size:10px;"></i>
                 {{ $course->learningProgram->name }}
             </div>
         @endif
@@ -82,7 +82,7 @@
                 $courseStatusStyle = $statusStyles[$course->status ?? 'published'] ?? $statusStyles['draft'];
             @endphp
             <div class="card-badge" style="background:{{ $courseStatusStyle['bg'] }};color:{{ $courseStatusStyle['color'] }};">
-                <i class="fas fa-eye" style="font-size:10px;"></i>
+                <i class="fa-solid fa-eye" style="font-size:10px;"></i>
                 {{ strtoupper($course->status ?? 'published') }}
                 @if ($course->available_from)
                     · mở {{ $course->available_from->format('d/m/Y H:i') }}
@@ -103,11 +103,11 @@
         </div>
 
         <div class="stats-row">
-            <span><i class="fas fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
+            <span><i class="fa-solid fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
             @if ($course->isTemplate())
-                <span><i class="fas fa-folder-tree"></i> {{ $course->modules_count ?? 0 }} chương</span>
+                <span><i class="fa-solid fa-folder-tree"></i> {{ $course->modules_count ?? 0 }} chương</span>
             @else
-                <span><i class="fas fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học sinh</span>
+                <span><i class="fa-solid fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học sinh</span>
             @endif
         </div>
 
@@ -123,18 +123,18 @@
             </div>
         @else
             <div class="updated-at">
-                <i class="far fa-clock"></i>
+                <i class="fa-regular fa-clock"></i>
                 Cập nhật {{ $course->updated_at->diffForHumans() }}
             </div>
         @endif
 
         @if ($course->isTemplate())
             <a href="{{ route('courses.create', ['template_course_id' => $course->id]) }}" class="btn-enter btn-enter-template">
-                Tạo khóa từ mẫu <i class="fas fa-copy"></i>
+                Tạo khóa từ mẫu <i class="fa-solid fa-copy"></i>
             </a>
         @else
             <a href="{{ route('courses.show', $course->id) }}" class="btn-enter">
-                Vào khóa học <i class="fas fa-arrow-right"></i>
+                Vào khóa học <i class="fa-solid fa-arrow-right"></i>
             </a>
         @endif
     </div>

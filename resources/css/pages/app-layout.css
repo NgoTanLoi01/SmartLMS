@@ -1,17 +1,19 @@
+@import '../design-tokens.css';
+
 :root {
     --sidebar-width: 272px;
     --sidebar-collapsed-width: 82px;
     --navbar-height: 72px;
-    --blue: #2563eb;
-    --blue-light: #eff6ff;
-    --blue-mid: #dbeafe;
-    --surface: #ffffff;
-    --bg: #f6f8fc;
-    --border: #e2e8f0;
-    --text: #0f172a;
-    --muted: #64748b;
-    --radius: 14px;
-    --radius-lg: 20px;
+    --blue: var(--sl-primary);
+    --blue-light: var(--sl-primary-soft);
+    --blue-mid: var(--sl-primary-subtle);
+    --surface: var(--sl-surface);
+    --bg: var(--sl-bg);
+    --border: var(--sl-border);
+    --text: var(--sl-text);
+    --muted: var(--sl-text-muted);
+    --radius: var(--sl-radius-md);
+    --radius-lg: var(--sl-radius-lg);
 }
 
 *,
@@ -21,7 +23,7 @@
 }
 
 body {
-    font-family: 'Be Vietnam Pro', sans-serif;
+    font-family: var(--sl-font-sans);
     background: var(--bg);
     margin: 0;
     color: var(--text);
@@ -88,11 +90,11 @@ body {
     padding: 0 16px;
     text-decoration: none;
     white-space: nowrap;
-    box-shadow: 0 12px 24px rgba(37, 99, 235, .22);
+    box-shadow: var(--sl-shadow-primary);
 }
 
 .topbar-action:hover {
-    background: #1d4ed8;
+    background: var(--sl-primary-hover);
     color: #fff;
 }
 
@@ -141,7 +143,7 @@ body {
 .notification-menu { width: min(390px, calc(100vw - 24px)); padding: 0; overflow: hidden; }
 .notification-menu-head { align-items:center; display:flex; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #e2e8f0; }
 .notification-menu-title { font-size:14px; font-weight:800; margin:0; }
-.notification-badge { align-items:center; background:#ef4444; border:2px solid #fff; border-radius:999px; box-shadow:0 4px 10px rgba(239,68,68,.36); color:#fff; display:flex; font-size:10px; font-weight:900; height:21px; justify-content:center; min-width:21px; padding:0 5px; position:absolute; right:-6px; top:-7px; z-index:2; }
+.notification-badge { align-items:center; background:#ef4444; border:2px solid #fff; border-radius:999px; box-shadow:0 4px 10px rgba(239,68,68,.36); color:#fff; display:flex; font-size: 11px; font-weight:900; height:21px; justify-content:center; min-width:21px; padding:0 5px; position:absolute; right:-6px; top:-7px; z-index:2; }
 .notification-item { border-bottom:1px solid #f1f5f9; display:block; padding:12px 16px; text-decoration:none; white-space:normal; }
 .notification-item.unread { background:#eff6ff; }
 .notification-item-title { color:#0f172a; font-size:13px; font-weight:750; margin-bottom:3px; }

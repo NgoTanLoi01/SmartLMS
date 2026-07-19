@@ -4,13 +4,13 @@
     <div class="container py-4" style="max-width:960px">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
             <div>
-                <h2 class="fw-bold mb-1"><i class="fas fa-bell text-primary me-2"></i>Trung tâm thông báo</h2>
+                <h2 class="fw-bold mb-1"><i class="fa-solid fa-bell text-primary me-2"></i>Trung tâm thông báo</h2>
                 <p class="text-muted mb-0">Cập nhật học tập và lịch học ngay trong SmartLMS.</p>
             </div>
             @if ($unreadCount > 0)
                 <form method="POST" action="{{ route('notifications.read-all') }}">
                     @csrf @method('PATCH')
-                    <button class="btn btn-outline-primary"><i class="fas fa-check-double me-1"></i>Đánh dấu tất cả đã đọc</button>
+                    <button class="btn btn-outline-primary"><i class="fa-solid fa-check-double me-1"></i>Đánh dấu tất cả đã đọc</button>
                 </form>
             @endif
         </div>
@@ -27,7 +27,7 @@
                 <div class="p-3 p-md-4 border-bottom {{ $notification->read_at ? 'bg-white' : 'bg-primary bg-opacity-10' }}">
                     <div class="d-flex gap-3">
                         <div class="rounded-circle bg-white shadow-sm d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
-                            <i class="fas fa-{{ match($notification->type) { 'grade' => 'star', 'assignment' => 'file-pen', 'lesson' => 'book-open', 'material' => 'folder-open', 'quiz' => 'clipboard-question', 'schedule' => 'calendar-days', 'attendance_warning' => 'user-clock', default => 'bell' } }} text-primary"></i>
+                            <i class="fa-solid fa-{{ match($notification->type) { 'grade' => 'star', 'assignment' => 'file-pen', 'lesson' => 'book-open', 'material' => 'folder-open', 'quiz' => 'clipboard-question', 'schedule' => 'calendar-days', 'attendance_warning' => 'user-clock', default => 'bell' } }} text-primary"></i>
                         </div>
                         <div class="flex-grow-1 min-width-0">
                             <div class="d-flex justify-content-between gap-2">
@@ -51,7 +51,7 @@
                 </div>
             @empty
                 <div class="text-center py-5 text-muted">
-                    <i class="far fa-bell-slash fa-3x mb-3 opacity-50"></i>
+                    <i class="fa-regular fa-bell-slash fa-3x mb-3 opacity-50"></i>
                     <p class="mb-0">Không có thông báo phù hợp.</p>
                 </div>
             @endforelse

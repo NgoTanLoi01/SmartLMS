@@ -17,7 +17,7 @@
             <input type="hidden" name="course_id" value="{{ $course->id }}">
 
             <div class="modal-header">
-                <div class="cm-header-icon icon-blue"><i class="fas fa-folder-plus"></i></div>
+                <div class="cm-header-icon icon-blue"><i class="fa-solid fa-folder-plus"></i></div>
                 <h5 class="modal-title">Thêm chương mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -32,7 +32,7 @@
 
             <div class="modal-footer">
                 <button type="submit" class="cm-btn cm-btn-primary">
-                    <i class="fas fa-check"></i> Lưu chương
+                    <i class="fa-solid fa-check"></i> Lưu chương
                 </button>
             </div>
         </form>
@@ -48,7 +48,7 @@
             @csrf @method('PUT')
 
             <div class="modal-header">
-                <div class="cm-header-icon icon-amber"><i class="fas fa-folder"></i></div>
+                <div class="cm-header-icon icon-amber"><i class="fa-solid fa-folder"></i></div>
                 <h5 class="modal-title">Sửa chương</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -62,7 +62,7 @@
 
             <div class="modal-footer">
                 <button type="submit" class="cm-btn cm-btn-amber">
-                    <i class="fas fa-save"></i> Cập nhật
+                    <i class="fa-solid fa-save"></i> Cập nhật
                 </button>
             </div>
         </form>
@@ -78,7 +78,7 @@
             @csrf
 
             <div class="modal-header">
-                <div class="cm-header-icon icon-blue"><i class="fas fa-book-open"></i></div>
+                <div class="cm-header-icon icon-blue"><i class="fa-solid fa-book-open"></i></div>
                 <h5 class="modal-title">Thêm bài học mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -140,7 +140,7 @@
 
             <div class="modal-footer">
                 <button type="submit" class="cm-btn cm-btn-primary">
-                    <i class="fas fa-plus"></i> Lưu bài học
+                    <i class="fa-solid fa-plus"></i> Lưu bài học
                 </button>
             </div>
         </form>
@@ -156,7 +156,7 @@
             @csrf @method('PUT')
 
             <div class="modal-header">
-                <div class="cm-header-icon icon-amber"><i class="fas fa-edit"></i></div>
+                <div class="cm-header-icon icon-amber"><i class="fa-solid fa-edit"></i></div>
                 <h5 class="modal-title">Sửa bài học</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -214,7 +214,7 @@
                     <textarea name="content" id="editLessonContent" class="cm-ctrl" rows="4"></textarea>
                     <div class="cm-ai-actions">
                         <button type="button" class="cm-ai-btn" data-ai-draft="lesson_summary">
-                            <i class="fas fa-wand-magic-sparkles"></i>AI tóm tắt từ tài liệu/bài học
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>AI tóm tắt từ tài liệu/bài học
                         </button>
                     </div>
                 </div>
@@ -222,7 +222,7 @@
 
             <div class="modal-footer">
                 <button type="submit" class="cm-btn cm-btn-amber">
-                    <i class="fas fa-save"></i> Cập nhật bài học
+                    <i class="fa-solid fa-save"></i> Cập nhật bài học
                 </button>
             </div>
         </form>
@@ -239,7 +239,7 @@
             <input type="hidden" name="course_id" value="{{ $course->id }}">
 
             <div class="modal-header">
-                <div class="cm-header-icon icon-amber"><i class="fas fa-tasks"></i></div>
+                <div class="cm-header-icon icon-amber"><i class="fa-solid fa-list-check"></i></div>
                 <h5 class="modal-title">Thêm bài tập thực hành</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -274,7 +274,7 @@
                         </select>
                         <div class="cm-ai-actions">
                             <button type="button" class="cm-ai-btn" data-ai-draft="assignment">
-                                <i class="fas fa-wand-magic-sparkles"></i>AI soạn bài tập
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>AI soạn bài tập
                             </button>
                         </div>
                     </div>
@@ -329,7 +329,7 @@
                     <div class="cm-hint">AI sẽ ưu tiên chấm theo tiêu chí này để tránh nhận xét lan man.</div>
                     <div class="cm-ai-actions">
                         <button type="button" class="cm-ai-btn" data-ai-draft="rubric" data-ai-target="add">
-                            <i class="fas fa-list-check"></i>AI tạo tiêu chí
+                            <i class="fa-solid fa-list-check"></i>AI tạo tiêu chí
                         </button>
                     </div>
                 </div>
@@ -337,7 +337,7 @@
 
             <div class="modal-footer">
                 <button type="submit" class="cm-btn cm-btn-amber">
-                    <i class="fas fa-save"></i> Lưu bài tập
+                    <i class="fa-solid fa-save"></i> Lưu bài tập
                 </button>
             </div>
         </form>
@@ -354,7 +354,7 @@
             <input type="hidden" name="course_id" value="{{ $course->id }}">
 
             <div class="modal-header">
-                <div class="cm-header-icon icon-amber"><i class="fas fa-edit"></i></div>
+                <div class="cm-header-icon icon-amber"><i class="fa-solid fa-edit"></i></div>
                 <h5 class="modal-title">Sửa bài tập</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -436,7 +436,7 @@
                     <div class="cm-hint">AI sẽ ưu tiên chấm theo tiêu chí này.</div>
                     <div class="cm-ai-actions">
                         <button type="button" class="cm-ai-btn" data-ai-draft="rubric" data-ai-target="edit">
-                            <i class="fas fa-list-check"></i>AI tạo tiêu chí
+                            <i class="fa-solid fa-list-check"></i>AI tạo tiêu chí
                         </button>
                     </div>
                 </div>
@@ -444,7 +444,7 @@
 
             <div class="modal-footer">
                 <button type="submit" class="cm-btn cm-btn-amber">
-                    <i class="fas fa-save"></i> Cập nhật bài tập
+                    <i class="fa-solid fa-save"></i> Cập nhật bài tập
                 </button>
             </div>
         </form>
@@ -458,7 +458,7 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="cm-modal-header-strip">
-                <div class="cm-header-icon icon-green"><i class="fas fa-users"></i></div>
+                <div class="cm-header-icon icon-green"><i class="fa-solid fa-users"></i></div>
                 <h5 class="modal-title" id="modal-assignment-name">Danh sách nộp bài</h5>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
             </div>
@@ -491,7 +491,7 @@
             <input type="hidden" name="course_id" value="{{ $course->id }}">
 
             <div class="modal-header">
-                <div class="cm-header-icon icon-violet"><i class="fas fa-random"></i></div>
+                <div class="cm-header-icon icon-violet"><i class="fa-solid fa-random"></i></div>
                 <h5 class="modal-title">Tạo đề thi trắc nghiệm</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -525,17 +525,17 @@
                     </select>
                     <div class="cm-ai-actions">
                         <button type="button" class="cm-ai-btn" data-ai-draft="quiz">
-                            <i class="fas fa-wand-magic-sparkles"></i>AI gợi ý quiz
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>AI gợi ý quiz
                         </button>
                     </div>
                 </div>
 
                 <div class="cm-section-title">
-                    <i class="fas fa-layer-group"></i> Cấu trúc đề thi
+                    <i class="fa-solid fa-layer-group"></i> Cấu trúc đề thi
                 </div>
 
                 <div class="cm-info-banner">
-                    <i class="fas fa-magic"></i>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
                     Hệ thống sẽ bốc ngẫu nhiên câu hỏi từ Ngân hàng và trộn đề riêng cho mỗi học sinh.
                 </div>
 
@@ -573,7 +573,7 @@
 
             <div class="modal-footer">
                 <button type="submit" class="cm-btn cm-btn-violet">
-                    <i class="fas fa-random"></i> Tạo đề thi
+                    <i class="fa-solid fa-random"></i> Tạo đề thi
                 </button>
             </div>
         </form>
@@ -587,7 +587,7 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="cm-header-icon icon-amber"><i class="fas fa-shield-halved"></i></div>
+                <div class="cm-header-icon icon-amber"><i class="fa-solid fa-shield-halved"></i></div>
                 <h5 class="modal-title">Kiểm tra chất lượng khóa học</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -864,7 +864,7 @@
                 if (!issues.length) {
                     content.innerHTML = `
                         <div class="cm-info-banner mb-0">
-                            <i class="fas fa-check-circle"></i>
+                            <i class="fa-solid fa-circle-check"></i>
                             Chưa phát hiện vấn đề lớn. Khóa học đang khá ổn để vận hành.
                         </div>`;
                     return;

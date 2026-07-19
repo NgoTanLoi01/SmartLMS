@@ -447,7 +447,7 @@
         </div>
         @if (in_array(auth()->user()->role, ['admin', 'teacher']))
             <button class="btn-create" data-bs-toggle="modal" data-bs-target="#addClassModal">
-                <i class="fas fa-plus"></i> Tạo lớp mới
+                <i class="fa-solid fa-plus"></i> Tạo lớp mới
             </button>
         @endif
     </div>
@@ -464,17 +464,17 @@
             </select>
         </div>
         <button type="submit" class="btn-create" style="padding:9px 16px;">
-            <i class="fas fa-filter"></i> Lọc
+            <i class="fa-solid fa-filter"></i> Lọc
         </button>
         <a href="{{ route('classes.index') }}" class="btn btn-light border rounded-3" style="padding:9px 14px;">
-            <i class="fas fa-rotate-left"></i>
+            <i class="fa-solid fa-rotate-left"></i>
         </a>
     </form>
 
     {{-- Grid --}}
     @if ($classes->isEmpty())
         <div class="empty-state">
-            <i class="fas fa-school"></i>
+            <i class="fa-solid fa-school"></i>
             <p>Chưa có lớp học nào. Hãy tạo lớp đầu tiên!</p>
         </div>
     @else
@@ -494,26 +494,26 @@
                                 ][$classStatus] ?? 'Đang hoạt động';
                             @endphp
                             <span class="class-status-badge class-status-{{ $classStatus }}">
-                                <i class="fas fa-circle" style="font-size:6px;"></i>{{ $classStatusLabel }}
+                                <i class="fa-solid fa-circle" style="font-size:6px;"></i>{{ $classStatusLabel }}
                             </span>
                         </div>
                         <div class="card-meta">
                             <span class="student-count">
-                                <i class="fas fa-users"></i> {{ $class->students_count }} HS
+                                <i class="fa-solid fa-users"></i> {{ $class->students_count }} HS
                             </span>
                             <div class="dropdown">
                                 <button class="menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-v"></i>
+                                    <i class="fa-solid fa-ellipsis-v"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end card-dropdown">
                                     <li>
                                         <a class="dropdown-item" href="{{ route('classes.progress', $class->id) }}">
-                                            <i class="fas fa-chart-line" style="color:#2563eb;"></i> Theo dõi tiến độ
+                                            <i class="fa-solid fa-chart-line" style="color:#2563eb;"></i> Theo dõi tiến độ
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{{ route('classes.students.index', $class->id) }}">
-                                            <i class="fas fa-user-graduate" style="color:#16a34a;"></i> Quản lý học sinh
+                                            <i class="fa-solid fa-user-graduate" style="color:#16a34a;"></i> Quản lý học sinh
                                         </a>
                                     </li>
                                     <li>
@@ -523,7 +523,7 @@
                                             data-status="{{ $class->status ?? 'active' }}"
                                             data-courses="{{ $class->courses->pluck('id') }}" data-bs-toggle="modal"
                                             data-bs-target="#editClassModal">
-                                            <i class="fas fa-edit" style="color:#f59e0b;"></i> Sửa lớp học
+                                            <i class="fa-solid fa-edit" style="color:#f59e0b;"></i> Sửa lớp học
                                         </a>
                                     </li>
                                     <li>
@@ -535,7 +535,7 @@
                                             <button type="submit" class="dropdown-item text-danger"
                                                 style="background:none; border:none; width:100%; text-align:left;"
                                                 onclick="return confirm('Lưu trữ lớp học này? Học sinh, khóa học và tiến độ vẫn được giữ lại.')">
-                                                <i class="fas fa-archive"></i> Lưu trữ lớp học
+                                                <i class="fa-solid fa-archive"></i> Lưu trữ lớp học
                                             </button>
                                         </form>
                                     </li>
@@ -548,14 +548,14 @@
                     <div>
                         <h2 class="class-name">{{ $class->name }}</h2>
                         <p class="class-teacher">
-                            <i class="fas fa-chalkboard-teacher"></i>
+                            <i class="fa-solid fa-chalkboard-teacher"></i>
                             {{ $class->teacher->name ?? 'Chưa phân công' }}
                         </p>
                     </div>
 
                     {{-- Manage button --}}
                     <a href="{{ route('classes.students.index', $class->id) }}" class="btn-manage">
-                        <i class="fas fa-user-graduate"></i> Quản lý học sinh
+                        <i class="fa-solid fa-user-graduate"></i> Quản lý học sinh
                     </a>
                 </div>
             @endforeach

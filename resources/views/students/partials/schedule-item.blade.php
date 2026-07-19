@@ -13,11 +13,11 @@
     <div class="min-w-0">
         <div class="ss-item-title">{{ $schedule->course_title }}</div>
         <div class="ss-item-meta">
-            <div><i class="fas fa-clock me-1"></i>{{ $startTime }} - {{ $endTime }}</div>
-            <div><i class="fas fa-users me-1"></i>{{ $schedule->class_name }}</div>
-            <div><i class="fas fa-location-dot me-1"></i>{{ $schedule->room ?: 'Chưa cập nhật phòng học' }}</div>
+            <div><i class="fa-solid fa-clock me-1"></i>{{ $startTime }} - {{ $endTime }}</div>
+            <div><i class="fa-solid fa-users me-1"></i>{{ $schedule->class_name }}</div>
+            <div><i class="fa-solid fa-location-dot me-1"></i>{{ $schedule->room ?: 'Chưa cập nhật phòng học' }}</div>
             @if ($hasNote)
-                <div class="ss-note"><i class="fas fa-triangle-exclamation"></i>{{ $schedule->note }}</div>
+                <div class="ss-note"><i class="fa-solid fa-triangle-exclamation"></i>{{ $schedule->note }}</div>
             @endif
         </div>
     </div>

@@ -21,7 +21,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -36,22 +36,22 @@
         {{-- ── Navbar ── --}}
         <nav class="navbar">
             <button class="hamburger me-3" id="sidebarToggle" aria-label="Mở menu">
-                <i class="fas fa-bars"></i>
+                <i class="fa-solid fa-bars"></i>
             </button>
 
             <button class="sidebar-collapse-btn" id="sidebarCollapseToggle" type="button"
                 aria-label="Thu gọn menu" title="Thu gọn menu" aria-expanded="true">
-                <i class="fas fa-bars" aria-hidden="true"></i>
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
             </button>
 
             <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <img src="{{ asset('smartlms-logo-sharpened.png') }}" alt="SmartLMS">
+                <img src="{{ asset('smartlms-logo-sharpened.webp') }}" alt="SmartLMS" width="800" height="200">
             </a>
 
             <div class="dropdown ms-auto">
                 <button class="topbar-icon-btn {{ ($topbarUnreadCount ?? 0) === 0 ? 'no-unread' : 'has-unread' }}" type="button"
                     data-bs-toggle="dropdown" aria-expanded="false" aria-label="Thông báo">
-                    <i class="fas fa-bell"></i>
+                    <i class="fa-solid fa-bell"></i>
                     @if (($topbarUnreadCount ?? 0) > 0)
                         <span class="notification-badge">{{ $topbarUnreadCount > 99 ? '99+' : $topbarUnreadCount }}</span>
                     @endif
@@ -78,7 +78,7 @@
             <div class="user-btn dropdown" data-bs-toggle="dropdown" id="userMenuBtn" aria-expanded="false">
                 <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
                 <span>{{ Auth::user()->name }}</span>
-                <i class="fas fa-chevron-down" style="font-size:11px; opacity:.6;"></i>
+                <i class="fa-solid fa-chevron-down" style="font-size:11px; opacity:.6;"></i>
             </div>
             <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="userMenuBtn">
                 <li>
@@ -92,7 +92,7 @@
                 </li>
                 <li>
                     <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                        <i class="fas fa-key" style="color:#f59e0b;"></i> Đổi mật khẩu
+                        <i class="fa-solid fa-key" style="color:#f59e0b;"></i> Đổi mật khẩu
                     </a>
                 </li>
                 <li>
@@ -100,7 +100,7 @@
                         @csrf
                         <button type="submit" class="dropdown-item text-danger"
                             style="background:none; border:none; width:100%; text-align:left;">
-                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
                         </button>
                     </form>
                 </li>
@@ -114,26 +114,26 @@
                 {{-- Main --}}
                 <li>
                     <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                        <i class="fas fa-house-chimney"></i> Trang chủ
+                        <i class="fa-solid fa-house-chimney"></i> Trang chủ
                     </a>
                 </li>
                 <li>
                     <a class="nav-link {{ request()->is('courses*') && !request()->routeIs('courses.materials.*') ? 'active' : '' }}"
                         href="{{ route('courses.index') }}">
-                        <i class="fas fa-graduation-cap"></i> Khóa học của tôi
+                        <i class="fa-solid fa-graduation-cap"></i> Khóa học của tôi
                     </a>
                 </li>
                 <li>
                     <a class="nav-link {{ request()->routeIs('materials.index') || request()->routeIs('courses.materials.*') ? 'active' : '' }}"
                         href="{{ route('materials.index') }}">
-                        <i class="fas fa-folder-open"></i> Kho học liệu
+                        <i class="fa-solid fa-folder-open"></i> Kho học liệu
                     </a>
                 </li>
                 @if (Auth::user()->isAdmin() || Auth::user()->isTeacher())
                     <li>
                         <a class="nav-link {{ request()->routeIs('shared-documents.*') ? 'active' : '' }}"
                             href="{{ route('shared-documents.index') }}">
-                            <i class="fas fa-box-archive"></i> Tài liệu chung
+                            <i class="fa-solid fa-box-archive"></i> Tài liệu chung
                         </a>
                     </li>
                 @endif
@@ -141,13 +141,13 @@
                     <li>
                         <a class="nav-link {{ request()->routeIs('students.schedule') ? 'active' : '' }}"
                             href="{{ route('students.schedule') }}">
-                            <i class="fas fa-calendar-days"></i> Lịch học cá nhân
+                            <i class="fa-solid fa-calendar-days"></i> Lịch học cá nhân
                         </a>
                     </li>
                     <li>
                         <a class="nav-link {{ request()->routeIs('students.grades') ? 'active' : '' }}"
                             href="{{ route('students.grades') }}">
-                            <i class="fas fa-chart-line"></i> Điểm & nhận xét
+                            <i class="fa-solid fa-chart-line"></i> Điểm & nhận xét
                         </a>
                     </li>
                 @endif
@@ -157,21 +157,21 @@
                     <a class="nav-link {{ request()->routeIs('tools.grade-calculator') ? 'active' : '' }}"
                         data-bs-toggle="collapse" href="#toolsMenu" role="button"
                         aria-expanded="{{ request()->routeIs('tools.grade-calculator') ? 'true' : 'false' }}">
-                        <i class="fas fa-toolbox"></i> Công cụ hỗ trợ
-                        <i class="fas fa-chevron-down chevron"></i>
+                        <i class="fa-solid fa-toolbox"></i> Công cụ hỗ trợ
+                        <i class="fa-solid fa-chevron-down chevron"></i>
                     </a>
                     <div class="collapse {{ request()->routeIs('tools.grade-calculator') ? 'show' : '' }}" id="toolsMenu">
                         <ul class="sub-menu" style="list-style:none; padding:0; margin:0;">
                             <li>
                                 <a class="nav-link {{ request()->routeIs('tools.grade-calculator') ? 'active-sub' : '' }}"
                                     href="{{ route('tools.grade-calculator') }}">
-                                    <i class="fas fa-calculator"></i> Tính điểm nghề
+                                    <i class="fa-solid fa-calculator"></i> Tính điểm nghề
                                 </a>
                             </li>
                             <li>
                                 <a class="nav-link" href="https://ngotanloi.my.canva.site/code-editer" target="_blank"
                                     rel="noopener">
-                                    <i class="fas fa-code"></i> Trình soạn thảo Code
+                                    <i class="fa-solid fa-code"></i> Trình soạn thảo Code
                                 </a>
                             </li>
                         </ul>
@@ -183,8 +183,8 @@
                     <a class="nav-link {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'active' : '' }}"
                         data-bs-toggle="collapse" href="#entertainmentMenu" role="button"
                         aria-expanded="{{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'true' : 'false' }}">
-                        <i class="fas fa-gamepad"></i> Góc giải trí
-                        <i class="fas fa-chevron-down chevron"></i>
+                        <i class="fa-solid fa-gamepad"></i> Góc giải trí
+                        <i class="fa-solid fa-chevron-down chevron"></i>
                     </a>
                     <div class="collapse {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'show' : '' }}"
                         id="entertainmentMenu">
@@ -192,13 +192,13 @@
                             <li>
                                 <a class="nav-link {{ request()->is('tools/chess*') ? 'active-sub' : '' }}"
                                     href="{{ route('tools.chess.index') }}">
-                                    <i class="fas fa-chess"></i> Cờ vua
+                                    <i class="fa-solid fa-chess"></i> Cờ vua
                                 </a>
                             </li>
                             <li>
                                 <a class="nav-link {{ request()->is('tools/caro*') ? 'active-sub' : '' }}"
                                     href="{{ route('tools.caro.index') }}">
-                                    <i class="fas fa-times-circle"></i> Cờ Caro
+                                    <i class="fa-solid fa-circle-xmark"></i> Cờ Caro
                                 </a>
                             </li>
                         </ul>
@@ -211,13 +211,13 @@
                     <li>
                         <a class="nav-link {{ request()->is('documents*') ? 'active' : '' }}"
                             href="{{ route('documents.upload') }}">
-                            <i class="fas fa-robot"></i> Huấn luyện AI
+                            <i class="fa-solid fa-robot"></i> Huấn luyện AI
                         </a>
                     </li>
                     <li>
                         <a class="nav-link {{ request()->is('question-bank*') ? 'active' : '' }}"
                             href="{{ route('questions.index') }}">
-                            <i class="fas fa-layer-group"></i> Ngân hàng câu hỏi
+                            <i class="fa-solid fa-layer-group"></i> Ngân hàng câu hỏi
                         </a>
                     </li>
 
@@ -225,74 +225,74 @@
                     <li>
                         <a class="nav-link {{ request()->is('programs*') ? 'active' : '' }}"
                             href="{{ route('programs.index') }}">
-                            <i class="fas fa-sitemap"></i> Chương trình học
+                            <i class="fa-solid fa-sitemap"></i> Chương trình học
                         </a>
                     </li>
                     <li>
                         <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
                             href="{{ route('classes.index') }}">
-                            <i class="fas fa-chalkboard"></i> Quản lý lớp học
+                            <i class="fa-solid fa-chalkboard"></i> Quản lý lớp học
                         </a>
                     </li>
                     <li>
                         <a class="nav-link {{ request()->is('schedules*') ? 'active' : '' }}"
                             href="{{ Route::has('schedules.index') ? route('schedules.index') : '#' }}">
-                            <i class="fas fa-calendar-alt"></i> Quản lý lịch học
+                            <i class="fa-solid fa-calendar-days"></i> Quản lý lịch học
                         </a>
                     </li>
                     <li>
                         <a class="nav-link {{ request()->is('teaching*') ? 'active' : '' }}"
                             href="{{ route('teaching.index') }}">
-                            <i class="fas fa-briefcase"></i> Giảng dạy
+                            <i class="fa-solid fa-briefcase"></i> Giảng dạy
                         </a>
                     </li>
                     <li>
                         <a class="nav-link {{ request()->is('payments*') ? 'active' : '' }}"
                             href="{{ route('payments.index') }}">
-                            <i class="fas fa-file-invoice-dollar"></i> Thanh toán
+                            <i class="fa-solid fa-file-invoice-dollar"></i> Thanh toán
                         </a>
                     </li>
                     <li>
                         <a class="nav-link {{ request()->is('operations/dashboard*') ? 'active' : '' }}"
                             href="{{ route('operations.dashboard') }}">
-                            <i class="fas fa-chart-pie"></i> Dashboard vận hành
+                            <i class="fa-solid fa-chart-pie"></i> Dashboard vận hành
                         </a>
                     </li>
                     <li>
                         <a class="nav-link {{ request()->is('reports/operations*') ? 'active' : '' }}"
                             href="{{ route('reports.operations') }}">
-                            <i class="fas fa-chart-column"></i> Báo cáo vận hành
+                            <i class="fa-solid fa-chart-column"></i> Báo cáo vận hành
                         </a>
                     </li>
                     @if (Auth::user()->role === 'admin')
                         <li>
                             <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
                                 href="{{ route('users.index') }}">
-                                <i class="fas fa-user-cog"></i> Quản lý người dùng
+                                <i class="fa-solid fa-user-cog"></i> Quản lý người dùng
                             </a>
                         </li>
                         <li>
                             <a class="nav-link {{ request()->is('system/storage*') ? 'active' : '' }}"
                                 href="{{ route('system.storage.index') }}">
-                                <i class="fas fa-cloud"></i> Kiểm tra lưu trữ
+                                <i class="fa-solid fa-cloud"></i> Kiểm tra lưu trữ
                             </a>
                         </li>
                         <li>
                             <a class="nav-link {{ request()->is('system/backups*') ? 'active' : '' }}"
                                 href="{{ route('system.backups.index') }}">
-                                <i class="fas fa-database"></i> Backup dữ liệu
+                                <i class="fa-solid fa-database"></i> Backup dữ liệu
                             </a>
                         </li>
                         <li>
                             <a class="nav-link {{ request()->is('audit-logs*') ? 'active' : '' }}"
                                 href="{{ route('audit-logs.index') }}">
-                                <i class="fas fa-shield-halved"></i> Audit log
+                                <i class="fa-solid fa-shield-halved"></i> Audit log
                             </a>
                         </li>
                         <li>
                             <a class="nav-link {{ request()->is('system/ai-operations*') ? 'active' : '' }}"
                                 href="{{ route('system.ai-operations.index') }}">
-                                <i class="fas fa-microchip"></i> Theo dõi AI & Queue
+                                <i class="fa-solid fa-microchip"></i> Theo dõi AI & Queue
                             </a>
                         </li>
                     @endif
@@ -309,7 +309,7 @@
 
                     <div class="modal-header">
                         <h5 class="modal-title" style="font-size:17px; font-weight:600;">
-                            <i class="fas fa-user-shield me-2" style="color:var(--blue);"></i>Thông tin tài khoản
+                            <i class="fa-solid fa-user-shield me-2" style="color:var(--blue);"></i>Thông tin tài khoản
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -392,12 +392,12 @@
             <div class="container-fluid p-0">
                 @if (session('success'))
                     <div class="alert-success">
-                        <i class="fas fa-check-circle"></i> {{ session('success') }}
+                        <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
                     </div>
                 @endif
                 @if (session('error'))
                     <div class="alert-error">
-                        <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+                        <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
                     </div>
                 @endif
                 @yield('content')

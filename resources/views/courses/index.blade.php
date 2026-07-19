@@ -4,30 +4,28 @@
 
 @section('content')
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
         /* ─── Tokens ─────────────────────────────────────── */
         :root {
-            --brand: #2563eb;
-            --brand-light: #eff6ff;
-            --brand-border: #bfdbfe;
-            --indigo: #4f46e5;
-            --indigo-light: #eef2ff;
-            --indigo-border: #c7d2fe;
-            --surface: #ffffff;
-            --surface-2: #f8fafc;
-            --border: #e2e8f0;
-            --border-hover: #bfdbfe;
-            --text: #0f172a;
-            --text-2: #334155;
-            --muted: #64748b;
-            --subtle: #94a3b8;
-            --danger: #dc2626;
-            --danger-light: #fef2f2;
-            --radius-card: 16px;
-            --radius-btn: 10px;
-            --shadow-card: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
-            --shadow-hover: 0 12px 32px rgba(37, 99, 235, .10), 0 2px 8px rgba(37, 99, 235, .06);
+            --brand: var(--sl-primary);
+            --brand-light: var(--sl-primary-soft);
+            --brand-border: var(--sl-primary-border);
+            --indigo: var(--sl-ai);
+            --indigo-light: var(--sl-ai-soft);
+            --indigo-border: var(--sl-ai-border);
+            --surface: var(--sl-surface);
+            --surface-2: var(--sl-surface-muted);
+            --border: var(--sl-border);
+            --border-hover: var(--sl-primary-border);
+            --text: var(--sl-text);
+            --text-2: var(--sl-text-secondary);
+            --muted: var(--sl-text-muted);
+            --subtle: var(--sl-text-subtle);
+            --danger: var(--sl-danger);
+            --danger-light: var(--sl-danger-soft);
+            --radius-card: var(--sl-radius-md);
+            --radius-btn: var(--sl-radius-sm);
+            --shadow-card: var(--sl-shadow-xs);
+            --shadow-hover: var(--sl-shadow-primary);
         }
 
         /* ─── Layout ─────────────────────────────────────── */
@@ -495,7 +493,7 @@
         }
 
         .stats-row i {
-            font-size: 10.5px;
+            font-size: 11px;
         }
 
         /* Divider */
@@ -684,7 +682,7 @@
             </div>
             @if (auth()->user()->role === 'teacher' || auth()->user()->role === 'admin')
                 <a href="{{ route('courses.create') }}" class="btn-create">
-                    <i class="fas fa-plus"></i> Tạo khóa học mới
+                    <i class="fa-solid fa-plus"></i> Tạo khóa học mới
                 </a>
             @endif
         </div>
@@ -744,10 +742,10 @@
 
                     <div class="course-filter-actions">
                         <button type="submit" class="btn btn-primary px-3">
-                            <i class="fas fa-filter me-1"></i>Lọc
+                            <i class="fa-solid fa-filter me-1"></i>Lọc
                         </button>
                         <a href="{{ route('courses.index') }}" class="btn btn-light px-3">
-                            <i class="fas fa-rotate-left"></i>
+                            <i class="fa-solid fa-rotate-left"></i>
                         </a>
                     </div>
                 </div>
@@ -758,7 +756,7 @@
         @if ($courses->isEmpty())
             <div class="empty-state">
                 <div class="empty-icon-wrap">
-                    <i class="fas fa-graduation-cap"></i>
+                    <i class="fa-solid fa-graduation-cap"></i>
                 </div>
                 <h3>Chưa có khóa học nào</h3>
                 <p>Hãy tạo hoặc tham gia khóa học đầu tiên để bắt đầu.</p>
@@ -771,7 +769,7 @@
                         <div class="section-title-group">
                             <span class="section-icon">
                                 <i
-                                    class="fas fa-{{ auth()->user()->role === 'student' ? 'book-open' : 'chalkboard-teacher' }}"></i>
+                                    class="fa-solid fa-{{ auth()->user()->role === 'student' ? 'book-open' : 'chalkboard-teacher' }}"></i>
                             </span>
                             <div>
                                 <h2 class="course-section-title">
@@ -800,7 +798,7 @@
                     <div class="course-section-header">
                         <div class="section-title-group">
                             <span class="section-icon section-icon-indigo">
-                                <i class="fas fa-layer-group"></i>
+                                <i class="fa-solid fa-layer-group"></i>
                             </span>
                             <div>
                                 <h2 class="course-section-title">Khóa mẫu</h2>

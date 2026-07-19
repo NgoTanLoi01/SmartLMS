@@ -1,19 +1,21 @@
+@import '../design-tokens.css';
+
 :root {
-    --lms-blue: #1d4ed8;
-    --lms-blue-light: #eff6ff;
-    --lms-blue-mid: #bfdbfe;
-    --lms-surface: #f8fafc;
-    --lms-border: #e2e8f0;
-    --lms-text: #0f172a;
-    --lms-muted: #64748b;
-    --lms-danger: #dc2626;
-    --lms-danger-light: #fef2f2;
-    --lms-warning: #d97706;
-    --lms-warning-light: #fffbeb;
-    --lms-success: #059669;
-    --lms-success-light: #ecfdf5;
-    --lms-radius: 10px;
-    --lms-radius-sm: 6px;
+    --lms-blue: var(--sl-primary);
+    --lms-blue-light: var(--sl-primary-soft);
+    --lms-blue-mid: var(--sl-primary-border);
+    --lms-surface: var(--sl-surface-muted);
+    --lms-border: var(--sl-border);
+    --lms-text: var(--sl-text);
+    --lms-muted: var(--sl-text-muted);
+    --lms-danger: var(--sl-danger);
+    --lms-danger-light: var(--sl-danger-soft);
+    --lms-warning: var(--sl-warning);
+    --lms-warning-light: var(--sl-warning-soft);
+    --lms-success: var(--sl-success);
+    --lms-success-light: var(--sl-success-soft);
+    --lms-radius: var(--sl-radius-sm);
+    --lms-radius-sm: var(--sl-radius-xs);
 }
 
 body {

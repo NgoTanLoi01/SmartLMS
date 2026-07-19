@@ -36,7 +36,7 @@
         const lessonEditorContentStyle = `
             body {
                 color: #202634;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-family: "Be Vietnam Pro", sans-serif;
                 font-size: 15px;
                 line-height: 1.75;
                 padding: 10px 14px;
@@ -84,11 +84,14 @@
                 position: relative;
             }
             .lesson-checklist li::before {
-                color: #16a34a;
-                content: "✓";
-                font-weight: 800;
+                background: #16a34a;
+                border-radius: 50%;
+                content: "";
+                height: 7px;
                 left: 0;
                 position: absolute;
+                top: .7em;
+                width: 7px;
             }
             .lesson-self-check { background: #f8fafc; border-color: #c7d2fe; }
         `;

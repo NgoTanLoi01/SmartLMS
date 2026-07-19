@@ -12,10 +12,10 @@
     <div id="mobile-sidebar-drawer">
         <div class="mobile-drawer-header">
             <h6 class="mb-0 fw-bold small text-uppercase text-muted" style="font-size:11px;letter-spacing:.05em;">
-                <i class="fas fa-list-ul me-2 text-primary"></i>Nội dung khóa học
+                <i class="fa-solid fa-list-ul me-2 text-primary"></i>Nội dung khóa học
             </h6>
             <button id="btn-close-sidebar" class="btn btn-sm btn-light border" type="button">
-                <i class="fas fa-times"></i>
+                <i class="fa-solid fa-times"></i>
             </button>
         </div>
         <div id="mobile-sidebar-content"></div>
@@ -64,7 +64,7 @@
                 </div>
                 <h1 class="header-course-title">{{ $course->title }}</h1>
                 <p class="header-teacher">
-                    <i class="fas fa-chalkboard-teacher"></i> {{ $course->teacher->name }}
+                    <i class="fa-solid fa-chalkboard-teacher"></i> {{ $course->teacher->name }}
                 </p>
                 @if (auth()->user()->role === 'student')
                     <div class="progress-wrap">
@@ -103,10 +103,10 @@
                 @if (!$isCourseManager)
                     <div class="toolbar">
                         <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
-                            <i class="fas fa-user-check"></i> Điểm danh & điểm số
+                            <i class="fa-solid fa-user-check"></i> Điểm danh & điểm số
                         </a>
                         <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
-                            <i class="fas fa-folder-open"></i> Kho học liệu
+                            <i class="fa-solid fa-folder-open"></i> Kho học liệu
                         </a>
                     </div>
                 @endif
@@ -117,53 +117,53 @@
             <div class="teacher-mode-panel" id="teacher-mode-panel">
                 <div class="teacher-mode-row">
                     <div>
-                        <h6 class="teacher-mode-title"><i class="fas fa-layer-group me-2"></i>Chế độ giáo viên</h6>
+                        <h6 class="teacher-mode-title"><i class="fa-solid fa-layer-group me-2"></i>Chế độ giáo viên</h6>
                         <div class="teacher-mode-subtitle">Quản lý nội dung, theo dõi tiến độ và thao tác nhanh.</div>
                     </div>
                     <div class="teacher-mode-toggle" role="group">
                         <button type="button" class="teacher-mode-btn active" data-course-mode="manage">
-                            <i class="fas fa-pen-to-square me-1"></i>Quản lý
+                            <i class="fa-solid fa-pen-to-square me-1"></i>Quản lý
                         </button>
                         <button type="button" class="teacher-mode-btn" data-course-mode="preview">
-                            <i class="fas fa-eye me-1"></i>Xem như học sinh
+                            <i class="fa-solid fa-eye me-1"></i>Xem như học sinh
                         </button>
                     </div>
                 </div>
                 <div class="teacher-preview-banner">
-                    <i class="fas fa-eye"></i>
+                    <i class="fa-solid fa-eye"></i>
                     <span>Đang xem ở chế độ học sinh. Nút sửa/xóa đang ẩn.</span>
                 </div>
                 <div class="teacher-quick-actions">
                     <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#aiCoursePlanModal">
-                        <i class="fas fa-wand-magic-sparkles"></i> AI thiết kế khóa học
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI thiết kế khóa học
                     </button>
                     <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addModuleModal">
-                        <i class="fas fa-folder-plus"></i> Thêm chương
+                        <i class="fa-solid fa-folder-plus"></i> Thêm chương
                     </button>
                     <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addLessonModal">
-                        <i class="fas fa-plus"></i> Thêm bài học
+                        <i class="fa-solid fa-plus"></i> Thêm bài học
                     </button>
                     <button class="tool-btn amber" data-bs-toggle="modal" data-bs-target="#addCourseAssignmentModal">
-                        <i class="fas fa-file-signature"></i> Giao bài tập
+                        <i class="fa-solid fa-file-signature"></i> Giao bài tập
                     </button>
                     <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#addQuizModal">
-                        <i class="fas fa-stopwatch"></i> Tạo quiz
+                        <i class="fa-solid fa-stopwatch"></i> Tạo quiz
                     </button>
                     <a href="{{ route('quizzes.ai_generate') }}" class="tool-btn purple">
-                        <i class="fas fa-wand-magic-sparkles"></i> Tạo câu hỏi AI
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo câu hỏi AI
                     </a>
                     <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
-                        <i class="fas fa-user-check"></i> Điểm danh
+                        <i class="fa-solid fa-user-check"></i> Điểm danh
                     </a>
                     <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
-                        <i class="fas fa-folder-open"></i> Kho học liệu
+                        <i class="fa-solid fa-folder-open"></i> Kho học liệu
                     </a>
                     <button type="button" class="tool-btn amber" id="course-quality-check-btn"
                         data-url="{{ route('courses.quality-check', $course->id) }}">
-                        <i class="fas fa-shield-halved"></i> Kiểm tra chất lượng
+                        <i class="fa-solid fa-shield-halved"></i> Kiểm tra chất lượng
                     </button>
                     <button type="button" class="tool-btn purple" id="start-presentation-btn">
-                        <i class="fas fa-display"></i> Trình chiếu
+                        <i class="fa-solid fa-display"></i> Trình chiếu
                     </button>
                 </div>
             </div>
@@ -172,26 +172,26 @@
         @if (auth()->user()->role !== 'student')
             <div class="course-dashboard-grid">
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fas fa-users me-1 text-blue-500"></i> Học sinh</div>
+                    <div class="course-dashboard-label"><i class="fa-solid fa-users me-1 text-blue-500"></i> Học sinh</div>
                     <div class="course-dashboard-value">{{ $courseDashboard['students_count'] }}</div>
                     <div class="course-dashboard-sub">{{ $courseDashboard['modules_count'] }} chương ·
                         {{ $courseDashboard['lessons_count'] }} bài</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fas fa-graduation-cap me-1"></i> Hoàn thành bài học
+                    <div class="course-dashboard-label"><i class="fa-solid fa-graduation-cap me-1"></i> Hoàn thành bài học
                     </div>
                     <div class="course-dashboard-value">{{ $courseDashboard['lesson_completion_rate'] }}%</div>
                     <div class="course-dashboard-sub">Tỷ lệ toàn khóa</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fas fa-file-signature me-1 text-warning"></i> Nộp bài
+                    <div class="course-dashboard-label"><i class="fa-solid fa-file-signature me-1 text-warning"></i> Nộp bài
                         tập
                     </div>
                     <div class="course-dashboard-value">{{ $courseDashboard['assignment_submission_rate'] }}%</div>
                     <div class="course-dashboard-sub">{{ $courseDashboard['pending_grades'] }} bài chờ chấm</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fas fa-stopwatch me-1 text-purple"></i> Quiz</div>
+                    <div class="course-dashboard-label"><i class="fa-solid fa-stopwatch me-1 text-purple"></i> Quiz</div>
                     <div class="course-dashboard-value">{{ $courseDashboard['quiz_completion_rate'] }}%</div>
                     <div class="course-dashboard-sub">Điểm TB:
                         {{ $courseDashboard['average_score'] !== null ? round($courseDashboard['average_score'], 1) : 'N/A' }}
@@ -210,7 +210,7 @@
                         <div class="sidebar-head">
                             <div class="sidebar-head-row">
                                 <h6 class="sidebar-head-title">
-                                    <i class="fas fa-list-ul text-primary"></i>  Nội dung khóa học
+                                    <i class="fa-solid fa-list-ul text-primary"></i>  Nội dung khóa học
                                 </h6>
                                 @if (auth()->user()->role === 'student')
                                     <span class="sidebar-head-count">{{ $progress }}%</span>
@@ -229,7 +229,7 @@
                         </div>
                         @if ($isCourseManager)
                             <div id="reorder-toast" class="reorder-toast mx-3 mt-3">
-                                <i class="fas fa-check me-1"></i>Đã lưu thứ tự nội dung
+                                <i class="fa-solid fa-check me-1"></i>Đã lưu thứ tự nội dung
                             </div>
                         @endif
                         <div class="sidebar-scroll">
@@ -239,13 +239,13 @@
 
                     <div class="course-side-card">
                         <h6 class="course-side-card__title">
-                            <i class="far fa-check-square"></i> Việc cần làm
+                            <i class="fa-regular fa-check-square"></i> Việc cần làm
                         </h6>
                         <div class="course-todo-list">
                             @if ($nextLesson)
                                 <a href="javascript:void(0)" class="course-todo-item"
                                     onclick="document.querySelector('.sidebar-scroll .lesson-item[data-id=&quot;{{ $nextLesson->id }}&quot;]')?.click()">
-                                    <span class="course-todo-icon lesson"><i class="fas fa-play"></i></span>
+                                    <span class="course-todo-icon lesson"><i class="fa-solid fa-play"></i></span>
                                     <span>
                                         <span class="course-todo-title">Học tiếp bài hiện tại</span>
                                         <span class="course-todo-meta">{{ $nextLesson->title }}</span>
@@ -256,7 +256,7 @@
                             @if ($nextAssignment)
                                 <a href="javascript:void(0)" class="course-todo-item"
                                     onclick="document.querySelector('.sidebar-scroll .assignment-item[data-id=&quot;{{ $nextAssignment->id }}&quot;]')?.click()">
-                                    <span class="course-todo-icon assignment"><i class="fas fa-file-signature"></i></span>
+                                    <span class="course-todo-icon assignment"><i class="fa-solid fa-file-signature"></i></span>
                                     <span>
                                         <span
                                             class="course-todo-title">{{ auth()->user()->role === 'student' ? 'Nộp bài tập' : 'Bài tập trong khóa' }}</span>
@@ -273,7 +273,7 @@
                             @if ($nextQuiz)
                                 <a href="javascript:void(0)" class="course-todo-item"
                                     onclick="document.querySelector('.sidebar-scroll .quiz-item[data-id=&quot;{{ $nextQuiz->id }}&quot;]')?.click()">
-                                    <span class="course-todo-icon quiz"><i class="fas fa-list-check"></i></span>
+                                    <span class="course-todo-icon quiz"><i class="fa-solid fa-list-check"></i></span>
                                     <span>
                                         <span
                                             class="course-todo-title">{{ auth()->user()->role === 'student' ? 'Làm kiểm tra' : 'Kiểm tra trong khóa' }}</span>
@@ -286,7 +286,7 @@
                             @if ($finalExam)
                                 <a href="javascript:void(0)" class="course-todo-item"
                                     onclick="document.querySelector('.sidebar-scroll .quiz-item[data-id=&quot;{{ $finalExam->id }}&quot;]')?.click()">
-                                    <span class="course-todo-icon exam"><i class="fas fa-award"></i></span>
+                                    <span class="course-todo-icon exam"><i class="fa-solid fa-award"></i></span>
                                     <span>
                                         <span class="course-todo-title">Thi kết thúc học phần</span>
                                         <span class="course-todo-meta">{{ $finalExam->title }}</span>
@@ -296,7 +296,7 @@
 
                             @if (!$nextLesson && !$nextAssignment && !$nextQuiz && !$finalExam)
                                 <div class="course-todo-item">
-                                    <span class="course-todo-icon lesson"><i class="fas fa-check"></i></span>
+                                    <span class="course-todo-icon lesson"><i class="fa-solid fa-check"></i></span>
                                     <span>
                                         <span class="course-todo-title">Không còn việc cần làm</span>
                                         <span class="course-todo-meta">Nội dung hiện tại đã hoàn tất.</span>
@@ -308,7 +308,7 @@
 
                     <div class="course-side-card">
                         <h6 class="course-side-card__title">
-                            <i class="fas fa-circle-info"></i> Thông tin khóa học
+                            <i class="fa-solid fa-circle-info"></i> Thông tin khóa học
                         </h6>
                         <div class="course-info-list">
                             <div class="course-info-row">
@@ -353,13 +353,13 @@
                     <div id="external-link-container" class="p-4 p-md-5 text-center d-none border-bottom">
                         <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle p-3"
                             style="background:var(--blue-100);">
-                            <i class="fas fa-external-link-alt fa-2x text-primary"></i>
+                            <i class="fa-solid fa-arrow-up-right-from-square fa-2x text-primary"></i>
                         </div>
                         <h5 class="fw-bold text-dark mb-1">Tài liệu / Video tham khảo ngoài</h5>
                         <p class="text-muted small mb-4">Bài học này chứa một liên kết ngoài hệ thống.</p>
                         <a href="#" id="external-link-btn" target="_blank"
                             class="btn btn-primary rounded-pill px-4 fw-bold">
-                            <i class="fas fa-external-link-alt me-2"></i>Truy cập ngay
+                            <i class="fa-solid fa-arrow-up-right-from-square me-2"></i>Truy cập ngay
                         </a>
                     </div>
 
@@ -375,7 +375,7 @@
                             </div>
                             <div id="lesson-duration-box" class="lesson-duration-box d-none">
                                 <span>Thời lượng dự kiến</span>
-                                <strong><i class="far fa-clock"></i> <span id="lesson-duration-text"></span></strong>
+                                <strong><i class="fa-regular fa-clock"></i> <span id="lesson-duration-text"></span></strong>
                             </div>
                         </div>
 
@@ -383,14 +383,14 @@
                         <div id="lesson-attachment-container" class="attachment-box d-none">
                             <div class="attachment-box__head">
                                 <h6>
-                                    <i class="fas fa-paperclip"></i>
+                                    <i class="fa-solid fa-paperclip"></i>
                                     Tài liệu đính kèm bài học
                                 </h6>
                                 <span class="badge bg-light text-dark border">1 file</span>
                             </div>
                             <div class="attachment-item">
                                 <div class="attachment-icon file-doc">
-                                    <i class="fas fa-file-alt"></i>
+                                    <i class="fa-solid fa-file-lines"></i>
                                 </div>
                                 <div class="flex-grow-1 min-w-0">
                                     <strong id="lesson-attachment-name">filename.pdf</strong>
@@ -399,11 +399,11 @@
                                 <div class="d-flex gap-2 attachment-actions">
                                     <a href="#" id="lesson-attachment-view-btn" target="_blank"
                                         class="btn btn-sm btn-secondary-action">
-                                        <i class="fas fa-eye me-1"></i>Xem
+                                        <i class="fa-solid fa-eye me-1"></i>Xem
                                     </a>
                                     <a href="#" id="lesson-attachment-btn" download
                                         class="btn btn-sm btn-primary-action">
-                                        <i class="fas fa-download me-1"></i>Tải
+                                        <i class="fa-solid fa-download me-1"></i>Tải
                                     </a>
                                 </div>
                             </div>
@@ -412,7 +412,7 @@
                         <div id="lesson-material-container" class="lesson-material-box d-none">
                             <div class="lesson-material-head">
                                 <h6>
-                                    <i class="fas fa-folder-open"></i>
+                                    <i class="fa-solid fa-folder-open"></i>
                                     Học liệu liên quan
                                 </h6>
                                 <span id="lesson-material-count" class="badge bg-light text-dark border">0 mục</span>
@@ -428,13 +428,13 @@
                             <div id="welcome-placeholder" class="welcome-guide mt-4">
                                 @if (auth()->user()->role === 'student')
                                     <h6 class="fw-bold mb-1" style="font-size:14px;"><i
-                                            class="fas fa-compass me-2 text-primary"></i>Bắt đầu từ đâu?</h6>
+                                            class="fa-solid fa-compass me-2 text-primary"></i>Bắt đầu từ đâu?</h6>
                                     <p class="text-muted small mb-0">Chọn một mục trong danh sách bên trái để bắt đầu. Bài
                                         đã xong sẽ có dấu tích xanh.</p>
                                     <div class="welcome-guide-grid">
                                         <div class="welcome-guide-item">
                                             <div class="welcome-guide-icon" style="background:var(--blue-50);">
-                                                <i class="fas fa-play-circle" style="color:var(--blue-600);"></i>
+                                                <i class="fa-solid fa-play-circle" style="color:var(--blue-600);"></i>
                                             </div>
                                             <div>
                                                 <div class="fw-bold" style="font-size:13px;">Bài học</div>
@@ -444,7 +444,7 @@
                                         </div>
                                         <div class="welcome-guide-item">
                                             <div class="welcome-guide-icon" style="background:var(--amber-50);">
-                                                <i class="fas fa-file-signature" style="color:var(--amber-500);"></i>
+                                                <i class="fa-solid fa-file-signature" style="color:var(--amber-500);"></i>
                                             </div>
                                             <div>
                                                 <div class="fw-bold" style="font-size:13px;">Bài tập</div>
@@ -454,7 +454,7 @@
                                         </div>
                                         <div class="welcome-guide-item">
                                             <div class="welcome-guide-icon" style="background:var(--purple-50);">
-                                                <i class="fas fa-stopwatch" style="color:var(--purple-600);"></i>
+                                                <i class="fa-solid fa-stopwatch" style="color:var(--purple-600);"></i>
                                             </div>
                                             <div>
                                                 <div class="fw-bold" style="font-size:13px;">Quiz</div>
@@ -465,7 +465,7 @@
                                     </div>
                                 @else
                                     <h6 class="fw-bold mb-2" style="font-size:14px;"><i
-                                            class="fas fa-pen-to-square me-2 text-primary"></i>Quản lý nội dung</h6>
+                                            class="fa-solid fa-pen-to-square me-2 text-primary"></i>Quản lý nội dung</h6>
                                     <div class="text-muted small">Chọn bài học, bài tập hoặc quiz ở danh sách bên trái để
                                         xem nhanh. Dùng các nút thêm nội dung ở phần trên.</div>
                                 @endif
@@ -476,7 +476,7 @@
                     <div id="lesson-ai-toolbar" class="lesson-ai-toolbar">
                         <div class="lesson-ai-toolbar__intro">
                             <span class="lesson-ai-icon">
-                                <i class="fas fa-robot"></i>
+                                <i class="fa-solid fa-robot"></i>
                             </span>
                             <div>
                                 <h6 class="lesson-ai-title">AI trợ giảng</h6>
@@ -486,19 +486,19 @@
                         <div class="lesson-ai-actions">
                             <button type="button" class="lesson-ai-btn" data-ai-assist-mode="summary"
                                 data-ai-prompt="Tóm tắt bài học này thành các ý chính dễ nhớ.">
-                                <i class="fas fa-align-left"></i>Tóm tắt
+                                <i class="fa-solid fa-align-left"></i>Tóm tắt
                             </button>
                             <button type="button" class="lesson-ai-btn" data-ai-assist-mode="explain"
                                 data-ai-prompt="Giải thích lại bài học này theo cách dễ hiểu hơn, từng bước ngắn gọn.">
-                                <i class="fas fa-lightbulb"></i>Dễ hiểu hơn
+                                <i class="fa-solid fa-lightbulb"></i>Dễ hiểu hơn
                             </button>
                             <button type="button" class="lesson-ai-btn" data-ai-assist-mode="examples"
                                 data-ai-prompt="Tạo ví dụ minh họa ngắn cho nội dung chính của bài học này.">
-                                <i class="fas fa-shapes"></i>Ví dụ
+                                <i class="fa-solid fa-shapes"></i>Ví dụ
                             </button>
                             <button type="button" class="lesson-ai-btn" data-ai-assist-mode="review"
                                 data-ai-prompt="Gợi ý cách ôn tập sau bài học này và vài câu hỏi tự kiểm tra.">
-                                <i class="fas fa-list-check"></i>Ôn tập
+                                <i class="fa-solid fa-list-check"></i>Ôn tập
                             </button>
                         </div>
                     </div>
@@ -507,18 +507,18 @@
                     <div id="assignment-content-area" class="d-none flex-column">
                         <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
                             <h2 id="assignment-title" class="assignment-title">
-                                <i class="fas fa-tasks me-2" style="color:var(--amber-500);"></i>Tiêu đề bài tập
+                                <i class="fa-solid fa-list-check me-2" style="color:var(--amber-500);"></i>Tiêu đề bài tập
                             </h2>
                             <span id="assignment-badge" class="badge rounded-pill px-3 py-2 fs-6">Trạng thái</span>
                         </div>
                         <div class="mb-4">
                             <span class="due-badge">
-                                <i class="fas fa-clock"></i> Hạn nộp: <span id="assignment-due-date"></span>
+                                <i class="fa-solid fa-clock"></i> Hạn nộp: <span id="assignment-due-date"></span>
                             </span>
                         </div>
                         <hr class="lesson-divider">
                         <h6 class="fw-bold mb-3" style="color:var(--gray-700);">
-                            <i class="fas fa-list-check me-2 text-primary"></i>Yêu cầu bài tập
+                            <i class="fa-solid fa-list-check me-2 text-primary"></i>Yêu cầu bài tập
                         </h6>
                         <div id="assignment-instructions" class="instructions-box mb-4"></div>
 
@@ -526,12 +526,12 @@
                             <div id="student-submission-area">
                                 <div id="submitted-info-area" class="d-none">
                                     <h6 class="fw-bold text-success mb-3">
-                                        <i class="fas fa-check-circle me-2"></i>Bài làm của bạn
+                                        <i class="fa-solid fa-circle-check me-2"></i>Bài làm của bạn
                                     </h6>
                                     <div class="submitted-file-card mb-3">
                                         <div>
                                             <p class="mb-1 fw-bold" style="font-size:14px;">
-                                                <i class="fas fa-clock me-2 text-success"></i>Thông tin nộp bài
+                                                <i class="fa-solid fa-clock me-2 text-success"></i>Thông tin nộp bài
                                             </p>
                                             <p class="mb-0 text-muted" style="font-size:12px;">
                                                 Đã nộp lúc: <span id="submitted-time-text" class="fw-medium"></span>
@@ -541,21 +541,21 @@
                                     <div id="submitted-file-card" class="submitted-file-card mb-3">
                                         <div>
                                             <p class="mb-1 fw-bold" style="font-size:14px;">
-                                                <i class="fas fa-file-alt me-2 text-primary"></i>Tài liệu đã tải lên
+                                                <i class="fa-solid fa-file-lines me-2 text-primary"></i>Tài liệu đã tải lên
                                             </p>
                                             <p class="mb-0 text-muted" style="font-size:12px;">Mở file để xem chi tiết bài
                                                 làm.</p>
                                         </div>
                                         <a href="#" id="submitted-file-link" target="_blank"
                                             class="btn btn-outline-primary btn-sm rounded-pill px-3 flex-shrink-0">
-                                            <i class="fas fa-eye me-1"></i> Xem file
+                                            <i class="fa-solid fa-eye me-1"></i> Xem file
                                         </a>
                                     </div>
                                     <div id="submitted-text-answer-card"
                                         class="submitted-file-card d-none mb-3 align-items-start">
                                         <div class="w-100">
                                             <p class="mb-2 fw-bold" style="font-size:14px;">
-                                                <i class="fas fa-align-left me-2 text-primary"></i>Bài tự luận đã nộp
+                                                <i class="fa-solid fa-align-left me-2 text-primary"></i>Bài tự luận đã nộp
                                             </p>
                                             <div id="submitted-text-answer-text" class="bg-light rounded-3 p-3 text-dark"
                                                 style="font-size:14px;line-height:1.7;white-space:pre-wrap;"></div>
@@ -563,7 +563,7 @@
                                     </div>
                                     <div id="grading-result" class="d-none mb-3 grading-result-box">
                                         <h6 class="fw-bold text-success mb-2">
-                                            <i class="fas fa-star me-2"></i>Điểm số:
+                                            <i class="fa-solid fa-star me-2"></i>Điểm số:
                                             <span id="grade-score" class="text-dark fs-5"></span>/10
                                         </h6>
                                         <p class="mb-0 text-dark" style="font-size:14px;">
@@ -573,25 +573,25 @@
                                     <div class="d-flex gap-2 flex-wrap" id="submission-actions">
                                         <button type="button" class="btn btn-primary rounded-pill px-4"
                                             id="btn-edit-submission">
-                                            <i class="fas fa-edit me-1"></i> Chỉnh sửa bài nộp
+                                            <i class="fa-solid fa-edit me-1"></i> Chỉnh sửa bài nộp
                                         </button>
                                         <form id="delete-submission-form" method="POST" class="m-0"
                                             onsubmit="return confirm('Bạn có chắc chắn muốn hủy bài đã nộp?');">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn btn-outline-danger rounded-pill px-4">
-                                                <i class="fas fa-trash-alt me-1"></i> Hủy bài nộp
+                                                <i class="fa-solid fa-trash-can me-1"></i> Hủy bài nộp
                                             </button>
                                         </form>
                                     </div>
                                     <p id="graded-warning" class="text-danger small mt-2 d-none fst-italic">
-                                        <i class="fas fa-lock me-1"></i>Giáo viên đã chấm điểm, bạn không thể sửa hoặc xóa
+                                        <i class="fa-solid fa-lock me-1"></i>Giáo viên đã chấm điểm, bạn không thể sửa hoặc xóa
                                         bài.
                                     </p>
                                 </div>
                                 <div id="upload-form-area" class="d-none submission-dropzone">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h6 class="fw-bold text-primary mb-0">
-                                            <i class="fas fa-cloud-upload-alt me-2"></i>Nộp bài tập
+                                            <i class="fa-solid fa-cloud-arrow-up me-2"></i>Nộp bài tập
                                         </h6>
                                         <button type="button" class="btn btn-sm btn-light d-none"
                                             id="btn-cancel-edit">Hủy sửa</button>
@@ -614,7 +614,7 @@
                                             </div>
                                             <button class="btn btn-warning text-dark px-4 fw-bold flex-shrink-0"
                                                 type="submit">
-                                                <i class="fas fa-paper-plane me-1"></i>Gửi bài
+                                                <i class="fa-solid fa-paper-plane me-1"></i>Gửi bài
                                             </button>
                                         </div>
                                     </form>
@@ -622,9 +622,9 @@
                             </div>
                         @else
                             <div class="text-center p-4 p-md-5 bg-white rounded-4 border">
-                                <i class="fas fa-users-cog fa-3x text-primary mb-3 d-block"></i>
+                                <i class="fa-solid fa-users-gear fa-3x text-primary mb-3 d-block"></i>
                                 <p class="text-muted mb-0">Bấm vào biểu tượng
-                                    <i class="fas fa-users-cog text-primary mx-1"></i>
+                                    <i class="fa-solid fa-users-gear text-primary mx-1"></i>
                                     ở danh sách bên trái để chấm điểm bài tập này.
                                 </p>
                             </div>
@@ -637,14 +637,14 @@
                             <div class="text-center mb-4">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
                                     style="width:68px;height:68px;background:var(--purple-50);">
-                                    <i id="quiz-main-icon" class="fas fa-stopwatch fa-2x"
+                                    <i id="quiz-main-icon" class="fa-solid fa-stopwatch fa-2x"
                                         style="color:var(--purple-600);"></i>
                                 </div>
                                 <h2 id="quiz-display-title" class="quiz-display-title">Tiêu đề bài kiểm tra</h2>
                             </div>
                             <div class="d-flex gap-2 mb-4 flex-wrap">
                                 <div class="quiz-stat-card">
-                                    <div class="quiz-stat-label"><i class="fas fa-clock me-1"></i> Thời gian</div>
+                                    <div class="quiz-stat-label"><i class="fa-solid fa-clock me-1"></i> Thời gian</div>
                                     <div class="quiz-stat-value">
                                         <span id="quiz-display-duration">0</span>
                                         <small style="font-size:.8rem;font-weight:600;color:var(--gray-500);">phút</small>
@@ -652,13 +652,13 @@
                                 </div>
                                 @if (auth()->user()->role === 'student')
                                     <div class="quiz-stat-card">
-                                        <div class="quiz-stat-label"><i class="fas fa-tasks me-1"></i> Trạng thái</div>
+                                        <div class="quiz-stat-label"><i class="fa-solid fa-list-check me-1"></i> Trạng thái</div>
                                         <div><span id="quiz-status-text" class="fw-bold text-warning"
                                                 style="font-size:.95rem;">Chưa làm</span></div>
                                     </div>
                                     <div id="quiz-score-box" class="quiz-stat-card d-none"
                                         style="background:var(--green-50);border-color:#bbf7d0;">
-                                        <div class="quiz-stat-label text-success"><i class="fas fa-star me-1"></i> Điểm số
+                                        <div class="quiz-stat-label text-success"><i class="fa-solid fa-star me-1"></i> Điểm số
                                         </div>
                                         <div class="quiz-stat-value text-success"><span id="quiz-score-text">0</span>/10
                                         </div>
@@ -670,7 +670,7 @@
                                 <div id="quiz-student-action-area">
                                     <div class="quiz-notice mb-4">
                                         <h6 class="fw-bold mb-2" style="color:var(--amber-800);font-size:13px;">
-                                            <i class="fas fa-exclamation-triangle me-2"></i>Lưu ý quan trọng
+                                            <i class="fa-solid fa-triangle-exclamation me-2"></i>Lưu ý quan trọng
                                         </h6>
                                         <ul class="mb-0 small text-dark ps-3">
                                             <li>Đồng hồ bắt đầu ngay khi bạn bấm nút.</li>
@@ -678,31 +678,31 @@
                                         </ul>
                                     </div>
                                     <a href="#" id="start-quiz-btn" class="btn btn-quiz-start w-100">
-                                        BẮT ĐẦU LÀM BÀI <i class="fas fa-arrow-right ms-2"></i>
+                                        BẮT ĐẦU LÀM BÀI <i class="fa-solid fa-arrow-right ms-2"></i>
                                     </a>
                                 </div>
                                 <div id="quiz-completed-msg" class="d-none">
                                     <div class="text-center p-4 rounded-4 mb-3"
                                         style="background:var(--green-100);color:var(--green-900);">
-                                        <i class="fas fa-check-circle fa-2x mb-2 d-block text-success"></i>
+                                        <i class="fa-solid fa-circle-check fa-2x mb-2 d-block text-success"></i>
                                         <h5 class="fw-bold mb-1">Hoàn thành!</h5>
                                         <p class="mb-0 small">Bài kiểm tra đã được nộp thành công.</p>
                                     </div>
                                     <a href="#" id="review-quiz-btn"
                                         class="btn btn-success rounded-pill w-100 py-3 fw-bold">
-                                        <i class="fas fa-search me-2"></i> Xem chi tiết bài làm
+                                        <i class="fa-solid fa-search me-2"></i> Xem chi tiết bài làm
                                     </a>
                                 </div>
                             @else
                                 <div class="quiz-notice mb-4"
                                     style="background:var(--blue-50);border-color:var(--blue-100);">
                                     <h6 class="fw-bold mb-2 text-primary" style="font-size:13px;">
-                                        <i class="fas fa-info-circle me-2"></i>Khu vực Quản lý
+                                        <i class="fa-solid fa-circle-info me-2"></i>Khu vực Quản lý
                                     </h6>
                                     <p class="mb-0 small text-dark">Vào trang soạn thảo để thêm / sửa / xóa câu hỏi.</p>
                                 </div>
                                 <a href="#" id="manage-quiz-btn" class="btn btn-quiz-start w-100">
-                                    <i class="fas fa-cog me-2"></i> VÀO TRANG SOẠN CÂU HỎI
+                                    <i class="fa-solid fa-cog me-2"></i> VÀO TRANG SOẠN CÂU HỎI
                                 </a>
                             @endif
                         </div>
@@ -711,13 +711,13 @@
                     {{-- ══ FOOTER NAV ══ --}}
                     <div class="footer-nav d-none" id="nav-footer">
                         <button class="btn-footer-nav" id="btn-prev" disabled>
-                            <i class="fas fa-arrow-left"></i>Bài trước
+                            <i class="fa-solid fa-arrow-left"></i>Bài trước
                         </button>
                         <button class="btn btn-complete-lesson d-none" id="btn-complete">
-                            <i class="fas fa-check-circle"></i> Hoàn thành
+                            <i class="fa-solid fa-circle-check"></i> Hoàn thành
                         </button>
                         <button class="btn-footer-nav" id="btn-next" disabled>
-                            Bài tiếp <i class="fas fa-arrow-right"></i>
+                            Bài tiếp <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
 
@@ -729,19 +729,19 @@
 
     {{-- Mobile FAB --}}
     <button id="btn-open-sidebar" aria-label="Mở danh sách bài học" title="Danh sách bài học">
-        <i class="fas fa-list"></i>
+        <i class="fa-solid fa-list"></i>
     </button>
 
     @if ($isCourseManager)
         <div class="presentation-controls" id="presentation-controls" aria-label="Điều khiển trình chiếu">
             <button type="button" id="presentation-font-down" title="Giảm cỡ chữ" aria-label="Giảm cỡ chữ">
-                <i class="fas fa-minus"></i><span>A</span>
+                <i class="fa-solid fa-minus"></i><span>A</span>
             </button>
             <button type="button" id="presentation-font-up" title="Tăng cỡ chữ" aria-label="Tăng cỡ chữ">
-                <span>A</span><i class="fas fa-plus"></i>
+                <span>A</span><i class="fa-solid fa-plus"></i>
             </button>
             <button type="button" id="exit-presentation-btn" class="presentation-exit-btn">
-                <i class="fas fa-compress"></i> Thoát trình chiếu
+                <i class="fa-solid fa-compress"></i> Thoát trình chiếu
             </button>
         </div>
     @endif
@@ -768,7 +768,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <div>
-                            <h5 class="modal-title fw-bold"><i class="fas fa-wand-magic-sparkles text-primary me-2"></i>AI thiết kế khóa học</h5>
+                            <h5 class="modal-title fw-bold"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>AI thiết kế khóa học</h5>
                             <div class="small text-muted mt-1">AI tạo bản nháp, giáo viên duyệt trước khi đưa vào khóa học.</div>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -788,16 +788,16 @@
                         <div id="ai-plan-loading" class="text-center py-5 d-none"><div class="spinner-border text-primary"></div><h6 class="mt-3 mb-1">AI đang thiết kế chương trình...</h6><div class="small text-muted">Quá trình có thể mất một vài phút.</div></div>
                         <div id="ai-plan-review-step" class="d-none">
                             <div class="alert alert-info" id="ai-plan-summary"></div>
-                            <div class="small text-muted mb-3"><i class="fas fa-pen me-1"></i>Có thể sửa trực tiếp tên chương, tên bài và nội dung trước khi áp dụng.</div>
+                            <div class="small text-muted mb-3"><i class="fa-solid fa-pen me-1"></i>Có thể sửa trực tiếp tên chương, tên bài và nội dung trước khi áp dụng.</div>
                             <div id="ai-plan-result" class="ai-plan-result"></div>
                         </div>
                         <div id="ai-plan-error" class="alert alert-danger d-none mt-3"></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
-                        <button type="button" class="btn btn-outline-primary d-none" id="ai-plan-back-btn"><i class="fas fa-arrow-left me-1"></i>Điều chỉnh yêu cầu</button>
-                        <button type="button" class="btn btn-primary" id="ai-plan-generate-btn"><i class="fas fa-sparkles me-1"></i>Tạo bản nháp</button>
-                        <button type="button" class="btn btn-success d-none" id="ai-plan-apply-btn"><i class="fas fa-check me-1"></i>Áp dụng vào khóa học</button>
+                        <button type="button" class="btn btn-outline-primary d-none" id="ai-plan-back-btn"><i class="fa-solid fa-arrow-left me-1"></i>Điều chỉnh yêu cầu</button>
+                        <button type="button" class="btn btn-primary" id="ai-plan-generate-btn"><i class="fa-solid fa-sparkles me-1"></i>Tạo bản nháp</button>
+                        <button type="button" class="btn btn-success d-none" id="ai-plan-apply-btn"><i class="fa-solid fa-check me-1"></i>Áp dụng vào khóa học</button>
                     </div>
                 </div>
             </div>

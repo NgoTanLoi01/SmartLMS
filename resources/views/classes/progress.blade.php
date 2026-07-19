@@ -14,20 +14,20 @@
             ['label' => $classroom->code],
         ]">
             <x-slot:meta>
-                <span><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+                <span><i class="fa-solid fa-chalkboard-teacher" aria-hidden="true"></i>
                     {{ $classroom->teacher->name }}</span>
-                <span><i class="fas fa-users" aria-hidden="true"></i>
+                <span><i class="fa-solid fa-users" aria-hidden="true"></i>
                     {{ $classReport['student_count'] }} học sinh</span>
             </x-slot:meta>
             <x-slot:actions>
                 <button type="button" class="lms-btn lms-btn-primary" data-ai-scope="class">
-                    <i class="fas fa-robot"></i> Phân tích AI toàn lớp
+                    <i class="fa-solid fa-robot"></i> Phân tích AI toàn lớp
                 </button>
                 <a href="{{ route('classes.students.index', $classroom->id) }}" class="lms-btn lms-btn-outline">
-                    <i class="fas fa-user-graduate"></i> Danh sách học sinh
+                    <i class="fa-solid fa-user-graduate"></i> Danh sách học sinh
                 </a>
                 <a href="{{ route('classes.index') }}" class="lms-btn lms-btn-outline">
-                    <i class="fas fa-arrow-left"></i> Quay lại
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
                 </a>
             </x-slot:actions>
         </x-ui.page-header>
@@ -37,13 +37,13 @@
             <div class="lms-ai-header">
                 <div>
                     <h2 class="lms-ai-title">
-                        <i class="fas fa-wand-magic-sparkles" style="color:var(--lms-blue);"></i>
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--lms-blue);"></i>
                         Phân tích học tập bằng AI
                     </h2>
                     <div class="lms-ai-scope" id="aiAnalysisScope">Đang chờ dữ liệu phân tích</div>
                 </div>
                 <button type="button" class="lms-btn lms-btn-outline lms-btn-sm" id="aiAnalysisClose">
-                    <i class="fas fa-xmark"></i> Đóng
+                    <i class="fa-solid fa-xmark"></i> Đóng
                 </button>
             </div>
             <div class="lms-ai-body">
@@ -59,21 +59,21 @@
                     <div class="lms-ai-columns">
                         <div class="lms-ai-col">
                             <div class="lms-ai-col-title">
-                                <i class="fas fa-triangle-exclamation" style="color:var(--lms-danger);"></i>
+                                <i class="fa-solid fa-triangle-exclamation" style="color:var(--lms-danger);"></i>
                                 Rủi ro phát hiện
                             </div>
                             <div id="aiRisks"></div>
                         </div>
                         <div class="lms-ai-col">
                             <div class="lms-ai-col-title">
-                                <i class="fas fa-lightbulb" style="color:var(--lms-warning);"></i>
+                                <i class="fa-solid fa-lightbulb" style="color:var(--lms-warning);"></i>
                                 Hành động đề xuất
                             </div>
                             <div id="aiActions"></div>
                         </div>
                         <div class="lms-ai-col">
                             <div class="lms-ai-col-title">
-                                <i class="fas fa-comment-dots" style="color:var(--lms-blue);"></i>
+                                <i class="fa-solid fa-comment-dots" style="color:var(--lms-blue);"></i>
                                 Nhận xét học sinh
                             </div>
                             <div id="aiComments"></div>
@@ -104,10 +104,10 @@
                 </div>
                 <div style="display:flex; gap:8px; align-items:flex-end;">
                     <button type="submit" class="lms-btn lms-btn-primary" style="height:36px; padding:0 14px;">
-                        <i class="fas fa-filter"></i> Lọc
+                        <i class="fa-solid fa-filter"></i> Lọc
                     </button>
                     <a href="{{ route('classes.progress', $classroom->id) }}" class="lms-btn-reset" title="Xóa bộ lọc">
-                        <i class="fas fa-rotate-left" style="font-size:13px;"></i>
+                        <i class="fa-solid fa-rotate-left" style="font-size:13px;"></i>
                     </a>
                 </div>
             </form>
@@ -157,11 +157,11 @@
                                 style="width:{{ $courseReport['report']['lesson_completion_rate'] }}%;"></div>
                         </div>
                         <div class="lms-course-tags">
-                            <span class="lms-course-tag"><i class="fas fa-paperclip" style="font-size:11px;"></i> Nộp bài
+                            <span class="lms-course-tag"><i class="fa-solid fa-paperclip" style="font-size:11px;"></i> Nộp bài
                                 {{ $courseReport['report']['assignment_submission_rate'] }}%</span>
-                            <span class="lms-course-tag"><i class="fas fa-star" style="font-size:11px;"></i> TB
+                            <span class="lms-course-tag"><i class="fa-solid fa-star" style="font-size:11px;"></i> TB
                                 {{ $courseReport['report']['score_average'] ?? 'N/A' }}</span>
-                            <span class="lms-course-tag"><i class="fas fa-user-clock" style="font-size:11px;"></i>
+                            <span class="lms-course-tag"><i class="fa-solid fa-user-clock" style="font-size:11px;"></i>
                                 {{ $courseReport['report']['needs_attention_count'] }} cần chú ý</span>
                         </div>
                     </div>
@@ -179,7 +179,7 @@
         {{-- Student progress table --}}
         <div class="lms-card">
             <div class="lms-card-header">
-                <h2 class="lms-card-title"><i class="fas fa-chart-line"></i> Tiến độ từng học sinh</h2>
+                <h2 class="lms-card-title"><i class="fa-solid fa-chart-line"></i> Tiến độ từng học sinh</h2>
                 <span class="lms-count">{{ $studentProgress->count() }} kết quả</span>
             </div>
             <div class="lms-table-wrap">
@@ -206,10 +206,10 @@
                                 <td>
                                     <div class="lms-student-name">{{ $student->name }}</div>
                                     @if ($student->username)
-                                        <div class="lms-student-email"><i class="fas fa-id-badge"></i> {{ $student->username }}</div>
+                                        <div class="lms-student-email"><i class="fa-solid fa-id-badge"></i> {{ $student->username }}</div>
                                     @endif
                                     @if ($student->student_code)
-                                        <div class="lms-student-email"><i class="fas fa-hashtag"></i> {{ $student->student_code }}</div>
+                                        <div class="lms-student-email"><i class="fa-solid fa-hashtag"></i> {{ $student->student_code }}</div>
                                     @endif
                                     <div class="lms-student-email">{{ $student->email }}</div>
                                 </td>
@@ -260,7 +260,7 @@
                                     <div class="lms-alerts">
                                         @forelse ($summary['alerts'] as $alert)
                                             <div class="lms-alert-item {{ $alert['level'] }}">
-                                                <i class="fas fa-circle-exclamation"></i>
+                                                <i class="fa-solid fa-circle-exclamation"></i>
                                                 <span>{{ $alert['text'] }}</span>
                                             </div>
                                         @empty
@@ -272,11 +272,11 @@
                                         <button class="lms-btn-ai" data-ai-scope="student"
                                             data-student-id="{{ $student->id }}"
                                             data-student-name="{{ $student->name }}">
-                                            <i class="fas fa-robot"></i> AI
+                                            <i class="fa-solid fa-robot"></i> AI
                                         </button>
                                         <button class="lms-btn-detail" data-bs-toggle="modal"
                                             data-bs-target="#{{ $modalId }}">
-                                            <i class="fas fa-list-check"></i> Chi tiết
+                                            <i class="fa-solid fa-list-check"></i> Chi tiết
                                         </button>
                                         <a href="{{ route('classes.students.show', ['classId' => $classroom->id, 'studentId' => $student->id, 'course_id' => $filters['course_id']]) }}"
                                             class="lms-btn-profile">
@@ -321,7 +321,7 @@
                     <div class="modal-body">
                         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
                             <div class="lms-modal-section">
-                                <div class="lms-modal-section-title"><i class="fas fa-book"
+                                <div class="lms-modal-section-title"><i class="fa-solid fa-book"
                                         style="color:var(--lms-blue); margin-right:6px; font-size:13px;"></i>Bài học hoàn
                                     thành</div>
                                 <div class="lms-modal-list">
@@ -337,7 +337,7 @@
                                 </div>
                             </div>
                             <div class="lms-modal-section">
-                                <div class="lms-modal-section-title"><i class="fas fa-clipboard-check"
+                                <div class="lms-modal-section-title"><i class="fa-solid fa-clipboard-check"
                                         style="color:var(--lms-success); margin-right:6px; font-size:13px;"></i>Quiz đã làm
                                 </div>
                                 <div class="lms-modal-list">
@@ -353,7 +353,7 @@
                                 </div>
                             </div>
                             <div class="lms-modal-section">
-                                <div class="lms-modal-section-title"><i class="fas fa-triangle-exclamation"
+                                <div class="lms-modal-section-title"><i class="fa-solid fa-triangle-exclamation"
                                         style="color:var(--lms-danger); margin-right:6px; font-size:13px;"></i>Bài tập còn
                                     thiếu</div>
                                 <div class="lms-modal-list">

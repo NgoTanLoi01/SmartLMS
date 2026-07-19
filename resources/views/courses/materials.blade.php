@@ -262,7 +262,7 @@
             <div class="materials-hero">
                 <div>
                     <div class="materials-kicker">
-                        <i class="fas fa-folder-open"></i> Kho học liệu
+                        <i class="fa-solid fa-folder-open"></i> Kho học liệu
                     </div>
                     <h1 class="materials-title">{{ $course->title }}</h1>
                     <p class="materials-subtitle">
@@ -271,7 +271,7 @@
                     </p>
                 </div>
                 <a class="materials-back" href="{{ route('courses.show', $course->id) }}">
-                    <i class="fas fa-arrow-left"></i> Quay lại khóa học
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại khóa học
                 </a>
             </div>
 
@@ -289,7 +289,7 @@
                     <div class="col-xl-7">
                         <div class="materials-panel">
                             <h2 class="materials-panel-title">
-                                <i class="fas fa-cloud-arrow-up"></i> Thêm học liệu mới
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Thêm học liệu mới
                             </h2>
                             <form action="{{ route('courses.materials.store', $course->id) }}" method="POST"
                                 enctype="multipart/form-data">
@@ -365,7 +365,7 @@
                                     </div>
                                     <div class="mf-col-4 d-flex align-items-end">
                                         <button class="materials-submit w-100" type="submit">
-                                            <i class="fas fa-plus me-1"></i> Thêm học liệu
+                                            <i class="fa-solid fa-plus me-1"></i> Thêm học liệu
                                         </button>
                                     </div>
                                     <div class="mf-col-12">
@@ -381,7 +381,7 @@
                     <div class="col-xl-5">
                         <div class="materials-panel">
                             <h2 class="materials-panel-title">
-                                <i class="fas fa-link"></i> Gắn học liệu đã có
+                                <i class="fa-solid fa-link"></i> Gắn học liệu đã có
                             </h2>
                             <form action="{{ route('courses.materials.attach', $course->id) }}" method="POST">
                                 @csrf
@@ -433,7 +433,7 @@
                                     </div>
                                     <div class="mf-col-12">
                                         <button class="materials-submit w-100" type="submit">
-                                            <i class="fas fa-layer-group me-1"></i> Gắn vào khóa học
+                                            <i class="fa-solid fa-layer-group me-1"></i> Gắn vào khóa học
                                         </button>
                                     </div>
                                 </div>
@@ -445,12 +445,12 @@
 
             <div class="materials-panel">
                 <h2 class="materials-panel-title">
-                    <i class="fas fa-box-archive"></i> Học liệu đang dùng
+                    <i class="fa-solid fa-box-archive"></i> Học liệu đang dùng
                 </h2>
 
                 @if ($assignments->isEmpty())
                     <div class="empty-materials">
-                        <i class="fas fa-folder-open me-2"></i> Chưa có học liệu nào trong khóa học này.
+                        <i class="fa-solid fa-folder-open me-2"></i> Chưa có học liệu nào trong khóa học này.
                     </div>
                 @else
                     <div class="material-list">
@@ -460,7 +460,7 @@
                             <div class="material-card">
                                 <div class="material-main">
                                     <span class="material-icon">
-                                        <i class="fas {{ $material->iconClass() }}"></i>
+                                        <i class="fa-solid {{ $material->iconClass() }}"></i>
                                     </span>
                                     <div class="min-w-0">
                                         <h3 class="material-name">{{ $material->title }}</h3>
@@ -490,7 +490,7 @@
                                         @if ($material->isFile()) data-no-page-transition @endif
                                         class="btn btn-primary material-btn">
                                         <i
-                                            class="fas {{ $material->isLink() ? 'fa-up-right-from-square' : 'fa-download' }} me-1"></i>
+                                            class="fa-solid {{ $material->isLink() ? 'fa-up-right-from-square' : 'fa-download' }} me-1"></i>
                                         {{ $material->isLink() ? 'Mở' : 'Tải' }}
                                     </a>
 
@@ -498,7 +498,7 @@
                                         <button class="btn btn-outline-secondary material-btn" type="button"
                                             data-bs-toggle="collapse"
                                             data-bs-target="#edit-material-{{ $assignment->id }}">
-                                            <i class="fas fa-sliders me-1"></i> Điều kiện
+                                            <i class="fa-solid fa-sliders me-1"></i> Điều kiện
                                         </button>
                                         <form
                                             action="{{ route('courses.materials.assignments.destroy', [$course->id, $assignment->id]) }}"
@@ -507,7 +507,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button class="btn btn-outline-danger material-btn" type="submit">
-                                                <i class="fas fa-trash"></i>
+                                                <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </form>
                                     @endif
@@ -570,7 +570,7 @@
                                             </div>
                                             <div class="mf-col-3 d-flex align-items-end">
                                                 <button class="materials-submit w-100" type="submit">
-                                                    <i class="fas fa-save me-1"></i> Lưu
+                                                    <i class="fa-solid fa-save me-1"></i> Lưu
                                                 </button>
                                             </div>
                                         </form>

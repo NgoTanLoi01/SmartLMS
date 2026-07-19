@@ -3,10 +3,10 @@
 {{-- Nút kích hoạt --}}
 <button class="cb-toggler has-pulse" id="cbToggler" aria-label="Mở trợ lý AI" aria-expanded="false">
     <span class="cb-mascot icon-open" aria-hidden="true">
-        <img src="{{ asset('chatbot-mascot-v2.png') }}" alt="">
+        <img src="{{ asset('chatbot-mascot-v2.webp') }}" alt="">
         <span class="cb-mascot__blink"></span>
     </span>
-    <i class="fas fa-times icon-close"></i>
+    <i class="fa-solid fa-times icon-close"></i>
     <span class="cb-badge" id="cbBadge">1</span>
 </button>
 
@@ -17,7 +17,7 @@
     <div class="cb-header">
         <div class="cb-avatar">
             <span class="cb-mascot" aria-hidden="true">
-                <img src="{{ asset('chatbot-mascot-v2.png') }}" alt="">
+                <img src="{{ asset('chatbot-mascot-v2.webp') }}" alt="">
                 <span class="cb-mascot__blink"></span>
             </span>
         </div>
@@ -30,16 +30,16 @@
         </div>
         <div class="cb-header-actions">
             <button class="cb-icon-btn" id="cbExpand" title="Phóng to" aria-label="Phóng to">
-                <i class="fas fa-expand" style="font-size:13px;"></i>
+                <i class="fa-solid fa-expand" style="font-size:13px;"></i>
             </button>
             <button class="cb-icon-btn" id="cbClose" title="Đóng" aria-label="Đóng chat">
-                <i class="fas fa-times" style="font-size:14px;"></i>
+                <i class="fa-solid fa-times" style="font-size:14px;"></i>
             </button>
         </div>
     </div>
 
     <div class="cb-context" id="cbContext">
-        <i class="fas fa-book-open text-primary"></i>
+        <i class="fa-solid fa-book-open text-primary"></i>
         <span>Đang bám theo: <strong id="cbContextTitle">Bài học</strong></span>
     </div>
 
@@ -47,15 +47,15 @@
     <div class="cb-body" id="cbBody">
         <div class="cb-date-divider" id="cbDateDivider"></div>
         <div class="cb-row ai">
-            <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.png') }}" alt=""></div>
+            <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.webp') }}" alt=""></div>
             <div class="cb-msg-wrap">
                 <div class="cb-msg ai">
                     @if (auth()->user()->isTeacher())
-                        Chào thầy/cô! 👋 Mình có thể tra lịch dạy và các việc cần xử lý hôm nay.
+                        Chào thầy/cô! Mình có thể tra lịch dạy và các việc cần xử lý hôm nay.
                     @elseif (auth()->user()->isStudent())
-                        Chào bạn! 👋 Mình có thể tra lịch học, bài tập và hỗ trợ nội dung bài học.
+                        Chào bạn! Mình có thể tra lịch học, bài tập và hỗ trợ nội dung bài học.
                     @else
-                        Chào bạn! 👋 Mình có thể hỗ trợ thông tin trong SmartLMS.
+                        Chào bạn! Mình có thể hỗ trợ thông tin trong SmartLMS.
                     @endif
                 </div>
                 <span class="cb-msg-time" id="cbWelcomeTime"></span>
@@ -76,7 +76,7 @@
     {{-- Typing --}}
     <div class="cb-typing" id="cbTyping" aria-live="polite" aria-label="AI đang trả lời">
         <div style="padding: 0 0 12px 16px; display:flex; align-items:flex-end; gap:8px;">
-            <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.png') }}" alt=""></div>
+            <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.webp') }}" alt=""></div>
             <div class="cb-typing-dots">
                 <span></span><span></span><span></span>
             </div>
@@ -90,7 +90,7 @@
                 aria-label="Nhập tin nhắn"></textarea>
         </div>
         <button class="cb-send-btn" id="cbSend" aria-label="Gửi tin nhắn">
-            <i class="fas fa-paper-plane" style="font-size:15px;"></i>
+            <i class="fa-solid fa-paper-plane" style="font-size:15px;"></i>
         </button>
     </div>
 </div>
@@ -152,7 +152,7 @@
             isFullscreen = !isFullscreen;
             windowEl.classList.toggle('fullscreen', isFullscreen);
             const icon = expandBtn.querySelector('i');
-            icon.className = isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
+            icon.className = isFullscreen ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
             icon.style.fontSize = '13px';
             expandBtn.setAttribute('title', isFullscreen ? 'Thu nhỏ' : 'Phóng to');
             expandBtn.setAttribute('aria-label', isFullscreen ? 'Thu nhỏ' : 'Phóng to');
@@ -276,7 +276,7 @@
 
             if (sender === 'ai') {
                 row.innerHTML = `
-                <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.png') }}" alt=""></div>
+                <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.webp') }}" alt=""></div>
                 <div class="cb-msg-wrap">
                     <div class="cb-msg ai">${html}</div>
                     <span class="cb-msg-time">${timeStr}</span>

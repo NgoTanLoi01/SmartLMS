@@ -27,6 +27,6 @@ class ExampleTest extends TestCase
             ->assertDontSee('href="#"', false)
             ->assertSee('href="'.route('home').'"', false)
             ->assertSee('href="'.route('login').'"', false)
-            ->assertSee('src="'.asset('smartlms-logo-nobg.png').'"', false);
+            ->assertSee('src="'.asset('smartlms-logo-nobg.webp').'"', false);
     }
 }

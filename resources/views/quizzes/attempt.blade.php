@@ -5,18 +5,18 @@
 @push('styles')
     <style>
         :root {
-            --qz-purple: #6f42c1;
-            --qz-purple-dk: #5a32a3;
-            --qz-purple-light: #f3effe;
-            --qz-purple-mid: #ede9fb;
-            --qz-border: #e8e3f5;
-            --qz-text: #1e1b4b;
-            --qz-muted: #6b7280;
-            --qz-surface: #ffffff;
-            --qz-bg: #f5f3ff;
-            --qz-danger: #dc2626;
-            --qz-radius: 14px;
-            --qz-shadow: 0 1px 4px rgba(111, 66, 193, 0.07), 0 4px 16px rgba(111, 66, 193, 0.06);
+            --qz-purple: var(--sl-primary);
+            --qz-purple-dk: var(--sl-primary-hover);
+            --qz-purple-light: var(--sl-primary-soft);
+            --qz-purple-mid: var(--sl-primary-subtle);
+            --qz-border: var(--sl-border);
+            --qz-text: var(--sl-text);
+            --qz-muted: var(--sl-text-muted);
+            --qz-surface: var(--sl-surface);
+            --qz-bg: var(--sl-bg);
+            --qz-danger: var(--sl-danger);
+            --qz-radius: var(--sl-radius-md);
+            --qz-shadow: var(--sl-shadow-sm);
 
             /* Timer dimensions — referenced in JS too */
             --qz-timer-w: 130px;
@@ -501,11 +501,11 @@
         {{-- ── Top bar ── --}}
         <header class="qz-topbar">
             <div class="qz-topbar-left">
-                <span class="qz-quiz-name"><i class="fas fa-pen-alt me-1" style="opacity:.6;"></i>{{ $quiz->title }}</span>
+                <span class="qz-quiz-name"><i class="fa-solid fa-pen me-1" style="opacity:.6;"></i>{{ $quiz->title }}</span>
                 <span class="qz-quiz-meta">{{ $total }} câu &nbsp;·&nbsp; {{ $quiz->time_limit }} phút</span>
             </div>
             <div class="qz-timer" id="qz-timer">
-                <i class="fas fa-clock qz-timer-icon" id="qz-clock-icon"></i>
+                <i class="fa-solid fa-clock qz-timer-icon" id="qz-clock-icon"></i>
                 <div class="qz-timer-inner">
                     <span class="qz-timer-label">Còn lại</span>
                     <span id="qz-countdown">--:--</span>
@@ -525,13 +525,13 @@
                 <div class="qz-heading">
                     <h1>{{ $quiz->title }}</h1>
                     <div class="qz-heading-meta">
-                        <span><i class="fas fa-list-ol me-1"></i> {{ $total }} câu hỏi</span>
-                        <span><i class="fas fa-clock me-1"></i> {{ $quiz->time_limit }} phút</span>
+                        <span><i class="fa-solid fa-list-ol me-1"></i> {{ $total }} câu hỏi</span>
+                        <span><i class="fa-solid fa-clock me-1"></i> {{ $quiz->time_limit }} phút</span>
                     </div>
-                    <div><span class="qz-warn-chip"><i class="fas fa-exclamation-triangle"></i> Không tải lại trang (F5)
+                    <div><span class="qz-warn-chip"><i class="fa-solid fa-triangle-exclamation"></i> Không tải lại trang (F5)
                             trong quá trình làm bài</span></div>
                     <div><span class="qz-warn-chip" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;">
-                            <i class="fas fa-rotate-left"></i> Nếu lỡ thoát, bạn có thể quay lại khi còn thời gian
+                            <i class="fa-solid fa-rotate-left"></i> Nếu lỡ thoát, bạn có thể quay lại khi còn thời gian
                         </span></div>
                 </div>
 
@@ -562,7 +562,7 @@
                         </div>
                     @empty
                         <div class="qz-error">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>
                             Ngân hàng câu hỏi không có đủ dữ liệu để tạo đề. Hãy báo cho giáo viên!
                         </div>
                     @endforelse
@@ -583,7 +583,7 @@
                     <span class="lbl">câu đã trả lời</span>
                 </div>
                 <button type="button" id="btn-submit-quiz" class="qz-submit-btn">
-                    <i class="fas fa-paper-plane"></i> Nộp bài
+                    <i class="fa-solid fa-paper-plane"></i> Nộp bài
                 </button>
             </div>
         @endif
@@ -707,7 +707,7 @@
                         if (confirm(msg)) {
                             clearInterval(tick);
                             btnSubmit.disabled = true;
-                            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang nộp bài...';
+                            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Đang nộp bài...';
                             form.classList.add('form-locked');
                             window.removeEventListener('beforeunload', guard);
                             localStorage.removeItem(storageKey);

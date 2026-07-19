@@ -5,20 +5,20 @@
 @push('styles')
     <style>
         :root {
-            --lms-blue: #1D4ED8;
-            --lms-blue-light: #EFF6FF;
-            --lms-surface: #F8FAFC;
-            --lms-border: #E2E8F0;
-            --lms-text: #0F172A;
-            --lms-muted: #64748B;
-            --lms-danger: #DC2626;
-            --lms-danger-light: #FEF2F2;
-            --lms-warning: #D97706;
-            --lms-warning-light: #FFFBEB;
-            --lms-success: #059669;
-            --lms-success-light: #ECFDF5;
-            --lms-radius: 10px;
-            --lms-radius-sm: 6px;
+            --lms-blue: var(--sl-primary);
+            --lms-blue-light: var(--sl-primary-soft);
+            --lms-surface: var(--sl-surface-muted);
+            --lms-border: var(--sl-border);
+            --lms-text: var(--sl-text);
+            --lms-muted: var(--sl-text-muted);
+            --lms-danger: var(--sl-danger);
+            --lms-danger-light: var(--sl-danger-soft);
+            --lms-warning: var(--sl-warning);
+            --lms-warning-light: var(--sl-warning-soft);
+            --lms-success: var(--sl-success);
+            --lms-success-light: var(--sl-success-soft);
+            --lms-radius: var(--sl-radius-sm);
+            --lms-radius-sm: var(--sl-radius-xs);
         }
 
         body {
@@ -547,19 +547,19 @@
                     <h1 class="lms-profile-name">{{ $student->name }}</h1>
                     <div class="lms-profile-meta">
                         @if ($student->username)
-                            <span><i class="fas fa-id-badge"></i> {{ $student->username }}</span>
+                            <span><i class="fa-solid fa-id-badge"></i> {{ $student->username }}</span>
                         @endif
                         @if ($student->student_code)
-                            <span><i class="fas fa-hashtag"></i> {{ $student->student_code }}</span>
+                            <span><i class="fa-solid fa-hashtag"></i> {{ $student->student_code }}</span>
                         @endif
-                        <span><i class="fas fa-envelope"></i> {{ $student->email }}</span>
-                        <span><i class="fas fa-chalkboard-teacher"></i> {{ $classroom->teacher->name }}</span>
+                        <span><i class="fa-solid fa-envelope"></i> {{ $student->email }}</span>
+                        <span><i class="fa-solid fa-chalkboard-teacher"></i> {{ $classroom->teacher->name }}</span>
                     </div>
                 </div>
             </div>
             <div>
                 <a href="{{ route('classes.students.index', $classroom->id) }}" class="lms-btn lms-btn-outline">
-                    <i class="fas fa-arrow-left"></i> Quay lại lớp
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại lớp
                 </a>
             </div>
         </div>
@@ -579,11 +579,11 @@
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button type="submit" class="lms-btn lms-btn-primary" style="height:36px; padding:0 14px;">
-                        <i class="fas fa-filter"></i> Lọc
+                        <i class="fa-solid fa-filter"></i> Lọc
                     </button>
                     <a href="{{ route('classes.students.show', ['classId' => $classroom->id, 'studentId' => $student->id]) }}"
                         class="lms-btn-reset" title="Xóa bộ lọc">
-                        <i class="fas fa-rotate-left" style="font-size:13px;"></i>
+                        <i class="fa-solid fa-rotate-left" style="font-size:13px;"></i>
                     </a>
                 </div>
             </form>
@@ -593,7 +593,7 @@
         @if (count($studentProfile['alerts']) > 0)
             <div class="lms-alert-banner">
                 <div class="lms-alert-banner-title">
-                    <i class="fas fa-triangle-exclamation"></i> Cảnh báo cần theo dõi
+                    <i class="fa-solid fa-triangle-exclamation"></i> Cảnh báo cần theo dõi
                 </div>
                 <div class="lms-alert-tags">
                     @foreach ($studentProfile['alerts'] as $alert)
@@ -649,7 +649,7 @@
                 {{-- Assignments --}}
                 <div class="lms-card">
                     <div class="lms-card-header">
-                        <h2 class="lms-card-title"><i class="fas fa-tasks"></i> Theo dõi bài tập</h2>
+                        <h2 class="lms-card-title"><i class="fa-solid fa-list-check"></i> Theo dõi bài tập</h2>
                     </div>
                     <div class="lms-table-wrap">
                         <table class="lms-table">
@@ -695,7 +695,7 @@
                 {{-- Quiz --}}
                 <div class="lms-card">
                     <div class="lms-card-header">
-                        <h2 class="lms-card-title"><i class="fas fa-clipboard-check"></i> Kết quả quiz</h2>
+                        <h2 class="lms-card-title"><i class="fa-solid fa-clipboard-check"></i> Kết quả quiz</h2>
                     </div>
                     <div class="lms-table-wrap">
                         <table class="lms-table">
@@ -743,7 +743,7 @@
                 {{-- Courses --}}
                 <div class="lms-card">
                     <div class="lms-card-header">
-                        <h2 class="lms-card-title"><i class="fas fa-book-open"></i> Khóa học đang theo dõi</h2>
+                        <h2 class="lms-card-title"><i class="fa-solid fa-book-open"></i> Khóa học đang theo dõi</h2>
                     </div>
                     <div style="padding:16px 20px;">
                         @forelse ($studentProfile['courses'] as $course)
@@ -762,7 +762,7 @@
                 {{-- Notes --}}
                 <div class="lms-card">
                     <div class="lms-card-header">
-                        <h2 class="lms-card-title"><i class="fas fa-note-sticky"></i> Ghi chú điểm danh</h2>
+                        <h2 class="lms-card-title"><i class="fa-solid fa-note-sticky"></i> Ghi chú điểm danh</h2>
                     </div>
                     <div style="padding:16px 20px;">
                         @forelse ($studentProfile['notes'] as $note)

@@ -174,12 +174,12 @@
 
             <h1 class="program-detail-title">{{ $program->name }}</h1>
             <div class="program-detail-meta">
-                <span class="program-chip"><i class="fas fa-hashtag"></i>{{ $program->code }}</span>
+                <span class="program-chip"><i class="fa-solid fa-hashtag"></i>{{ $program->code }}</span>
                 <span class="program-chip" style="background:#f0fdf4;color:#15803d;">
-                    <i class="fas fa-user-tie"></i>{{ $program->teacher?->name ?? 'N/A' }}
+                    <i class="fa-solid fa-user-tie"></i>{{ $program->teacher?->name ?? 'N/A' }}
                 </span>
                 <span class="program-chip" style="background:#f8fafc;color:#475569;">
-                    <i class="fas fa-circle"></i>{{ strtoupper($program->status) }}
+                    <i class="fa-solid fa-circle"></i>{{ strtoupper($program->status) }}
                 </span>
             </div>
             <p class="program-detail-desc">{{ $program->description ?: 'Chưa có mô tả cho chương trình này.' }}</p>
@@ -187,11 +187,11 @@
         <div class="program-actions-top">
             <a href="{{ route('courses.create', ['learning_program_id' => $program->id, 'course_type' => 'template']) }}"
                 class="btn btn-outline-primary rounded-pill px-4">
-                <i class="fas fa-layer-group me-2"></i>Tạo khóa mẫu
+                <i class="fa-solid fa-layer-group me-2"></i>Tạo khóa mẫu
             </a>
             <a href="{{ route('courses.create', ['learning_program_id' => $program->id, 'course_type' => 'delivery']) }}"
                 class="btn btn-primary rounded-pill px-4">
-                <i class="fas fa-plus me-2"></i>Tạo khóa triển khai
+                <i class="fa-solid fa-plus me-2"></i>Tạo khóa triển khai
             </a>
         </div>
     </div>
@@ -223,7 +223,7 @@
             </div>
             <a href="{{ route('courses.create', ['learning_program_id' => $program->id, 'course_type' => 'template']) }}"
                 class="btn btn-sm btn-outline-primary rounded-pill">
-                <i class="fas fa-plus me-1"></i>Thêm mẫu
+                <i class="fa-solid fa-plus me-1"></i>Thêm mẫu
             </a>
         </div>
         <div class="program-list">
@@ -232,9 +232,9 @@
                     <div>
                         <h3 class="program-row-title">{{ $course->title }}</h3>
                         <div class="program-row-meta">
-                            <span><i class="fas fa-folder-tree"></i> {{ $course->modules_count ?? 0 }} chương</span>
-                            <span><i class="fas fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
-                            <span><i class="fas fa-eye"></i> {{ strtoupper($course->status ?? 'published') }}</span>
+                            <span><i class="fa-solid fa-folder-tree"></i> {{ $course->modules_count ?? 0 }} chương</span>
+                            <span><i class="fa-solid fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
+                            <span><i class="fa-solid fa-eye"></i> {{ strtoupper($course->status ?? 'published') }}</span>
                         </div>
                     </div>
                     <div class="d-flex gap-2 flex-wrap justify-content-end">
@@ -263,7 +263,7 @@
             </div>
             <a href="{{ route('courses.create', ['learning_program_id' => $program->id, 'course_type' => 'delivery']) }}"
                 class="btn btn-sm btn-outline-primary rounded-pill">
-                <i class="fas fa-plus me-1"></i>Thêm khóa triển khai
+                <i class="fa-solid fa-plus me-1"></i>Thêm khóa triển khai
             </a>
         </div>
         <div class="program-list">
@@ -272,12 +272,12 @@
                     <div>
                         <h3 class="program-row-title">{{ $course->title }}</h3>
                         <div class="program-row-meta">
-                            <span><i class="fas fa-chalkboard"></i>
+                            <span><i class="fa-solid fa-chalkboard"></i>
                                 {{ $course->classes->pluck('name')->join(', ') ?: 'Chưa gắn lớp' }}
                             </span>
-                            <span><i class="fas fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học sinh</span>
-                            <span><i class="fas fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
-                            <span><i class="fas fa-eye"></i> {{ strtoupper($course->status ?? 'published') }}</span>
+                            <span><i class="fa-solid fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học sinh</span>
+                            <span><i class="fa-solid fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
+                            <span><i class="fa-solid fa-eye"></i> {{ strtoupper($course->status ?? 'published') }}</span>
                         </div>
                     </div>
                     <div class="d-flex gap-2 flex-wrap justify-content-end">

@@ -140,14 +140,14 @@
                         <div class="ai-plan-module-head">
                             <span class="badge bg-primary">Chương ${moduleIndex + 1}</span>
                             <input class="form-control ai-plan-module-title" value="${esc(module.title)}" aria-label="Tên chương">
-                            <button type="button" class="ai-plan-remove" data-remove-module title="Xóa chương"><i class="fas fa-trash"></i></button>
+                            <button type="button" class="ai-plan-remove" data-remove-module title="Xóa chương"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <div data-lessons>${(module.lessons || []).map((lesson, lessonIndex) => `
                             <article class="ai-plan-lesson" data-lesson>
                                 <div class="ai-plan-lesson-head">
                                     <span class="badge bg-light text-dark">Buổi ${lessonIndex + 1}</span>
                                     <input class="form-control fw-semibold" value="${esc(lesson.title)}" aria-label="Tên bài học">
-                                    <button type="button" class="ai-plan-remove" data-remove-lesson title="Xóa bài"><i class="fas fa-times"></i></button>
+                                    <button type="button" class="ai-plan-remove" data-remove-lesson title="Xóa bài"><i class="fa-solid fa-times"></i></button>
                                 </div>
                                 <div class="ai-plan-lesson-content" contenteditable="true">${lesson.content || ''}</div>
                             </article>`).join('')}</div>
@@ -212,7 +212,7 @@
                     window.location.href = response.data.redirect_url;
                 } catch (error) {
                     applyBtn.disabled = false;
-                    applyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Áp dụng vào khóa học';
+                    applyBtn.innerHTML = '<i class="fa-solid fa-check me-1"></i>Áp dụng vào khóa học';
                     showError(error.response?.data?.message || 'Không thể áp dụng kế hoạch.');
                 }
             });
