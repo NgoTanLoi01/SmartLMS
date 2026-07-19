@@ -22,23 +22,18 @@
             </div>
         @endif
 
-        {{-- Page header --}}
-        <div class="lms-page-header">
-            <div>
-                <nav class="lms-breadcrumb" aria-label="breadcrumb">
-                    <a href="{{ route('classes.index') }}">Lớp học</a>
-                    <span class="lms-breadcrumb-sep">›</span>
-                    <span>{{ $classroom->code }}</span>
-                </nav>
-                <h1 class="lms-page-title">{{ $classroom->name }}</h1>
-                <div class="lms-page-meta">
-                    <span><i class="fas fa-chalkboard-teacher"></i> {{ $classroom->teacher->name }}</span>
-                    <span><i class="fas fa-users"></i> {{ $classroom->students->count() }} học sinh</span>
-                </div>
-            </div>
-
+        <x-ui.page-header :title="$classroom->name" :breadcrumbs="[
+            ['label' => 'Lớp học', 'url' => route('classes.index')],
+            ['label' => $classroom->code],
+        ]">
+            <x-slot:meta>
+                <span><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+                    {{ $classroom->teacher->name }}</span>
+                <span><i class="fas fa-users" aria-hidden="true"></i>
+                    {{ $classroom->students->count() }} học sinh</span>
+            </x-slot:meta>
             @if (auth()->user()->role === 'admin' || auth()->id() === $classroom->teacher_id)
-                <div class="lms-btn-group">
+                <x-slot:actions>
                     <a href="{{ route('classes.progress', $classroom->id) }}" class="lms-btn lms-btn-outline">
                         <i class="fas fa-chart-line"></i> Theo dõi tiến độ
                     </a>
@@ -48,33 +43,21 @@
                     <button class="lms-btn lms-btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                         <i class="fas fa-user-plus"></i> Thêm học sinh
                     </button>
-                </div>
+                </x-slot:actions>
             @endif
-        </div>
+        </x-ui.page-header>
 
         {{-- Stat cards --}}
-        <div class="lms-stats">
-            <div class="lms-stat">
-                <div class="lms-stat-label">Tổng học sinh</div>
-                <div class="lms-stat-value">{{ $classStats['total'] ?? $classroom->students->count() }}</div>
-                <div class="lms-stat-sub">Đang hiển thị {{ $classStats['shown'] ?? $classroom->students->count() }}</div>
-            </div>
-            <div class="lms-stat danger">
-                <div class="lms-stat-label">Cần theo dõi</div>
-                <div class="lms-stat-value">{{ $classStats['needs_attention'] ?? 0 }}</div>
-                <div class="lms-stat-sub">Cảnh báo học tập hoặc điểm danh</div>
-            </div>
-            <div class="lms-stat warning">
-                <div class="lms-stat-label">Chưa nộp bài</div>
-                <div class="lms-stat-value">{{ $classStats['missing_assignments'] ?? 0 }}</div>
-                <div class="lms-stat-sub">Học sinh còn thiếu bài tập</div>
-            </div>
-            <div class="lms-stat info">
-                <div class="lms-stat-label">Có lượt vắng</div>
-                <div class="lms-stat-value">{{ $classStats['absent'] ?? 0 }}</div>
-                <div class="lms-stat-sub">Từ dữ liệu điểm danh</div>
-            </div>
-        </div>
+        <x-ui.stat-grid>
+            <x-ui.stat-card label="Tổng học sinh" :value="$classStats['total'] ?? $classroom->students->count()"
+                description="Đang hiển thị {{ $classStats['shown'] ?? $classroom->students->count() }}" />
+            <x-ui.stat-card label="Cần theo dõi" :value="$classStats['needs_attention'] ?? 0" tone="danger"
+                description="Cảnh báo học tập hoặc điểm danh" />
+            <x-ui.stat-card label="Chưa nộp bài" :value="$classStats['missing_assignments'] ?? 0" tone="warning"
+                description="Học sinh còn thiếu bài tập" />
+            <x-ui.stat-card label="Có lượt vắng" :value="$classStats['absent'] ?? 0" tone="info"
+                description="Từ dữ liệu điểm danh" />
+        </x-ui.stat-grid>
 
         {{-- Student table card --}}
         <div class="lms-card">

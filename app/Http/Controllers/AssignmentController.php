@@ -10,14 +10,19 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
+use App\Services\SubmissionArchiveService;
+use App\Services\SubmissionFileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use ZipStream\ZipStream;
 
 class AssignmentController extends Controller
 {
+    public function __construct(
+        private SubmissionFileService $submissionFiles,
+        private SubmissionArchiveService $submissionArchives,
+    ) {}
+
     // Hiển thị danh sách
     public function index()
     {
@@ -221,9 +226,9 @@ class AssignmentController extends Controller
             default => 'Nộp file',
         };
 
-        $fileUrl = $this->submissionFileUrl($submission);
-        $filePreviewUrl = $this->submissionFilePreviewUrl($submission);
-        $filePreviewType = $this->submissionPreviewType($submission);
+        $fileUrl = $this->submissionFiles->url($submission);
+        $filePreviewUrl = $this->submissionFiles->previewUrl($submission);
+        $filePreviewType = $this->submissionFiles->previewType($submission);
         $fileName = $submission->original_filename ?: ($submission->file_path ? basename($submission->file_path) : null);
 
         $students = $course->classes()
@@ -294,7 +299,7 @@ class AssignmentController extends Controller
                 'student_code' => $student->student_code,
                 'student_email' => $student->email,
                 'submitted_at' => $submission ? $submission->formatSubmittedAt('d/m/Y H:i:s') : null,
-                'file_url' => $submission ? $this->submissionFileUrl($submission) : null,
+                'file_url' => $this->submissionFiles->url($submission),
                 'text_answer' => $submission ? $submission->text_answer : null,
                 'grade' => $submission ? $submission->grade : null,
                 'submission_id' => $submission ? $submission->id : null,
@@ -338,71 +343,7 @@ class AssignmentController extends Controller
             return back()->with('error', 'Không có bài nộp phù hợp để tải.');
         }
 
-        $archiveName = 'Bai_nop_'.Str::slug($assignment->title, '_').'_'.now()->format('Y-m-d_His').'.zip';
-
-        return response()->streamDownload(function () use ($submissions, $assignment) {
-            $zip = new ZipStream(outputStream: fopen('php://output', 'wb'), sendHttpHeaders: false);
-            $usedNames = [];
-            $csv = fopen('php://temp', 'w+b');
-            fwrite($csv, "\xEF\xBB\xBF");
-            fputcsv($csv, ['Mã học sinh', 'Họ và tên', 'Email', 'Thời gian nộp', 'Trạng thái', 'Tên file', 'Điểm', 'Nhận xét'], ',', '"', '');
-
-            foreach ($submissions as $submission) {
-                $student = $submission->user;
-                $isLate = $assignment->due_date && $submission->submitted_at?->gt($assignment->due_date);
-                $archiveFileName = '';
-
-                if ($submission->file_path) {
-                    $disk = Storage::disk($this->submissionDisk($submission));
-                    if ($disk->exists($submission->file_path)) {
-                        $originalName = $submission->original_filename ?: basename($submission->file_path);
-                        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-                        $studentName = Str::slug($student?->name ?: 'hoc_sinh', '_');
-                        $archiveFileName = $studentName.($extension ? '.'.strtolower($extension) : '');
-                        $archiveFileName = $this->uniqueArchiveName($archiveFileName, $usedNames);
-                        $stream = $disk->readStream($submission->file_path);
-
-                        if (is_resource($stream)) {
-                            $zip->addFileFromStream(fileName: 'files/'.$archiveFileName, stream: $stream);
-                            fclose($stream);
-                        } else {
-                            $archiveFileName = '';
-                        }
-                    }
-                }
-
-                fputcsv($csv, [
-                    $student?->student_code,
-                    $student?->name,
-                    $student?->email,
-                    $submission->formatSubmittedAt('d/m/Y H:i:s'),
-                    $isLate ? 'Nộp muộn' : 'Đúng hạn',
-                    $archiveFileName ?: ($submission->file_path ? 'Không tìm thấy file' : 'Chỉ nộp nội dung tự luận'),
-                    $submission->grade,
-                    $submission->feedback,
-                ], ',', '"', '');
-            }
-
-            rewind($csv);
-            $zip->addFileFromStream(fileName: 'Danh_sach_bai_nop.csv', stream: $csv);
-            fclose($csv);
-            $zip->finish();
-        }, $archiveName, ['Content-Type' => 'application/zip']);
-    }
-
-    private function uniqueArchiveName(string $name, array &$usedNames): string
-    {
-        $candidate = $name;
-        $counter = 2;
-        while (isset($usedNames[Str::lower($candidate)])) {
-            $extension = pathinfo($name, PATHINFO_EXTENSION);
-            $stem = pathinfo($name, PATHINFO_FILENAME);
-            $candidate = $stem.'_'.$counter++.($extension ? '.'.$extension : '');
-        }
-
-        $usedNames[Str::lower($candidate)] = true;
-
-        return $candidate;
+        return $this->submissionArchives->download($assignment, $submissions);
     }
 
     public function submit(Request $request, $id)
@@ -448,7 +389,7 @@ class AssignmentController extends Controller
 
         // 3. Nếu đã có bài nộp cũ, thực hiện xóa file cũ trước khi lưu file mới
         if ($request->hasFile('file') && $oldSubmission && $oldSubmission->file_path) {
-            $this->deleteSubmissionFile($oldSubmission);
+            $this->submissionFiles->delete($oldSubmission);
         }
 
         // 4. Lưu file mới vào folder assignments
@@ -507,7 +448,7 @@ class AssignmentController extends Controller
         }
 
         // Xóa file vật lý trong storage
-        $this->deleteSubmissionFile($submission);
+        $this->submissionFiles->delete($submission);
 
         // Xóa record trong DB
         $submission->delete();
@@ -585,21 +526,7 @@ class AssignmentController extends Controller
 
         Gate::authorize('view', $submission);
 
-        if (! $submission->file_path) {
-            abort(404, 'Bài nộp không có file đính kèm.');
-        }
-
-        $diskName = $this->submissionDisk($submission);
-        $disk = Storage::disk($diskName);
-
-        if (! $disk->exists($submission->file_path)) {
-            abort(404, 'Không tìm thấy file bài nộp.');
-        }
-
-        return $disk->download(
-            $submission->file_path,
-            $submission->original_filename ?: basename($submission->file_path)
-        );
+        return $this->submissionFiles->download($submission);
     }
 
     public function previewSubmissionFile($id)
@@ -608,99 +535,6 @@ class AssignmentController extends Controller
 
         Gate::authorize('view', $submission);
 
-        if (! $submission->file_path || ! $this->submissionPreviewType($submission)) {
-            abort(404, 'File này không hỗ trợ xem trước.');
-        }
-
-        $disk = Storage::disk($this->submissionDisk($submission));
-        if (! $disk->exists($submission->file_path)) {
-            abort(404, 'Không tìm thấy file bài nộp.');
-        }
-
-        $stream = $disk->readStream($submission->file_path);
-        if ($stream === false) {
-            abort(404, 'Không thể đọc file bài nộp.');
-        }
-
-        $fileName = str_replace(["\r", "\n", '"'], ['', '', "'"], $submission->original_filename ?: basename($submission->file_path));
-
-        return response()->stream(function () use ($stream) {
-            fpassthru($stream);
-            if (is_resource($stream)) {
-                fclose($stream);
-            }
-        }, 200, [
-            'Content-Type' => $this->previewContentType($submission),
-            'Content-Disposition' => 'inline; filename="'.$fileName.'"',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
-    }
-
-    private function submissionFileUrl(?AssignmentSubmission $submission): ?string
-    {
-        return $submission && $submission->file_path
-            ? route('assignments.submissions.file', $submission->id)
-            : null;
-    }
-
-    private function submissionFilePreviewUrl(?AssignmentSubmission $submission): ?string
-    {
-        return $submission && $submission->file_path && $this->submissionPreviewType($submission)
-            ? route('assignments.submissions.preview', $submission->id)
-            : null;
-    }
-
-    private function submissionPreviewType(?AssignmentSubmission $submission): ?string
-    {
-        if (! $submission || ! $submission->file_path) {
-            return null;
-        }
-
-        $extension = strtolower(pathinfo($submission->original_filename ?: $submission->file_path, PATHINFO_EXTENSION));
-        $mimeType = strtolower((string) $submission->mime_type);
-
-        return match (true) {
-            $extension === 'pdf' || $mimeType === 'application/pdf' => 'pdf',
-            in_array($extension, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true) || str_starts_with($mimeType, 'image/') => 'image',
-            in_array($extension, ['html', 'htm'], true) || in_array($mimeType, ['text/html', 'application/xhtml+xml'], true) => 'html',
-            default => null,
-        };
-    }
-
-    private function previewContentType(AssignmentSubmission $submission): string
-    {
-        return match ($this->submissionPreviewType($submission)) {
-            'pdf' => 'application/pdf',
-            'image' => $submission->mime_type ?: $this->imageContentTypeFromExtension($submission),
-            'html' => 'text/html; charset=UTF-8',
-            default => 'application/octet-stream',
-        };
-    }
-
-    private function imageContentTypeFromExtension(AssignmentSubmission $submission): string
-    {
-        return match (strtolower(pathinfo($submission->original_filename ?: $submission->file_path, PATHINFO_EXTENSION))) {
-            'jpg', 'jpeg' => 'image/jpeg',
-            'gif' => 'image/gif',
-            'webp' => 'image/webp',
-            default => 'image/png',
-        };
-    }
-
-    private function submissionDisk(AssignmentSubmission $submission): string
-    {
-        return $submission->file_disk ?: 'public';
-    }
-
-    private function deleteSubmissionFile(AssignmentSubmission $submission): void
-    {
-        if (! $submission->file_path) {
-            return;
-        }
-
-        $disk = Storage::disk($this->submissionDisk($submission));
-        if ($disk->exists($submission->file_path)) {
-            $disk->delete($submission->file_path);
-        }
+        return $this->submissionFiles->preview($submission);
     }
 }

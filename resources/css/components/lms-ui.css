@@ -1,0 +1,252 @@
+:root {
+    --lms-blue: #1d4ed8;
+    --lms-blue-light: #eff6ff;
+    --lms-blue-mid: #bfdbfe;
+    --lms-surface: #f8fafc;
+    --lms-border: #e2e8f0;
+    --lms-text: #0f172a;
+    --lms-muted: #64748b;
+    --lms-danger: #dc2626;
+    --lms-danger-light: #fef2f2;
+    --lms-warning: #d97706;
+    --lms-warning-light: #fffbeb;
+    --lms-success: #059669;
+    --lms-success-light: #ecfdf5;
+    --lms-radius: 10px;
+    --lms-radius-sm: 6px;
+}
+
+body {
+    background: #f1f5f9;
+}
+
+.lms-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 2rem 3rem;
+}
+
+.lms-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    color: var(--lms-muted);
+    font-size: 13px;
+}
+
+.lms-breadcrumb a {
+    color: var(--lms-muted);
+    text-decoration: none;
+}
+
+.lms-breadcrumb a:hover {
+    color: var(--lms-blue);
+}
+
+.lms-breadcrumb-sep {
+    color: #cbd5e1;
+    font-size: 10px;
+}
+
+.lms-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.lms-page-title {
+    margin: 0 0 4px;
+    color: var(--lms-text);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.lms-page-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    color: var(--lms-muted);
+    font-size: 13px;
+}
+
+.lms-page-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.lms-page-meta i {
+    font-size: 13px;
+}
+
+.lms-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: var(--lms-radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.lms-btn-primary {
+    border-color: var(--lms-blue);
+    background: var(--lms-blue);
+    color: #fff;
+}
+
+.lms-btn-primary:hover {
+    background: #1e40af;
+    color: #fff;
+}
+
+.lms-btn-outline {
+    border-color: var(--lms-border);
+    background: #fff;
+    color: var(--lms-text);
+}
+
+.lms-btn-outline:hover {
+    border-color: #94a3b8;
+    background: var(--lms-surface);
+    color: var(--lms-text);
+}
+
+.lms-btn-success {
+    border-color: #a7f3d0;
+    background: #fff;
+    color: var(--lms-success);
+}
+
+.lms-btn-success:hover {
+    border-color: #6ee7b7;
+    background: var(--lms-success-light);
+    color: var(--lms-success);
+}
+
+.lms-btn-sm {
+    padding: 5px 11px;
+    font-size: 12.5px;
+}
+
+.lms-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.lms-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 1.75rem;
+}
+
+.lms-stat {
+    position: relative;
+    overflow: hidden;
+    padding: 18px 20px;
+    border: 1px solid var(--lms-border);
+    border-radius: var(--lms-radius);
+    background: #fff;
+}
+
+.lms-stat::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    border-radius: var(--lms-radius) var(--lms-radius) 0 0;
+    background: var(--lms-blue);
+    content: '';
+}
+
+.lms-stat.success::before {
+    background: var(--lms-success);
+}
+
+.lms-stat.warning::before {
+    background: var(--lms-warning);
+}
+
+.lms-stat.danger::before {
+    background: var(--lms-danger);
+}
+
+.lms-stat.info::before {
+    background: #0ea5e9;
+}
+
+.lms-stat-label {
+    margin-bottom: 8px;
+    color: var(--lms-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.lms-stat-value {
+    margin-bottom: 5px;
+    color: var(--lms-text);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.lms-stat.danger .lms-stat-value {
+    color: var(--lms-danger);
+}
+
+.lms-stat.warning .lms-stat-value {
+    color: var(--lms-warning);
+}
+
+.lms-stat.info .lms-stat-value {
+    color: #0369a1;
+}
+
+.lms-stat-sub {
+    margin-top: 2px;
+    color: var(--lms-muted);
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .lms-page {
+        padding: 1rem 1rem 2rem;
+    }
+
+    .lms-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lms-btn-group {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .lms-btn-group .lms-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .lms-stats {
+        grid-template-columns: 1fr;
+    }
+}

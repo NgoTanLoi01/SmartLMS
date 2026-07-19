@@ -9,23 +9,17 @@
 @section('content')
     <div class="lms-page">
 
-        {{-- Page header --}}
-        <div class="lms-page-header">
-            <div>
-                <nav class="lms-breadcrumb">
-                    <a href="{{ route('classes.index') }}">Lớp học</a>
-                    <span class="lms-breadcrumb-sep">›</span>
-                    <span>{{ $classroom->code }}</span>
-                </nav>
-                <h1 class="lms-page-title">Dashboard tiến độ: {{ $classroom->name }}</h1>
-                <div class="lms-page-meta">
-                    <span><i class="fas fa-chalkboard-teacher" style="font-size:12px;"></i>
-                        {{ $classroom->teacher->name }}</span>
-                    <span><i class="fas fa-users" style="font-size:12px;"></i> {{ $classReport['student_count'] }} học
-                        sinh</span>
-                </div>
-            </div>
-            <div class="lms-btn-group">
+        <x-ui.page-header title="Dashboard tiến độ: {{ $classroom->name }}" :breadcrumbs="[
+            ['label' => 'Lớp học', 'url' => route('classes.index')],
+            ['label' => $classroom->code],
+        ]">
+            <x-slot:meta>
+                <span><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+                    {{ $classroom->teacher->name }}</span>
+                <span><i class="fas fa-users" aria-hidden="true"></i>
+                    {{ $classReport['student_count'] }} học sinh</span>
+            </x-slot:meta>
+            <x-slot:actions>
                 <button type="button" class="lms-btn lms-btn-primary" data-ai-scope="class">
                     <i class="fas fa-robot"></i> Phân tích AI toàn lớp
                 </button>
@@ -35,8 +29,8 @@
                 <a href="{{ route('classes.index') }}" class="lms-btn lms-btn-outline">
                     <i class="fas fa-arrow-left"></i> Quay lại
                 </a>
-            </div>
-        </div>
+            </x-slot:actions>
+        </x-ui.page-header>
 
         {{-- AI Analysis Panel --}}
         <div class="lms-ai-panel d-none" id="aiAnalysisPanel">
@@ -120,40 +114,32 @@
         </div>
 
         {{-- Class stats --}}
-        <div class="lms-stats">
-            <div class="lms-stat">
-                <div class="lms-stat-label">Hoàn thành bài học</div>
-                <div class="lms-stat-value">{{ $classReport['lesson_completion_rate'] }}%</div>
+        <x-ui.stat-grid>
+            <x-ui.stat-card label="Hoàn thành bài học" value="{{ $classReport['lesson_completion_rate'] }}%">
                 <div class="lms-prog-bar">
                     <div class="lms-prog-fill" style="width:{{ $classReport['lesson_completion_rate'] }}%;"></div>
                 </div>
                 <div class="lms-stat-sub">{{ $classReport['lesson_completed'] }}/{{ $classReport['lesson_total'] }} lượt
                 </div>
-            </div>
-            <div class="lms-stat success">
-                <div class="lms-stat-label">Tỷ lệ nộp bài</div>
-                <div class="lms-stat-value">{{ $classReport['assignment_submission_rate'] }}%</div>
+            </x-ui.stat-card>
+            <x-ui.stat-card label="Tỷ lệ nộp bài" value="{{ $classReport['assignment_submission_rate'] }}%"
+                tone="success">
                 <div class="lms-prog-bar">
                     <div class="lms-prog-fill green" style="width:{{ $classReport['assignment_submission_rate'] }}%;">
                     </div>
                 </div>
                 <div class="lms-stat-sub">
                     {{ $classReport['assignment_submitted'] }}/{{ $classReport['assignment_total'] }} lượt</div>
-            </div>
-            <div class="lms-stat">
-                <div class="lms-stat-label">Điểm trung bình</div>
-                <div class="lms-stat-value">{{ $classReport['score_average'] ?? '—' }}</div>
+            </x-ui.stat-card>
+            <x-ui.stat-card label="Điểm trung bình" :value="$classReport['score_average'] ?? '—'">
                 <div class="lms-stat-sub">Bài tập & quiz đã có</div>
                 <div class="lms-stat-sub">Thiếu {{ $classReport['missing_assignment_total'] }} lượt bài</div>
-            </div>
-            <div class="lms-stat">
-                <div class="lms-stat-label">Cần chú ý</div>
-                <div class="lms-stat-value" style="color:var(--lms-danger);">{{ $classReport['needs_attention_count'] }}
-                </div>
+            </x-ui.stat-card>
+            <x-ui.stat-card label="Cần chú ý" :value="$classReport['needs_attention_count']" tone="danger">
                 <div class="lms-stat-sub">{{ $classReport['absence_total'] }} lượt vắng toàn lớp</div>
                 <div class="lms-stat-sub">{{ $classReport['pending_quiz_total'] }} lượt quiz chưa làm</div>
-            </div>
-        </div>
+            </x-ui.stat-card>
+        </x-ui.stat-grid>
 
         {{-- Course cards --}}
         @if (count($courseReports) > 0)

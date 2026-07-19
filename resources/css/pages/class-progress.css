@@ -1,130 +1,4 @@
-:root {
-    --lms-blue: #1D4ED8;
-    --lms-blue-light: #EFF6FF;
-    --lms-blue-mid: #BFDBFE;
-    --lms-surface: #F8FAFC;
-    --lms-border: #E2E8F0;
-    --lms-text: #0F172A;
-    --lms-muted: #64748B;
-    --lms-danger: #DC2626;
-    --lms-danger-light: #FEF2F2;
-    --lms-warning: #D97706;
-    --lms-warning-light: #FFFBEB;
-    --lms-success: #059669;
-    --lms-success-light: #ECFDF5;
-    --lms-radius: 10px;
-    --lms-radius-sm: 6px;
-}
-
-body {
-    background: #F1F5F9;
-}
-
-.lms-page {
-    padding: 2rem 2rem 3rem;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-/* ── Breadcrumb ── */
-.lms-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--lms-muted);
-    margin-bottom: 6px;
-}
-
-.lms-breadcrumb a {
-    color: var(--lms-muted);
-    text-decoration: none;
-}
-
-.lms-breadcrumb a:hover {
-    color: var(--lms-blue);
-}
-
-.lms-breadcrumb-sep {
-    font-size: 10px;
-    color: #CBD5E1;
-}
-
-/* ── Page header ── */
-.lms-page-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.75rem;
-    flex-wrap: wrap;
-}
-
-.lms-page-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--lms-text);
-    margin: 0 0 4px;
-    letter-spacing: -0.3px;
-}
-
-.lms-page-meta {
-    font-size: 13px;
-    color: var(--lms-muted);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-/* ── Buttons ── */
-.lms-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 16px;
-    border-radius: var(--lms-radius-sm);
-    font-size: 13.5px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    border: 1px solid transparent;
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-.lms-btn-primary {
-    background: var(--lms-blue);
-    color: #fff;
-    border-color: var(--lms-blue);
-}
-
-.lms-btn-primary:hover {
-    background: #1e40af;
-    color: #fff;
-}
-
-.lms-btn-outline {
-    background: #fff;
-    color: var(--lms-text);
-    border-color: var(--lms-border);
-}
-
-.lms-btn-outline:hover {
-    background: var(--lms-surface);
-    color: var(--lms-text);
-    border-color: #94A3B8;
-}
-
-.lms-btn-sm {
-    padding: 5px 11px;
-    font-size: 12.5px;
-}
-
-.lms-btn-group {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
+@import '../components/lms-ui.css';
 
 /* ── AI Panel ── */
 .lms-ai-panel {
@@ -261,61 +135,6 @@ body {
     padding: 12px 14px;
     font-size: 13px;
     color: #92400E;
-}
-
-/* ── Stat cards ── */
-.lms-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 1.75rem;
-}
-
-.lms-stat {
-    background: #fff;
-    border: 1px solid var(--lms-border);
-    border-radius: var(--lms-radius);
-    padding: 18px 20px;
-    position: relative;
-    overflow: hidden;
-}
-
-.lms-stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--lms-blue);
-    border-radius: var(--lms-radius) var(--lms-radius) 0 0;
-}
-
-.lms-stat.success::before {
-    background: var(--lms-success);
-}
-
-.lms-stat-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--lms-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-}
-
-.lms-stat-value {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--lms-text);
-    line-height: 1;
-    margin-bottom: 5px;
-}
-
-.lms-stat-sub {
-    font-size: 12px;
-    color: var(--lms-muted);
-    margin-top: 2px;
 }
 
 .lms-prog-bar {
@@ -814,14 +633,6 @@ body {
 }
 
 @media (max-width: 768px) {
-    .lms-page {
-        padding: 1rem 1rem 2rem;
-    }
-
-    .lms-stats {
-        grid-template-columns: 1fr 1fr;
-    }
-
     .lms-courses {
         grid-template-columns: 1fr;
     }
@@ -835,18 +646,4 @@ body {
         width: 100%;
     }
 
-    .lms-btn-group {
-        flex-direction: column;
-    }
-
-    .lms-btn-group .lms-btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .lms-stats {
-        grid-template-columns: 1fr;
-    }
 }
