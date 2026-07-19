@@ -10,6 +10,19 @@ const onReady = (callback) => {
 onReady(() => {
     const collection = document.getElementById('documentCollection');
     const viewButtons = [...document.querySelectorAll('[data-document-view]')];
+    const filterToggle = document.querySelector('.document-filter-toggle');
+    const filters = document.getElementById('documentFilters');
+
+    const setFiltersOpen = (open) => {
+        if (!filterToggle || !filters) return;
+        filters.classList.toggle('is-open', open);
+        filterToggle.classList.toggle('is-open', open);
+        filterToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
+    filterToggle?.addEventListener('click', () => {
+        setFiltersOpen(filterToggle.getAttribute('aria-expanded') !== 'true');
+    });
 
     const applyView = (view) => {
         const selectedView = view === 'list' ? 'list' : 'grid';

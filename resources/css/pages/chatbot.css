@@ -79,6 +79,12 @@
     position: absolute;
 }
 
+body.modal-open .cb-toggler {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px) scale(.9);
+}
+
 .cb-toggler .icon-close {
     opacity: 0;
     transform: rotate(-90deg) scale(0.5);
@@ -785,10 +791,10 @@
 /* ── Responsive ── */
 @media (max-width: 480px) {
     .cb-toggler {
-        bottom: 20px;
-        right: 20px;
-        width: 76px;
-        height: 84px;
+        bottom: 12px;
+        right: 12px;
+        width: 62px;
+        height: 68px;
     }
 
     .cb-window {

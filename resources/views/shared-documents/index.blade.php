@@ -51,8 +51,26 @@
 
             <section class="document-workspace">
                 <div class="document-toolbar">
+                    <div class="document-mobile-actions">
+                        <button class="document-filter-toggle {{ request()->hasAny(['q', 'folder', 'extension']) ? 'has-filters' : '' }}"
+                            type="button" aria-controls="documentFilters"
+                            aria-expanded="{{ request()->hasAny(['q', 'folder', 'extension']) ? 'true' : 'false' }}">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>Bộ lọc</span>
+                            @if (request()->hasAny(['q', 'folder', 'extension']))
+                                <em>Đang lọc</em>
+                            @endif
+                            <i class="fa-solid fa-chevron-down document-filter-toggle-icon"></i>
+                        </button>
+                        <button class="document-mobile-upload" type="button" data-bs-toggle="modal"
+                            data-bs-target="#uploadDocumentModal" aria-label="Tải tài liệu lên">
+                            <i class="fa-solid fa-cloud-arrow-up"></i><span>Tải lên</span>
+                        </button>
+                    </div>
                     <div class="document-toolbar-main">
-                        <form method="GET" action="{{ route('shared-documents.index') }}" class="document-filters">
+                        <form method="GET" action="{{ route('shared-documents.index') }}"
+                            class="document-filters {{ request()->hasAny(['q', 'folder', 'extension']) ? 'is-open' : '' }}"
+                            id="documentFilters">
                             @if (request('scope'))
                                 <input type="hidden" name="scope" value="{{ request('scope') }}">
                             @endif
@@ -118,6 +136,19 @@
                             lên</button>
                     </div>
                 @else
+                    <div class="document-results-head">
+                        <div>
+                            <strong>{{ $documents->total() }} tài liệu</strong>
+                            <span>
+                                @if (request()->hasAny(['q', 'folder', 'extension']))
+                                    theo bộ lọc hiện tại
+                                @else
+                                    bạn có thể truy cập
+                                @endif
+                            </span>
+                        </div>
+                        <span>Trang {{ $documents->currentPage() }}/{{ $documents->lastPage() }}</span>
+                    </div>
                     <div class="document-grid" id="documentCollection" data-view="grid">
                         @foreach ($documents as $document)
                             <article class="document-card">
