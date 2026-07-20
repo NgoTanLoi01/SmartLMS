@@ -213,10 +213,22 @@
                                     </span>
                                 </div>
 
-                                <a class="document-download" href="{{ route('shared-documents.download', $document) }}"
-                                    data-no-page-transition data-file-download>
-                                    <i class="fa-solid fa-download"></i> Tải xuống
-                                </a>
+                                <div class="document-card-actions">
+                                    @if ($document->previewType())
+                                        <button class="document-preview-button" type="button" data-bs-toggle="modal"
+                                            data-bs-target="#previewDocumentModal"
+                                            data-preview-url="{{ route('shared-documents.preview', $document) }}"
+                                            data-preview-type="{{ $document->previewType() }}"
+                                            data-preview-title="{{ $document->title }}"
+                                            data-download-url="{{ route('shared-documents.download', $document) }}">
+                                            <i class="fa-solid fa-eye"></i> Xem trước
+                                        </button>
+                                    @endif
+                                    <a class="document-download" href="{{ route('shared-documents.download', $document) }}"
+                                        data-no-page-transition data-file-download>
+                                        <i class="fa-solid fa-download"></i> Tải xuống
+                                    </a>
+                                </div>
                             </article>
 
                             @can('update', $document)
@@ -274,6 +286,36 @@
         @endforeach
     </datalist>
 
+    <div class="modal fade" id="previewDocumentModal" tabindex="-1"
+        aria-labelledby="previewDocumentTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered document-preview-dialog">
+            <div class="modal-content document-modal document-preview-modal">
+                <div class="modal-header">
+                    <div><span>Xem trước tài liệu</span>
+                        <h2 id="previewDocumentTitle">Tài liệu</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body document-preview-body">
+                    <div class="document-preview-loading" id="documentPreviewLoading" role="status">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <span>Đang mở tài liệu...</span>
+                    </div>
+                    <img class="document-preview-media document-preview-image" id="documentPreviewImage"
+                        alt="" hidden>
+                    <iframe class="document-preview-media document-preview-frame" id="documentPreviewFrame"
+                        title="Xem trước tài liệu PDF" hidden></iframe>
+                </div>
+                <div class="modal-footer">
+                    <a class="btn btn-light" id="documentPreviewOpen" href="#" target="_blank" rel="noopener"
+                        data-no-page-transition><i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Mở tab mới</a>
+                    <a class="btn btn-primary" id="documentPreviewDownload" href="#" data-no-page-transition
+                        data-file-download><i class="fa-solid fa-download me-1"></i>Tải xuống</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered document-upload-dialog">
             <form class="modal-content document-modal document-upload-modal" method="POST"
@@ -314,7 +356,7 @@
                             placeholder="Nội dung hoặc mục đích sử dụng của tài liệu">{{ old('description') }}</textarea>
                     </label>
                     <p class="document-security-note"><i class="fa-solid fa-shield-halved"></i> File được lưu trong bucket
-                        riêng tư. Người dùng phải đăng nhập và có quyền mới tải xuống được.</p>
+                        riêng tư. Người dùng phải đăng nhập và có quyền mới xem hoặc tải xuống được.</p>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-light"
                         data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary"><i

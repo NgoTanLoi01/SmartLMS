@@ -288,10 +288,6 @@
         }
 
         /* ── Modal ── */
-        .modal {
-            z-index: 1060 !important;
-        }
-
         .modal-content {
             border: 1px solid #e8edf3;
             border-radius: 14px;

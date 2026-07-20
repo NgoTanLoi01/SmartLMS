@@ -96,6 +96,37 @@ class SharedDocumentStorageTest extends TestCase
         $this->actingAs($otherTeacher)
             ->get(route('shared-documents.download', $private))
             ->assertForbidden();
+
+        $this->actingAs($otherTeacher)
+            ->get(route('shared-documents.preview', $shared))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        $this->actingAs($otherTeacher)
+            ->get(route('shared-documents.preview', $private))
+            ->assertForbidden();
+    }
+
+    public function test_supported_documents_are_previewed_inline_and_unsupported_files_are_rejected(): void
+    {
+        $owner = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $image = $this->createDocument($owner, SharedDocument::VISIBILITY_PRIVATE, 'minh-hoa.webp');
+        $unsupported = $this->createDocument($owner, SharedDocument::VISIBILITY_PRIVATE, 'tai-lieu.docx');
+
+        $response = $this->actingAs($owner)
+            ->get(route('shared-documents.preview', $image))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/webp')
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        $this->assertStringStartsWith('inline;', (string) $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('private', (string) $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+
+        $this->actingAs($owner)
+            ->get(route('shared-documents.preview', $unsupported))
+            ->assertNotFound();
     }
 
     public function test_other_teacher_cannot_update_or_delete_document(): void
@@ -149,6 +180,7 @@ class SharedDocumentStorageTest extends TestCase
     private function createDocument(User $owner, string $visibility, string $name): SharedDocument
     {
         $path = "shared-documents/{$owner->id}/{$name}";
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
         Storage::disk('r2')->put($path, 'document-content');
 
         return SharedDocument::create([
@@ -158,8 +190,15 @@ class SharedDocumentStorageTest extends TestCase
             'disk' => 'r2',
             'file_path' => $path,
             'original_name' => $name,
-            'mime_type' => 'application/pdf',
-            'extension' => 'pdf',
+            'mime_type' => match ($extension) {
+                'pdf' => 'application/pdf',
+                'jpg', 'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                default => 'application/octet-stream',
+            },
+            'extension' => $extension,
             'file_size' => 16,
             'checksum' => hash('sha256', 'document-content'),
         ]);

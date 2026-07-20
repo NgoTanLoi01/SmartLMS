@@ -75,6 +75,68 @@ onReady(() => {
         window.requestAnimationFrame(tick);
     });
 
+    const previewModal = document.getElementById('previewDocumentModal');
+    const previewTitle = document.getElementById('previewDocumentTitle');
+    const previewImage = document.getElementById('documentPreviewImage');
+    const previewFrame = document.getElementById('documentPreviewFrame');
+    const previewLoading = document.getElementById('documentPreviewLoading');
+    const previewLoadingText = previewLoading?.querySelector('span');
+    const previewOpen = document.getElementById('documentPreviewOpen');
+    const previewDownload = document.getElementById('documentPreviewDownload');
+
+    const setPreviewLoading = (message = 'Đang mở tài liệu...') => {
+        if (previewLoadingText) previewLoadingText.textContent = message;
+        if (previewLoading) previewLoading.hidden = false;
+    };
+
+    const clearPreview = () => {
+        previewImage?.removeAttribute('src');
+        previewFrame?.removeAttribute('src');
+        if (previewImage) previewImage.hidden = true;
+        if (previewFrame) previewFrame.hidden = true;
+        setPreviewLoading();
+    };
+
+    previewModal?.addEventListener('show.bs.modal', (event) => {
+        const trigger = event.relatedTarget;
+        if (!(trigger instanceof HTMLElement)) return;
+
+        const url = trigger.dataset.previewUrl;
+        const type = trigger.dataset.previewType;
+        const title = trigger.dataset.previewTitle || 'Tài liệu';
+        const downloadUrl = trigger.dataset.downloadUrl || '#';
+        if (!url || !['pdf', 'image'].includes(type)) return;
+
+        clearPreview();
+        if (previewTitle) previewTitle.textContent = title;
+        if (previewOpen) previewOpen.href = url;
+        if (previewDownload) previewDownload.href = downloadUrl;
+
+        if (type === 'image' && previewImage) {
+            previewImage.alt = `Xem trước ${title}`;
+            previewImage.hidden = false;
+            previewImage.src = url;
+            return;
+        }
+
+        if (previewFrame) {
+            previewFrame.title = `Xem trước ${title}`;
+            previewFrame.hidden = false;
+            previewFrame.src = url;
+        }
+    });
+
+    previewImage?.addEventListener('load', () => {
+        if (previewLoading) previewLoading.hidden = true;
+    });
+    previewImage?.addEventListener('error', () => {
+        setPreviewLoading('Không thể hiển thị ảnh. Bạn vẫn có thể tải tài liệu xuống.');
+    });
+    previewFrame?.addEventListener('load', () => {
+        if (previewLoading) previewLoading.hidden = true;
+    });
+    previewModal?.addEventListener('hidden.bs.modal', clearPreview);
+
     const dropzone = document.getElementById('documentDropzone');
     const input = document.getElementById('documentFilesInput');
     const picker = document.getElementById('documentFilePicker');

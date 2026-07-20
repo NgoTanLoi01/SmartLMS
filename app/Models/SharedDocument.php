@@ -85,4 +85,28 @@ class SharedDocument extends Model
             default => 'fa-file-lines',
         };
     }
+
+    public function previewType(): ?string
+    {
+        $extension = strtolower((string) $this->extension);
+
+        return match (true) {
+            $extension === 'pdf' => 'pdf',
+            in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true) => 'image',
+            default => null,
+        };
+    }
+
+    public function previewContentType(): string
+    {
+        return match ($this->previewType()) {
+            'pdf' => 'application/pdf',
+            'image' => match (strtolower((string) $this->extension)) {
+                'jpg', 'jpeg' => 'image/jpeg',
+                'webp' => 'image/webp',
+                default => 'image/png',
+            },
+            default => 'application/octet-stream',
+        };
+    }
 }

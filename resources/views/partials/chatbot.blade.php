@@ -51,25 +51,31 @@
             <div class="cb-msg-wrap">
                 <div class="cb-msg ai">
                     @if (auth()->user()->isTeacher())
-                        Chào thầy/cô! Mình có thể tra lịch dạy và các việc cần xử lý hôm nay.
+                        Xin chào thầy/cô! Hôm nay tôi có thể hỗ trợ gì cho thầy/cô?
                     @elseif (auth()->user()->isStudent())
-                        Chào bạn! Mình có thể tra lịch học, bài tập và hỗ trợ nội dung bài học.
+                        Xin chào bạn! Hôm nay tôi có thể hỗ trợ gì cho bạn?
                     @else
-                        Chào bạn! Mình có thể hỗ trợ thông tin trong SmartLMS.
+                        Xin chào! Hôm nay tôi có thể hỗ trợ gì cho bạn?
                     @endif
+
                 </div>
                 <span class="cb-msg-time" id="cbWelcomeTime"></span>
             </div>
         </div>
         <div class="cb-quick-actions" aria-label="Câu hỏi gợi ý">
             @if (auth()->user()->isTeacher())
-                <button type="button" class="cb-quick-action" data-prompt="Lịch dạy hôm nay của tôi">Lịch dạy hôm nay</button>
-                <button type="button" class="cb-quick-action" data-prompt="Bài nào đang chờ tôi chấm?">Bài chờ chấm</button>
+                <button type="button" class="cb-quick-action" data-prompt="Lịch dạy hôm nay của tôi">Lịch dạy hôm
+                    nay</button>
+                <button type="button" class="cb-quick-action" data-prompt="Bài nào đang chờ tôi chấm?">Bài chờ
+                    chấm</button>
             @elseif (auth()->user()->isStudent())
-                <button type="button" class="cb-quick-action" data-prompt="Lịch học hôm nay của tôi">Lịch học hôm nay</button>
-                <button type="button" class="cb-quick-action" data-prompt="Tôi còn bài tập nào chưa nộp?">Bài tập chưa nộp</button>
+                <button type="button" class="cb-quick-action" data-prompt="Lịch học hôm nay của tôi">Lịch học hôm
+                    nay</button>
+                <button type="button" class="cb-quick-action" data-prompt="Tôi còn bài tập nào chưa nộp?">Bài tập chưa
+                    nộp</button>
             @endif
-            <button type="button" class="cb-quick-action" data-prompt="Thông báo chưa đọc của tôi">Thông báo của tôi</button>
+            <button type="button" class="cb-quick-action" data-prompt="Thông báo chưa đọc của tôi">Thông báo của
+                tôi</button>
         </div>
     </div>
 
@@ -226,7 +232,8 @@
             } finally {
                 input.disabled = false;
                 sendBtn.disabled = false;
-                document.querySelectorAll('.cb-quick-action').forEach(button => button.disabled = false);
+                document.querySelectorAll('.cb-quick-action').forEach(button => button.disabled =
+                false);
                 input.focus();
             }
         };

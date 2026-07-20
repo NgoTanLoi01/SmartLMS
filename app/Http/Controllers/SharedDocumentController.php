@@ -137,6 +137,34 @@ class SharedDocumentController extends Controller
         return $disk->download($sharedDocument->file_path, $sharedDocument->original_name);
     }
 
+    public function preview(SharedDocument $sharedDocument)
+    {
+        Gate::authorize('view', $sharedDocument);
+        abort_unless($sharedDocument->previewType(), 404, 'Tài liệu này không hỗ trợ xem trước.');
+
+        $disk = Storage::disk($sharedDocument->disk);
+        abort_unless($disk->exists($sharedDocument->file_path), 404, 'Không tìm thấy tài liệu trên kho lưu trữ.');
+
+        $stream = $disk->readStream($sharedDocument->file_path);
+        abort_if($stream === false, 404, 'Không thể đọc tài liệu trên kho lưu trữ.');
+
+        $fileName = str_replace(["\r", "\n", '"'], ['', '', "'"], basename($sharedDocument->original_name));
+        $fallbackName = preg_replace('/[^A-Za-z0-9._-]/', '_', Str::ascii($fileName)) ?: 'document';
+        $disposition = 'inline; filename="'.$fallbackName.'"; filename*=UTF-8\'\''.rawurlencode($fileName);
+
+        return response()->stream(function () use ($stream) {
+            fpassthru($stream);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }, 200, [
+            'Content-Type' => $sharedDocument->previewContentType(),
+            'Content-Disposition' => $disposition,
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function destroy(SharedDocument $sharedDocument)
     {
         Gate::authorize('delete', $sharedDocument);
