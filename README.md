@@ -12,7 +12,8 @@
 ---
 
 ## 🏗 Kiến Trúc Hệ Thống (System Architecture)
-<img width="7200" height="6342" alt="LMS_AI_Architecture" src="https://github.com/user-attachments/assets/1453ef3c-85e6-4576-865e-b056bb605164" />
+<img width="1672" height="941" src="https://github.com/user-attachments/assets/a979eedc-c933-4a35-9f03-a9160f56067c" />
+
 
 ---
 
