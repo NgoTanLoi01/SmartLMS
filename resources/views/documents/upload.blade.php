@@ -887,7 +887,7 @@
                                     @if ($doc->can_delete)
                                         <form action="{{ route('documents.destroy', $doc->document_name) }}" method="POST" class="d-inline">
                                             @csrf @method('DELETE')
-                                            <input type="hidden" name="course_id" value="{{ $doc->course_id }}">
+                                            <input type="hidden" name="course_id" value="{{ $doc->course_id ?? 0 }}">
                                             <input type="hidden" name="uploaded_by" value="{{ $doc->uploaded_by }}">
                                             <button type="submit" class="btn-delete"
                                                 onclick="return confirm('Xóa tài liệu này? AI sẽ không còn trả lời được nội dung liên quan.')">

@@ -101,14 +101,15 @@ class DocumentController extends Controller
     public function destroy(Request $request, $name)
     {
         $data = $request->validate([
-            'course_id' => 'required|integer|min:0',
+            'course_id' => 'present|nullable|integer|min:0',
             'uploaded_by' => 'nullable|integer|min:1',
         ]);
+        $courseId = (int) ($data['course_id'] ?? 0);
         $query = DocumentChunk::on('pgsql')
             ->where('document_name', $name);
-        (int) $data['course_id'] === 0
+        $courseId === 0
             ? $query->where(fn ($scope) => $scope->whereNull('course_id')->orWhere('course_id', 0))
-            : $query->where('course_id', $data['course_id']);
+            : $query->where('course_id', $courseId);
         array_key_exists('uploaded_by', $data) && $data['uploaded_by'] !== null
             ? $query->where('uploaded_by', $data['uploaded_by'])
             : $query->whereNull('uploaded_by');
