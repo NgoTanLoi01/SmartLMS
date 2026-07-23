@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Services\DeepSeekService;
+use App\Services\HtmlSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -41,7 +42,7 @@ class CoursePlannerController extends Controller
         return response()->json($result, $result['success'] ? 200 : 422);
     }
 
-    public function apply(Request $request, Course $course)
+    public function apply(Request $request, Course $course, HtmlSanitizer $htmlSanitizer)
     {
         $this->authorizeManageCourse($course);
 
@@ -53,7 +54,7 @@ class CoursePlannerController extends Controller
             'modules.*.lessons.*.content' => 'nullable|string|max:30000',
         ]);
 
-        $created = DB::transaction(function () use ($course, $data) {
+        $created = DB::transaction(function () use ($course, $data, $htmlSanitizer) {
             $moduleOrder = (int) $course->modules()->max('order');
             $moduleCount = 0;
             $lessonCount = 0;
@@ -71,7 +72,7 @@ class CoursePlannerController extends Controller
                     Lesson::create([
                         'module_id' => $module->id,
                         'title' => trim($lessonData['title']),
-                        'content' => $this->sanitizeLessonContent($lessonData['content'] ?? ''),
+                        'content' => $htmlSanitizer->sanitize($lessonData['content'] ?? ''),
                         'order' => $index + 1,
                         'status' => Lesson::STATUS_DRAFT,
                         'published_at' => null,
@@ -93,12 +94,5 @@ class CoursePlannerController extends Controller
     private function authorizeManageCourse(Course $course): void
     {
         Gate::authorize('manageContent', $course);
-    }
-
-    private function sanitizeLessonContent(string $content): string
-    {
-        $content = strip_tags($content, '<h2><h3><h4><p><ul><ol><li><strong><em><br>');
-
-        return preg_replace('/<(h2|h3|h4|p|ul|ol|li|strong|em|br)\b[^>]*>/i', '<$1>', $content) ?? '';
     }
 }

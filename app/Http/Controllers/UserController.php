@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\UserDeletionGuard;
 use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -151,7 +152,7 @@ class UserController extends Controller
             : 'Đã vô hiệu hóa tài khoản và thu hồi các phiên đăng nhập.');
     }
 
-    public function destroy($id)
+    public function destroy($id, UserDeletionGuard $deletionGuard)
     {
         if (auth()->user()->role !== 'admin') {
             abort(403);
@@ -162,6 +163,11 @@ class UserController extends Controller
         // Không cho phép admin tự xóa chính mình
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Bạn không thể tự xóa tài khoản của mình!');
+        }
+
+        $blockers = $deletionGuard->blockers($user);
+        if ($blockers !== []) {
+            return back()->with('error', 'Không thể xóa giáo viên vì vẫn còn dữ liệu sở hữu: '.implode(', ', $blockers).'. Hãy vô hiệu hóa tài khoản hoặc chuyển quyền sở hữu trước.');
         }
 
         $user->delete();

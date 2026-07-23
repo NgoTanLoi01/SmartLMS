@@ -51,6 +51,13 @@ class AccountLifecycleTest extends TestCase
             $table->integer('last_activity')->index();
         });
 
+        Schema::create('courses', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('teacher_id');
+            $table->string('title');
+            $table->timestamps();
+        });
+
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
@@ -85,6 +92,7 @@ class AccountLifecycleTest extends TestCase
         if ($this->isolatedSchemaCreated) {
             Schema::dropIfExists('smart_notifications');
             Schema::dropIfExists('audit_logs');
+            Schema::dropIfExists('courses');
             Schema::dropIfExists('sessions');
             Schema::dropIfExists('users');
         }
@@ -229,6 +237,44 @@ class AccountLifecycleTest extends TestCase
         $admin->refresh();
         $this->assertTrue($admin->is_active);
         $this->assertNull($admin->expires_at);
+    }
+
+    public function test_teacher_with_owned_training_data_cannot_be_physically_deleted(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'deletion-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $teacher = $this->createUser(['email' => 'teacher-with-course@example.com']);
+
+        DB::table('courses')->insert([
+            'teacher_id' => $teacher->id,
+            'title' => 'Khóa học cần được bảo toàn',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('users.destroy', $teacher))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('users', ['id' => $teacher->id]);
+        $this->assertDatabaseHas('courses', ['teacher_id' => $teacher->id]);
+    }
+
+    public function test_teacher_without_owned_training_data_can_be_deleted(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'plain-deletion-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $teacher = $this->createUser(['email' => 'teacher-without-data@example.com']);
+
+        $this->actingAs($admin)
+            ->delete(route('users.destroy', $teacher))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('users', ['id' => $teacher->id]);
     }
 
     private function createUser(array $attributes = []): User

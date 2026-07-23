@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SanitizedHtml;
 use Illuminate\Database\Eloquent\Model;
 
 class Lesson extends Model
@@ -17,6 +18,7 @@ class Lesson extends Model
     protected $fillable = ['module_id', 'title', 'content', 'video_url', 'attachment_path', 'attachment', 'attachment_disk', 'attachment_original_name', 'attachment_mime_type', 'attachment_size', 'order', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
+        'content' => SanitizedHtml::class,
         'published_at' => 'datetime',
         'available_from' => 'datetime',
     ];

@@ -25,6 +25,13 @@ x-app-environment: &app-environment
     R2_REGION: ${R2_REGION:-auto}
     R2_URL: ${R2_URL:-}
     R2_USE_PATH_STYLE_ENDPOINT: ${R2_USE_PATH_STYLE_ENDPOINT:-false}
+    BACKUP_TIMEZONE: ${BACKUP_TIMEZONE:-Asia/Ho_Chi_Minh}
+    BACKUP_KEEP_LOCAL_COPIES: ${BACKUP_KEEP_LOCAL_COPIES:-10}
+    BACKUP_UPLOAD_DISK: ${BACKUP_UPLOAD_DISK:-}
+    BACKUP_REMOTE_DIRECTORY: ${BACKUP_REMOTE_DIRECTORY:-backups}
+    BACKUP_SCHEDULE_ENABLED: ${BACKUP_SCHEDULE_ENABLED:-true}
+    BACKUP_SCHEDULE_TIME: ${BACKUP_SCHEDULE_TIME:-02:00}
+    BACKUP_SCHEDULE_UPLOAD_R2: ${BACKUP_SCHEDULE_UPLOAD_R2:-false}
     BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
     REVERB_APP_ID: ${REVERB_APP_ID:?REVERB_APP_ID must be set in .env}
     REVERB_APP_KEY: ${REVERB_APP_KEY:?REVERB_APP_KEY must be set in .env}
@@ -116,6 +123,32 @@ services:
                     memory: 512M
                 reservations:
                     memory: 256M
+
+    scheduler:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: lms-scheduler
+        working_dir: /var/www/html
+        volumes:
+            - ./:/var/www/html
+        environment:
+            <<: *app-environment
+        command: php artisan schedule:work
+        depends_on:
+            db:
+                condition: service_healthy
+            app:
+                condition: service_started
+        restart: unless-stopped
+        stop_signal: SIGTERM
+        stop_grace_period: 30s
+        deploy:
+            resources:
+                limits:
+                    memory: 256M
+                reservations:
+                    memory: 128M
 
     reverb:
         build:

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SanitizedHtml;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -23,6 +24,7 @@ class Assignments extends Model
     protected $fillable = ['course_id', 'lesson_id', 'type', 'title', 'instructions', 'grading_rubric', 'grading_scale', 'ai_grading_enabled', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
+        'instructions' => SanitizedHtml::class,
         'due_date' => 'datetime',
         'published_at' => 'datetime',
         'available_from' => 'datetime',

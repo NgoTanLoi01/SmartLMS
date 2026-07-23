@@ -55,6 +55,27 @@ R2_USE_PATH_STYLE_ENDPOINT=false
 
 Bucket nên để private vì tài liệu được tải xuống thông qua controller có Policy kiểm tra quyền, không qua URL công khai.
 
+Backup database chạy hằng ngày lúc 02:00 theo múi giờ Việt Nam và giữ 10 bản local gần nhất:
+
+```dotenv
+BACKUP_TIMEZONE=Asia/Ho_Chi_Minh
+BACKUP_KEEP_LOCAL_COPIES=10
+BACKUP_REMOTE_DIRECTORY=backups
+BACKUP_SCHEDULE_ENABLED=true
+BACKUP_SCHEDULE_TIME=02:00
+BACKUP_SCHEDULE_UPLOAD_R2=false
+```
+
+Service `scheduler` phải luôn chạy. Có thể kiểm tra lịch và tạo một bản backup thử bằng:
+
+```bash
+docker compose exec app php artisan schedule:list
+docker compose exec app php artisan smartlms:backup
+docker compose logs --tail=100 scheduler
+```
+
+Chỉ đặt `BACKUP_SCHEDULE_UPLOAD_R2=true` hoặc dùng cờ `--upload-r2` khi môi trường đã phê duyệt việc xuất database sang bucket R2 riêng tư.
+
 Cài dependency và tạo frontend assets trước khi khởi động container. Cấu hình Compose hiện tại bind mount mã nguồn từ host, vì vậy `vendor/` và `public/build/` phải tồn tại trên máy triển khai:
 
 ```bash
@@ -105,10 +126,11 @@ docker compose ps
 curl --fail http://localhost:${APP_PORT:-8000}/up
 ```
 
-Kiểm tra thêm queue worker và Reverb:
+Kiểm tra thêm queue worker, scheduler và Reverb:
 
 ```bash
 docker compose logs --tail=100 queue-worker
+docker compose logs --tail=100 scheduler
 docker compose logs --tail=100 reverb
 ```
 
@@ -142,6 +164,7 @@ Không tự động rollback migration có thay đổi dữ liệu. Nếu cần 
 - `/up` trả HTTP 200.
 - Đăng nhập web hoạt động; `APP_DEBUG` vẫn tắt.
 - Queue worker không có lỗi lặp lại.
+- Scheduler đang chạy và liệt kê tác vụ backup hằng ngày.
 - Reverb lắng nghe tại cổng nội bộ 8080.
 - MySQL/PostgreSQL/Reverb không có host port binding.
 - Luồng upload, chấm bài và tác vụ AI được kiểm tra nhanh nếu bản phát hành liên quan.
