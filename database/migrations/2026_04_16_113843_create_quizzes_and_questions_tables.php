@@ -51,6 +51,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('quizzes_and_questions_tables');
+        Schema::dropIfExists('quiz_attempts');
+        Schema::dropIfExists('options');
+        Schema::dropIfExists('questions');
+        Schema::dropIfExists('quizzes');
     }
 };

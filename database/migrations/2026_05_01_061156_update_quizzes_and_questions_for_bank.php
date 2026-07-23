@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -36,6 +37,27 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('questions', function (Blueprint $table) {
+            $table->foreignId('quiz_id')->nullable()->after('id')->constrained()->cascadeOnDelete();
+        });
+
+        DB::table('questions')
+            ->whereNotNull('course_id')
+            ->orderBy('id')
+            ->each(function ($question) {
+                $quizId = DB::table('quizzes')->where('course_id', $question->course_id)->orderBy('id')->value('id');
+                if ($quizId) {
+                    DB::table('questions')->where('id', $question->id)->update(['quiz_id' => $quizId]);
+                }
+            });
+
+        Schema::table('questions', function (Blueprint $table) {
+            $table->dropForeign(['course_id']);
+            $table->dropColumn(['course_id', 'difficulty']);
+        });
+
+        Schema::table('quizzes', function (Blueprint $table) {
+            $table->dropColumn(['is_random', 'easy_count', 'medium_count', 'hard_count']);
+        });
     }
 };

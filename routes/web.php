@@ -116,6 +116,9 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::post('/classes/{classId}/students', [ClassManagementController::class, 'storeStudent'])->name('classes.students.store');
         Route::delete('/classes/{classId}/students/{studentId}', [ClassManagementController::class, 'removeStudent'])->name('classes.students.destroy');
         Route::post('/classes/{classId}/students/import', [ClassManagementController::class, 'importStudents'])->name('classes.students.import');
+        Route::get('/classes/{classId}/students/import/{previewToken}/confirm', [ClassManagementController::class, 'confirmStudentReplacementPage'])
+            ->whereUuid('previewToken')
+            ->name('classes.students.import.confirm');
     });
 
     // ==========================================

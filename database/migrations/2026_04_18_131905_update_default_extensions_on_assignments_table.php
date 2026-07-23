@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -26,6 +27,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        DB::table('assignments')
+            ->where('allowed_extensions', 'pdf,docx,zip,png,jpg,jpeg')
+            ->update(['allowed_extensions' => 'pdf,docx,zip']);
+
+        Schema::table('assignments', function (Blueprint $table) {
+            $table->string('allowed_extensions')->default('pdf,docx,zip')->change();
+        });
     }
 };

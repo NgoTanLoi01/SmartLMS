@@ -345,6 +345,17 @@
                         <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required
                             style="font-size:13.5px;">
                     </div>
+                    <div class="lms-form-group" style="margin-top:16px; margin-bottom:0;">
+                        <label class="lms-form-label">Cách cập nhật sĩ số</label>
+                        <label class="d-flex gap-2 align-items-start mt-2">
+                            <input type="radio" name="mode" value="append" checked>
+                            <span><strong>Thêm/cập nhật</strong><br><small class="text-muted">Giữ nguyên học viên đang có và bổ sung dữ liệu từ file.</small></span>
+                        </label>
+                        <label class="d-flex gap-2 align-items-start mt-2">
+                            <input type="radio" name="mode" value="replace">
+                            <span><strong>Thay thế toàn bộ sĩ số</strong><br><small class="text-danger">Hệ thống sẽ hiển thị chính xác học viên bị gỡ ở bước xác nhận tiếp theo.</small></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="modal-footer" style="padding-top:16px;">
                     <button type="button" class="lms-btn lms-btn-outline" data-bs-dismiss="modal">Hủy</button>

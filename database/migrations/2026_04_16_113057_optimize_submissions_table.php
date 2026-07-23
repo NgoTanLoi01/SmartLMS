@@ -31,6 +31,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('submissions', function (Blueprint $table) {
+            $table->dropIndex(['assignment_id', 'student_id']);
+            $table->dropColumn(['submitted_at', 'is_final', 'deleted_at']);
+        });
     }
 };

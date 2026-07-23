@@ -6,13 +6,17 @@ use App\Models\Option;
 use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class QuizAttemptController extends Controller
 {
+    private const SUBMISSION_GRACE_SECONDS = 30;
+
     // ==========================================
     // 1. MỞ GIAO DIỆN LÀM BÀI VÀ SINH ĐỀ NGẪU NHIÊN
     // ==========================================
@@ -93,53 +97,100 @@ class QuizAttemptController extends Controller
         $userId = auth()->id();
         $this->authorizeStudentCanAttempt($quiz);
 
-        // [CHỐNG GIAN LẬN] Lấy đề từ Cache — không tin question_ids từ form
         $cacheKey = "quiz_session_{$quiz_id}_{$userId}";
-        $sessionData = Cache::get($cacheKey);
+        $activeKey = "quiz_active_{$quiz_id}_{$userId}";
+        $submissionLock = Cache::lock("quiz_submission_{$quiz_id}_{$userId}", 15);
 
-        if (! $sessionData) {
-            Log::warning("[QUIZ] User {$userId} nộp bài {$quiz_id} không có session hợp lệ.");
-
-            return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Phiên làm bài không hợp lệ hoặc đã hết hạn. Kết quả không được ghi nhận!');
+        if (! $submissionLock->get()) {
+            return redirect()->route('courses.show', $quiz->course_id)
+                ->with('error', 'Bài kiểm tra đang được xử lý. Vui lòng không gửi lại yêu cầu.');
         }
 
-        // [CHỐNG GIAN LẬN] Kiểm tra nộp bài sau khi hết giờ (cho phép 30s đệm)
-        $elapsed = now()->timestamp - $sessionData['started_at'];
-        $timeLimit = $sessionData['time_limit'];
+        try {
+            // Không tin question_ids từ form; phiên đề và việc nộp được khóa theo quiz/học viên.
+            $sessionData = Cache::get($cacheKey);
 
-        if ($elapsed > $timeLimit + 30) {
-            Log::warning("[QUIZ] User {$userId} nộp bài {$quiz_id} sau khi hết giờ ({$elapsed}s / {$timeLimit}s).");
+            if (! $sessionData) {
+                Log::warning("[QUIZ] User {$userId} nộp bài {$quiz_id} không có session hợp lệ.");
+
+                return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Phiên làm bài không hợp lệ hoặc đã hết hạn. Kết quả không được ghi nhận!');
+            }
+
+            $startedAt = filter_var($sessionData['started_at'] ?? null, FILTER_VALIDATE_INT);
+            $timeLimit = filter_var($sessionData['time_limit'] ?? null, FILTER_VALIDATE_INT);
+            if ($startedAt === false || $timeLimit === false || $timeLimit <= 0) {
+                Cache::forget($cacheKey);
+                Cache::forget($activeKey);
+
+                return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Phiên làm bài bị lỗi. Kết quả không được ghi nhận!');
+            }
+
+            $elapsed = max(now()->timestamp - $startedAt, 0);
+            if ($elapsed > $timeLimit + self::SUBMISSION_GRACE_SECONDS) {
+                Log::warning("[QUIZ] User {$userId} nộp bài {$quiz_id} sau khi hết giờ ({$elapsed}s / {$timeLimit}s).");
+                Cache::forget($cacheKey);
+                Cache::forget($activeKey);
+
+                return redirect()->route('courses.show', $quiz->course_id)
+                    ->with('error', 'Đã quá thời gian nộp bài. Kết quả không được ghi nhận!');
+            }
+
+            $authorizedIds = array_map('intval', $sessionData['question_ids'] ?? []);
+            $answers = $request->input('answers', []);
+            $filteredAnswers = array_filter($answers, fn ($qid) => in_array((int) $qid, $authorizedIds, true), ARRAY_FILTER_USE_KEY);
+
+            if (count($filteredAnswers) < count($answers)) {
+                Log::warning("[QUIZ] User {$userId} gửi answers ngoài đề cho quiz {$quiz_id}.");
+            }
+
+            [$score, $fullAnswers] = $this->grade($authorizedIds, $filteredAnswers, $userId, $quiz_id);
+
+            try {
+                $attempt = DB::transaction(function () use ($quiz, $userId, $score, $fullAnswers, $startedAt) {
+                    $existingAttempt = QuizAttempt::query()
+                        ->where('quiz_id', $quiz->id)
+                        ->where('user_id', $userId)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($existingAttempt) {
+                        return null;
+                    }
+
+                    return QuizAttempt::create([
+                        'quiz_id' => $quiz->id,
+                        'user_id' => $userId,
+                        'score' => $score,
+                        'student_answers' => $fullAnswers,
+                        'started_at' => now()->setTimestamp($startedAt),
+                        'completed_at' => now(),
+                    ]);
+                }, 3);
+            } catch (QueryException $exception) {
+                if (! QuizAttempt::where('quiz_id', $quiz->id)->where('user_id', $userId)->exists()) {
+                    throw $exception;
+                }
+
+                $attempt = null;
+            }
+
+            if (! $attempt) {
+                Cache::forget($cacheKey);
+                Cache::forget($activeKey);
+
+                return redirect()->route('courses.show', $quiz->course_id)
+                    ->with('error', 'Bài kiểm tra này đã được ghi nhận trước đó. Không tạo thêm kết quả trùng lặp.');
+            }
+
+            Cache::forget($cacheKey);
+            Cache::forget($activeKey);
+
+            return redirect()
+                ->route('courses.show', $quiz->course_id)
+                ->with('success', "Nộp bài thành công! Điểm của bạn: {$score}/10");
+        } finally {
+            $submissionLock->release();
         }
-
-        $authorizedIds = $sessionData['question_ids'];
-        $answers = $request->input('answers', []);
-
-        // [CHỐNG GIAN LẬN] Lọc câu trả lời ngoài đề đã phát
-        $filteredAnswers = array_filter($answers, fn ($qid) => in_array((int) $qid, $authorizedIds), ARRAY_FILTER_USE_KEY);
-
-        if (count($filteredAnswers) < count($answers)) {
-            Log::warning("[QUIZ] User {$userId} gửi answers ngoài đề cho quiz {$quiz_id}.");
-        }
-
-        // Chấm điểm
-        [$score, $fullAnswers] = $this->grade($authorizedIds, $filteredAnswers, $userId, $quiz_id);
-
-        QuizAttempt::create([
-            'quiz_id' => $quiz->id,
-            'user_id' => $userId,
-            'score' => $score,
-            'student_answers' => $fullAnswers,
-            'started_at' => now()->subSeconds($elapsed),
-            'completed_at' => now(),
-        ]);
-
-        // Dọn Cache
-        Cache::forget($cacheKey);
-        Cache::forget("quiz_active_{$quiz_id}_{$userId}");
-
-        return redirect()
-            ->route('courses.show', $quiz->course_id)
-            ->with('success', "Nộp bài thành công! Điểm của bạn: {$score}/10");
     }
 
     // ==========================================

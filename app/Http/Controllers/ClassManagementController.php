@@ -20,10 +20,15 @@ use App\Support\StudentLoginCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use Throwable;
 
 class ClassManagementController extends Controller
 {
@@ -399,37 +404,203 @@ class ClassManagementController extends Controller
         $classroom = Classroom::findOrFail($classId);
         Gate::authorize('manageStudents', $classroom);
 
+        $mode = (string) $request->input('mode', StudentImport::MODE_APPEND);
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:5120', // Tối đa 5MB
+            'mode' => 'sometimes|required|in:'.StudentImport::MODE_APPEND.','.StudentImport::MODE_REPLACE,
         ]);
 
         try {
-            $import = new StudentImport($classId);
-            // Gọi thư viện Excel để đọc file và chạy file StudentImport
+            if ($mode === StudentImport::MODE_REPLACE && $request->filled('preview_token')) {
+                $request->validate([
+                    'preview_token' => 'required|uuid',
+                    'replace_confirmed' => 'accepted',
+                ]);
+
+                return $this->confirmStudentReplacement($request, $classroom);
+            }
+
+            $request->validate([
+                'file' => 'required|mimes:xlsx,xls,csv|max:5120',
+            ]);
+
+            if ($mode === StudentImport::MODE_REPLACE) {
+                return $this->previewStudentReplacement($request, $classroom);
+            }
+
+            $import = new StudentImport($classId, StudentImport::MODE_APPEND);
             Excel::import($import, $request->file('file'));
+            $this->auditStudentImport($classroom, $import, $request->file('file')->getClientOriginalName(), StudentImport::MODE_APPEND);
 
-            AuditLogger::log(
-                AuditLogger::STUDENTS_IMPORTED,
-                $classroom,
-                null,
-                [
-                    'rows_processed' => $import->processedCount,
-                    'created_users' => $import->createdCount,
-                    'updated_users' => $import->updatedCount,
-                    'synced_students' => $import->syncedCount,
-                    'skipped_rows' => $import->skippedCount,
-                ],
-                [
-                    'class_id' => $classroom->id,
-                    'class_name' => $classroom->name,
-                    'file_name' => $request->file('file')->getClientOriginalName(),
-                ],
-                'Import danh sách học viên từ Excel.'
-            );
+            return back()->with('success', "Đã thêm/cập nhật {$import->syncedCount} học viên; sĩ số hiện tại được giữ nguyên.");
+        } catch (Throwable $e) {
+            if ($e instanceof ValidationException) {
+                throw $e;
+            }
 
-            return back()->with('success', 'Đã nhập danh sách học viên từ file Excel thành công!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
+            return redirect()->route('classes.students.index', $classroom)
+                ->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
+        }
+    }
+
+    private function previewStudentReplacement(Request $request, Classroom $classroom)
+    {
+        $this->deleteExpiredStudentImportPreviews();
+
+        $token = (string) Str::uuid();
+        $extension = strtolower($request->file('file')->getClientOriginalExtension()) ?: 'xlsx';
+        $storedPath = $request->file('file')->storeAs(
+            'student-import-previews/'.auth()->id(),
+            $token.'.'.$extension,
+            'local'
+        );
+
+        if (! $storedPath) {
+            throw new \RuntimeException('Không thể lưu file để xem trước thay đổi sĩ số.');
+        }
+
+        try {
+            $preview = new StudentImport($classroom->id, StudentImport::MODE_REPLACE, true);
+            Excel::import($preview, Storage::disk('local')->path($storedPath));
+
+            Cache::put($this->studentImportPreviewKey($token), [
+                'class_id' => $classroom->id,
+                'user_id' => auth()->id(),
+                'path' => $storedPath,
+                'file_name' => $request->file('file')->getClientOriginalName(),
+                'detached_count' => $preview->detachedCount,
+            ], now()->addMinutes(30));
+
+            return redirect()->route('classes.students.import.confirm', [$classroom, $token]);
+        } catch (Throwable $e) {
+            Storage::disk('local')->delete($storedPath);
+
+            throw $e;
+        }
+    }
+
+    public function confirmStudentReplacementPage($classId, string $previewToken)
+    {
+        $classroom = Classroom::findOrFail($classId);
+        Gate::authorize('manageStudents', $classroom);
+
+        $cacheKey = $this->studentImportPreviewKey($previewToken);
+        $metadata = Cache::get($cacheKey);
+        if (! is_array($metadata)
+            || (int) ($metadata['class_id'] ?? 0) !== (int) $classroom->id
+            || (int) ($metadata['user_id'] ?? 0) !== (int) auth()->id()
+            || ! Storage::disk('local')->exists((string) ($metadata['path'] ?? ''))) {
+            return redirect()->route('classes.students.index', $classroom)
+                ->with('error', 'Phiên xem trước import đã hết hạn hoặc không hợp lệ. Vui lòng tải lại file.');
+        }
+
+        try {
+            $preview = new StudentImport($classroom->id, StudentImport::MODE_REPLACE, true);
+            Excel::import($preview, Storage::disk('local')->path($metadata['path']));
+            $rosterChanged = session('roster_changed', false)
+                || $preview->detachedCount !== (int) $metadata['detached_count'];
+
+            if ($rosterChanged) {
+                $metadata['detached_count'] = $preview->detachedCount;
+                Cache::put($cacheKey, $metadata, now()->addMinutes(30));
+            }
+
+            return view('classes.confirm-student-import', compact('classroom', 'preview', 'previewToken', 'rosterChanged'));
+        } catch (Throwable $e) {
+            return redirect()->route('classes.students.index', $classroom)
+                ->with('error', 'Không thể đọc lại file xem trước: '.$e->getMessage());
+        }
+    }
+
+    private function confirmStudentReplacement(Request $request, Classroom $classroom)
+    {
+        $token = (string) $request->input('preview_token');
+        $cacheKey = $this->studentImportPreviewKey($token);
+        $metadata = Cache::get($cacheKey);
+
+        if (! is_array($metadata)
+            || (int) ($metadata['class_id'] ?? 0) !== (int) $classroom->id
+            || (int) ($metadata['user_id'] ?? 0) !== (int) auth()->id()) {
+            return redirect()->route('classes.students.index', $classroom)
+                ->with('error', 'Phiên xác nhận import đã hết hạn hoặc không hợp lệ. Vui lòng tải lại file.');
+        }
+
+        $lock = Cache::lock('student_import_confirmation_'.$token, 30);
+        if (! $lock->get()) {
+            return redirect()->route('classes.students.index', $classroom)
+                ->with('error', 'File import này đang được xử lý. Vui lòng không gửi lại yêu cầu.');
+        }
+
+        $storedPath = (string) $metadata['path'];
+
+        try {
+            if (! Storage::disk('local')->exists($storedPath)) {
+                throw new \RuntimeException('File xem trước không còn tồn tại. Vui lòng tải lại file.');
+            }
+
+            $absolutePath = Storage::disk('local')->path($storedPath);
+            $freshPreview = new StudentImport($classroom->id, StudentImport::MODE_REPLACE, true);
+            Excel::import($freshPreview, $absolutePath);
+
+            if ($freshPreview->detachedCount !== (int) $metadata['detached_count']) {
+                $metadata['detached_count'] = $freshPreview->detachedCount;
+                Cache::put($cacheKey, $metadata, now()->addMinutes(30));
+
+                return redirect()->route('classes.students.import.confirm', [$classroom, $token])
+                    ->with('roster_changed', true);
+            }
+
+            $import = new StudentImport($classroom->id, StudentImport::MODE_REPLACE);
+            Excel::import($import, $absolutePath);
+            $this->auditStudentImport($classroom, $import, (string) $metadata['file_name'], StudentImport::MODE_REPLACE);
+
+            Cache::forget($cacheKey);
+            Storage::disk('local')->delete($storedPath);
+
+            return redirect()->route('classes.students.index', $classroom)
+                ->with('success', "Đã thay thế sĩ số: đồng bộ {$import->syncedCount} và gỡ {$import->detachedCount} học viên khỏi lớp.");
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function auditStudentImport(Classroom $classroom, StudentImport $import, string $fileName, string $mode): void
+    {
+        AuditLogger::log(
+            AuditLogger::STUDENTS_IMPORTED,
+            $classroom,
+            null,
+            [
+                'mode' => $mode,
+                'rows_processed' => $import->processedCount,
+                'created_users' => $import->createdCount,
+                'updated_users' => $import->updatedCount,
+                'synced_students' => $import->syncedCount,
+                'detached_students' => $import->detachedCount,
+                'skipped_rows' => $import->skippedCount,
+            ],
+            [
+                'class_id' => $classroom->id,
+                'class_name' => $classroom->name,
+                'file_name' => $fileName,
+            ],
+            'Import danh sách học viên từ Excel.'
+        );
+    }
+
+    private function studentImportPreviewKey(string $token): string
+    {
+        return 'student_import_preview_'.$token;
+    }
+
+    private function deleteExpiredStudentImportPreviews(): void
+    {
+        $disk = Storage::disk('local');
+        $cutoff = now()->subHour()->timestamp;
+
+        foreach ($disk->allFiles('student-import-previews') as $path) {
+            if ($disk->lastModified($path) < $cutoff) {
+                $disk->delete($path);
+            }
         }
     }
 
