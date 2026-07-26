@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Models\Course;
+use App\Models\QuizAttempt;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -309,7 +310,8 @@ class DashboardController extends Controller
                     $query->selectRaw('1')
                         ->from('quiz_attempts')
                         ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
-                        ->where('quiz_attempts.user_id', $user->id);
+                        ->where('quiz_attempts.user_id', $user->id)
+                        ->where('quiz_attempts.status', 'submitted');
                 })
 
                 ->select('quizzes.*', 'courses.title as course_title', 'courses.id as course_id')
@@ -330,17 +332,17 @@ class DashboardController extends Controller
                     $query->selectRaw('1')
                         ->from('quiz_attempts')
                         ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
-                        ->where('quiz_attempts.user_id', $user->id);
+                        ->where('quiz_attempts.user_id', $user->id)
+                        ->where('quiz_attempts.status', 'submitted');
                 })
                 ->count();
             // ==========================================
             // ĐIỂM TRUNG BÌNH QUIZ
             // ==========================================
 
-            $avgQuizScore = DB::table('quiz_attempts')
-
+            $avgQuizScore = QuizAttempt::query()
                 ->where('user_id', $user->id)
-
+                ->resultsReleased()
                 ->avg('score');
 
             $data['average_score'] = $avgQuizScore ? round($avgQuizScore, 1) : 0;
@@ -362,19 +364,17 @@ class DashboardController extends Controller
             // DỮ LIỆU BIỂU ĐỒ QUIZ
             // ==========================================
 
-            $recentQuizzes = DB::table('quiz_attempts')
-
-                ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
-
-                ->where('quiz_attempts.user_id', $user->id)
-
-                ->select('quizzes.title', 'quiz_attempts.score')
-
-                ->orderBy('quiz_attempts.completed_at', 'asc')
-
+            $recentQuizzes = QuizAttempt::query()
+                ->with('quiz:id,title')
+                ->where('user_id', $user->id)
+                ->resultsReleased()
+                ->orderBy('completed_at')
                 ->take(5)
-
-                ->get();
+                ->get()
+                ->map(fn (QuizAttempt $attempt) => (object) [
+                    'title' => $attempt->quiz?->title,
+                    'score' => $attempt->score,
+                ]);
 
             $data['chart_quiz_labels'] = $recentQuizzes->pluck('title')->toArray();
 

@@ -85,6 +85,11 @@ class Course extends Model
         return $this->hasMany(Quiz::class)->notArchived();
     }
 
+    public function archivedQuizzes()
+    {
+        return $this->hasMany(Quiz::class)->where('status', Quiz::STATUS_ARCHIVED);
+    }
+
     public function questionBanks()
     {
         return $this->belongsToMany(QuestionBank::class, 'course_question_bank')->withTimestamps();

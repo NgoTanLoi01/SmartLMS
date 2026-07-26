@@ -26,6 +26,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\QuizSessionController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SharedDocumentController;
 use App\Http\Controllers\StorageHealthController;
@@ -240,6 +241,8 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::get('/question-bank', [QuestionController::class, 'index'])->name('questions.index');
         Route::post('/question-bank/banks', [QuestionController::class, 'storeQuestionBank'])->name('questions.banks.store');
         Route::post('/question-bank/banks/attach', [QuestionController::class, 'attachQuestionBank'])->name('questions.banks.attach');
+        Route::post('/question-bank/passages', [QuestionController::class, 'storePassage'])->name('questions.passages.store');
+        Route::delete('/question-bank/passages/{passage}', [QuestionController::class, 'destroyPassage'])->name('questions.passages.destroy');
         Route::post('/question-bank', [QuestionController::class, 'storeBank'])->name('questions.storeBank');
         Route::post('/question-bank/import', [QuestionController::class, 'importBank'])->name('questions.importBank');
         Route::put('/question-bank/{id}', [QuestionController::class, 'updateBank'])->name('questions.updateBank');
@@ -251,9 +254,19 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     // ==========================================
     Route::middleware('role:admin,teacher')->group(function () {
         Route::post('/quizzes', [QuizController::class, 'store'])->name('quizzes.store');
+        Route::get('/courses/{course}/quizzes/archived', [QuizController::class, 'archived'])->name('quizzes.archived');
         Route::get('/quizzes/{id}', [QuizController::class, 'show'])->name('quizzes.show');
         Route::delete('/quizzes/{id}', [QuizController::class, 'destroy'])->name('quizzes.destroy');
+        Route::patch('/quizzes/{id}/restore', [QuizController::class, 'restore'])->name('quizzes.restore');
+        Route::delete('/quizzes/{id}/force', [QuizController::class, 'forceDestroy'])->name('quizzes.force-destroy');
         Route::get('/quizzes/{id}/submissions', [QuizController::class, 'submissions'])->name('quizzes.submissions');
+        Route::get('/quizzes/{quiz}/sessions', [QuizSessionController::class, 'index'])->name('quizzes.sessions.index');
+        Route::post('/quizzes/{quiz}/sessions', [QuizSessionController::class, 'store'])->name('quizzes.sessions.store');
+        Route::put('/quiz-sessions/{session}', [QuizSessionController::class, 'update'])->name('quiz-sessions.update');
+        Route::delete('/quiz-sessions/{session}', [QuizSessionController::class, 'destroy'])->name('quiz-sessions.destroy');
+        Route::get('/quiz-sessions/{session}/monitor', [QuizSessionController::class, 'monitor'])->name('quiz-sessions.monitor');
+        Route::get('/quiz-sessions/{session}/monitor-data', [QuizSessionController::class, 'monitorData'])->name('quiz-sessions.monitor-data');
+        Route::post('/quiz-sessions/{session}/release', [QuizSessionController::class, 'release'])->name('quiz-sessions.release');
 
         // Quản lý câu hỏi trong đề thi cụ thể
         Route::post('/quizzes/{id}/questions', [QuestionController::class, 'store'])->name('questions.store');
@@ -268,6 +281,12 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     Route::post('/quizzes/{id}/attempt', [QuizAttemptController::class, 'store'])
         ->middleware('role:student')
         ->name('quizzes.submit');
+    Route::put('/attempts/{attempt}/answer', [QuizAttemptController::class, 'autosave'])
+        ->middleware(['role:student', 'throttle:180,1'])
+        ->name('quizzes.autosave');
+    Route::post('/attempts/{attempt}/heartbeat', [QuizAttemptController::class, 'heartbeat'])
+        ->middleware(['role:student', 'throttle:12,1'])
+        ->name('quizzes.heartbeat');
     Route::get('/attempts/{id}/review', [QuizAttemptController::class, 'review'])->name('quizzes.review');
 
     // ==========================================

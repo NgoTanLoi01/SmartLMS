@@ -7,6 +7,7 @@ libpng-dev \
 libjpeg-dev \
 libfreetype6-dev \
 libpq-dev \
+libsqlite3-dev \
 zip \
 libzip-dev \
 unzip \
@@ -21,7 +22,7 @@ tesseract-ocr-vie \
 # Cài đặt các phần mở rộng PHP
 # Bổ sung pcntl để chạy Reverb (WebSocket)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-&& docker-php-ext-install pdo_mysql pdo_pgsql pgsql gd zip bcmath pcntl
+&& docker-php-ext-install pdo_mysql pdo_pgsql pgsql pdo_sqlite gd zip bcmath pcntl
 
 # Đồng bộ giới hạn upload với validation của Laravel.
 COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini

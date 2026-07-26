@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\Option;
 use App\Models\Question;
 use App\Models\QuestionBank;
+use App\Models\QuizPassage;
 use App\Services\AiResponseValidator;
 use App\Services\GeminiEmbeddingService;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class QuestionController extends Controller
         if ($user->role === 'admin') {
             $courses = Course::with('questionBanks')->get();
             $questionBanks = QuestionBank::with(['teacher', 'courses'])->latest()->get();
-            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options'])
+            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options', 'passage'])
                 ->notArchived();
         } else {
             $courses = Course::with('questionBanks')->where('teacher_id', $user->id)->get();
@@ -48,7 +49,7 @@ class QuestionController extends Controller
                 })
                 ->latest()
                 ->get();
-            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options'])
+            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options', 'passage'])
                 ->notArchived()
                 ->whereIn('question_bank_id', $questionBanks->pluck('id'));
         }
@@ -70,7 +71,39 @@ class QuestionController extends Controller
         // Giữ lại query string khi chuyển trang
         $questions->appends($request->all());
 
-        return view('quizzes.question_bank', compact('courses', 'questionBanks', 'questions'));
+        $passages = QuizPassage::query()
+            ->with('course:id,title')
+            ->withCount('questions')
+            ->whereIn('course_id', $courses->pluck('id'))
+            ->orderBy('title')
+            ->get();
+
+        return view('quizzes.question_bank', compact('courses', 'questionBanks', 'questions', 'passages'));
+    }
+
+    public function storePassage(Request $request)
+    {
+        $data = $request->validate([
+            'course_id' => ['required', 'exists:courses,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'content' => ['required', 'string', 'max:50000'],
+            'source_label' => ['nullable', 'string', 'max:255'],
+        ]);
+        $this->authorizeCourse(Course::findOrFail($data['course_id']));
+        QuizPassage::create($data);
+
+        return back()->with('success', 'Đã tạo ngữ liệu dùng chung cho nhóm câu hỏi.');
+    }
+
+    public function destroyPassage(QuizPassage $passage)
+    {
+        $this->authorizeCourse($passage->course);
+        DB::transaction(function () use ($passage) {
+            $passage->questions()->update(['quiz_passage_id' => null]);
+            $passage->delete();
+        });
+
+        return back()->with('success', 'Đã xóa ngữ liệu và gỡ liên kết khỏi các câu hỏi.');
     }
 
     public function storeQuestionBank(Request $request)
@@ -124,6 +157,7 @@ class QuestionController extends Controller
         $request->validate([
             'course_id' => 'required|exists:courses,id',
             'question_bank_id' => 'nullable|exists:question_banks,id',
+            'quiz_passage_id' => 'nullable|exists:quiz_passages,id',
             'difficulty' => 'required|in:easy,medium,hard',
             'question_text' => 'required|string',
             'options' => 'required|array|size:4',
@@ -136,10 +170,12 @@ class QuestionController extends Controller
         $this->authorizeCourse(Course::findOrFail($request->course_id));
         $this->authorizeQuestionBank($bank);
         $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
+        $passageId = $this->validatedPassageId($request);
 
         $question = Question::create([
             'course_id' => $request->course_id,
             'question_bank_id' => $bank->id,
+            'quiz_passage_id' => $passageId,
             'difficulty' => $request->difficulty,
             'question_text' => $request->question_text,
             'status' => Question::STATUS_PUBLISHED,
@@ -164,6 +200,7 @@ class QuestionController extends Controller
         $request->validate([
             'course_id' => 'required|exists:courses,id',
             'question_bank_id' => 'nullable|exists:question_banks,id',
+            'quiz_passage_id' => 'nullable|exists:quiz_passages,id',
             'difficulty' => 'required|in:easy,medium,hard',
             'question_text' => 'required|string',
             'options' => 'required|array|size:4',
@@ -180,10 +217,12 @@ class QuestionController extends Controller
         $this->authorizeCourse(Course::findOrFail($request->course_id));
         $this->authorizeQuestionBank($bank);
         $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
+        $passageId = $this->validatedPassageId($request);
 
         $question->update([
             'course_id' => $request->course_id,
             'question_bank_id' => $bank->id,
+            'quiz_passage_id' => $passageId,
             'difficulty' => $request->difficulty,
             'question_text' => $request->question_text,
         ]);
@@ -547,6 +586,19 @@ class QuestionController extends Controller
     private function authorizeQuestionBank(QuestionBank $bank): void
     {
         Gate::authorize('update', $bank);
+    }
+
+    private function validatedPassageId(Request $request): ?int
+    {
+        if (! $request->filled('quiz_passage_id')) {
+            return null;
+        }
+
+        $passage = QuizPassage::findOrFail($request->integer('quiz_passage_id'));
+        abort_unless((int) $passage->course_id === (int) $request->course_id, 422, 'Ngữ liệu không thuộc khóa học đã chọn.');
+        $this->authorizeCourse($passage->course);
+
+        return $passage->id;
     }
 
     private function authorizeQuestionAccess(Question $question): void

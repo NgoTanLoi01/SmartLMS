@@ -28,7 +28,7 @@ class MigrationRollbackIntegrityTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['quiz_attempts', 'options', 'questions', 'quizzes', 'attendance_data', 'attendance_columns', 'class_user', 'classes', 'courses', 'users'] as $table) {
+        foreach (['quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'class_user', 'classes', 'courses', 'users'] as $table) {
             Schema::dropIfExists($table);
         }
 
@@ -63,6 +63,33 @@ class MigrationRollbackIntegrityTest extends TestCase
         $migration->down();
         $this->assertFalse(Schema::hasTable('class_user'));
         $this->assertFalse(Schema::hasTable('classes'));
+    }
+
+    public function test_quiz_exam_foundation_migration_is_reversible(): void
+    {
+        $quizBundle = require database_path('migrations/2026_04_16_113843_create_quizzes_and_questions_tables.php');
+        $quizBundle->up();
+
+        $foundation = require database_path('migrations/2026_07_26_000001_create_quiz_exam_foundation.php');
+        $foundation->up();
+
+        $this->assertTrue(Schema::hasTable('quiz_sessions'));
+        $this->assertTrue(Schema::hasTable('quiz_passages'));
+        $this->assertTrue(Schema::hasTable('quiz_session_user'));
+        $this->assertTrue(Schema::hasTable('quiz_attempt_questions'));
+        $this->assertTrue(Schema::hasTable('quiz_attempt_answers'));
+        $this->assertTrue(Schema::hasColumn('quiz_attempts', 'expires_at'));
+
+        $foundation->down();
+
+        $this->assertFalse(Schema::hasTable('quiz_attempt_answers'));
+        $this->assertFalse(Schema::hasTable('quiz_attempt_questions'));
+        $this->assertFalse(Schema::hasTable('quiz_session_user'));
+        $this->assertFalse(Schema::hasTable('quiz_sessions'));
+        $this->assertFalse(Schema::hasTable('quiz_passages'));
+        $this->assertFalse(Schema::hasColumn('quiz_attempts', 'expires_at'));
+
+        $quizBundle->down();
     }
 
     public function test_attendance_bundle_migration_rolls_back_data_before_columns(): void

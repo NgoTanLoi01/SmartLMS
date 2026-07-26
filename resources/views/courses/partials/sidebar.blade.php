@@ -388,7 +388,7 @@
     @if ($course->quizzes->count() > 0)
         @php
             $doneQuizCount = $isStudent
-                ? $course->quizzes->filter(fn($q) => isset($userQuizAttempts[$q->id]))->count()
+                ? $course->quizzes->filter(fn($q) => isset($userQuizAttempts[$q->id]) && $userQuizAttempts[$q->id]->status === 'submitted')->count()
                 : 0;
         @endphp
         <div class="accordion-item" style="background:#faf8ff;">
@@ -412,6 +412,15 @@
                         </span>
                     </div>
                 </button>
+                @if ($isManager && $course->archivedQuizzes->isNotEmpty())
+                    <a href="{{ route('quizzes.archived', $course) }}"
+                        class="me-3 d-inline-flex align-items-center gap-1 text-decoration-none"
+                        style="padding:5px 9px;border:1px solid #ddd6fe;border-radius:8px;background:#fff;color:#6b7280;font-size:11px;font-weight:700;white-space:nowrap;"
+                        title="Mở kho lưu trữ bài kiểm tra">
+                        <i class="fa-solid fa-box-archive"></i>
+                        Kho lưu trữ <span class="badge rounded-pill" style="background:#ede9fe;color:#6d28d9;">{{ $course->archivedQuizzes->count() }}</span>
+                    </a>
+                @endif
             </div>
 
             <div id="course-quizzes-collapse" class="accordion-collapse collapse" data-bs-parent="#courseAccordion">
@@ -423,22 +432,24 @@
                                     $isStudent && isset($userQuizAttempts[$quiz->id])
                                         ? $userQuizAttempts[$quiz->id]
                                         : null;
+                                $resultReleased = $attempt?->resultIsReleased() ?? false;
                             @endphp
-                            <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper {{ $attempt ? 'completed' : '' }} d-flex align-items-center justify-content-between shadow-none"
+                            <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper {{ $attempt?->status === 'submitted' ? 'completed' : '' }} d-flex align-items-center justify-content-between shadow-none"
                                 style="min-width:0;">
 
                                 <a href="javascript:void(0)"
                                     class="quiz-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 py-2 pe-2 ps-4"
                                     style="min-width:0;" data-id="{{ $quiz->id }}"
                                     data-title="{{ $quiz->title }}" data-duration="{{ $quiz->time_limit }}"
-                                    data-status="{{ $attempt ? 'completed' : 'pending' }}"
-                                    data-score="{{ $attempt ? $attempt->score : '' }}"
+                                    data-status="{{ $attempt?->status === 'submitted' ? 'completed' : ($attempt?->status === 'in_progress' ? 'in_progress' : 'pending') }}"
+                                    data-score="{{ $attempt && $resultReleased ? $attempt->score : '' }}"
+                                    data-result-released="{{ $resultReleased ? '1' : '0' }}"
                                     data-attempt-id="{{ $attempt ? $attempt->id : '' }}">
 
                                     <div
                                         style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                                        background:{{ $attempt ? '#dcfce7' : '#ede9fe' }};">
-                                        @if ($attempt)
+                                        background:{{ $attempt?->status === 'submitted' ? '#dcfce7' : '#ede9fe' }};">
+                                        @if ($attempt?->status === 'submitted')
                                             <i class="fa-solid fa-check" style="font-size:11px;color:#16a34a;"></i>
                                         @else
                                             <i class="fa-solid fa-stopwatch" style="font-size: 11px;color:#7c3aed;"></i>
@@ -447,17 +458,22 @@
 
                                     <div style="min-width:0;">
                                         <div class="lesson-name-text fw-semibold"
-                                            style="color:{{ $attempt ? '#166534' : '#5b21b6' }};">
+                                            style="color:{{ $attempt?->status === 'submitted' ? '#166534' : '#5b21b6' }};">
                                             {{ $quiz->title }}
                                         </div>
                                         @if ($isStudent)
                                             <div class="sidebar-status-row">
-                                                @if ($attempt)
+                                                @if ($attempt?->status === 'submitted')
                                                     <span class="sidebar-status-pill done"><i
                                                             class="fa-solid fa-check"></i>Đã làm</span>
-                                                    <span
-                                                        class="sidebar-status-pill pending">{{ $attempt->score }}/10
-                                                        điểm</span>
+                                                    @if($resultReleased)
+                                                        <span class="sidebar-status-pill pending">{{ $attempt->score }}/10 điểm</span>
+                                                    @else
+                                                        <span class="sidebar-status-pill pending"><i class="fa-solid fa-lock"></i>Chờ công bố</span>
+                                                    @endif
+                                                @elseif($attempt?->status === 'in_progress')
+                                                    <span class="sidebar-status-pill quiz"><i class="fa-solid fa-pen"></i>Đang làm</span>
+                                                    <span class="sidebar-status-pill pending">Tiếp tục bài thi</span>
                                                 @else
                                                     <span class="sidebar-status-pill quiz"><i
                                                             class="fa-solid fa-stopwatch"></i>Cần làm</span>
@@ -489,6 +505,12 @@
 
                                 @if ($isManager)
                                     <div class="action-buttons d-flex pe-2 gap-1">
+                                        <a href="{{ route('quizzes.sessions.index', $quiz) }}"
+                                            class="btn-action text-white d-flex align-items-center px-2"
+                                            style="background:#0d6efd;width:auto;text-decoration:none;border-radius:6px;font-size:11px;font-weight:700;gap:3px;"
+                                            title="Quản lý ca thi">
+                                            <i class="fa-solid fa-calendar-days"></i> Ca thi
+                                        </a>
                                         <a href="{{ route('quizzes.submissions', $quiz->id) }}"
                                             class="btn-action text-white d-flex align-items-center px-2"
                                             style="background:#198754;width:auto;text-decoration:none;border-radius:6px;font-size: 11px;font-weight:700;gap:3px;"

@@ -45,9 +45,9 @@ class StudentGradesController extends Controller
             ->latest('submitted_at')
             ->get();
 
-        $quizAttempts = QuizAttempt::with(['quiz.course'])
+        $quizAttempts = QuizAttempt::with(['quiz.course', 'session'])
             ->where('user_id', $user->id)
-            ->whereNotNull('completed_at')
+            ->resultsReleased()
             ->whereHas('quiz', function ($query) use ($courseIds, $selectedCourseId) {
                 $query->whereIn('course_id', $courseIds)
                     ->when($selectedCourseId, fn ($q) => $q->where('course_id', $selectedCourseId));

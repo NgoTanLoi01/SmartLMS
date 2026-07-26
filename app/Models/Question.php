@@ -10,7 +10,7 @@ class Question extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
-    protected $fillable = ['course_id', 'question_bank_id', 'question_text', 'difficulty', 'status'];
+    protected $fillable = ['course_id', 'question_bank_id', 'quiz_passage_id', 'question_text', 'difficulty', 'status'];
 
     public function scopeNotArchived($query)
     {
@@ -35,5 +35,10 @@ class Question extends Model
     public function options()
     {
         return $this->hasMany(Option::class);
+    }
+
+    public function passage()
+    {
+        return $this->belongsTo(QuizPassage::class, 'quiz_passage_id');
     }
 }

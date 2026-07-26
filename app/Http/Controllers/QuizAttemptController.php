@@ -6,12 +6,15 @@ use App\Models\Option;
 use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
+use App\Models\QuizSession;
+use App\Services\QuizExamService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class QuizAttemptController extends Controller
 {
@@ -20,82 +23,57 @@ class QuizAttemptController extends Controller
     // ==========================================
     // 1. MỞ GIAO DIỆN LÀM BÀI VÀ SINH ĐỀ NGẪU NHIÊN
     // ==========================================
-    public function create($quiz_id)
+    public function create($quiz_id, QuizExamService $examService)
     {
-        $quiz = Quiz::findOrFail($quiz_id);
-        $userId = auth()->id();
+        $quiz = Quiz::with(['course.questionBanks', 'sessions'])->findOrFail($quiz_id);
         $this->authorizeStudentCanAttempt($quiz);
+        $student = auth()->user();
+        $session = $this->resolveSession($quiz, $student->id);
 
-        // Chặn làm lại bài đã hoàn thành
-        $existingAttempt = QuizAttempt::where('quiz_id', $quiz_id)
-            ->where('user_id', $userId)
-            ->whereNotNull('completed_at')
-            ->first();
-
-        if ($existingAttempt) {
-            return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Bạn đã hoàn thành bài kiểm tra này. Không thể làm lại!');
+        if ($quiz->sessions->isNotEmpty() && ! $session) {
+            return redirect()->route('courses.show', $quiz->course_id)
+                ->with('error', 'Hiện không có ca thi đang mở dành cho bạn.');
         }
 
-        $cacheKey = "quiz_session_{$quiz_id}_{$userId}";
-        $activeKey = "quiz_active_{$quiz_id}_{$userId}";
-        $sessionData = Cache::get($cacheKey);
-
-        if ($sessionData) {
-            $elapsed = now()->timestamp - $sessionData['started_at'];
-            $remainingSeconds = max(($sessionData['time_limit'] ?? ($quiz->time_limit * 60)) - $elapsed, 0);
-
-            if ($remainingSeconds <= 0) {
-                Cache::forget($cacheKey);
-                Cache::forget($activeKey);
-
-                return redirect()->route('courses.show', $quiz->course_id)->with('error', 'Phiên làm bài đã hết thời gian. Vui lòng liên hệ giáo viên nếu cần hỗ trợ.');
-            }
-
-            $examQuestions = $this->loadExamFromSession($sessionData);
-
-            Cache::put($activeKey, true, now()->addSeconds($remainingSeconds + 300));
-
-            return view('quizzes.attempt', compact('quiz', 'examQuestions', 'remainingSeconds'));
+        try {
+            $attempt = $examService->startOrResume($quiz, $student, $session);
+        } catch (ValidationException $exception) {
+            return redirect()->route('courses.show', $quiz->course_id)
+                ->with('error', collect($exception->errors())->flatten()->first());
         }
 
-        if (Cache::has($activeKey)) {
-            Cache::forget($activeKey);
+        if ($attempt->expires_at->lte(now())) {
+            $examService->submit($attempt);
+
+            return redirect()->route('courses.show', $quiz->course_id)
+                ->with('error', 'Bài thi đã hết thời gian và được tự động nộp.');
         }
 
-        // Sinh đề ngẫu nhiên
-        $examQuestions = $this->generateExam($quiz);
+        $attempt->load(['attemptQuestions.answer', 'session']);
+        $remainingSeconds = $examService->remainingSeconds($attempt);
 
-        // [CHỐNG GIAN LẬN] Lưu đề đã phát lên Cache server-side
-        // → bỏ qua hoàn toàn question_ids từ form khi chấm bài
-        $ttl = now()->addMinutes($quiz->time_limit + 5);
-
-        Cache::put(
-            "quiz_session_{$quiz_id}_{$userId}",
-            [
-                'question_ids' => $examQuestions->pluck('id')->toArray(),
-                'option_ids' => $examQuestions->mapWithKeys(fn ($question) => [
-                    $question->id => $question->options->pluck('id')->toArray(),
-                ])->toArray(),
-                'started_at' => now()->timestamp,
-                'time_limit' => $quiz->time_limit * 60,
-            ],
-            $ttl,
-        );
-
-        Cache::put($activeKey, true, $ttl);
-        $remainingSeconds = $quiz->time_limit * 60;
-
-        return view('quizzes.attempt', compact('quiz', 'examQuestions', 'remainingSeconds'));
+        return view('quizzes.attempt', compact('quiz', 'attempt', 'remainingSeconds'));
     }
 
     // ==========================================
     // 2. NỘP BÀI VÀ CHẤM ĐIỂM
     // ==========================================
-    public function store(Request $request, $quiz_id)
+    public function store(Request $request, $quiz_id, QuizExamService $examService)
     {
         $quiz = Quiz::findOrFail($quiz_id);
         $userId = auth()->id();
         $this->authorizeStudentCanAttempt($quiz);
+
+        if ($request->filled('attempt_id')) {
+            $attempt = QuizAttempt::with('session')->where('quiz_id', $quiz->id)->findOrFail($request->integer('attempt_id'));
+            Gate::authorize('update', $attempt);
+            $attempt = $examService->submit($attempt);
+            $message = $attempt->resultIsReleased()
+                ? "Nộp bài thành công! Điểm của bạn: {$attempt->score}/10"
+                : 'Nộp bài thành công! Kết quả sẽ được công bố theo chính sách của ca thi.';
+
+            return redirect()->route('courses.show', $quiz->course_id)->with('success', $message);
+        }
 
         $cacheKey = "quiz_session_{$quiz_id}_{$userId}";
         $activeKey = "quiz_active_{$quiz_id}_{$userId}";
@@ -198,9 +176,18 @@ class QuizAttemptController extends Controller
     // ==========================================
     public function review($attempt_id)
     {
-        $attempt = QuizAttempt::with('quiz.course')->findOrFail($attempt_id);
+        $attempt = QuizAttempt::with(['quiz.course', 'session', 'attemptQuestions.answer'])->findOrFail($attempt_id);
 
         Gate::authorize('view', $attempt);
+
+        if (auth()->user()->isStudent() && ! $attempt->resultIsReleased()) {
+            return redirect()->route('courses.show', $attempt->quiz->course_id)
+                ->with('error', 'Kết quả của ca thi chưa được công bố.');
+        }
+
+        if ($attempt->attemptQuestions->isNotEmpty()) {
+            return view('quizzes.review_snapshot', compact('attempt'));
+        }
 
         $studentAnswers = is_string($attempt->student_answers) ? json_decode($attempt->student_answers, true) : $attempt->student_answers ?? [];
 
@@ -209,6 +196,52 @@ class QuizAttemptController extends Controller
         $questions = ! empty($questionIds) ? Question::with('options')->whereIn('id', $questionIds)->get()->sortBy(fn ($q) => array_search($q->id, $questionIds)) : collect([]);
 
         return view('quizzes.review', compact('attempt', 'studentAnswers', 'questions'));
+    }
+
+    public function autosave(Request $request, QuizAttempt $attempt, QuizExamService $examService)
+    {
+        Gate::authorize('update', $attempt);
+        if ($attempt->isInProgress() && $attempt->expires_at?->lte(now())) {
+            $examService->submit($attempt);
+
+            return response()->json(['message' => 'Bài thi đã hết thời gian và được tự động nộp.'], 409);
+        }
+        $data = $request->validate([
+            'attempt_question_id' => ['required', 'integer'],
+            'selected_option_id' => ['nullable', 'integer'],
+            'flagged' => ['required', 'boolean'],
+            'current_position' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $attempt = $examService->saveAnswer(
+            $attempt,
+            (int) $data['attempt_question_id'],
+            isset($data['selected_option_id']) ? (int) $data['selected_option_id'] : null,
+            (bool) $data['flagged'],
+            (int) $data['current_position'],
+        );
+
+        return response()->json([
+            'saved_at' => now()->format('H:i:s'),
+            'remaining_seconds' => $examService->remainingSeconds($attempt),
+        ]);
+    }
+
+    public function heartbeat(Request $request, QuizAttempt $attempt, QuizExamService $examService)
+    {
+        Gate::authorize('update', $attempt);
+        if ($attempt->isInProgress() && $attempt->expires_at?->lte(now())) {
+            $examService->submit($attempt);
+
+            return response()->json(['message' => 'Bài thi đã hết thời gian và được tự động nộp.'], 409);
+        }
+        $data = $request->validate(['current_position' => ['required', 'integer', 'min:1']]);
+        $attempt = $examService->heartbeat($attempt, (int) $data['current_position']);
+
+        return response()->json([
+            'server_time' => now()->toIso8601String(),
+            'remaining_seconds' => $examService->remainingSeconds($attempt),
+        ]);
     }
 
     // ==========================================
@@ -249,6 +282,17 @@ class QuizAttemptController extends Controller
     private function authorizeStudentCanAttempt(Quiz $quiz): void
     {
         Gate::authorize('attempt', $quiz);
+    }
+
+    private function resolveSession(Quiz $quiz, int $userId): ?QuizSession
+    {
+        return $quiz->sessions()
+            ->whereHas('candidates', fn ($query) => $query->where('users.id', $userId))
+            ->whereIn('status', [QuizSession::STATUS_SCHEDULED, QuizSession::STATUS_OPEN])
+            ->where('starts_at', '<=', now())
+            ->where('ends_at', '>=', now())
+            ->orderBy('starts_at')
+            ->first();
     }
 
     private function loadExamFromSession(array $sessionData)

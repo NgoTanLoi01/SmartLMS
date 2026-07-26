@@ -122,6 +122,7 @@ class CourseController extends Controller
             'classes',
             'modules.lessons.assignments',
             'quizzes',
+            'archivedQuizzes:id,course_id,title,status',
         ])->findOrFail($id);
         $this->authorizeCourseAccess($course);
 
@@ -220,6 +221,7 @@ class CourseController extends Controller
         $userQuizAttempts = [];
         if (auth()->check() && auth()->user()->role === 'student') {
             $userQuizAttempts = QuizAttempt::where('user_id', auth()->id())
+                ->with('session')
                 ->whereIn('quiz_id', $course->quizzes->pluck('id'))
                 ->get()
                 ->keyBy('quiz_id');
@@ -546,6 +548,7 @@ class CourseController extends Controller
 
         $quizAttempted = QuizAttempt::whereIn('user_id', $studentIds)
             ->whereIn('quiz_id', $quizIds)
+            ->where('status', 'submitted')
             ->select('user_id', 'quiz_id')
             ->distinct()
             ->get()
@@ -564,7 +567,7 @@ class CourseController extends Controller
             'assignment_submission_rate' => $assignmentTotal > 0 ? round(($assignmentSubmitted / $assignmentTotal) * 100) : 0,
             'quiz_completion_rate' => $quizTotal > 0 ? round(($quizAttempted / $quizTotal) * 100) : 0,
             'pending_grades' => $pendingGrades,
-            'average_score' => QuizAttempt::whereIn('user_id', $studentIds)->whereIn('quiz_id', $quizIds)->avg('score'),
+            'average_score' => QuizAttempt::whereIn('user_id', $studentIds)->whereIn('quiz_id', $quizIds)->where('status', 'submitted')->avg('score'),
         ];
     }
 }

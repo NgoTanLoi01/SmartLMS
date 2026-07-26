@@ -13,6 +13,9 @@
             <p class="page-subtitle">Quản lý kho câu hỏi trắc nghiệm dùng để trộn đề thi ngẫu nhiên</p>
         </div>
         <div class="btn-group-actions">
+            <button class="btn-act btn-act-ghost" data-bs-toggle="modal" data-bs-target="#passageModal">
+                <i class="fa-solid fa-file-lines"></i> Ngữ liệu
+            </button>
             <button class="btn-act btn-act-ghost" data-bs-toggle="modal" data-bs-target="#addQuestionBankModal">
                 <i class="fa-solid fa-layer-group"></i> Tạo bank
             </button>
@@ -103,6 +106,9 @@
                             <td><span class="q-id">#{{ $question->id }}</span></td>
                             <td>
                                 <div class="q-text">{{ Str::limit($question->question_text, 80) }}</div>
+                                @if($question->passage)
+                                    <div class="small text-primary mt-1"><i class="fa-solid fa-file-lines"></i> {{ Str::limit($question->passage->title, 55) }}</div>
+                                @endif
                                 @php $correctOpt = $question->options->where('is_correct', true)->first(); @endphp
                                 <div class="q-answer">
                                     <i class="fa-solid fa-circle-check"></i>
@@ -140,6 +146,7 @@
                                         data-bs-target="#editQuestionModal" data-id="{{ $question->id }}"
                                         data-course="{{ $question->course_id }}"
                                         data-bank="{{ $question->question_bank_id }}"
+                                        data-passage="{{ $question->quiz_passage_id }}"
                                         data-difficulty="{{ $question->difficulty }}"
                                         data-text="{{ htmlspecialchars($question->question_text) }}"
                                         data-options="{{ $question->options->sortBy('id')->values()->toJson() }}"
@@ -172,6 +179,35 @@
         @if ($questions->hasPages())
             <div class="pagination-wrap">{{ $questions->links() }}</div>
         @endif
+    </div>
+
+    <div class="modal fade" id="passageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form action="{{ route('questions.passages.store') }}" method="POST">
+                    @csrf
+                    <div class="modal-header"><h5 class="modal-title"><i class="fa-solid fa-file-lines"></i> Ngữ liệu dùng chung</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div class="row-g">
+                            <div class="col-flex-2"><label class="form-label-sm">Khóa học</label><select name="course_id" class="form-ctrl" required>@foreach($courses as $course)<option value="{{ $course->id }}">{{ $course->title }}</option>@endforeach</select></div>
+                            <div class="col-flex-2"><label class="form-label-sm">Tên ngữ liệu</label><input name="title" class="form-ctrl" required placeholder="Ví dụ: Đọc đoạn văn và trả lời câu 1–5"></div>
+                            <div class="col-flex-full"><label class="form-label-sm">Nguồn tham khảo</label><input name="source_label" class="form-ctrl" placeholder="Không bắt buộc"></div>
+                            <div class="col-flex-full"><label class="form-label-sm">Nội dung đoạn văn/tài liệu</label><textarea name="content" class="form-ctrl" rows="8" maxlength="50000" required></textarea></div>
+                        </div>
+                        @if($passages->isNotEmpty())
+                            <div class="section-divider">Ngữ liệu hiện có</div>
+                            @foreach($passages as $passage)
+                                <div class="d-flex align-items-center gap-2 border rounded-3 p-2 mb-2">
+                                    <div class="flex-grow-1"><strong>{{ $passage->title }}</strong><small class="text-muted d-block">{{ $passage->course->title ?? '' }} · {{ $passage->questions_count }} câu hỏi</small></div>
+                                    <span class="badge bg-light text-secondary">Đang sử dụng</span>
+                                </div>
+                            @endforeach
+                        @endif
+                    </div>
+                    <div class="modal-footer"><button class="btn-modal-submit">Lưu ngữ liệu</button></div>
+                </form>
+            </div>
+        </div>
     </div>
 
     {{-- ══════════════════════════════
@@ -303,6 +339,13 @@
                                 </select>
                             </div>
                             <div class="col-flex-full">
+                                <label class="form-label-sm">Ngữ liệu dùng chung (không bắt buộc)</label>
+                                <select name="quiz_passage_id" class="form-ctrl">
+                                    <option value="">Câu hỏi độc lập</option>
+                                    @foreach($passages as $passage)<option value="{{ $passage->id }}">{{ $passage->course->title ?? '' }} — {{ $passage->title }}</option>@endforeach
+                                </select>
+                            </div>
+                            <div class="col-flex-full">
                                 <label class="form-label-sm">Nội dung câu hỏi</label>
                                 <textarea name="question_text" class="form-ctrl" rows="3" placeholder="Nhập câu hỏi tại đây..." required></textarea>
                             </div>
@@ -371,6 +414,13 @@
                                     <option value="easy">Dễ</option>
                                     <option value="medium">Trung bình</option>
                                     <option value="hard">Khó</option>
+                                </select>
+                            </div>
+                            <div class="col-flex-full">
+                                <label class="form-label-sm">Ngữ liệu dùng chung (không bắt buộc)</label>
+                                <select name="quiz_passage_id" id="edit_quiz_passage_id" class="form-ctrl">
+                                    <option value="">Câu hỏi độc lập</option>
+                                    @foreach($passages as $passage)<option value="{{ $passage->id }}">{{ $passage->course->title ?? '' }} — {{ $passage->title }}</option>@endforeach
                                 </select>
                             </div>
                             <div class="col-flex-full">
@@ -472,6 +522,7 @@
                 var id = btn.getAttribute('data-id');
                 var courseId = btn.getAttribute('data-course');
                 var bankId = btn.getAttribute('data-bank') || '';
+                var passageId = btn.getAttribute('data-passage') || '';
                 var difficulty = btn.getAttribute('data-difficulty');
                 var text = btn.getAttribute('data-text');
                 var options = JSON.parse(btn.getAttribute('data-options') || '[]');
@@ -479,6 +530,7 @@
                 document.getElementById('editQuestionForm').action = '/question-bank/' + id;
                 document.getElementById('edit_course_id').value = courseId;
                 document.getElementById('edit_question_bank_id').value = bankId;
+                document.getElementById('edit_quiz_passage_id').value = passageId;
                 document.getElementById('edit_difficulty').value = difficulty;
                 document.getElementById('edit_question_text').value = text;
 

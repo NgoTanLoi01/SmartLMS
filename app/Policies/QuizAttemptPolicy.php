@@ -16,4 +16,10 @@ class QuizAttemptPolicy
         return $attempt->quiz?->course
             && $user->can('manageContent', $attempt->quiz->course);
     }
+
+    public function update(User $user, QuizAttempt $attempt): bool
+    {
+        return $user->isStudent()
+            && (int) $attempt->user_id === (int) $user->id;
+    }
 }

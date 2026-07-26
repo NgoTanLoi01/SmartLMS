@@ -7,7 +7,9 @@ use App\Models\Question;
 use App\Models\Quiz;
 use App\Services\NotificationCenter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class QuizController extends Controller
 {
@@ -115,9 +117,58 @@ class QuizController extends Controller
         return back()->with('success', 'Đã lưu trữ bài kiểm tra. Lịch sử làm bài và điểm số vẫn được giữ lại.');
     }
 
+    public function archived(Course $course)
+    {
+        Gate::authorize('manageContent', $course);
+        $archivedQuizzes = Quiz::query()
+            ->where('course_id', $course->id)
+            ->where('status', Quiz::STATUS_ARCHIVED)
+            ->withCount(['sessions', 'attempts'])
+            ->latest('updated_at')
+            ->get();
+
+        return view('quizzes.archived', compact('course', 'archivedQuizzes'));
+    }
+
+    public function restore($id)
+    {
+        $quiz = Quiz::where('status', Quiz::STATUS_ARCHIVED)->findOrFail($id);
+        Gate::authorize('update', $quiz);
+        $quiz->update([
+            'status' => Quiz::STATUS_DRAFT,
+            'published_at' => null,
+        ]);
+
+        return redirect()->route('courses.show', $quiz->course_id)
+            ->with('success', 'Đã khôi phục bài kiểm tra về trạng thái bản nháp.');
+    }
+
+    public function forceDestroy(Request $request, $id)
+    {
+        $quiz = Quiz::where('status', Quiz::STATUS_ARCHIVED)->findOrFail($id);
+        Gate::authorize('delete', $quiz);
+        $request->validate(['confirmation' => ['required', 'string']]);
+
+        if (! hash_equals($quiz->title, (string) $request->confirmation)) {
+            throw ValidationException::withMessages([
+                'confirmation' => 'Tên bài kiểm tra xác nhận không chính xác.',
+            ]);
+        }
+
+        if ($quiz->attempts()->exists()) {
+            return back()->with('error', 'Không thể xóa vĩnh viễn vì bài kiểm tra đã có bài làm. Bạn có thể tiếp tục giữ trong kho lưu trữ.');
+        }
+
+        $courseId = $quiz->course_id;
+        DB::transaction(fn () => $quiz->delete());
+
+        return redirect()->route('quizzes.archived', $courseId)
+            ->with('success', 'Đã xóa vĩnh viễn bài kiểm tra và các ca thi chưa phát sinh bài làm.');
+    }
+
     public function submissions($id)
     {
-        $quiz = Quiz::with(['course.teacher', 'attempts.user'])->findOrFail($id);
+        $quiz = Quiz::with(['course.teacher', 'attempts.user', 'attempts.session'])->findOrFail($id);
         Gate::authorize('viewSubmissions', $quiz);
 
         $attempts = $quiz->attempts()->orderBy('completed_at', 'desc')->get();

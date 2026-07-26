@@ -27,6 +27,7 @@
                             <tr>
                                 <th class="px-4 py-3">STT</th>
                                 <th class="px-4 py-3">Học sinh</th>
+                                <th class="px-4 py-3">Trạng thái</th>
                                 <th class="px-4 py-3 text-center">Điểm số</th>
                                 <th class="px-4 py-3">Thời gian nộp</th>
                                 <th class="px-4 py-3 text-end">Thao tác</th>
@@ -40,25 +41,31 @@
                                         <div class="fw-bold text-dark">{{ $attempt->user->name }}</div>
                                         <div class="small text-muted">{{ $attempt->user->email }}</div>
                                     </td>
+                                    <td class="px-4">
+                                        <span class="badge {{ $attempt->status === 'submitted' ? 'bg-success' : 'bg-primary' }}">
+                                            {{ $attempt->status === 'submitted' ? 'Đã nộp' : 'Đang thi' }}
+                                        </span>
+                                        @if($attempt->session)<div class="small text-muted mt-1">{{ $attempt->session->name }}</div>@endif
+                                    </td>
                                     <td class="px-4 text-center">
-                                        <span
+                                        @if($attempt->status === 'submitted')<span
                                             class="badge rounded-pill fs-6 {{ $attempt->score >= 5 ? 'bg-success bg-opacity-10 text-success border border-success' : 'bg-danger bg-opacity-10 text-danger border border-danger' }}">
                                             {{ $attempt->score }} / 10
-                                        </span>
+                                        </span>@else — @endif
                                     </td>
                                     <td class="px-4 text-muted small">
-                                        {{ \Carbon\Carbon::parse($attempt->completed_at)->format('H:i - d/m/Y') }}
+                                        {{ $attempt->completed_at?->format('H:i - d/m/Y') ?? '—' }}
                                     </td>
                                     <td class="px-4 text-end">
-                                        <a href="{{ route('quizzes.review', $attempt->id) }}"
+                                        @if($attempt->status === 'submitted')<a href="{{ route('quizzes.review', $attempt->id) }}"
                                             class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
                                             <i class="fa-solid fa-eye me-1"></i> Xem chi tiết
-                                        </a>
+                                        </a>@endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
+                                    <td colspan="6" class="text-center py-5 text-muted">
                                         <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-50"></i>
                                         <p class="mb-0">Chưa có học sinh nào nộp bài.</p>
                                     </td>

@@ -787,6 +787,7 @@
                 const status = this.getAttribute('data-status');
                 const score = this.getAttribute('data-score');
                 const attemptId = this.getAttribute('data-attempt-id');
+                const resultReleased = this.getAttribute('data-result-released') === '1';
 
                 // Các thành phần UI của học sinh
                 const statusText = document.getElementById('quiz-status-text');
@@ -803,8 +804,8 @@
                         statusText.innerText = 'Đã hoàn thành';
                         statusText.className = 'mb-0 fw-bold text-success fs-5 mt-2';
 
-                        if (scoreBox) scoreBox.classList.remove('d-none');
-                        if (scoreText) scoreText.innerText = score;
+                        if (scoreBox) scoreBox.classList.toggle('d-none', !resultReleased);
+                        if (scoreText && resultReleased) scoreText.innerText = score;
                         if (actionArea) actionArea.classList.add('d-none');
                         if (mainIcon) {
                             mainIcon.className = 'fa-solid fa-circle-check fa-5x mb-4 text-success';
@@ -813,14 +814,19 @@
 
                         // HIỆN KHUNG THÔNG BÁO VÀ GÁN LINK VÀO NÚT
                         if (completedMsg) completedMsg.classList.remove('d-none');
-                        if (reviewBtn && attemptId) {
+                        if (reviewBtn && attemptId && resultReleased) {
                             reviewBtn.href = `/attempts/${attemptId}/review`;
+                            reviewBtn.classList.remove('d-none');
+                        } else if (reviewBtn) {
+                            reviewBtn.classList.add('d-none');
                         }
 
                     } else {
                         // Chưa làm bài
-                        statusText.innerText = 'Chưa làm';
-                        statusText.className = 'mb-0 fw-bold text-warning fs-5 mt-2';
+                        statusText.innerText = status === 'in_progress' ? 'Đang làm bài' : 'Chưa làm';
+                        statusText.className = status === 'in_progress'
+                            ? 'mb-0 fw-bold text-primary fs-5 mt-2'
+                            : 'mb-0 fw-bold text-warning fs-5 mt-2';
 
                         if (scoreBox) scoreBox.classList.add('d-none');
                         if (actionArea) actionArea.classList.remove('d-none');
@@ -837,6 +843,9 @@
                 const manageBtn = document.getElementById('manage-quiz-btn');
 
                 if (startBtn) startBtn.href = `/quizzes/${id}/attempt`;
+                if (startBtn) startBtn.innerHTML = status === 'in_progress'
+                    ? 'TIẾP TỤC BÀI THI <i class="fa-solid fa-arrow-right ms-2"></i>'
+                    : 'BẮT ĐẦU LÀM BÀI <i class="fa-solid fa-arrow-right ms-2"></i>';
                 if (manageBtn) manageBtn.href = `/quizzes/${id}`;
 
                 quizArea.scrollIntoView({

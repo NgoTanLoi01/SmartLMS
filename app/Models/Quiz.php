@@ -58,4 +58,9 @@ class Quiz extends Model
     {
         return $this->hasMany(QuizAttempt::class);
     }
+
+    public function sessions()
+    {
+        return $this->hasMany(QuizSession::class)->orderBy('starts_at');
+    }
 }
