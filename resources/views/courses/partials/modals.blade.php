@@ -482,17 +482,17 @@
 </div>
 
 {{-- ============================================================
-     8. MODAL: TẠO ĐỀ THI TRẮC NGHIỆM
+     8. MODAL: TẠO ĐỀ THI HỖN HỢP
      ============================================================ --}}
 <div class="modal fade cm-modal" id="addQuizModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <form action="{{ route('quizzes.store') }}" method="POST" class="modal-content">
             @csrf
             <input type="hidden" name="course_id" value="{{ $course->id }}">
 
             <div class="modal-header">
                 <div class="cm-header-icon icon-violet"><i class="fa-solid fa-random"></i></div>
-                <h5 class="modal-title">Tạo đề thi trắc nghiệm</h5>
+                <h5 class="modal-title">Tạo đề thi hỗn hợp</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
@@ -535,8 +535,8 @@
                 </div>
 
                 <div class="cm-info-banner">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    Hệ thống sẽ bốc ngẫu nhiên câu hỏi từ Ngân hàng và trộn đề riêng cho mỗi học sinh.
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Nhập chính xác số câu cần lấy ở từng hình thức và độ khó. Số “Có” là lượng câu hiện sẵn sàng trong ngân hàng.</span>
                 </div>
 
                 <div class="cm-row cols-2">
@@ -555,20 +555,42 @@
                     </div>
                 </div>
 
-                <div class="difficulty-grid">
-                    <div class="diff-card">
-                        <div class="diff-label diff-easy">Câu dễ</div>
-                        <input type="number" name="easy_count" id="addQuizEasyCount" value="10" min="0" required>
-                    </div>
-                    <div class="diff-card">
-                        <div class="diff-label diff-medium">Trung bình</div>
-                        <input type="number" name="medium_count" id="addQuizMediumCount" value="5" min="0" required>
-                    </div>
-                    <div class="diff-card">
-                        <div class="diff-label diff-hard">Câu khó</div>
-                        <input type="number" name="hard_count" id="addQuizHardCount" value="5" min="0" required>
-                    </div>
+                @php
+                    $quizTypeIcons = [
+                        'single_choice' => 'fa-circle-dot',
+                        'multiple_choice' => 'fa-square-check',
+                        'true_false_group' => 'fa-toggle-on',
+                        'fill_blank' => 'fa-i-cursor',
+                        'numeric' => 'fa-calculator',
+                    ];
+                @endphp
+                <div class="quiz-distribution" data-quiz-distribution>
+                    <div class="quiz-dist-head"><span>Hình thức</span><span class="diff-easy">Dễ</span><span class="diff-medium">Trung bình</span><span class="diff-hard">Khó</span><span>Tổng</span></div>
+                    @foreach($quizQuestionTypeLabels as $type => $typeLabel)
+                        <div class="quiz-dist-row" data-distribution-row>
+                            <div class="quiz-dist-type"><span><i class="fa-solid {{ $quizTypeIcons[$type] ?? 'fa-circle-question' }}"></i></span><strong>{{ $typeLabel }}</strong></div>
+                            @foreach($quizDifficultyLabels as $difficulty => $difficultyLabel)
+                                @php
+                                    $available = (int) data_get($quizQuestionAvailability, "{$type}.{$difficulty}", 0);
+                                    $fieldId = $type === 'single_choice'
+                                        ? ['easy' => 'addQuizEasyCount', 'medium' => 'addQuizMediumCount', 'hard' => 'addQuizHardCount'][$difficulty]
+                                        : "quizDist_{$type}_{$difficulty}";
+                                    $previousValue = data_get(old('question_distribution', []), "{$type}.{$difficulty}");
+                                    $defaultValue = $previousValue !== null
+                                        ? min(max((int) $previousValue, 0), $available)
+                                        : ($type === 'single_choice' && $difficulty === 'easy' ? min(5, $available) : 0);
+                                @endphp
+                                <label class="quiz-dist-cell">
+                                    <input type="number" name="question_distribution[{{ $type }}][{{ $difficulty }}]" id="{{ $fieldId }}" value="{{ $defaultValue }}" min="0" max="{{ $available }}" data-dist-input data-available="{{ $available }}" aria-label="{{ $typeLabel }} - {{ $difficultyLabel }}">
+                                    <small>Có {{ $available }}</small>
+                                </label>
+                            @endforeach
+                            <strong class="quiz-dist-total" data-row-total>0</strong>
+                        </div>
+                    @endforeach
+                    <div class="quiz-dist-summary"><span><i class="fa-solid fa-list-check"></i> Tổng số câu trong đề</span><strong data-grand-total>0 câu</strong></div>
                 </div>
+                <div class="quiz-dist-error" data-distribution-error hidden>Hãy chọn ít nhất một câu hỏi.</div>
             </div>
 
             <div class="modal-footer">
@@ -579,6 +601,45 @@
         </form>
     </div>
 </div>
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const distribution = document.querySelector('[data-quiz-distribution]');
+            if (!distribution) return;
+            const inputs = Array.from(distribution.querySelectorAll('[data-dist-input]'));
+            const error = document.querySelector('[data-distribution-error]');
+
+            const refresh = () => {
+                inputs.forEach(input => {
+                    const available = Number(input.dataset.available) || 0;
+                    const value = Number(input.value) || 0;
+                    input.value = Math.max(0, Math.min(value, available));
+                });
+
+                let grandTotal = 0;
+                distribution.querySelectorAll('[data-distribution-row]').forEach(row => {
+                    const total = Array.from(row.querySelectorAll('[data-dist-input]')).reduce((sum, input) => sum + (Number(input.value) || 0), 0);
+                    row.querySelector('[data-row-total]').textContent = total;
+                    row.classList.toggle('has-selection', total > 0);
+                    grandTotal += total;
+                });
+                distribution.querySelector('[data-grand-total]').textContent = `${grandTotal} câu`;
+                error.hidden = grandTotal > 0;
+                inputs[0]?.setCustomValidity(grandTotal > 0 ? '' : 'Hãy chọn ít nhất một câu hỏi.');
+            };
+
+            inputs.forEach(input => input.addEventListener('input', () => {
+                const available = Number(input.dataset.available);
+                if ((Number(input.value) || 0) > available) input.value = available;
+                if ((Number(input.value) || 0) < 0) input.value = 0;
+                refresh();
+            }));
+            window.refreshQuizDistribution = refresh;
+            refresh();
+        });
+    </script>
+@endpush
 
 {{-- ============================================================
      9. MODAL: KIỂM TRA CHẤT LƯỢNG KHÓA HỌC
@@ -812,6 +873,7 @@
                     setValue('addQuizEasyCount', draft.easy_count ?? 5);
                     setValue('addQuizMediumCount', draft.medium_count ?? 5);
                     setValue('addQuizHardCount', draft.hard_count ?? 2);
+                    window.refreshQuizDistribution?.();
                     return;
                 }
 

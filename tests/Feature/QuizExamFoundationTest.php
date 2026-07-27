@@ -8,10 +8,12 @@ use App\Models\Quiz;
 use App\Models\QuizSession;
 use App\Models\User;
 use App\Services\QuizExamService;
+use App\Services\QuizQuestionSelectionService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class QuizExamFoundationTest extends TestCase
@@ -88,6 +90,124 @@ class QuizExamFoundationTest extends TestCase
         $this->assertFalse($submitted->resultIsReleased());
     }
 
+    public function test_mixed_question_types_are_snapshotted_autosaved_and_graded(): void
+    {
+        $this->quiz->update(['easy_count' => 5]);
+        $this->seedMixedQuestions();
+
+        $service = app(QuizExamService::class);
+        $attempt = $service->startOrResume($this->quiz->fresh(), $this->student, $this->session);
+        $questions = $attempt->attemptQuestions->keyBy('question_type');
+
+        $this->assertSame([
+            Question::TYPE_FILL_BLANK,
+            Question::TYPE_MULTIPLE_CHOICE,
+            Question::TYPE_NUMERIC,
+            Question::TYPE_SINGLE_CHOICE,
+            Question::TYPE_TRUE_FALSE_GROUP,
+        ], $questions->keys()->sort()->values()->all());
+
+        $payloads = [
+            Question::TYPE_SINGLE_CHOICE => data_get($questions[Question::TYPE_SINGLE_CHOICE]->answer_key_snapshot, 'option_ids.0'),
+            Question::TYPE_MULTIPLE_CHOICE => data_get($questions[Question::TYPE_MULTIPLE_CHOICE]->answer_key_snapshot, 'option_ids'),
+            Question::TYPE_TRUE_FALSE_GROUP => data_get($questions[Question::TYPE_TRUE_FALSE_GROUP]->answer_key_snapshot, 'statements'),
+            Question::TYPE_FILL_BLANK => ['  Hà Nội ', 'VIỆT NAM'],
+            Question::TYPE_NUMERIC => '9,8',
+        ];
+
+        foreach ($questions as $question) {
+            $service->saveAnswer($attempt, $question->id, $payloads[$question->question_type], false, $question->position);
+        }
+
+        $submitted = $service->submit($attempt->fresh());
+
+        $this->assertSame(10.0, (float) $submitted->score);
+        $this->assertTrue($submitted->answers()->where('is_correct', false)->doesntExist());
+        $this->assertSame('cm', data_get($questions[Question::TYPE_NUMERIC]->response_schema_snapshot, 'unit'));
+        $this->assertCount(2, data_get($questions[Question::TYPE_FILL_BLANK]->answer_key_snapshot, 'blanks'));
+    }
+
+    public function test_multiple_choice_requires_exact_set_and_numeric_respects_tolerance(): void
+    {
+        $this->quiz->update(['easy_count' => 5]);
+        $this->seedMixedQuestions();
+
+        $service = app(QuizExamService::class);
+        $attempt = $service->startOrResume($this->quiz->fresh(), $this->student, $this->session);
+        $questions = $attempt->attemptQuestions->keyBy('question_type');
+
+        $single = $questions[Question::TYPE_SINGLE_CHOICE];
+        $multiple = $questions[Question::TYPE_MULTIPLE_CHOICE];
+        $truthGroup = $questions[Question::TYPE_TRUE_FALSE_GROUP];
+        $fill = $questions[Question::TYPE_FILL_BLANK];
+        $numeric = $questions[Question::TYPE_NUMERIC];
+
+        $service->saveAnswer($attempt, $single->id, data_get($single->answer_key_snapshot, 'option_ids.0'), false, 1);
+        $service->saveAnswer($attempt, $multiple->id, [data_get($multiple->answer_key_snapshot, 'option_ids.0')], false, 2);
+        $service->saveAnswer($attempt, $truthGroup->id, data_get($truthGroup->answer_key_snapshot, 'statements'), false, 3);
+        $service->saveAnswer($attempt, $fill->id, ['Hanoi', 'Việt Nam'], false, 4);
+        $service->saveAnswer($attempt, $numeric->id, '10.21', false, 5);
+
+        $submitted = $service->submit($attempt->fresh());
+
+        $this->assertSame(6.0, (float) $submitted->score);
+        $this->assertFalse((bool) $multiple->answer()->first()->is_correct);
+        $this->assertFalse((bool) $numeric->answer()->first()->is_correct);
+        $this->assertTrue((bool) $fill->answer()->first()->is_correct);
+    }
+
+    public function test_questions_are_selected_by_exact_type_and_difficulty_distribution(): void
+    {
+        $this->seedMixedQuestions();
+        $hardFill = Question::create([
+            'course_id' => $this->quiz->course_id,
+            'question_type' => Question::TYPE_FILL_BLANK,
+            'question_text' => 'Hoàn thành công thức khó: [[1]].',
+            'answer_config' => [
+                'blanks' => [['accepted' => ['x = 2']]],
+                'case_sensitive' => false,
+            ],
+            'difficulty' => 'hard',
+            'status' => 'published',
+        ]);
+
+        $selector = app(QuizQuestionSelectionService::class);
+        $distribution = $selector->emptyDistribution();
+        $distribution[Question::TYPE_SINGLE_CHOICE]['easy'] = 1;
+        $distribution[Question::TYPE_FILL_BLANK]['easy'] = 1;
+        $distribution[Question::TYPE_FILL_BLANK]['hard'] = 1;
+        $this->quiz->update([
+            'easy_count' => 2,
+            'medium_count' => 0,
+            'hard_count' => 1,
+            'question_distribution' => $distribution,
+        ]);
+
+        $selected = $selector->selectForQuiz($this->quiz->fresh());
+
+        $this->assertCount(3, $selected);
+        $this->assertSame(1, $selected->where('question_type', Question::TYPE_SINGLE_CHOICE)->where('difficulty', 'easy')->count());
+        $this->assertSame(1, $selected->where('question_type', Question::TYPE_FILL_BLANK)->where('difficulty', 'easy')->count());
+        $this->assertSame([$hardFill->id], $selected->where('question_type', Question::TYPE_FILL_BLANK)->where('difficulty', 'hard')->pluck('id')->all());
+    }
+
+    public function test_distribution_cannot_request_more_questions_than_available(): void
+    {
+        $selector = app(QuizQuestionSelectionService::class);
+        $distribution = $selector->emptyDistribution();
+        $distribution[Question::TYPE_SINGLE_CHOICE]['easy'] = 2;
+
+        try {
+            $selector->assertAvailable($this->quiz->course, $distribution);
+            $this->fail('Cấu hình vượt quá tồn kho phải bị từ chối.');
+        } catch (ValidationException $exception) {
+            $this->assertSame(
+                'Không đủ câu Một đáp án - Dễ: cần 2, hiện có 1.',
+                $exception->errors()['question_distribution.single_choice.easy'][0]
+            );
+        }
+    }
+
     private function createSchema(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -120,6 +240,7 @@ class QuizExamFoundationTest extends TestCase
             $table->integer('easy_count')->default(0);
             $table->integer('medium_count')->default(0);
             $table->integer('hard_count')->default(0);
+            $table->json('question_distribution')->nullable();
             $table->string('status')->default('published');
             $table->timestamp('published_at')->nullable();
             $table->timestamp('available_from')->nullable();
@@ -142,7 +263,9 @@ class QuizExamFoundationTest extends TestCase
             $table->unsignedBigInteger('course_id')->nullable();
             $table->unsignedBigInteger('question_bank_id')->nullable();
             $table->unsignedBigInteger('quiz_passage_id')->nullable();
+            $table->string('question_type')->default('single_choice');
             $table->text('question_text');
+            $table->json('answer_config')->nullable();
             $table->string('difficulty')->default('medium');
             $table->string('status')->default('published');
             $table->timestamps();
@@ -202,12 +325,15 @@ class QuizExamFoundationTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('quiz_attempt_id');
             $table->unsignedBigInteger('question_id')->nullable();
+            $table->string('question_type')->default('single_choice');
             $table->unsignedInteger('position');
             $table->text('question_text');
             $table->string('passage_title')->nullable();
             $table->longText('passage_content')->nullable();
             $table->string('passage_source_label')->nullable();
             $table->json('option_snapshot');
+            $table->json('answer_key_snapshot')->nullable();
+            $table->json('response_schema_snapshot')->nullable();
             $table->unsignedBigInteger('correct_option_id');
             $table->timestamps();
         });
@@ -216,6 +342,8 @@ class QuizExamFoundationTest extends TestCase
             $table->unsignedBigInteger('quiz_attempt_id');
             $table->unsignedBigInteger('quiz_attempt_question_id');
             $table->unsignedBigInteger('selected_option_id')->nullable();
+            $table->json('answer_payload')->nullable();
+            $table->boolean('is_correct')->nullable();
             $table->timestamp('answered_at')->nullable();
             $table->timestamps();
         });
@@ -239,5 +367,58 @@ class QuizExamFoundationTest extends TestCase
         DB::table('options')->insert(['question_id' => $question->id, 'option_text' => 'Sai', 'is_correct' => false, 'created_at' => now(), 'updated_at' => now()]);
         $this->session = QuizSession::create(['quiz_id' => $this->quiz->id, 'name' => 'Ca 1', 'starts_at' => now()->subMinute(), 'ends_at' => now()->addMinutes(40), 'status' => 'open', 'result_release_policy' => 'after_session']);
         DB::table('quiz_session_user')->insert(['quiz_session_id' => $this->session->id, 'user_id' => $this->student->id, 'extra_time_minutes' => 0, 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    private function seedMixedQuestions(): void
+    {
+        $courseId = $this->quiz->course_id;
+
+        $multiple = Question::create([
+            'course_id' => $courseId,
+            'question_type' => Question::TYPE_MULTIPLE_CHOICE,
+            'question_text' => 'Chọn hai số chẵn.',
+            'answer_config' => ['grading' => 'all_or_nothing'],
+            'difficulty' => 'easy',
+            'status' => 'published',
+        ]);
+        foreach ([['2', true], ['3', false], ['4', true]] as [$text, $correct]) {
+            DB::table('options')->insert(['question_id' => $multiple->id, 'option_text' => $text, 'is_correct' => $correct, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        $truthGroup = Question::create([
+            'course_id' => $courseId,
+            'question_type' => Question::TYPE_TRUE_FALSE_GROUP,
+            'question_text' => 'Xác định tính đúng sai.',
+            'answer_config' => ['grading' => 'all_or_nothing'],
+            'difficulty' => 'easy',
+            'status' => 'published',
+        ]);
+        foreach ([['Trái Đất quay quanh Mặt Trời', true], ['Mặt Trời quay quanh Trái Đất', false]] as [$text, $correct]) {
+            DB::table('options')->insert(['question_id' => $truthGroup->id, 'option_text' => $text, 'is_correct' => $correct, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        Question::create([
+            'course_id' => $courseId,
+            'question_type' => Question::TYPE_FILL_BLANK,
+            'question_text' => 'Thủ đô là [[1]], thuộc [[2]].',
+            'answer_config' => [
+                'blanks' => [
+                    ['accepted' => ['Hà Nội', 'Hanoi']],
+                    ['accepted' => ['Việt Nam']],
+                ],
+                'case_sensitive' => false,
+            ],
+            'difficulty' => 'easy',
+            'status' => 'published',
+        ]);
+
+        Question::create([
+            'course_id' => $courseId,
+            'question_type' => Question::TYPE_NUMERIC,
+            'question_text' => 'Chiều dài đo được là bao nhiêu?',
+            'answer_config' => ['target' => 10, 'tolerance' => 0.2, 'unit' => 'cm'],
+            'difficulty' => 'easy',
+            'status' => 'published',
+        ]);
     }
 }

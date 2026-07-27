@@ -103,6 +103,7 @@ class ControllerServiceRefactorTest extends TestCase
             $table->unsignedInteger('easy_count')->default(0);
             $table->unsignedInteger('medium_count')->default(0);
             $table->unsignedInteger('hard_count')->default(0);
+            $table->json('question_distribution')->nullable();
             $table->string('status')->nullable();
             $table->timestamp('published_at')->nullable();
             $table->timestamp('available_from')->nullable();

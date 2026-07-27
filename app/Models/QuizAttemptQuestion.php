@@ -9,17 +9,22 @@ class QuizAttemptQuestion extends Model
     protected $fillable = [
         'quiz_attempt_id',
         'question_id',
+        'question_type',
         'position',
         'question_text',
         'passage_title',
         'passage_content',
         'passage_source_label',
         'option_snapshot',
+        'answer_key_snapshot',
+        'response_schema_snapshot',
         'correct_option_id',
     ];
 
     protected $casts = [
         'option_snapshot' => 'array',
+        'answer_key_snapshot' => 'array',
+        'response_schema_snapshot' => 'array',
     ];
 
     public function attempt()
@@ -30,5 +35,10 @@ class QuizAttemptQuestion extends Model
     public function answer()
     {
         return $this->hasOne(QuizAttemptAnswer::class);
+    }
+
+    public function typeLabel(): string
+    {
+        return Question::typeLabels()[$this->question_type] ?? 'Một đáp án';
     }
 }

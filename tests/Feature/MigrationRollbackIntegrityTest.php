@@ -105,6 +105,55 @@ class MigrationRollbackIntegrityTest extends TestCase
         $this->assertFalse(Schema::hasTable('attendance_columns'));
     }
 
+    public function test_mixed_question_type_migration_is_reversible(): void
+    {
+        $quizBundle = require database_path('migrations/2026_04_16_113843_create_quizzes_and_questions_tables.php');
+        $quizBundle->up();
+        $foundation = require database_path('migrations/2026_07_26_000001_create_quiz_exam_foundation.php');
+        $foundation->up();
+        Schema::table('questions', function (Blueprint $table) {
+            $table->string('difficulty')->default('medium');
+        });
+
+        $mixedTypes = require database_path('migrations/2026_07_27_000002_add_mixed_question_types.php');
+        $mixedTypes->up();
+
+        $this->assertTrue(Schema::hasColumn('questions', 'question_type'));
+        $this->assertTrue(Schema::hasColumn('questions', 'answer_config'));
+        $this->assertTrue(Schema::hasColumn('quiz_attempt_questions', 'answer_key_snapshot'));
+        $this->assertTrue(Schema::hasColumn('quiz_attempt_answers', 'answer_payload'));
+        $this->assertTrue(Schema::hasColumn('quiz_attempt_answers', 'is_correct'));
+
+        $mixedTypes->down();
+
+        $this->assertFalse(Schema::hasColumn('questions', 'question_type'));
+        $this->assertFalse(Schema::hasColumn('quiz_attempt_questions', 'answer_key_snapshot'));
+        $this->assertFalse(Schema::hasColumn('quiz_attempt_answers', 'answer_payload'));
+
+        $foundation->down();
+        $quizBundle->down();
+    }
+
+    public function test_quiz_question_distribution_migration_is_reversible(): void
+    {
+        $quizBundle = require database_path('migrations/2026_04_16_113843_create_quizzes_and_questions_tables.php');
+        $quizBundle->up();
+        Schema::table('quizzes', function (Blueprint $table) {
+            $table->unsignedInteger('hard_count')->default(0);
+        });
+
+        $distribution = require database_path('migrations/2026_07_27_000003_add_question_distribution_to_quizzes.php');
+        $distribution->up();
+
+        $this->assertTrue(Schema::hasColumn('quizzes', 'question_distribution'));
+
+        $distribution->down();
+
+        $this->assertFalse(Schema::hasColumn('quizzes', 'question_distribution'));
+
+        $quizBundle->down();
+    }
+
     public function test_quiz_attempt_constraint_keeps_first_completed_attempt_and_is_reversible(): void
     {
         Schema::create('quiz_attempts', function (Blueprint $table) {

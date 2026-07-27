@@ -9,8 +9,10 @@ use App\Models\Course;
 use App\Models\LearningMaterialAssignment;
 use App\Models\LearningProgram;
 use App\Models\Lesson;
+use App\Models\Question;
 use App\Models\QuizAttempt;
 use App\Services\CourseCloningService;
+use App\Services\QuizQuestionSelectionService;
 use App\Services\StoredAssetReferenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +22,10 @@ use Illuminate\Support\Facades\Storage;
 
 class CourseController extends Controller
 {
-    public function __construct(private CourseCloningService $courseCloner) {}
+    public function __construct(
+        private CourseCloningService $courseCloner,
+        private QuizQuestionSelectionService $quizQuestionSelector,
+    ) {}
 
     public function index()
     {
@@ -125,6 +130,11 @@ class CourseController extends Controller
             'archivedQuizzes:id,course_id,title,status',
         ])->findOrFail($id);
         $this->authorizeCourseAccess($course);
+        $quizQuestionAvailability = auth()->user()->role === 'student'
+            ? $this->quizQuestionSelector->emptyDistribution()
+            : $this->quizQuestionSelector->availableCounts($course);
+        $quizQuestionTypeLabels = Question::typeLabels();
+        $quizDifficultyLabels = QuizQuestionSelectionService::DIFFICULTIES;
 
         if (auth()->user()->role === 'student') {
             $course->setRelation(
@@ -227,7 +237,7 @@ class CourseController extends Controller
                 ->keyBy('quiz_id');
         }
 
-        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards'));
+        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards', 'quizQuestionAvailability', 'quizQuestionTypeLabels', 'quizDifficultyLabels'));
     }
 
     public function create()

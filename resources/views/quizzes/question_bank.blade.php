@@ -10,7 +10,7 @@
         <div>
             <h1 class="page-title"><i class="fa-solid fa-database"
                     style="color:#2563eb; font-size:18px; margin-right:10px;"></i>Ngân hàng câu hỏi</h1>
-            <p class="page-subtitle">Quản lý kho câu hỏi trắc nghiệm dùng để trộn đề thi ngẫu nhiên</p>
+            <p class="page-subtitle">Soạn câu hỏi hỗn hợp, quản lý ngữ liệu và tự động chấm điểm</p>
         </div>
         <div class="btn-group-actions">
             <button class="btn-act btn-act-ghost" data-bs-toggle="modal" data-bs-target="#passageModal">
@@ -49,6 +49,21 @@
             @if (request('question_bank_id'))
                 <input type="hidden" name="question_bank_id" value="{{ request('question_bank_id') }}">
             @endif
+            @if (request('question_type'))
+                <input type="hidden" name="question_type" value="{{ request('question_type') }}">
+            @endif
+        </form>
+
+        <form action="{{ route('questions.index') }}" method="GET" class="filter-group">
+            <label class="filter-label">Loại câu hỏi</label>
+            <select name="question_type" onchange="this.form.submit()">
+                <option value="">Tất cả hình thức</option>
+                @foreach($questionTypeLabels as $value => $label)
+                    <option value="{{ $value }}" @selected(request('question_type') === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+            @if(request('course_id'))<input type="hidden" name="course_id" value="{{ request('course_id') }}">@endif
+            @if(request('question_bank_id'))<input type="hidden" name="question_bank_id" value="{{ request('question_bank_id') }}">@endif
         </form>
 
         <form action="{{ route('questions.index') }}" method="GET" class="filter-group">
@@ -63,6 +78,9 @@
             </select>
             @if (request('course_id'))
                 <input type="hidden" name="course_id" value="{{ request('course_id') }}">
+            @endif
+            @if (request('question_type'))
+                <input type="hidden" name="question_type" value="{{ request('question_type') }}">
             @endif
         </form>
 
@@ -93,6 +111,7 @@
                     <tr>
                         <th style="width:52px;">ID</th>
                         <th style="width:36%;">Nội dung câu hỏi</th>
+                        <th>Hình thức</th>
                         <th>Ngân hàng</th>
                         <th>Dùng cho</th>
                         <th>Giáo viên</th>
@@ -109,12 +128,12 @@
                                 @if($question->passage)
                                     <div class="small text-primary mt-1"><i class="fa-solid fa-file-lines"></i> {{ Str::limit($question->passage->title, 55) }}</div>
                                 @endif
-                                @php $correctOpt = $question->options->where('is_correct', true)->first(); @endphp
                                 <div class="q-answer">
                                     <i class="fa-solid fa-circle-check"></i>
-                                    {{ $correctOpt ? Str::limit($correctOpt->option_text, 45) : 'Chưa có đáp án đúng' }}
+                                    {{ Str::limit($question->answerSummary(), 62) }}
                                 </div>
                             </td>
+                            <td><span class="type-badge type-{{ $question->question_type }}">{{ $question->typeLabel() }}</span></td>
                             <td><span class="q-course">{{ $question->questionBank->name ?? $question->course->title ?? 'N/A' }}</span></td>
                             <td>
                                 <span class="q-course">
@@ -141,15 +160,28 @@
                                 @endif
                             </td>
                             <td>
+                                @php
+                                    $editPayload = json_encode([
+                                        'id' => $question->id,
+                                        'course_id' => $question->course_id,
+                                        'question_bank_id' => $question->question_bank_id,
+                                        'quiz_passage_id' => $question->quiz_passage_id,
+                                        'difficulty' => $question->difficulty,
+                                        'question_type' => $question->question_type,
+                                        'question_text' => $question->question_text,
+                                        'answer_config' => $question->answer_config,
+                                        'options' => $question->options->sortBy('id')->values(),
+                                    ], JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_TAG | JSON_HEX_QUOT);
+                                @endphp
                                 <div style="display:flex; gap:6px; justify-content:flex-end;">
                                     <button type="button" class="action-btn" data-bs-toggle="modal"
                                         data-bs-target="#editQuestionModal" data-id="{{ $question->id }}"
+                                        data-update-url="{{ route('questions.updateBank', $question->id) }}"
                                         data-course="{{ $question->course_id }}"
                                         data-bank="{{ $question->question_bank_id }}"
                                         data-passage="{{ $question->quiz_passage_id }}"
                                         data-difficulty="{{ $question->difficulty }}"
-                                        data-text="{{ htmlspecialchars($question->question_text) }}"
-                                        data-options="{{ $question->options->sortBy('id')->values()->toJson() }}"
+                                        data-payload="{{ $editPayload }}"
                                         title="Sửa">
                                         <i class="fa-solid fa-edit"></i>
                                     </button>
@@ -166,7 +198,7 @@
                         </tr>
                     @empty
                         <tr class="empty-row">
-                            <td colspan="7">
+                            <td colspan="8">
                                 <i class="fa-solid fa-box-open"></i>
                                 <p>Kho câu hỏi trống. Hãy thêm câu hỏi mới!</p>
                             </td>
@@ -302,76 +334,7 @@
             <div class="modal-content">
                 <form action="{{ route('questions.storeBank') }}" method="POST">
                     @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="fa-solid fa-pen-square"></i>Thêm câu hỏi mới</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row-g">
-                            <div class="col-flex-2">
-                                <label class="form-label-sm">Khóa học</label>
-                                <select name="course_id" class="form-ctrl" required>
-                                    @foreach ($courses as $course)
-                                        <option value="{{ $course->id }}"
-                                            {{ request('course_id') == $course->id ? 'selected' : '' }}>
-                                            {{ $course->title }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-flex-2">
-                                <label class="form-label-sm">Ngân hàng câu hỏi</label>
-                                <select name="question_bank_id" class="form-ctrl">
-                                    <option value="">Tự chọn/tạo theo khóa học</option>
-                                    @foreach ($questionBanks as $bank)
-                                        <option value="{{ $bank->id }}" {{ request('question_bank_id') == $bank->id ? 'selected' : '' }}>
-                                            {{ $bank->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-flex-1">
-                                <label class="form-label-sm">Độ khó</label>
-                                <select name="difficulty" class="form-ctrl" required>
-                                    <option value="easy">Dễ</option>
-                                    <option value="medium" selected>Trung bình</option>
-                                    <option value="hard">Khó</option>
-                                </select>
-                            </div>
-                            <div class="col-flex-full">
-                                <label class="form-label-sm">Ngữ liệu dùng chung (không bắt buộc)</label>
-                                <select name="quiz_passage_id" class="form-ctrl">
-                                    <option value="">Câu hỏi độc lập</option>
-                                    @foreach($passages as $passage)<option value="{{ $passage->id }}">{{ $passage->course->title ?? '' }} — {{ $passage->title }}</option>@endforeach
-                                </select>
-                            </div>
-                            <div class="col-flex-full">
-                                <label class="form-label-sm">Nội dung câu hỏi</label>
-                                <textarea name="question_text" class="form-ctrl" rows="3" placeholder="Nhập câu hỏi tại đây..." required></textarea>
-                            </div>
-                        </div>
-
-                        <div class="section-divider">Các đáp án — tích chọn đáp án đúng</div>
-
-                        @for ($i = 1; $i <= 4; $i++)
-                            <div class="answer-row">
-                                <input type="radio" name="correct_option" value="{{ $i }}"
-                                    {{ $i == 1 ? 'checked' : '' }} required style="cursor:pointer; flex-shrink:0;">
-                                <div class="answer-label">{{ chr(64 + $i) }}</div>
-                                <input type="text" name="options[{{ $i }}]" class="answer-input"
-                                    placeholder="Nhập đáp án {{ chr(64 + $i) }}..." required>
-                            </div>
-                        @endfor
-
-                        <div class="info-note">
-                            <i class="fa-solid fa-circle-info" style="margin-top:1px; flex-shrink:0;"></i>
-                            Khi học sinh làm bài, thứ tự 4 đáp án sẽ được xáo trộn ngẫu nhiên.
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn-modal-submit">Lưu vào kho</button>
-                    </div>
+                    @include('quizzes.partials.question_editor', ['mode' => 'add', 'editorId' => 'add'])
                 </form>
             </div>
         </div>
@@ -385,66 +348,7 @@
             <div class="modal-content">
                 <form action="" method="POST" id="editQuestionForm">
                     @csrf @method('PUT')
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="fa-solid fa-edit"></i>Chỉnh sửa câu hỏi</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row-g">
-                            <div class="col-flex-2">
-                                <label class="form-label-sm">Khóa học</label>
-                                <select name="course_id" id="edit_course_id" class="form-ctrl" required>
-                                    @foreach ($courses as $course)
-                                        <option value="{{ $course->id }}">{{ $course->title }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-flex-2">
-                                <label class="form-label-sm">Ngân hàng câu hỏi</label>
-                                <select name="question_bank_id" id="edit_question_bank_id" class="form-ctrl">
-                                    <option value="">Tự chọn/tạo theo khóa học</option>
-                                    @foreach ($questionBanks as $bank)
-                                        <option value="{{ $bank->id }}">{{ $bank->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-flex-1">
-                                <label class="form-label-sm">Độ khó</label>
-                                <select name="difficulty" id="edit_difficulty" class="form-ctrl" required>
-                                    <option value="easy">Dễ</option>
-                                    <option value="medium">Trung bình</option>
-                                    <option value="hard">Khó</option>
-                                </select>
-                            </div>
-                            <div class="col-flex-full">
-                                <label class="form-label-sm">Ngữ liệu dùng chung (không bắt buộc)</label>
-                                <select name="quiz_passage_id" id="edit_quiz_passage_id" class="form-ctrl">
-                                    <option value="">Câu hỏi độc lập</option>
-                                    @foreach($passages as $passage)<option value="{{ $passage->id }}">{{ $passage->course->title ?? '' }} — {{ $passage->title }}</option>@endforeach
-                                </select>
-                            </div>
-                            <div class="col-flex-full">
-                                <label class="form-label-sm">Nội dung câu hỏi</label>
-                                <textarea name="question_text" id="edit_question_text" class="form-ctrl" rows="3" required></textarea>
-                            </div>
-                        </div>
-
-                        <div class="section-divider">Các đáp án — tích chọn đáp án đúng</div>
-
-                        @for ($i = 1; $i <= 4; $i++)
-                            <div class="answer-row">
-                                <input type="radio" name="correct_option" id="edit_correct_{{ $i }}"
-                                    value="{{ $i }}" required style="cursor:pointer; flex-shrink:0;">
-                                <div class="answer-label">{{ chr(64 + $i) }}</div>
-                                <input type="text" name="options[{{ $i }}]"
-                                    id="edit_option_{{ $i }}" class="answer-input" required>
-                            </div>
-                        @endfor
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn-modal-submit">Cập nhật</button>
-                    </div>
+                    @include('quizzes.partials.question_editor', ['mode' => 'edit', 'editorId' => 'edit'])
                 </form>
             </div>
         </div>
@@ -514,38 +418,137 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var editModal = document.getElementById('editQuestionModal');
-            if (!editModal) return;
+            const editors = new Map();
 
-            editModal.addEventListener('show.bs.modal', function(event) {
-                var btn = event.relatedTarget;
-                var id = btn.getAttribute('data-id');
-                var courseId = btn.getAttribute('data-course');
-                var bankId = btn.getAttribute('data-bank') || '';
-                var passageId = btn.getAttribute('data-passage') || '';
-                var difficulty = btn.getAttribute('data-difficulty');
-                var text = btn.getAttribute('data-text');
-                var options = JSON.parse(btn.getAttribute('data-options') || '[]');
+            document.querySelectorAll('[data-question-editor]').forEach(root => {
+                const state = {
+                    root,
+                    options: Array.from({length: 4}, (_, index) => ({text: '', correct: index === 0})),
+                    blanks: [''],
+                };
+                editors.set(root.dataset.questionEditor, state);
 
-                document.getElementById('editQuestionForm').action = '/question-bank/' + id;
-                document.getElementById('edit_course_id').value = courseId;
-                document.getElementById('edit_question_bank_id').value = bankId;
-                document.getElementById('edit_quiz_passage_id').value = passageId;
-                document.getElementById('edit_difficulty').value = difficulty;
-                document.getElementById('edit_question_text').value = text;
+                const type = () => root.querySelector('[name="question_type"]:checked').value;
+                const optionRows = root.querySelector('[data-option-rows]');
+                const textInput = root.querySelector('[data-field="question_text"]');
 
-                for (var j = 1; j <= 4; j++) {
-                    document.getElementById('edit_correct_' + j).checked = false;
+                const captureOptions = () => {
+                    optionRows.querySelectorAll('[data-option-row]').forEach((row, index) => {
+                        if (!state.options[index]) return;
+                        state.options[index].text = row.querySelector('[data-option-text]').value;
+                        const correctness = row.querySelector('[data-option-correct]');
+                        if (correctness) state.options[index].correct = correctness.type === 'select' ? correctness.value === '1' : correctness.checked;
+                    });
+                };
+
+                const renderOptions = () => {
+                    const currentType = type();
+                    const isGroup = currentType === 'true_false_group';
+                    const isMultiple = currentType === 'multiple_choice';
+                    optionRows.innerHTML = '';
+                    state.options.forEach((option, index) => {
+                        const number = index + 1;
+                        const row = document.createElement('div');
+                        row.className = 'answer-row answer-row-modern';
+                        row.dataset.optionRow = '';
+                        const marker = isGroup
+                            ? `<span class="statement-number">${number}</span>`
+                            : `<label class="correct-control" title="Đánh dấu đáp án đúng"><input data-option-correct type="${isMultiple ? 'checkbox' : 'radio'}" name="${isMultiple ? 'correct_options[]' : 'correct_option'}" value="${number}" ${option.correct ? 'checked' : ''}><span><i class="fa-solid fa-check"></i></span></label>`;
+                        const truth = isGroup
+                            ? `<select data-option-correct name="truth_values[${number}]" class="truth-select"><option value="1" ${option.correct ? 'selected' : ''}>Đúng</option><option value="0" ${!option.correct ? 'selected' : ''}>Sai</option></select>`
+                            : '';
+                        row.innerHTML = `${marker}<input data-option-text type="text" name="options[${number}]" class="answer-input" maxlength="2000" placeholder="${isGroup ? 'Nhập nhận định' : 'Nhập phương án'} ${number}" required>${truth}<button type="button" class="remove-option" aria-label="Xóa phương án" ${state.options.length <= 2 ? 'disabled' : ''}><i class="fa-solid fa-xmark"></i></button>`;
+                        row.querySelector('[data-option-text]').value = option.text || '';
+                        row.querySelector('.remove-option').addEventListener('click', () => {
+                            captureOptions();
+                            state.options.splice(index, 1);
+                            if (!state.options.some(item => item.correct) && !isGroup) state.options[0].correct = true;
+                            renderOptions();
+                        });
+                        optionRows.appendChild(row);
+                    });
+                };
+
+                const renderBlanks = () => {
+                    const placeholders = textInput.value.match(/\[\[\s*\d+\s*\]\]/g) || [];
+                    const count = placeholders.length;
+                    while (state.blanks.length < count) state.blanks.push('');
+                    state.blanks = state.blanks.slice(0, Math.max(count, 1));
+                    const container = root.querySelector('[data-blank-rows]');
+                    container.innerHTML = '';
+                    root.querySelector('[data-blank-preview]').textContent = count
+                        ? `Đã nhận diện ${count} ô trống. Mỗi ô có thể có nhiều cách viết đúng.`
+                        : 'Thêm [[1]] vào nội dung để tạo ô trống đầu tiên.';
+                    state.blanks.slice(0, count).forEach((answer, index) => {
+                        const row = document.createElement('label');
+                        row.className = 'blank-answer-row';
+                        row.innerHTML = `<span>Ô ${index + 1}</span><input type="text" name="blank_answers[${index + 1}]" maxlength="2000" placeholder="Đáp án đúng | cách viết khác" required>`;
+                        const input = row.querySelector('input');
+                        input.value = answer;
+                        input.addEventListener('input', () => state.blanks[index] = input.value);
+                        container.appendChild(row);
+                    });
+                };
+
+                const applyType = () => {
+                    captureOptions();
+                    const currentType = type();
+                    renderOptions();
+                    renderBlanks();
+                    root.querySelectorAll('[data-answer-section]').forEach(section => {
+                        const active = (section.dataset.answerSection === 'options' && ['single_choice', 'multiple_choice', 'true_false_group'].includes(currentType))
+                            || (section.dataset.answerSection === 'blanks' && currentType === 'fill_blank')
+                            || (section.dataset.answerSection === 'numeric' && currentType === 'numeric');
+                        section.hidden = !active;
+                        section.querySelectorAll('input,select,textarea').forEach(input => input.disabled = !active);
+                    });
+                    root.querySelector('[data-placeholder-helper]').hidden = currentType !== 'fill_blank';
+                    root.querySelector('[data-add-option]').hidden = currentType === 'true_false_group' && state.options.length >= 10;
+                    root.querySelector('[data-options-title]').textContent = currentType === 'true_false_group' ? 'Các nhận định' : 'Các phương án';
+                    root.querySelector('[data-options-hint]').textContent = currentType === 'single_choice' ? 'Chọn một đáp án đúng.' : currentType === 'multiple_choice' ? 'Chọn từ hai đáp án đúng; chấm theo nguyên tắc chọn đủ.' : 'Xác định Đúng hoặc Sai cho từng nhận định.';
+                    root.querySelector('[data-editor-guidance] span').textContent = currentType === 'fill_blank' ? 'Có thể khai báo nhiều cách viết đúng bằng dấu |.' : currentType === 'numeric' ? 'Ví dụ 10 ± 0.5 sẽ chấp nhận kết quả từ 9.5 đến 10.5.' : currentType === 'true_false_group' ? 'Học sinh phải trả lời đầy đủ từng nhận định để được tính đúng.' : 'Thứ tự phương án sẽ được xáo trộn khi phát đề.';
+                };
+
+                root.querySelectorAll('[name="question_type"]').forEach(input => input.addEventListener('change', applyType));
+                root.querySelector('[data-add-option]').addEventListener('click', () => {
+                    captureOptions();
+                    if (state.options.length >= (type() === 'true_false_group' ? 10 : 8)) return;
+                    state.options.push({text: '', correct: false});
+                    renderOptions();
+                });
+                textInput.addEventListener('input', () => {
+                    if (type() === 'fill_blank') renderBlanks();
+                });
+
+                state.applyType = applyType;
+                state.renderBlanks = renderBlanks;
+                applyType();
+            });
+
+            const editModal = document.getElementById('editQuestionModal');
+            editModal?.addEventListener('show.bs.modal', event => {
+                const button = event.relatedTarget;
+                const payload = JSON.parse(button.getAttribute('data-payload') || '{}');
+                const state = editors.get('edit');
+                const root = state.root;
+                document.getElementById('editQuestionForm').action = button.dataset.updateUrl;
+                ['course_id', 'question_bank_id', 'quiz_passage_id', 'difficulty', 'question_text'].forEach(field => {
+                    root.querySelector(`[data-field="${field}"]`).value = payload[field] ?? '';
+                });
+                const typeInput = root.querySelector(`[name="question_type"][value="${payload.question_type || 'single_choice'}"]`);
+                if (typeInput) typeInput.checked = true;
+                state.options = (payload.options || []).map(option => ({text: option.option_text, correct: Boolean(option.is_correct)}));
+                if (state.options.length < 2 && ['single_choice', 'multiple_choice', 'true_false_group'].includes(payload.question_type)) {
+                    state.options = [{text: '', correct: true}, {text: '', correct: false}];
                 }
-                for (var i = 0; i < 4; i++) {
-                    var n = i + 1;
-                    if (options[i]) {
-                        document.getElementById('edit_option_' + n).value = options[i].option_text;
-                        if (options[i].is_correct == 1 || options[i].is_correct === true) {
-                            document.getElementById('edit_correct_' + n).checked = true;
-                        }
-                    }
-                }
+                const config = payload.answer_config || {};
+                state.blanks = (config.blanks || []).map(blank => (blank.accepted || []).join(' | '));
+                root.querySelector('[name="case_sensitive"]').checked = Boolean(config.case_sensitive);
+                root.querySelector('[data-field="numeric_answer"]').value = config.target ?? '';
+                root.querySelector('[data-field="numeric_tolerance"]').value = config.tolerance ?? 0;
+                root.querySelector('[data-field="numeric_unit"]').value = config.unit ?? '';
+                root.querySelector('[data-option-rows]').innerHTML = '';
+                state.applyType();
             });
         });
     </script>

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
-use App\Models\Question;
 use App\Models\Quiz;
 use App\Services\NotificationCenter;
+use App\Services\QuizQuestionSelectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -13,30 +13,36 @@ use Illuminate\Validation\ValidationException;
 
 class QuizController extends Controller
 {
+    public function __construct(private QuizQuestionSelectionService $questionSelector) {}
+
     public function store(Request $request)
     {
         $request->validate([
             'course_id' => 'required|exists:courses,id',
             'title' => 'required|string|max:255',
             'time_limit' => 'required|integer|min:1',
-            'easy_count' => 'required|integer|min:0',
-            'medium_count' => 'required|integer|min:0',
-            'hard_count' => 'required|integer|min:0',
+            'question_distribution' => ['required', 'array'],
+            'question_distribution.*' => ['array'],
+            'question_distribution.*.*' => ['nullable', 'integer', 'min:0', 'max:500'],
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
 
         $course = Course::findOrFail($request->integer('course_id'));
         Gate::authorize('create', [Quiz::class, $course]);
+        $distribution = $this->questionSelector->normalizeDistribution($request->input('question_distribution', []));
+        $this->questionSelector->assertAvailable($course, $distribution);
+        $totals = $this->questionSelector->totalsByDifficulty($distribution);
 
         $quiz = Quiz::create([
             'course_id' => $request->course_id,
             'title' => $request->title,
             'time_limit' => $request->time_limit,
             'is_random' => true,
-            'easy_count' => $request->easy_count,
-            'medium_count' => $request->medium_count,
-            'hard_count' => $request->hard_count,
+            'easy_count' => $totals['easy'],
+            'medium_count' => $totals['medium'],
+            'hard_count' => $totals['hard'],
+            'question_distribution' => $distribution,
             'status' => $request->input('status', 'published'),
             'published_at' => $request->input('status', 'published') === 'published' ? now() : null,
             'available_from' => $request->available_from,
@@ -66,35 +72,9 @@ class QuizController extends Controller
         // THUẬT TOÁN LẤY ĐỀ NGẪU NHIÊN & XÁO TRỘN
         // ==========================================
         if ($quiz->is_random) {
-            $bankIds = $quiz->course->questionBanks()->pluck('question_banks.id');
-            $pick = fn ($difficulty, $limit) => Question::with('options')
-                ->notArchived()
-                ->where(function ($q) use ($quiz, $bankIds) {
-                    if ($bankIds->isNotEmpty()) {
-                        $q->whereIn('question_bank_id', $bankIds);
-                    }
+            $examQuestions = $this->questionSelector->selectForQuiz($quiz);
 
-                    $q->orWhere('course_id', $quiz->course_id);
-                })
-                ->where('difficulty', $difficulty)
-                ->inRandomOrder()
-                ->limit($limit)
-                ->get();
-
-            // 1. Bốc ngẫu nhiên câu hỏi từ Ngân hàng theo độ khó
-            $easyQuestions = $pick('easy', $quiz->easy_count);
-
-            $mediumQuestions = $pick('medium', $quiz->medium_count);
-
-            $hardQuestions = $pick('hard', $quiz->hard_count);
-
-            // 2. Gộp tất cả lại thành 1 đề thi duy nhất
-            $examQuestions = $easyQuestions->merge($mediumQuestions)->merge($hardQuestions);
-
-            // 3. Xáo trộn thứ tự các CÂU HỎI
-            $examQuestions = $examQuestions->shuffle();
-
-            // 4. Xáo trộn thứ tự các ĐÁP ÁN bên trong mỗi câu hỏi
+            // Xáo trộn thứ tự đáp án cho các câu lựa chọn.
             foreach ($examQuestions as $question) {
                 // Biến Collection options thành một Collection mới đã xáo trộn
                 $question->setRelation('options', $question->options->shuffle());

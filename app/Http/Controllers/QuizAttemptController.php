@@ -209,14 +209,19 @@ class QuizAttemptController extends Controller
         $data = $request->validate([
             'attempt_question_id' => ['required', 'integer'],
             'selected_option_id' => ['nullable', 'integer'],
+            'answer' => ['nullable'],
             'flagged' => ['required', 'boolean'],
             'current_position' => ['required', 'integer', 'min:1'],
         ]);
 
+        $answerPayload = array_key_exists('answer', $data)
+            ? $data['answer']
+            : ($data['selected_option_id'] ?? null);
+
         $attempt = $examService->saveAnswer(
             $attempt,
             (int) $data['attempt_question_id'],
-            isset($data['selected_option_id']) ? (int) $data['selected_option_id'] : null,
+            $answerPayload,
             (bool) $data['flagged'],
             (int) $data['current_position'],
         );

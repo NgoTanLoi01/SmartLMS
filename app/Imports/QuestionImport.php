@@ -48,6 +48,7 @@ class QuestionImport implements ToCollection, WithStartRow
             $question = Question::create([
                 'course_id' => $this->courseId,
                 'question_bank_id' => $this->questionBankId,
+                'question_type' => Question::TYPE_SINGLE_CHOICE,
                 'difficulty' => $difficulty,
                 'question_text' => $questionText,
                 'status' => Question::STATUS_PUBLISHED,

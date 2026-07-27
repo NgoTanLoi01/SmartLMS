@@ -76,6 +76,7 @@ class CourseCloningService
                 'easy_count' => $sourceQuiz->easy_count,
                 'medium_count' => $sourceQuiz->medium_count,
                 'hard_count' => $sourceQuiz->hard_count,
+                'question_distribution' => $sourceQuiz->question_distribution,
                 'status' => $sourceQuiz->status,
                 'published_at' => $sourceQuiz->published_at,
                 'available_from' => $sourceQuiz->available_from,
@@ -100,7 +101,9 @@ class CourseCloningService
                 $targetQuestion = Question::create([
                     'course_id' => $targetCourse->id,
                     'question_bank_id' => null,
+                    'question_type' => $sourceQuestion->question_type,
                     'question_text' => $sourceQuestion->question_text,
+                    'answer_config' => $sourceQuestion->answer_config,
                     'difficulty' => $sourceQuestion->difficulty,
                     'status' => $sourceQuestion->status ?? Question::STATUS_PUBLISHED,
                 ]);

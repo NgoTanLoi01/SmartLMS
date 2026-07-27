@@ -10,11 +10,15 @@ class QuizAttemptAnswer extends Model
         'quiz_attempt_id',
         'quiz_attempt_question_id',
         'selected_option_id',
+        'answer_payload',
+        'is_correct',
         'answered_at',
     ];
 
     protected $casts = [
         'answered_at' => 'datetime',
+        'answer_payload' => 'array',
+        'is_correct' => 'boolean',
     ];
 
     public function attempt()

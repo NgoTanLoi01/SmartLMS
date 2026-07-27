@@ -12,6 +12,7 @@ use App\Models\QuestionBank;
 use App\Models\QuizPassage;
 use App\Services\AiResponseValidator;
 use App\Services\GeminiEmbeddingService;
+use App\Services\QuestionDefinitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -24,6 +25,7 @@ class QuestionController extends Controller
     public function __construct(
         private GeminiEmbeddingService $embeddingService,
         private AiResponseValidator $responseValidator,
+        private QuestionDefinitionService $questionDefinitionService,
     ) {}
 
     // ==========================================
@@ -65,6 +67,10 @@ class QuestionController extends Controller
             });
         }
 
+        if ($request->filled('question_type')) {
+            $query->where('question_type', $request->question_type);
+        }
+
         // Lấy danh sách câu hỏi (có phân trang)
         $questions = $query->orderBy('created_at', 'desc')->paginate(15);
 
@@ -78,7 +84,9 @@ class QuestionController extends Controller
             ->orderBy('title')
             ->get();
 
-        return view('quizzes.question_bank', compact('courses', 'questionBanks', 'questions', 'passages'));
+        $questionTypeLabels = Question::typeLabels();
+
+        return view('quizzes.question_bank', compact('courses', 'questionBanks', 'questions', 'passages', 'questionTypeLabels'));
     }
 
     public function storePassage(Request $request)
@@ -159,10 +167,9 @@ class QuestionController extends Controller
             'question_bank_id' => 'nullable|exists:question_banks,id',
             'quiz_passage_id' => 'nullable|exists:quiz_passages,id',
             'difficulty' => 'required|in:easy,medium,hard',
-            'question_text' => 'required|string',
-            'options' => 'required|array|size:4',
-            'correct_option' => 'required|in:1,2,3,4',
+            'question_text' => 'required|string|max:10000',
         ]);
+        $definition = $this->questionDefinitionService->validate($request);
 
         $bank = $request->filled('question_bank_id')
             ? QuestionBank::findOrFail($request->question_bank_id)
@@ -172,22 +179,19 @@ class QuestionController extends Controller
         $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
         $passageId = $this->validatedPassageId($request);
 
-        $question = Question::create([
-            'course_id' => $request->course_id,
-            'question_bank_id' => $bank->id,
-            'quiz_passage_id' => $passageId,
-            'difficulty' => $request->difficulty,
-            'question_text' => $request->question_text,
-            'status' => Question::STATUS_PUBLISHED,
-        ]);
-
-        foreach ($request->options as $index => $optionText) {
-            Option::create([
-                'question_id' => $question->id,
-                'option_text' => $optionText,
-                'is_correct' => $index == $request->correct_option ? true : false,
+        DB::transaction(function () use ($request, $bank, $passageId, $definition) {
+            $question = Question::create([
+                'course_id' => $request->course_id,
+                'question_bank_id' => $bank->id,
+                'quiz_passage_id' => $passageId,
+                'question_type' => $definition['question_type'],
+                'difficulty' => $request->difficulty,
+                'question_text' => $request->question_text,
+                'answer_config' => $definition['answer_config'],
+                'status' => Question::STATUS_PUBLISHED,
             ]);
-        }
+            $this->questionDefinitionService->syncOptions($question, $definition);
+        });
 
         return back()->with('success', 'Đã thêm câu hỏi vào Ngân hàng thành công!');
     }
@@ -202,10 +206,9 @@ class QuestionController extends Controller
             'question_bank_id' => 'nullable|exists:question_banks,id',
             'quiz_passage_id' => 'nullable|exists:quiz_passages,id',
             'difficulty' => 'required|in:easy,medium,hard',
-            'question_text' => 'required|string',
-            'options' => 'required|array|size:4',
-            'correct_option' => 'required|in:1,2,3,4',
+            'question_text' => 'required|string|max:10000',
         ]);
+        $definition = $this->questionDefinitionService->validate($request);
 
         $question = Question::findOrFail($id);
 
@@ -219,26 +222,18 @@ class QuestionController extends Controller
         $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
         $passageId = $this->validatedPassageId($request);
 
-        $question->update([
-            'course_id' => $request->course_id,
-            'question_bank_id' => $bank->id,
-            'quiz_passage_id' => $passageId,
-            'difficulty' => $request->difficulty,
-            'question_text' => $request->question_text,
-        ]);
-
-        // Cập nhật các đáp án
-        $options = $question->options()->orderBy('id', 'asc')->get();
-        $index = 1;
-        foreach ($request->options as $optionText) {
-            if (isset($options[$index - 1])) {
-                $options[$index - 1]->update([
-                    'option_text' => $optionText,
-                    'is_correct' => $index == $request->correct_option ? true : false,
-                ]);
-            }
-            $index++;
-        }
+        DB::transaction(function () use ($question, $request, $bank, $passageId, $definition) {
+            $question->update([
+                'course_id' => $request->course_id,
+                'question_bank_id' => $bank->id,
+                'quiz_passage_id' => $passageId,
+                'question_type' => $definition['question_type'],
+                'difficulty' => $request->difficulty,
+                'question_text' => $request->question_text,
+                'answer_config' => $definition['answer_config'],
+            ]);
+            $this->questionDefinitionService->syncOptions($question, $definition);
+        });
 
         return back()->with('success', 'Đã cập nhật câu hỏi thành công!');
     }
@@ -546,6 +541,7 @@ class QuestionController extends Controller
             $question = Question::create([
                 'course_id' => $request->course_id,
                 'question_bank_id' => $bank->id,
+                'question_type' => Question::TYPE_SINGLE_CHOICE,
                 'difficulty' => $dbDifficulty,
                 'question_text' => $q['question'],
                 'status' => Question::STATUS_PUBLISHED,
