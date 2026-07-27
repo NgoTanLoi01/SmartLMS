@@ -29,6 +29,40 @@ class AiResponseValidatorTest extends TestCase
         $this->assertSame(['1', '2', '3', '4'], $questions[0]['options']);
     }
 
+    public function test_it_normalizes_every_supported_mixed_question_type(): void
+    {
+        $questions = $this->validator->quizQuestions([
+            ['question_type' => 'multiple_choice', 'question' => 'Chọn các số chẵn', 'options' => ['1', '2', '3', '4'], 'correct_indexes' => [1, 3]],
+            ['question_type' => 'true_false_group', 'question' => 'Xác định đúng sai', 'statements' => [['text' => 'Mệnh đề A', 'is_true' => true], ['text' => 'Mệnh đề B', 'is_true' => false]]],
+            ['question_type' => 'fill_blank', 'question' => 'Thủ đô là [[1]]', 'blanks' => [['accepted' => ['Hà Nội', 'Hanoi']]]],
+            ['question_type' => 'numeric', 'question' => 'Kết quả phép tính', 'numeric_answer' => 10, 'numeric_tolerance' => 0.2, 'numeric_unit' => 'cm'],
+        ], 4);
+
+        $this->assertSame([1, 3], $questions[0]['correct_indexes']);
+        $this->assertFalse($questions[1]['statements'][1]['is_true']);
+        $this->assertSame(['Hà Nội', 'Hanoi'], $questions[2]['blanks'][0]['accepted']);
+        $this->assertSame(0.2, $questions[3]['numeric_tolerance']);
+    }
+
+    public function test_it_normalizes_ai_quiz_distribution_draft(): void
+    {
+        $distribution = [];
+        foreach (['single_choice', 'multiple_choice', 'true_false_group', 'fill_blank', 'numeric'] as $type) {
+            $distribution[$type] = ['easy' => 0, 'medium' => 0, 'hard' => 0];
+        }
+        $distribution['fill_blank']['hard'] = 2;
+
+        $draft = $this->validator->teachingDraft('quiz', [
+            'title' => 'Đề AI',
+            'time_limit' => 20,
+            'topic' => 'HTML',
+            'rationale' => 'Ưu tiên khả năng vận dụng.',
+            'question_distribution' => $distribution,
+        ]);
+
+        $this->assertSame(2, $draft['question_distribution']['fill_blank']['hard']);
+    }
+
     #[DataProvider('invalidQuizProvider')]
     public function test_it_rejects_invalid_quiz_schema(array $questions): void
     {

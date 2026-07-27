@@ -12,12 +12,14 @@ use App\Models\QuestionBank;
 use App\Models\QuizPassage;
 use App\Services\AiResponseValidator;
 use App\Services\GeminiEmbeddingService;
+use App\Services\QuestionAiQualityService;
 use App\Services\QuestionDefinitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class QuestionController extends Controller
@@ -26,6 +28,7 @@ class QuestionController extends Controller
         private GeminiEmbeddingService $embeddingService,
         private AiResponseValidator $responseValidator,
         private QuestionDefinitionService $questionDefinitionService,
+        private QuestionAiQualityService $questionAiQualityService,
     ) {}
 
     // ==========================================
@@ -326,6 +329,7 @@ class QuestionController extends Controller
             'lesson_id' => 'nullable|integer',
             'topic' => 'nullable|string|max:255',
             'difficulty' => 'required|string|in:Dễ,Trung bình,Khó',
+            'question_type' => 'required|in:single_choice,multiple_choice,true_false_group,fill_blank,numeric',
             'quantity' => 'required|integer|min:1|max:20',
         ]);
 
@@ -347,39 +351,36 @@ class QuestionController extends Controller
         $topicInstruction = $topic !== ''
             ? "Tập trung vào chủ đề: '{$topic}'."
             : 'Tự chọn các ý quan trọng nhất từ nguồn nội dung đã cung cấp.';
+        $questionType = (string) $request->question_type;
+        $typeLabel = Question::typeLabels()[$questionType];
+        $questionSchema = $this->aiQuestionSchema($questionType);
 
         // 3. Gửi cho DeepSeek để soạn câu hỏi dưới dạng JSON
         $prompt = "Dựa trên nguồn nội dung: {$sourceLabel}
         ---
         {$contextText}
         ---
-        Hãy tạo {$request->quantity} câu hỏi trắc nghiệm, độ khó: {$request->difficulty}.
+        Hãy tạo {$request->quantity} câu hỏi loại {$typeLabel}, độ khó: {$request->difficulty}.
         {$topicInstruction}
         
         YÊU CẦU BẮT BUỘC:
         1. Ngôn ngữ: Tiếng Việt.
         2. Chỉ tạo câu hỏi dựa trên nội dung được cung cấp, không bịa kiến thức ngoài.
-        3. Trả về ĐÚNG cấu trúc JSON:
+        3. Trả về ĐÚNG cấu trúc JSON, mỗi phần tử questions theo schema:
         {
-            \"questions\": [
-                {
-                    \"question\": \"nội dung câu hỏi\",
-                    \"options\": [\"đáp án A\", \"đáp án B\", \"đáp án C\", \"đáp án D\"],
-                    \"correct_index\": 0,
-                    \"explanation\": \"giải thích ngắn gọn\"
-                }
-            ]
+            \"questions\": [{$questionSchema}]
         }
-        4. Mỗi câu hỏi phải có đúng 4 đáp án, correct_index là số từ 0 đến 3.
-        5. Không thêm markdown, không thêm chữ giải thích ngoài JSON.";
+        4. Luôn đặt question_type là {$questionType}; giải thích phải nêu được vì sao đáp án đúng.
+        5. quality_review là mảng cảnh báo tự kiểm định; để [] nếu không phát hiện vấn đề.
+        6. Không thêm markdown, không thêm chữ giải thích ngoài JSON.";
 
         $operation = AiOperation::create([
             'user_id' => $request->user()->id, 'feature' => 'quiz_generation', 'provider' => 'deepseek',
             'model' => config('services.deepseek.model', 'deepseek-v4-flash'), 'status' => AiOperation::STATUS_QUEUED,
             'subject_type' => Course::class, 'subject_id' => $course->id,
-            'metadata' => ['quantity' => (int) $request->quantity, 'difficulty' => $request->difficulty, 'source_label' => $sourceLabel],
+            'metadata' => ['quantity' => (int) $request->quantity, 'difficulty' => $request->difficulty, 'question_type' => $questionType, 'source_label' => $sourceLabel],
         ]);
-        GenerateQuizQuestions::dispatch($operation->id, $prompt, $sourceLabel, (int) $request->quantity)->afterCommit();
+        GenerateQuizQuestions::dispatch($operation->id, $prompt, $sourceLabel, (int) $request->quantity, $course->id)->afterCommit();
 
         return response()->json([
             'success' => true, 'queued' => true, 'operation_id' => $operation->uuid,
@@ -517,14 +518,10 @@ class QuestionController extends Controller
             'course_id' => 'required|exists:courses,id',
             'question_bank_id' => 'nullable|exists:question_banks,id',
             'difficulty' => 'required|string|in:Dễ,Trung bình,Khó,easy,medium,hard',
+            'allow_duplicates' => 'nullable|boolean',
             'questions' => 'required|array|min:1|max:20',
-            'questions.*.question' => 'required|string|max:2000',
-            'questions.*.options' => 'required|array|size:4',
-            'questions.*.options.*' => 'required|string|max:1000',
-            'questions.*.correct_index' => 'required|integer|min:0|max:3',
-            'questions.*.explanation' => 'nullable|string|max:4000',
         ]);
-        $validatedQuestions = $this->responseValidator->quizQuestions($request->questions, count($request->questions));
+        $validatedQuestions = $this->validatedAiQuestions($request->questions);
 
         // Chuyển đổi nhãn độ khó để khớp với DB (easy, medium, hard)
         $difficultyMap = ['Dễ' => 'easy', 'Trung bình' => 'medium', 'Khó' => 'hard'];
@@ -537,26 +534,106 @@ class QuestionController extends Controller
         $this->authorizeQuestionBank($bank);
         $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
 
-        foreach ($validatedQuestions as $q) {
-            $question = Question::create([
-                'course_id' => $request->course_id,
-                'question_bank_id' => $bank->id,
-                'question_type' => Question::TYPE_SINGLE_CHOICE,
-                'difficulty' => $dbDifficulty,
-                'question_text' => $q['question'],
-                'status' => Question::STATUS_PUBLISHED,
-            ]);
-
-            foreach ($q['options'] as $index => $optionText) {
-                Option::create([
-                    'question_id' => $question->id,
-                    'option_text' => $optionText,
-                    'is_correct' => $index == $q['correct_index'],
-                ]);
-            }
+        $reviewed = $this->questionAiQualityService->reviewBatch((int) $request->course_id, $validatedQuestions);
+        $duplicates = collect($reviewed)->filter(fn ($question) => (int) data_get($question, 'quality.duplicate.similarity', 0) >= 92);
+        if ($duplicates->isNotEmpty() && ! $request->boolean('allow_duplicates')) {
+            return response()->json([
+                'message' => 'Có câu hỏi rất giống dữ liệu hiện có. Hãy xem lại trước khi lưu.',
+                'needs_confirmation' => true,
+                'questions' => $reviewed,
+            ], 422);
         }
 
+        DB::transaction(function () use ($validatedQuestions, $request, $bank, $dbDifficulty) {
+            foreach ($validatedQuestions as $q) {
+                [$answerConfig, $options] = $this->aiQuestionDefinition($q);
+                $question = Question::create([
+                    'course_id' => $request->course_id,
+                    'question_bank_id' => $bank->id,
+                    'question_type' => $q['question_type'],
+                    'difficulty' => $dbDifficulty,
+                    'question_text' => $q['question'],
+                    'answer_config' => $answerConfig,
+                    'status' => Question::STATUS_PUBLISHED,
+                ]);
+
+                foreach ($options as $option) {
+                    Option::create([
+                        'question_id' => $question->id,
+                        'option_text' => $option['text'],
+                        'is_correct' => $option['is_correct'],
+                    ]);
+                }
+            }
+        });
+
         return response()->json(['success' => 'Đã lưu '.count($request->questions).' câu hỏi vào ngân hàng!']);
+    }
+
+    public function reviewGeneratedQuestions(Request $request)
+    {
+        $request->validate([
+            'course_id' => 'required|exists:courses,id',
+            'questions' => 'required|array|min:1|max:20',
+        ]);
+        $course = Course::findOrFail($request->integer('course_id'));
+        $this->authorizeCourse($course);
+
+        return response()->json([
+            'questions' => $this->questionAiQualityService->reviewBatch(
+                $course,
+                $this->validatedAiQuestions($request->questions)
+            ),
+        ]);
+    }
+
+    private function validatedAiQuestions(array $questions): array
+    {
+        try {
+            return $this->responseValidator->quizQuestions($questions, count($questions));
+        } catch (\UnexpectedValueException $exception) {
+            throw ValidationException::withMessages(['questions' => $exception->getMessage()]);
+        }
+    }
+
+    private function aiQuestionSchema(string $type): string
+    {
+        return match ($type) {
+            Question::TYPE_MULTIPLE_CHOICE => '{\"question_type\":\"multiple_choice\",\"question\":\"Nội dung\",\"options\":[\"A\",\"B\",\"C\",\"D\"],\"correct_indexes\":[0,2],\"explanation\":\"Giải thích\",\"quality_review\":[]}',
+            Question::TYPE_TRUE_FALSE_GROUP => '{\"question_type\":\"true_false_group\",\"question\":\"Xác định đúng sai\",\"statements\":[{\"text\":\"Nhận định 1\",\"is_true\":true},{\"text\":\"Nhận định 2\",\"is_true\":false}],\"explanation\":\"Giải thích\",\"quality_review\":[]}',
+            Question::TYPE_FILL_BLANK => '{\"question_type\":\"fill_blank\",\"question\":\"Nội dung [[1]] và [[2]]\",\"blanks\":[{\"accepted\":[\"đáp án 1\",\"cách viết khác\"]},{\"accepted\":[\"đáp án 2\"]}],\"case_sensitive\":false,\"explanation\":\"Giải thích\",\"quality_review\":[]}',
+            Question::TYPE_NUMERIC => '{\"question_type\":\"numeric\",\"question\":\"Nội dung\",\"numeric_answer\":10,\"numeric_tolerance\":0.1,\"numeric_unit\":\"cm\",\"explanation\":\"Giải thích\",\"quality_review\":[]}',
+            default => '{\"question_type\":\"single_choice\",\"question\":\"Nội dung\",\"options\":[\"A\",\"B\",\"C\",\"D\"],\"correct_indexes\":[0],\"explanation\":\"Giải thích\",\"quality_review\":[]}',
+        };
+    }
+
+    private function aiQuestionDefinition(array $question): array
+    {
+        return match ($question['question_type']) {
+            Question::TYPE_SINGLE_CHOICE, Question::TYPE_MULTIPLE_CHOICE => [
+                $question['question_type'] === Question::TYPE_MULTIPLE_CHOICE ? ['grading' => 'all_or_nothing'] : null,
+                collect($question['options'])->map(fn ($text, $index) => [
+                    'text' => $text,
+                    'is_correct' => in_array($index, $question['correct_indexes'], true),
+                ])->all(),
+            ],
+            Question::TYPE_TRUE_FALSE_GROUP => [
+                ['grading' => 'all_or_nothing'],
+                collect($question['statements'])->map(fn ($statement) => [
+                    'text' => $statement['text'],
+                    'is_correct' => $statement['is_true'],
+                ])->all(),
+            ],
+            Question::TYPE_FILL_BLANK => [[
+                'blanks' => $question['blanks'],
+                'case_sensitive' => $question['case_sensitive'],
+            ], []],
+            Question::TYPE_NUMERIC => [[
+                'target' => $question['numeric_answer'],
+                'tolerance' => $question['numeric_tolerance'],
+                'unit' => $question['numeric_unit'],
+            ], []],
+        };
     }
 
     private function defaultQuestionBankForCourse(int $courseId): QuestionBank

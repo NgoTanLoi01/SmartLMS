@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\AiOperation;
 use App\Services\DeepSeekService;
+use App\Services\QuestionAiQualityService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -21,17 +22,23 @@ class GenerateQuizQuestions implements ShouldQueue
 
     public array $backoff = [10, 30, 90];
 
-    public function __construct(public int $operationId, public string $prompt, public string $sourceLabel, public int $expectedQuantity)
-    {
+    public function __construct(
+        public int $operationId,
+        public string $prompt,
+        public string $sourceLabel,
+        public int $expectedQuantity,
+        public int $courseId,
+    ) {
         $this->onQueue('ai');
     }
 
-    public function handle(DeepSeekService $deepSeek): void
+    public function handle(DeepSeekService $deepSeek, QuestionAiQualityService $qualityService): void
     {
         $operation = AiOperation::findOrFail($this->operationId);
         $started = hrtime(true);
         $operation->update(['status' => AiOperation::STATUS_PROCESSING, 'attempts' => $this->attempts(), 'started_at' => now(), 'error_message' => null]);
         $output = $deepSeek->generateQuizQuestions($this->prompt, $this->expectedQuantity);
+        $output['questions'] = $qualityService->reviewBatch($this->courseId, $output['questions']);
         $usage = $output['usage'];
         $operation->update([
             'status' => AiOperation::STATUS_COMPLETED,

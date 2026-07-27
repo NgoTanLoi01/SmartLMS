@@ -362,10 +362,15 @@ PROMPT,
 {
   "title": "Tên quiz ngắn gọn",
   "time_limit": 20,
-  "easy_count": 5,
-  "medium_count": 5,
-  "hard_count": 2,
-  "topic": "Chủ đề dùng để sinh câu hỏi trong ngân hàng"
+  "topic": "Chủ đề dùng để sinh câu hỏi trong ngân hàng",
+  "rationale": "Giải thích ngắn về cơ cấu đề",
+  "question_distribution": {
+    "single_choice": {"easy": 5, "medium": 2, "hard": 1},
+    "multiple_choice": {"easy": 1, "medium": 1, "hard": 0},
+    "true_false_group": {"easy": 1, "medium": 1, "hard": 0},
+    "fill_blank": {"easy": 1, "medium": 0, "hard": 1},
+    "numeric": {"easy": 0, "medium": 1, "hard": 0}
+  }
 }
 PROMPT,
                 'lesson_summary' => <<<'PROMPT'
@@ -398,6 +403,7 @@ Quy tắc:
 - Tránh quá dài; ưu tiên rõ việc học sinh cần làm, sản phẩm cần nộp và tiêu chí đánh giá.
 - Với rubric, tổng điểm nên khớp grading_scale.
 - Với lesson_summary, content có thể dùng HTML đơn giản: p, ul, ol, li, strong.
+- Với quiz, thiết kế cơ cấu hợp lý theo mục tiêu, thời gian, tổng số câu và tồn kho được gửi trong requirements. Có thể đề xuất vượt tồn kho khi thật sự cần để hệ thống chỉ ra phần còn thiếu và hỗ trợ sinh bổ sung.
 PROMPT;
 
             $userPayload = json_encode([
@@ -405,6 +411,7 @@ PROMPT;
                 'teacher_request' => $payload['teacher_request'] ?? '',
                 'current_title' => $payload['current_title'] ?? '',
                 'current_instructions' => $payload['current_instructions'] ?? '',
+                'requirements' => $payload['requirements'] ?? [],
                 'context' => $context,
             ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
 

@@ -158,6 +158,18 @@
                                 @else
                                     <span class="diff-badge diff-hard">Khó</span>
                                 @endif
+                                @php($difficultyMetrics = $question->difficulty_metrics ?? [])
+                                @if($question->observedDifficultyLabel())
+                                    <div class="small text-muted mt-1" title="Độ khó thực tế được tính từ kết quả làm bài">
+                                        Thực tế: <strong>{{ $question->observedDifficultyLabel() }}</strong>
+                                        · {{ round(((float) ($difficultyMetrics['accuracy'] ?? 0)) * 100) }}% đúng
+                                        / {{ (int) ($difficultyMetrics['sample_size'] ?? 0) }} lượt
+                                    </div>
+                                @elseif((int) ($difficultyMetrics['sample_size'] ?? 0) > 0)
+                                    <div class="small text-muted mt-1">
+                                        Cần {{ max(0, 5 - (int) $difficultyMetrics['sample_size']) }} lượt nữa để đánh giá
+                                    </div>
+                                @endif
                             </td>
                             <td>
                                 @php

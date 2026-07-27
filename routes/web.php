@@ -236,6 +236,9 @@ Route::middleware(['auth', 'account.active'])->group(function () {
             ->middleware('throttle:ai-generation')
             ->name('quizzes.ai_generate.process');
         Route::post('/quizzes/ai-generate/save', [QuestionController::class, 'saveGeneratedQuestions'])->name('quizzes.ai_generate.save');
+        Route::post('/quizzes/ai-generate/review', [QuestionController::class, 'reviewGeneratedQuestions'])
+            ->middleware('throttle:ai-generation')
+            ->name('quizzes.ai_generate.review');
 
         // Ngân hàng câu hỏi
         Route::get('/question-bank', [QuestionController::class, 'index'])->name('questions.index');

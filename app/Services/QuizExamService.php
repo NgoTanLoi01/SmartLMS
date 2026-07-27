@@ -15,7 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class QuizExamService
 {
-    public function __construct(private QuizQuestionSelectionService $questionSelector) {}
+    public function __construct(
+        private QuizQuestionSelectionService $questionSelector,
+        private QuestionDifficultyAnalyticsService $difficultyAnalytics,
+    ) {}
 
     public function startOrResume(Quiz $quiz, User $student, ?QuizSession $session): QuizAttempt
     {
@@ -166,7 +169,7 @@ class QuizExamService
 
     public function submit(QuizAttempt $attempt): QuizAttempt
     {
-        return DB::transaction(function () use ($attempt) {
+        $submitted = DB::transaction(function () use ($attempt) {
             $lockedAttempt = QuizAttempt::query()->lockForUpdate()->findOrFail($attempt->id);
             if (! $lockedAttempt->isInProgress()) {
                 return $lockedAttempt;
@@ -203,6 +206,12 @@ class QuizExamService
 
             return $lockedAttempt->fresh(['quiz', 'session']);
         }, 3);
+
+        $this->difficultyAnalytics->refreshForQuestionIds(
+            $submitted->attemptQuestions()->pluck('question_id')
+        );
+
+        return $submitted;
     }
 
     public function submitExpiredForSession(QuizSession $session): int

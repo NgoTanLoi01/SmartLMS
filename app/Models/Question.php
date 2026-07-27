@@ -20,10 +20,12 @@ class Question extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
-    protected $fillable = ['course_id', 'question_bank_id', 'quiz_passage_id', 'question_type', 'question_text', 'answer_config', 'difficulty', 'status'];
+    protected $fillable = ['course_id', 'question_bank_id', 'quiz_passage_id', 'question_type', 'question_text', 'answer_config', 'difficulty', 'observed_difficulty', 'difficulty_metrics', 'difficulty_evaluated_at', 'status'];
 
     protected $casts = [
         'answer_config' => 'array',
+        'difficulty_metrics' => 'array',
+        'difficulty_evaluated_at' => 'datetime',
     ];
 
     public static function typeLabels(): array
@@ -40,6 +42,16 @@ class Question extends Model
     public function typeLabel(): string
     {
         return self::typeLabels()[$this->question_type] ?? 'Một đáp án';
+    }
+
+    public function observedDifficultyLabel(): ?string
+    {
+        return match ($this->observed_difficulty) {
+            'easy' => 'Dễ',
+            'medium' => 'Trung bình',
+            'hard' => 'Khó',
+            default => null,
+        };
     }
 
     public function answerSummary(): string

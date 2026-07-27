@@ -154,6 +154,25 @@ class MigrationRollbackIntegrityTest extends TestCase
         $quizBundle->down();
     }
 
+    public function test_observed_question_difficulty_migration_is_reversible(): void
+    {
+        Schema::create('questions', function (Blueprint $table) {
+            $table->id();
+            $table->string('difficulty')->default('medium');
+        });
+
+        $migration = require database_path('migrations/2026_07_27_000004_add_observed_difficulty_to_questions.php');
+        $migration->up();
+
+        $this->assertTrue(Schema::hasColumn('questions', 'observed_difficulty'));
+        $this->assertTrue(Schema::hasColumn('questions', 'difficulty_metrics'));
+
+        $migration->down();
+
+        $this->assertFalse(Schema::hasColumn('questions', 'observed_difficulty'));
+        $this->assertFalse(Schema::hasColumn('questions', 'difficulty_metrics'));
+    }
+
     public function test_quiz_attempt_constraint_keeps_first_completed_attempt_and_is_reversible(): void
     {
         Schema::create('quiz_attempts', function (Blueprint $table) {

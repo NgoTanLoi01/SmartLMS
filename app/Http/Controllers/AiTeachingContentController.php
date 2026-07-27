@@ -22,6 +22,11 @@ class AiTeachingContentController extends Controller
             'teacher_request' => 'nullable|string|max:1000',
             'current_title' => 'nullable|string|max:255',
             'current_instructions' => 'nullable|string|max:10000',
+            'requirements' => 'nullable|array',
+            'requirements.total_questions' => 'nullable|integer|min:1|max:100',
+            'requirements.inventory' => 'nullable|array',
+            'requirements.inventory.*' => 'array',
+            'requirements.inventory.*.*' => 'integer|min:0|max:10000',
         ]);
 
         if (! empty($data['lesson_id'])) {

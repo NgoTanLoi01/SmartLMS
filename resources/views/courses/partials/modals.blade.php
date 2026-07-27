@@ -581,7 +581,7 @@
                                         : ($type === 'single_choice' && $difficulty === 'easy' ? min(5, $available) : 0);
                                 @endphp
                                 <label class="quiz-dist-cell">
-                                    <input type="number" name="question_distribution[{{ $type }}][{{ $difficulty }}]" id="{{ $fieldId }}" value="{{ $defaultValue }}" min="0" max="{{ $available }}" data-dist-input data-available="{{ $available }}" aria-label="{{ $typeLabel }} - {{ $difficultyLabel }}">
+                                    <input type="number" name="question_distribution[{{ $type }}][{{ $difficulty }}]" id="{{ $fieldId }}" value="{{ $defaultValue }}" min="0" max="{{ $available }}" data-dist-input data-type="{{ $type }}" data-difficulty="{{ $difficulty }}" data-available="{{ $available }}" aria-label="{{ $typeLabel }} - {{ $difficultyLabel }}">
                                     <small>Có {{ $available }}</small>
                                 </label>
                             @endforeach
@@ -591,6 +591,11 @@
                     <div class="quiz-dist-summary"><span><i class="fa-solid fa-list-check"></i> Tổng số câu trong đề</span><strong data-grand-total>0 câu</strong></div>
                 </div>
                 <div class="quiz-dist-error" data-distribution-error hidden>Hãy chọn ít nhất một câu hỏi.</div>
+                <div class="quiz-ai-advice" data-ai-matrix-advice hidden>
+                    <div class="quiz-ai-advice__title"><i class="fa-solid fa-wand-magic-sparkles"></i> Đề xuất của AI</div>
+                    <p data-ai-matrix-rationale></p>
+                    <div data-ai-shortage-list></div>
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -609,6 +614,13 @@
             if (!distribution) return;
             const inputs = Array.from(distribution.querySelectorAll('[data-dist-input]'));
             const error = document.querySelector('[data-distribution-error]');
+            const advice = document.querySelector('[data-ai-matrix-advice]');
+            const rationale = document.querySelector('[data-ai-matrix-rationale]');
+            const shortageList = document.querySelector('[data-ai-shortage-list]');
+            const typeLabels = @json($quizQuestionTypeLabels);
+            const difficultyLabels = @json($quizDifficultyLabels);
+            const generatorUrl = @json(route('quizzes.ai_generate'));
+            const courseId = @json($course->id);
 
             const refresh = () => {
                 inputs.forEach(input => {
@@ -630,12 +642,45 @@
             };
 
             inputs.forEach(input => input.addEventListener('input', () => {
+                delete input.dataset.aiRequested;
+                advice.hidden = true;
                 const available = Number(input.dataset.available);
                 if ((Number(input.value) || 0) > available) input.value = available;
                 if ((Number(input.value) || 0) < 0) input.value = 0;
                 refresh();
             }));
             window.refreshQuizDistribution = refresh;
+            window.quizDistributionInventory = () => inputs.reduce((result, input) => {
+                result[input.dataset.type] ??= {};
+                result[input.dataset.type][input.dataset.difficulty] = Number(input.dataset.available) || 0;
+                return result;
+            }, {});
+            window.quizDistributionTotal = () => inputs.reduce((sum, input) => sum + (Number(input.value) || 0), 0);
+            window.applyAiQuizDistribution = (matrix, explanation = '') => {
+                const shortages = [];
+                inputs.forEach(input => {
+                    const requested = Number(matrix?.[input.dataset.type]?.[input.dataset.difficulty]) || 0;
+                    const available = Number(input.dataset.available) || 0;
+                    input.dataset.aiRequested = requested;
+                    input.value = Math.min(requested, available);
+                    if (requested > available) {
+                        shortages.push({
+                            type: input.dataset.type,
+                            difficulty: input.dataset.difficulty,
+                            missing: requested - available,
+                        });
+                    }
+                });
+                refresh();
+                rationale.textContent = explanation || 'AI đã cân đối hình thức câu hỏi, độ khó và thời gian làm bài.';
+                shortageList.innerHTML = shortages.length === 0
+                    ? '<div class="quiz-ai-stock-ok"><i class="fa-solid fa-circle-check"></i> Ngân hàng hiện đủ câu cho cơ cấu được đề xuất.</div>'
+                    : `<div class="quiz-ai-shortage-title">Cần sinh bổ sung ${shortages.reduce((sum, item) => sum + item.missing, 0)} câu:</div>${shortages.map(item => {
+                        const params = new URLSearchParams({course_id: courseId, question_type: item.type, difficulty: item.difficulty, quantity: Math.min(item.missing, 20)});
+                        return `<a class="quiz-ai-shortage" href="${generatorUrl}?${params.toString()}"><span>${typeLabels[item.type]} · ${difficultyLabels[item.difficulty]}</span><strong>Thiếu ${item.missing} câu <i class="fa-solid fa-arrow-up-right-from-square"></i></strong></a>`;
+                    }).join('')}`;
+                advice.hidden = false;
+            };
             refresh();
         });
     </script>
@@ -865,15 +910,16 @@
                         course_id: courseId,
                         lesson_id: sourceType === 'lesson' ? sourceId : null,
                         module_id: sourceType === 'module' ? sourceId : null,
+                        requirements: {
+                            total_questions: Math.max(window.quizDistributionTotal?.() || 0, 10),
+                            inventory: window.quizDistributionInventory?.() || {},
+                        },
                     });
                     if (!draft) return;
 
                     setValue('addQuizTitle', draft.title);
                     setValue('addQuizTimeLimit', draft.time_limit || 20);
-                    setValue('addQuizEasyCount', draft.easy_count ?? 5);
-                    setValue('addQuizMediumCount', draft.medium_count ?? 5);
-                    setValue('addQuizHardCount', draft.hard_count ?? 2);
-                    window.refreshQuizDistribution?.();
+                    window.applyAiQuizDistribution?.(draft.question_distribution || {}, draft.rationale || '');
                     return;
                 }
 

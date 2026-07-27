@@ -198,6 +198,16 @@
             border-radius: 14px;
             padding: 14px;
         }
+
+        .ai-editor-label { color:#64748b; font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+        .ai-editor-control { border:1px solid #dbe3ef; border-radius:9px; font-size:13px; padding:9px 11px; width:100%; }
+        .ai-answer-row { align-items:center; background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; display:flex; gap:9px; margin-top:8px; padding:8px; }
+        .ai-answer-row.is-correct { background:#f0fdf4; border-color:#86efac; }
+        .ai-answer-row input[type="text"] { background:transparent; border:0; flex:1; min-width:0; outline:0; }
+        .ai-quality { border-radius:10px; font-size:12px; margin-top:14px; padding:10px 12px; }
+        .ai-quality.good { background:#f0fdf4; color:#166534; }
+        .ai-quality.needs_review { background:#fff7ed; color:#9a3412; }
+        .ai-quality ul { margin:6px 0 0; padding-left:18px; }
     </style>
 
     <div class="container py-5">
@@ -217,7 +227,7 @@
                                 <select class="form-select ai-input" id="course_id" required>
                                     <option value="">-- Chọn khóa học --</option>
                                     @foreach ($courses as $course)
-                                        <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                        <option value="{{ $course->id }}" @selected((string) request('course_id') === (string) $course->id)>{{ $course->title }}</option>
                                     @endforeach
                                 </select>
                                 <div class="form-text mt-2 d-flex align-items-center">
@@ -292,17 +302,25 @@
                             </div>
 
                             <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Hình thức câu hỏi</label>
+                                    <select class="form-select ai-input" id="question_type">
+                                        @foreach(\App\Models\Question::typeLabels() as $type => $label)
+                                            <option value="{{ $type }}" @selected(request('question_type', 'single_choice') === $type)>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-uppercase text-muted">Độ khó</label>
                                     <select class="form-select ai-input" id="difficulty">
-                                        <option value="Dễ">Dễ</option>
-                                        <option value="Trung bình" selected>Trung bình</option>
-                                        <option value="Khó">Khó</option>
+                                        <option value="Dễ" @selected(request('difficulty') === 'easy')>Dễ</option>
+                                        <option value="Trung bình" @selected(!request('difficulty') || request('difficulty') === 'medium')>Trung bình</option>
+                                        <option value="Khó" @selected(request('difficulty') === 'hard')>Khó</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-uppercase text-muted">Số lượng</label>
-                                    <input type="number" class="form-control ai-input" id="quantity" value="5"
+                                    <input type="number" class="form-control ai-input" id="quantity" value="{{ min(20, max(1, (int) request('quantity', 5))) }}"
                                         min="1" max="20">
                                 </div>
                             </div>
@@ -359,9 +377,14 @@
                             class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded-4 shadow-sm">
                             <h5 class="fw-bold mb-0 text-gradient"><i class="fa-solid fa-list-check me-2"></i>Kết quả sinh ra
                             </h5>
-                            <button class="btn btn-primary btn-save-all fw-bold shadow-sm" id="btnSaveAll">
-                                <i class="fa-solid fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary fw-bold" id="btnReviewAll">
+                                    <i class="fa-solid fa-shield-halved me-2"></i> KIỂM TRA LẠI
+                                </button>
+                                <button type="button" class="btn btn-primary btn-save-all fw-bold shadow-sm" id="btnSaveAll">
+                                    <i class="fa-solid fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG
+                                </button>
+                            </div>
                         </div>
 
                         <div id="questionsContainer">
@@ -373,47 +396,10 @@
         </div>
     </div>
 
-    {{-- Template mẫu cho 1 câu hỏi --}}
-    <template id="questionTemplate">
-        <div class="card shadow-sm ai-question-card mb-4" data-temp-id="">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <span class="badge q-badge q-title">Câu 1</span>
-                    <button class="btn btn-sm btn-outline-secondary border-0 btn-remove-q" title="Bỏ câu này">
-                        <i class="fa-solid fa-trash-can text-danger"></i>
-                    </button>
-                </div>
-
-                <h6 class="fw-bold mb-4 q-content">[Nội dung câu hỏi]</h6>
-
-                <div class="row g-3 mb-4 options-container">
-                    <div class="col-md-6">
-                        <div class="option-item opt-a">A. <span class="opt-text">...</span></div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="option-item opt-b">B. <span class="opt-text">...</span></div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="option-item opt-c">C. <span class="opt-text">...</span></div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="option-item opt-d">D. <span class="opt-text">...</span></div>
-                    </div>
-                </div>
-
-                <div class="explanation-box small d-flex align-items-start">
-                    <i class="fa-solid fa-lightbulb text-warning me-2 mt-1"></i>
-                    <div>
-                        <strong>Giải thích:</strong> <span class="explanation">...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-
     <script>
         const processUrl = "{{ route('quizzes.ai_generate.process') }}";
         const saveUrl = "{{ route('quizzes.ai_generate.save') }}";
+        const reviewUrl = "{{ route('quizzes.ai_generate.review') }}";
         const csrfToken = "{{ csrf_token() }}";
         const courseContextOptions = @json($courseContextOptions);
 
@@ -534,6 +520,7 @@
                 lesson_id: lessonSelect.value,
                 topic: topicInput.value,
                 difficulty: document.getElementById('difficulty').value,
+                question_type: document.getElementById('question_type').value,
                 quantity: document.getElementById('quantity').value
             };
 
@@ -603,83 +590,106 @@
         // ==========================================
         function renderQuestions() {
             const container = document.getElementById('questionsContainer');
-            container.innerHTML = '';
-            const template = document.getElementById('questionTemplate').content;
-
-            generatedQuestions.forEach((q, index) => {
-                const clone = template.cloneNode(true);
-                const card = clone.querySelector('.ai-question-card');
-
-                // Set data attribute để dễ xóa
-                card.setAttribute('data-temp-id', q.tempId);
-
-                // Điền nội dung
-                clone.querySelector('.q-title').innerText = `Câu ${index + 1}`;
-                clone.querySelector('.q-content').innerText = q.question;
-
-                const optionsMap = {
-                    0: clone.querySelector('.opt-a'),
-                    1: clone.querySelector('.opt-b'),
-                    2: clone.querySelector('.opt-c'),
-                    3: clone.querySelector('.opt-d')
-                };
-
-                q.options.forEach((optText, optIndex) => {
-                    const optionDiv = optionsMap[optIndex];
-                    optionDiv.querySelector('.opt-text').innerText = optText;
-
-                    // Highlight đáp án đúng
-                    if (optIndex === q.correct_index) {
-                        optionDiv.classList.add('is-correct');
-                        optionDiv.innerHTML += ' <i class="fa-solid fa-circle-check float-end"></i>';
-                    }
-                });
-
-                // Điền giải thích
-                clone.querySelector('.explanation').innerText = q.explanation || "Không có giải thích.";
-
-                // Xử lý nút Xóa
-                clone.querySelector('.btn-remove-q').addEventListener('click', function() {
-                    const cardToRemove = this.closest('.ai-question-card');
-                    const idToRemove = parseInt(cardToRemove.getAttribute('data-temp-id'));
-
-                    // Xóa khỏi mảng dữ liệu
-                    generatedQuestions = generatedQuestions.filter(q => q.tempId !== idToRemove);
-
-                    // Xóa khỏi DOM
-                    cardToRemove.remove();
-
-                    // Cập nhật lại số thứ tự các câu còn lại
-                    updateQuestionNumbers();
-
-                    if (generatedQuestions.length === 0) resetUI();
-                });
-
-                container.appendChild(clone);
-            });
+            container.innerHTML = generatedQuestions.map((q, index) => questionEditorHtml(q, index)).join('');
         }
 
-        // Cập nhật lại số thứ tự câu hỏi sau khi xóa
-        function updateQuestionNumbers() {
-            const cards = document.querySelectorAll('.ai-question-card');
-            cards.forEach((card, index) => {
-                card.querySelector('.q-title').innerText = `Câu ${index + 1}`;
-            });
+        function escapeHtml(value) {
+            const box = document.createElement('div');
+            box.textContent = value ?? '';
+            return box.innerHTML;
+        }
+
+        function questionEditorHtml(q, index) {
+            const typeLabels = @json(\App\Models\Question::typeLabels());
+            const quality = q.quality || {status: 'needs_review', score: 0, warnings: ['Chưa kiểm định lại sau khi chỉnh sửa.']};
+            const warnings = quality.warnings || [];
+            const qualityHtml = `<div class="ai-quality ${quality.status}"><strong><i class="fa-solid ${quality.status === 'good' ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i> Chất lượng ${quality.score ?? 0}/100</strong>${warnings.length ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : '<span class="ms-2">Không phát hiện vấn đề hoặc câu trùng.</span>'}</div>`;
+            let answerHtml = '';
+
+            if (['single_choice', 'multiple_choice'].includes(q.question_type)) {
+                const inputType = q.question_type === 'single_choice' ? 'radio' : 'checkbox';
+                answerHtml = (q.options || []).map((option, optionIndex) => {
+                    const checked = (q.correct_indexes || [q.correct_index]).map(Number).includes(optionIndex);
+                    return `<label class="ai-answer-row ${checked ? 'is-correct' : ''}"><input type="${inputType}" name="correct-${q.tempId}" data-correct-index="${optionIndex}" ${checked ? 'checked' : ''}><input type="text" value="${escapeHtml(option)}" data-option-index="${optionIndex}"></label>`;
+                }).join('');
+            } else if (q.question_type === 'true_false_group') {
+                answerHtml = (q.statements || []).map((statement, statementIndex) => `<div class="ai-answer-row"><input type="text" value="${escapeHtml(statement.text)}" data-statement-text="${statementIndex}"><select class="form-select form-select-sm" style="width:90px" data-statement-value="${statementIndex}"><option value="1" ${statement.is_true ? 'selected' : ''}>Đúng</option><option value="0" ${!statement.is_true ? 'selected' : ''}>Sai</option></select></div>`).join('');
+            } else if (q.question_type === 'fill_blank') {
+                answerHtml = (q.blanks || []).map((blank, blankIndex) => `<div class="ai-answer-row"><strong>Ô ${blankIndex + 1}</strong><input type="text" value="${escapeHtml((blank.accepted || []).join(' | '))}" data-blank-index="${blankIndex}" placeholder="Ngăn cách các cách viết đúng bằng dấu |"></div>`).join('');
+            } else {
+                answerHtml = `<div class="row g-2"><div class="col-md-4"><label class="ai-editor-label">Đáp án số</label><input class="ai-editor-control" type="number" step="any" value="${q.numeric_answer ?? ''}" data-numeric="numeric_answer"></div><div class="col-md-4"><label class="ai-editor-label">Sai số ±</label><input class="ai-editor-control" type="number" step="any" min="0" value="${q.numeric_tolerance ?? 0}" data-numeric="numeric_tolerance"></div><div class="col-md-4"><label class="ai-editor-label">Đơn vị</label><input class="ai-editor-control" value="${escapeHtml(q.numeric_unit || '')}" data-numeric="numeric_unit"></div></div>`;
+            }
+
+            return `<div class="card shadow-sm ai-question-card mb-4" data-temp-id="${q.tempId}"><div class="card-body p-4"><div class="d-flex justify-content-between align-items-start mb-3"><div><span class="badge q-badge">Câu ${index + 1}</span><span class="badge bg-light text-dark ms-2">${escapeHtml(typeLabels[q.question_type] || q.question_type)}</span></div><button type="button" class="btn btn-sm border-0 btn-remove-q" title="Bỏ câu"><i class="fa-solid fa-trash-can text-danger"></i></button></div><label class="ai-editor-label">Nội dung câu hỏi</label><textarea class="ai-editor-control mb-3" rows="3" data-question-field="question">${escapeHtml(q.question || '')}</textarea><label class="ai-editor-label">Đáp án</label>${answerHtml}<label class="ai-editor-label mt-3">Giải thích đáp án</label><textarea class="ai-editor-control" rows="2" data-question-field="explanation">${escapeHtml(q.explanation || '')}</textarea>${qualityHtml}</div></div>`;
+        }
+
+        document.getElementById('questionsContainer').addEventListener('input', updateQuestionFromEditor);
+        document.getElementById('questionsContainer').addEventListener('change', updateQuestionFromEditor);
+        document.getElementById('questionsContainer').addEventListener('click', function(event) {
+            const remove = event.target.closest('.btn-remove-q');
+            if (!remove) return;
+            const id = Number(remove.closest('[data-temp-id]').dataset.tempId);
+            generatedQuestions = generatedQuestions.filter(question => question.tempId !== id);
+            generatedQuestions.length ? renderQuestions() : resetUI();
+        });
+
+        function updateQuestionFromEditor(event) {
+            const card = event.target.closest('[data-temp-id]');
+            if (!card) return;
+            const question = generatedQuestions.find(item => item.tempId === Number(card.dataset.tempId));
+            if (!question) return;
+            const target = event.target;
+            if (target.dataset.questionField) question[target.dataset.questionField] = target.value;
+            if (target.dataset.optionIndex !== undefined) question.options[Number(target.dataset.optionIndex)] = target.value;
+            if (target.dataset.correctIndex !== undefined) {
+                if (question.question_type === 'single_choice') {
+                    question.correct_indexes = [Number(target.dataset.correctIndex)];
+                    question.correct_index = Number(target.dataset.correctIndex);
+                } else {
+                    question.correct_indexes = Array.from(card.querySelectorAll('[data-correct-index]:checked')).map(input => Number(input.dataset.correctIndex));
+                }
+                card.querySelectorAll('.ai-answer-row').forEach(row => row.classList.toggle('is-correct', Boolean(row.querySelector('[data-correct-index]:checked'))));
+            }
+            if (target.dataset.statementText !== undefined) question.statements[Number(target.dataset.statementText)].text = target.value;
+            if (target.dataset.statementValue !== undefined) question.statements[Number(target.dataset.statementValue)].is_true = target.value === '1';
+            if (target.dataset.blankIndex !== undefined) question.blanks[Number(target.dataset.blankIndex)].accepted = target.value.split('|').map(value => value.trim()).filter(Boolean);
+            if (target.dataset.numeric) question[target.dataset.numeric] = target.dataset.numeric === 'numeric_unit' ? target.value : Number(target.value);
+            question.quality = {status: 'needs_review', score: 0, warnings: ['Nội dung đã được chỉnh sửa; hãy bấm Kiểm tra lại.']};
+            const qualityBox = card.querySelector('.ai-quality');
+            qualityBox.className = 'ai-quality needs_review';
+            qualityBox.innerHTML = '<strong><i class="fa-solid fa-triangle-exclamation"></i> Chưa kiểm định lại</strong><ul><li>Nội dung đã được chỉnh sửa; hãy bấm Kiểm tra lại.</li></ul>';
         }
 
         // ==========================================
         // 3. LƯU TẤT CẢ VÀO NGÂN HÀNG
         // ==========================================
-        document.getElementById('btnSaveAll').addEventListener('click', async function() {
+        document.getElementById('btnReviewAll').addEventListener('click', async function() {
+            if (!generatedQuestions.length) return;
+            const button = this;
+            button.disabled = true;
+            try {
+                const response = await fetch(reviewUrl, {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrfToken,'Accept':'application/json'}, body:JSON.stringify({course_id:courseSelect.value, questions:generatedQuestions})});
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'Không thể kiểm tra.');
+                generatedQuestions = data.questions.map(question => ({...question, tempId: tempIdCounter++}));
+                renderQuestions();
+            } catch (error) { alert(error.message); }
+            finally { button.disabled = false; }
+        });
+
+        document.getElementById('btnSaveAll').addEventListener('click', () => saveQuestions(false));
+
+        async function saveQuestions(allowDuplicates) {
             if (generatedQuestions.length === 0) return;
 
-            const btnSave = this;
+            const btnSave = document.getElementById('btnSaveAll');
             btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Đang lưu...';
             btnSave.disabled = true;
 
             const payload = {
                 course_id: document.getElementById('course_id').value,
                 difficulty: document.getElementById('difficulty').value,
+                allow_duplicates: allowDuplicates,
                 questions: generatedQuestions
             };
 
@@ -697,21 +707,25 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Có thể dùng Toast/SweetAlert thay cho Alert thông thường
                     alert("Thành công! " + data.success);
                     window.location.href = "{{ route('questions.index') }}";
+                } else if (data.needs_confirmation) {
+                    generatedQuestions = (data.questions || generatedQuestions).map(question => ({...question, tempId: tempIdCounter++}));
+                    renderQuestions();
+                    if (confirm(data.message + ' Bạn vẫn muốn lưu các câu này?')) await saveQuestions(true);
                 } else {
-                    alert("Lỗi khi lưu: " + (data.message || "Vui lòng kiểm tra lại."));
+                    alert("Lỗi khi lưu: " + (data.message || Object.values(data.errors || {}).flat()[0] || "Vui lòng kiểm tra lại."));
                     btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG';
                     btnSave.disabled = false;
                 }
             } catch (error) {
                 console.error(error);
                 alert("Lỗi kết nối khi lưu dữ liệu.");
+            } finally {
                 btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-2"></i> LƯU VÀO NGÂN HÀNG';
                 btnSave.disabled = false;
             }
-        });
+        }
 
         // Reset UI về ban đầu
         function resetUI() {

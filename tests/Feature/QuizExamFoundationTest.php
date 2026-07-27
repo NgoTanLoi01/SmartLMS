@@ -7,6 +7,8 @@ use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\QuizSession;
 use App\Models\User;
+use App\Services\QuestionAiQualityService;
+use App\Services\QuestionDifficultyAnalyticsService;
 use App\Services\QuizExamService;
 use App\Services\QuizQuestionSelectionService;
 use Illuminate\Database\Schema\Blueprint;
@@ -208,6 +210,70 @@ class QuizExamFoundationTest extends TestCase
         }
     }
 
+    public function test_ai_quality_review_detects_duplicate_question(): void
+    {
+        $reviewed = app(QuestionAiQualityService::class)->reviewBatch($this->quiz->course_id, [[
+            'question_type' => Question::TYPE_SINGLE_CHOICE,
+            'question' => 'Đáp án nào đúng?',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_indexes' => [0],
+            'explanation' => 'Giải thích đáp án.',
+        ]]);
+
+        $this->assertSame('needs_review', $reviewed[0]['quality']['status']);
+        $this->assertSame(100, $reviewed[0]['quality']['duplicate']['similarity']);
+    }
+
+    public function test_observed_difficulty_is_calculated_after_enough_submissions(): void
+    {
+        $question = Question::where('question_text', 'Đáp án nào đúng?')->firstOrFail();
+
+        foreach (range(1, 5) as $index) {
+            $userId = DB::table('users')->insertGetId([
+                'name' => "Học viên {$index}",
+                'email' => "analytics{$index}@exam.test",
+                'password' => Hash::make('x'),
+                'role' => 'student',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $attemptId = DB::table('quiz_attempts')->insertGetId([
+                'quiz_id' => $this->quiz->id,
+                'user_id' => $userId,
+                'status' => 'submitted',
+                'completed_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $issuedId = DB::table('quiz_attempt_questions')->insertGetId([
+                'quiz_attempt_id' => $attemptId,
+                'question_id' => $question->id,
+                'question_type' => Question::TYPE_SINGLE_CHOICE,
+                'position' => 1,
+                'question_text' => $question->question_text,
+                'option_snapshot' => '[]',
+                'correct_option_id' => $this->correctOptionId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::table('quiz_attempt_answers')->insert([
+                'quiz_attempt_id' => $attemptId,
+                'quiz_attempt_question_id' => $issuedId,
+                'is_correct' => $index <= 4,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        app(QuestionDifficultyAnalyticsService::class)->refreshForQuestionIds([$question->id]);
+
+        $question->refresh();
+        $this->assertSame('easy', $question->observed_difficulty);
+        $this->assertSame(5, $question->difficulty_metrics['sample_size']);
+        $this->assertSame(0.8, $question->difficulty_metrics['accuracy']);
+    }
+
     private function createSchema(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -267,6 +333,9 @@ class QuizExamFoundationTest extends TestCase
             $table->text('question_text');
             $table->json('answer_config')->nullable();
             $table->string('difficulty')->default('medium');
+            $table->string('observed_difficulty')->nullable();
+            $table->json('difficulty_metrics')->nullable();
+            $table->timestamp('difficulty_evaluated_at')->nullable();
             $table->string('status')->default('published');
             $table->timestamps();
         });
