@@ -25,6 +25,8 @@ use App\Http\Controllers\OperationalReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizAttemptController;
+use App\Http\Controllers\QuizAttemptAttachmentController;
+use App\Http\Controllers\QuizGradingController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizSessionController;
 use App\Http\Controllers\ScheduleController;
@@ -270,6 +272,8 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::get('/quiz-sessions/{session}/monitor', [QuizSessionController::class, 'monitor'])->name('quiz-sessions.monitor');
         Route::get('/quiz-sessions/{session}/monitor-data', [QuizSessionController::class, 'monitorData'])->name('quiz-sessions.monitor-data');
         Route::post('/quiz-sessions/{session}/release', [QuizSessionController::class, 'release'])->name('quiz-sessions.release');
+        Route::get('/attempts/{attempt}/grade', [QuizGradingController::class, 'show'])->name('quiz-attempts.grade');
+        Route::put('/attempts/{attempt}/answers/{answer}/grade', [QuizGradingController::class, 'update'])->name('quiz-attempts.grade-answer');
 
         // Quản lý câu hỏi trong đề thi cụ thể
         Route::post('/quizzes/{id}/questions', [QuestionController::class, 'store'])->name('questions.store');
@@ -290,6 +294,14 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     Route::post('/attempts/{attempt}/heartbeat', [QuizAttemptController::class, 'heartbeat'])
         ->middleware(['role:student', 'throttle:12,1'])
         ->name('quizzes.heartbeat');
+    Route::post('/attempts/{attempt}/questions/{question}/attachments', [QuizAttemptAttachmentController::class, 'store'])
+        ->middleware(['role:student', 'throttle:30,1'])
+        ->name('quiz-attempt-attachments.store');
+    Route::delete('/quiz-attempt-attachments/{attachment}', [QuizAttemptAttachmentController::class, 'destroy'])
+        ->middleware('role:student')
+        ->name('quiz-attempt-attachments.destroy');
+    Route::get('/quiz-attempt-attachments/{attachment}', [QuizAttemptAttachmentController::class, 'download'])
+        ->name('quiz-attempt-attachments.download');
     Route::get('/attempts/{id}/review', [QuizAttemptController::class, 'review'])->name('quizzes.review');
 
     // ==========================================

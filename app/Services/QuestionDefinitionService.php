@@ -22,6 +22,8 @@ class QuestionDefinitionService
             Question::TYPE_TRUE_FALSE_GROUP => $this->validateTrueFalseGroup($request),
             Question::TYPE_FILL_BLANK => $this->validateFillBlank($request),
             Question::TYPE_NUMERIC => $this->validateNumeric($request),
+            Question::TYPE_ESSAY => $this->validateEssay($request),
+            Question::TYPE_CODE_DEBUG => $this->validateCodeDebug($request),
         };
     }
 
@@ -174,6 +176,87 @@ class QuestionDefinitionService
             ],
             'options' => [],
         ];
+    }
+
+    private function validateEssay(Request $request): array
+    {
+        $data = $request->validate([
+            'max_score' => ['required', 'numeric', 'min:0.25', 'max:100'],
+            'word_limit' => ['required', 'integer', 'min:10', 'max:5000'],
+            'allow_attachments' => ['nullable', 'boolean'],
+            'rubric_text' => ['nullable', 'string', 'max:10000'],
+        ]);
+
+        return [
+            'question_type' => Question::TYPE_ESSAY,
+            'answer_config' => [
+                'grading_mode' => 'manual',
+                'max_score' => (float) $data['max_score'],
+                'word_limit' => (int) $data['word_limit'],
+                'allow_attachments' => (bool) ($data['allow_attachments'] ?? false),
+                'allowed_extensions' => ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg'],
+                'max_files' => 3,
+                'max_file_size_kb' => 10240,
+                'rubric' => $this->parseRubric($data['rubric_text'] ?? null, (float) $data['max_score']),
+            ],
+            'options' => [],
+        ];
+    }
+
+    private function validateCodeDebug(Request $request): array
+    {
+        $data = $request->validate([
+            'max_score' => ['required', 'numeric', 'min:0.25', 'max:100'],
+            'starter_code' => ['required', 'string', 'max:50000'],
+            'explanation_mode' => ['required', Rule::in(['disabled', 'optional', 'required'])],
+            'explanation_word_limit' => ['required_unless:explanation_mode,disabled', 'nullable', 'integer', 'min:10', 'max:2000'],
+            'rubric_text' => ['nullable', 'string', 'max:10000'],
+        ]);
+
+        return [
+            'question_type' => Question::TYPE_CODE_DEBUG,
+            'answer_config' => [
+                'grading_mode' => 'manual',
+                'max_score' => (float) $data['max_score'],
+                'language' => 'html_css',
+                'starter_code' => $data['starter_code'],
+                'explanation_mode' => $data['explanation_mode'],
+                'explanation_word_limit' => (int) ($data['explanation_word_limit'] ?? 0),
+                'rubric' => $this->parseRubric($data['rubric_text'] ?? null, (float) $data['max_score']),
+            ],
+            'options' => [],
+        ];
+    }
+
+    private function parseRubric(?string $rubricText, float $maxScore): array
+    {
+        $lines = collect(preg_split('/\r\n|\r|\n/', trim((string) $rubricText)))
+            ->map(fn ($line) => trim($line))
+            ->filter();
+
+        if ($lines->isEmpty()) {
+            return [['criterion' => 'Mức độ đáp ứng yêu cầu', 'max_score' => $maxScore]];
+        }
+
+        $rubric = $lines->map(function ($line, $index) {
+            $parts = array_map('trim', explode('|', $line));
+            $score = isset($parts[1]) && is_numeric($parts[1]) ? (float) $parts[1] : null;
+            if ($parts[0] === '' || $score === null || $score <= 0) {
+                throw ValidationException::withMessages([
+                    'rubric_text' => 'Mỗi dòng rubric phải có dạng “Tên tiêu chí | điểm”, ví dụ: Nội dung chính xác | 3.',
+                ]);
+            }
+
+            return ['criterion' => mb_substr($parts[0], 0, 500), 'max_score' => $score];
+        })->values();
+
+        if (abs($rubric->sum('max_score') - $maxScore) > 0.001) {
+            throw ValidationException::withMessages([
+                'rubric_text' => 'Tổng điểm các tiêu chí rubric phải bằng điểm tối đa của câu.',
+            ]);
+        }
+
+        return $rubric->all();
     }
 
     private function mapOptions(array $options, array $correctIndexes): array

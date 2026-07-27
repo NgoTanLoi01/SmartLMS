@@ -63,9 +63,11 @@ class StudentImportIntegrityTest extends TestCase
 
     protected function tearDown(): void
     {
-        Schema::dropIfExists('class_user');
-        Schema::dropIfExists('classes');
-        Schema::dropIfExists('users');
+        if ($this->usesIsolatedSqliteDatabase()) {
+            Schema::dropIfExists('class_user');
+            Schema::dropIfExists('classes');
+            Schema::dropIfExists('users');
+        }
 
         parent::tearDown();
     }

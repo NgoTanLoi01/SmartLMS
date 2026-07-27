@@ -15,20 +15,23 @@
         .exam-connection.saving::before { background:#f59e0b; }
         .exam-timer { background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:7px 12px; font-size:1.1rem; font-weight:800; font-variant-numeric:tabular-nums; }
         .exam-timer.urgent { background:#b91c1c; }
-        .exam-body { min-height:0; flex:1; display:grid; grid-template-columns:minmax(0,1fr) 280px; }
-        .exam-content { overflow:auto; padding:28px; }
-        .question-card { max-width:900px; margin:0 auto; background:white; border:1px solid #dce3ed; border-radius:16px; box-shadow:0 8px 24px rgba(15,23,42,.06); overflow:hidden; }
+        .exam-body { min-height:0; flex:1; display:grid; grid-template-columns:minmax(0,1fr) clamp(270px,20vw,320px); }
+        .exam-content { min-width:0; overflow:auto; padding:clamp(18px,2.2vw,32px); }
+        .question-card { width:100%; max-width:980px; margin:0 auto; background:white; border:1px solid #dce3ed; border-radius:16px; box-shadow:0 8px 24px rgba(15,23,42,.06); overflow:hidden; }
+        .question-card[data-question-type="code_debug"] { max-width:1180px; }
         .question-card.with-passage { max-width:1200px; display:grid; grid-template-columns:minmax(320px,45%) minmax(0,1fr); }
+        .question-panel { min-width:0; }
         .passage-panel { padding:24px; background:#fbfdff; border-right:1px solid #dce3ed; max-height:65vh; overflow:auto; }
         .passage-title { font-weight:800; color:#173f8f; margin-bottom:12px; }
         .passage-content { white-space:pre-wrap; line-height:1.7; font-size:.94rem; }
         .passage-source { margin-top:14px; color:#64748b; font-size:.75rem; font-style:italic; }
-        .question-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; padding:22px 24px; border-bottom:1px solid #e8edf4; }
+        .question-head { display:flex; justify-content:space-between; gap:20px; align-items:flex-start; padding:22px 24px; border-bottom:1px solid #e8edf4; }
+        .question-head > div { min-width:0; flex:1; }
         .question-number { color:#173f8f; font-size:.82rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
         .question-type-pill { display:inline-flex; align-items:center; gap:5px; margin-left:8px; padding:3px 8px; border-radius:999px; background:#edf4ff; color:#1d4ed8; font-size:.68rem; font-weight:800; text-transform:none; letter-spacing:0; }
-        .question-text { font-size:1.08rem; line-height:1.65; font-weight:650; }
+        .question-text { font-size:clamp(1rem,1.25vw,1.12rem); line-height:1.6; font-weight:700; overflow-wrap:anywhere; }
         .question-instruction { color:#64748b; font-size:.78rem; margin-top:8px; font-weight:500; }
-        .flag-button { border:1px solid #f3c96a; background:#fff9e9; color:#8a5b00; border-radius:10px; padding:8px 12px; font-weight:700; white-space:nowrap; }
+        .flag-button { flex:0 0 auto; border:1px solid #f3c96a; background:#fff9e9; color:#8a5b00; border-radius:10px; padding:8px 12px; font-weight:700; white-space:nowrap; cursor:pointer; }
         .flag-button.active { background:#f59e0b; color:#fff; border-color:#f59e0b; }
         .option-list { padding:14px 24px 22px; }
         .exam-option { display:flex; gap:12px; align-items:center; padding:14px; margin-top:10px; border:1px solid #dce3ed; border-radius:12px; cursor:pointer; transition:.15s; }
@@ -36,16 +39,19 @@
         .exam-option:has(input:checked) { border-color:#2563eb; background:#eff6ff; box-shadow:0 0 0 1px #2563eb; }
         .exam-option input { width:18px; height:18px; accent-color:#2563eb; }
         .option-label { width:28px; height:28px; border-radius:50%; background:#eaf0fb; color:#173f8f; font-weight:800; display:grid; place-items:center; flex:0 0 auto; }
-        .true-false-list { display:grid; gap:10px; padding:16px 24px 24px; }
-        .true-false-row { display:grid; grid-template-columns:32px minmax(0,1fr) auto; gap:12px; align-items:center; border:1px solid #dce3ed; border-radius:12px; padding:12px; }
+        .true-false-list { display:grid; gap:12px; padding:18px 24px 24px; }
+        .true-false-row { display:grid; grid-template-columns:32px minmax(0,1fr) 132px; gap:14px; align-items:center; border:1px solid #dce3ed; border-radius:12px; padding:13px 14px; transition:border-color .15s,background .15s; }
+        .true-false-row:has(input:checked) { border-color:#93c5fd; background:#f8fbff; }
         .statement-index { width:28px; height:28px; display:grid; place-items:center; border-radius:8px; background:#ede9fe; color:#6d28d9; font-weight:800; font-size:.78rem; }
-        .statement-text { font-size:.9rem; line-height:1.5; }
-        .truth-buttons { display:flex; gap:6px; }
+        .statement-text { min-width:0; font-size:.92rem; line-height:1.55; overflow-wrap:anywhere; }
+        .truth-buttons { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
         .truth-choice { margin:0; cursor:pointer; }
-        .truth-choice input { position:absolute; opacity:0; }
-        .truth-choice span { min-width:54px; display:block; text-align:center; border:1px solid #cbd5e1; border-radius:8px; padding:7px 9px; color:#64748b; font-size:.75rem; font-weight:750; }
+        .truth-choice input { position:absolute; opacity:0; pointer-events:none; }
+        .truth-choice span { display:block; text-align:center; border:1px solid #cbd5e1; border-radius:8px; padding:8px 7px; color:#64748b; background:#fff; font-size:.75rem; font-weight:750; transition:.15s; }
+        .truth-choice:hover span { border-color:#60a5fa; color:#1d4ed8; }
+        .truth-choice input:focus-visible + span { outline:3px solid rgba(37,99,235,.2); outline-offset:2px; }
         .truth-choice input:checked + span { background:#2563eb; border-color:#2563eb; color:#fff; }
-        .structured-answer { padding:18px 24px 24px; display:grid; gap:12px; }
+        .structured-answer { min-width:0; padding:18px 24px 24px; display:grid; gap:14px; }
         .blank-entry { display:grid; grid-template-columns:84px minmax(0,1fr); gap:10px; align-items:center; }
         .blank-entry label { color:#475569; font-size:.8rem; font-weight:750; }
         .structured-input { width:100%; border:1px solid #cbd5e1; border-radius:11px; padding:12px 14px; font-size:.95rem; transition:.15s; }
@@ -53,8 +59,27 @@
         .numeric-entry { display:flex; align-items:center; gap:10px; }
         .numeric-entry .structured-input { max-width:320px; }
         .numeric-unit { padding:9px 12px; border-radius:9px; background:#f1f5f9; color:#475569; font-size:.85rem; font-weight:700; }
-        .exam-nav-actions { max-width:900px; margin:18px auto 0; display:flex; justify-content:space-between; gap:12px; }
-        .exam-btn { border:1px solid #cbd5e1; background:#fff; border-radius:10px; padding:10px 18px; font-weight:750; color:#334155; }
+        .essay-editor,.code-editor { min-height:250px; resize:vertical; line-height:1.65; }
+        .code-editor { min-height:400px; border:0; border-radius:0; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:.86rem; line-height:1.65; tab-size:2; background:#fbfdff; }
+        .code-editor:focus { box-shadow:inset 0 0 0 2px rgba(37,99,235,.55); }
+        .answer-toolbar { display:flex; justify-content:space-between; gap:12px; align-items:center; color:#64748b; font-size:.75rem; }
+        .code-workspace { display:grid; grid-template-columns:minmax(420px,1.18fr) minmax(320px,.82fr); border:1px solid #cbd5e1; border-radius:12px; overflow:hidden; background:#fff; }
+        .code-pane { min-width:0; display:flex; flex-direction:column; }
+        .code-pane-head { min-height:44px; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:9px 12px; border-bottom:1px solid #e8edf4; background:#f8fafc; font-size:.78rem; font-weight:800; }
+        .code-language { padding:3px 8px; border-radius:999px; background:#e0edff; color:#1d4ed8; font-size:.68rem; }
+        .preview-pane { border-left:1px solid #dce3ed; background:#fff; }
+        .preview-head { min-height:44px; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 12px; border-bottom:1px solid #e8edf4; font-size:.78rem; font-weight:800; }
+        .preview-frame { display:block; width:100%; min-height:400px; border:0; background:white; }
+        .preview-button { border:1px solid #93b4e8; border-radius:8px; background:#eff6ff; color:#1d4ed8; padding:6px 10px; font-size:.72rem; font-weight:800; }
+        .attachment-box { border:1px dashed #9fb4d1; border-radius:12px; padding:14px; background:#fbfdff; }
+        .attachment-list { display:grid; gap:7px; margin-top:10px; }
+        .attachment-item { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 10px; border-radius:8px; background:#eef5ff; font-size:.76rem; }
+        .attachment-item a { color:#174ea6; font-weight:700; text-decoration:none; }
+        .attachment-delete { border:0; background:transparent; color:#dc2626; }
+        .exam-nav-actions { width:100%; max-width:980px; margin:18px auto 0; display:flex; justify-content:space-between; gap:12px; }
+        .exam-content:has(.exam-question[data-question-type="code_debug"]:not([hidden])) .exam-nav-actions,
+        .exam-content:has(.exam-question.with-passage:not([hidden])) .exam-nav-actions { max-width:1180px; }
+        .exam-btn { border:1px solid #cbd5e1; background:#fff; border-radius:10px; padding:10px 18px; font-weight:750; color:#334155; cursor:pointer; }
         .exam-btn.primary { background:#1677e8; border-color:#1677e8; color:white; }
         .exam-btn:disabled { opacity:.45; }
         .exam-sidebar { background:white; border-left:1px solid #dce3ed; padding:20px; overflow:auto; }
@@ -63,12 +88,21 @@
         .navigator-title { font-weight:800; margin-bottom:6px; }
         .navigator-help { color:#64748b; font-size:.75rem; margin-bottom:14px; }
         .question-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
-        .question-dot { height:38px; border:1px solid #cbd5e1; background:#fff; border-radius:9px; font-weight:750; color:#475569; position:relative; }
+        .question-dot { height:38px; border:1px solid #cbd5e1; background:#fff; border-radius:9px; font-weight:750; color:#475569; position:relative; cursor:pointer; }
         .question-dot.answered { background:#dcfce7; border-color:#86efac; color:#166534; }
         .question-dot.flagged::after { content:''; position:absolute; right:3px; top:3px; width:7px; height:7px; border-radius:50%; background:#f59e0b; }
         .question-dot.current { color:white; background:#2563eb; border-color:#2563eb; }
         .exam-summary { margin-top:18px; font-size:.82rem; color:#475569; display:grid; gap:5px; }
-        .submit-exam { width:100%; margin-top:18px; border:0; background:#173f8f; color:white; padding:12px; border-radius:10px; font-weight:800; }
+        .submit-exam { width:100%; margin-top:18px; border:0; background:#173f8f; color:white; padding:12px; border-radius:10px; font-weight:800; cursor:pointer; }
+        @media(max-width:1180px) {
+            .code-workspace { grid-template-columns:1fr; }
+            .preview-pane { border-left:0; border-top:1px solid #dce3ed; }
+            .preview-frame { min-height:300px; }
+        }
+        @media(max-width:1050px) {
+            .true-false-row { grid-template-columns:32px minmax(0,1fr); }
+            .truth-buttons { grid-column:2; width:min(100%,260px); }
+        }
         @media(max-width:800px) {
             .exam-header { padding:8px 12px; }
             .exam-body { grid-template-columns:1fr; }
@@ -80,9 +114,21 @@
             .submit-exam { margin-top:10px; }
             .question-card.with-passage { grid-template-columns:1fr; }
             .passage-panel { border-right:0; border-bottom:1px solid #dce3ed; max-height:38vh; }
-            .true-false-row { grid-template-columns:30px 1fr; }
-            .truth-buttons { grid-column:2; }
+            .question-head { padding:18px; gap:12px; }
+            .question-text { font-size:1rem; }
+            .option-list,.true-false-list,.structured-answer { padding-left:18px; padding-right:18px; }
+            .true-false-row { grid-template-columns:30px minmax(0,1fr); }
+            .truth-buttons { grid-column:1 / -1; width:100%; }
             .blank-entry { grid-template-columns:1fr; gap:5px; }
+            .code-editor { min-height:320px; }
+            .preview-frame { min-height:260px; }
+        }
+        @media(max-width:520px) {
+            .exam-title { max-width:58vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+            .exam-connection { display:none; }
+            .question-head { flex-direction:column; }
+            .flag-button { align-self:flex-end; }
+            .question-grid { grid-template-columns:repeat(5,1fr); }
         }
     </style>
 @endpush
@@ -93,7 +139,8 @@
         $answerMap = $questions->mapWithKeys(fn($question) => [$question->id => $question->answer?->answer_payload ?? $question->answer?->selected_option_id]);
         $answeredIds = $questions->filter(function($question) use ($answerMap) {
             $answer = $answerMap->get($question->id);
-            if (is_array($answer)) return collect($answer)->contains(fn($value) => $value !== null && trim((string) $value) !== '');
+            if (is_array($answer)) return collect($answer)->contains(fn($value) => $value !== null && !is_array($value) && trim((string) $value) !== '');
+            if ($question->attachments->isNotEmpty()) return true;
             return $answer !== null && trim((string) $answer) !== '';
         })->pluck('id');
         $flags = collect($attempt->flagged_question_ids ?? [])->map(fn($id) => (int) $id);
@@ -139,6 +186,8 @@
                                             @case('true_false_group') Chọn Đúng hoặc Sai cho từng nhận định. @break
                                             @case('fill_blank') Điền câu trả lời vào từng ô; không cần nhập dấu |. @break
                                             @case('numeric') Nhập giá trị số{{ data_get($question->response_schema_snapshot, 'unit') ? ' theo đơn vị '.data_get($question->response_schema_snapshot, 'unit') : '' }}. @break
+                                            @case('essay') Trình bày tối đa {{ data_get($question->response_schema_snapshot, 'word_limit', 500) }} từ; bài sẽ được giáo viên chấm. @break
+                                            @case('code_debug') Sửa mã HTML/CSS và {{ data_get($question->response_schema_snapshot, 'explanation_mode') === 'required' ? 'bắt buộc giải thích lỗi' : (data_get($question->response_schema_snapshot, 'explanation_mode') === 'optional' ? 'có thể giải thích lỗi' : 'không cần giải thích') }}. @break
                                             @default Chọn một phương án đúng nhất.
                                         @endswitch
                                     </div>
@@ -186,8 +235,45 @@
                                         <div class="blank-entry"><label for="blank_{{ $question->id }}_{{ $blankIndex }}">Ô trống {{ $blankIndex + 1 }}</label><input id="blank_{{ $question->id }}_{{ $blankIndex }}" class="structured-input" type="text" value="{{ $blankAnswers[$blankIndex] ?? '' }}" maxlength="1000" autocomplete="off" data-answer-question="{{ $question->id }}" data-blank-index="{{ $blankIndex }}" placeholder="Nhập câu trả lời"></div>
                                     @endfor
                                 </div>
-                            @else
+                            @elseif($question->question_type === 'numeric')
                                 <div class="structured-answer"><div class="numeric-entry"><input class="structured-input" type="text" inputmode="decimal" value="{{ $answerMap->get($question->id) }}" maxlength="100" autocomplete="off" data-answer-question="{{ $question->id }}" placeholder="Nhập kết quả số">@if(data_get($question->response_schema_snapshot, 'unit'))<span class="numeric-unit">{{ data_get($question->response_schema_snapshot, 'unit') }}</span>@endif</div></div>
+                            @elseif($question->question_type === 'essay')
+                                @php $essayPayload = is_array($answerMap->get($question->id)) ? $answerMap->get($question->id) : []; @endphp
+                                <div class="structured-answer">
+                                    <textarea class="structured-input essay-editor" data-answer-question="{{ $question->id }}" data-word-limit="{{ data_get($question->response_schema_snapshot, 'word_limit', 500) }}" placeholder="Nhập câu trả lời của bạn...">{{ $essayPayload['text'] ?? '' }}</textarea>
+                                    <div class="answer-toolbar"><span data-word-count="{{ $question->id }}">0/{{ data_get($question->response_schema_snapshot, 'word_limit', 500) }} từ</span><span><i class="fa-solid fa-cloud-arrow-up"></i> Tự động lưu</span></div>
+                                    @if(data_get($question->response_schema_snapshot, 'allow_attachments'))
+                                        <div class="attachment-box" data-attachment-box="{{ $question->id }}" data-upload-url="{{ route('quiz-attempt-attachments.store', [$attempt, $question]) }}">
+                                            <label class="form-label-sm"><i class="fa-solid fa-paperclip"></i> Tệp đính kèm (không bắt buộc)</label>
+                                            <input type="file" data-attachment-input accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg">
+                                            <div class="attachment-list" data-attachment-list>
+                                                @foreach($question->attachments as $attachment)
+                                                    <div class="attachment-item" data-attachment-id="{{ $attachment->id }}"><a href="{{ route('quiz-attempt-attachments.download', $attachment) }}"><i class="fa-solid fa-file"></i> {{ $attachment->original_name }}</a><button type="button" class="attachment-delete" data-delete-url="{{ route('quiz-attempt-attachments.destroy', $attachment) }}" aria-label="Xóa tệp"><i class="fa-solid fa-trash"></i></button></div>
+                                                @endforeach
+                                            </div>
+                                            <small class="text-muted">PDF, DOCX, TXT, PNG, JPG · tối đa 10 MB/tệp</small>
+                                        </div>
+                                    @endif
+                                </div>
+                            @elseif($question->question_type === 'code_debug')
+                                @php
+                                    $codePayload = is_array($answerMap->get($question->id)) ? $answerMap->get($question->id) : [];
+                                    $starterCode = data_get($question->response_schema_snapshot, 'starter_code', '');
+                                    $explanationMode = data_get($question->response_schema_snapshot, 'explanation_mode', 'optional');
+                                @endphp
+                                <div class="structured-answer">
+                                    <div class="code-workspace">
+                                        <div class="code-pane">
+                                            <div class="code-pane-head"><span><i class="fa-solid fa-code"></i> Mã đã sửa</span><span class="code-language">HTML/CSS</span></div>
+                                            <textarea class="structured-input code-editor" data-answer-question="{{ $question->id }}" data-code-input spellcheck="false" aria-label="Mã HTML và CSS đã sửa">{{ $codePayload['code'] ?? $starterCode }}</textarea>
+                                        </div>
+                                        <div class="preview-pane"><div class="preview-head"><span>Xem trước an toàn</span><button type="button" class="preview-button" data-preview-code="{{ $question->id }}"><i class="fa-solid fa-play"></i> Chạy thử</button></div><iframe class="preview-frame" sandbox="" data-preview-frame="{{ $question->id }}" title="Xem trước HTML/CSS"></iframe></div>
+                                    </div>
+                                    @if($explanationMode !== 'disabled')
+                                        <div><label class="form-label-sm">Giải thích lỗi {{ $explanationMode === 'required' ? '(bắt buộc)' : '(không bắt buộc)' }}</label><textarea class="structured-input" rows="4" data-answer-question="{{ $question->id }}" data-code-explanation data-word-limit="{{ data_get($question->response_schema_snapshot, 'explanation_word_limit', 150) }}" placeholder="Nêu nguyên nhân và cách khắc phục...">{{ $codePayload['explanation'] ?? '' }}</textarea></div>
+                                    @endif
+                                    <div class="answer-toolbar"><span>HTML/CSS được xem trước trong iframe sandbox, JavaScript bị vô hiệu hóa.</span><span><i class="fa-solid fa-cloud-arrow-up"></i> Tự động lưu</span></div>
+                                </div>
                             @endif
                         </div>
                     </section>
@@ -271,6 +357,8 @@
                     return Object.fromEntries(inputs.filter(input => input.checked).map(input => [input.dataset.statementId, input.value === '1']));
                 }
                 if (type === 'fill_blank') return inputs.sort((a, b) => Number(a.dataset.blankIndex) - Number(b.dataset.blankIndex)).map(input => input.value.trim());
+                if (type === 'essay') return {text: inputs[0]?.value.trim() ?? ''};
+                if (type === 'code_debug') return {code: card.querySelector('[data-code-input]')?.value ?? '', explanation: card.querySelector('[data-code-explanation]')?.value.trim() ?? ''};
                 return inputs[0]?.value.trim() ?? '';
             };
 
@@ -280,6 +368,8 @@
                 const answer = collectAnswer(questionId);
                 if (type === 'true_false_group') return Object.keys(answer).length === card.querySelectorAll('[data-statement-id]').length / 2;
                 if (type === 'fill_blank') return answer.length > 0 && answer.every(value => value !== '');
+                if (type === 'essay') return answer.text !== '' || card.querySelectorAll('[data-attachment-id]').length > 0;
+                if (type === 'code_debug') return answer.code.trim() !== '';
                 if (Array.isArray(answer)) return answer.length > 0;
                 return answer !== null && answer !== '';
             };
@@ -332,7 +422,7 @@
             };
 
             document.querySelectorAll('[data-answer-question]').forEach(input => {
-                const eventName = ['text', 'number'].includes(input.type) ? 'input' : 'change';
+                const eventName = ['text', 'number', 'textarea'].includes(input.type) || input.tagName === 'TEXTAREA' ? 'input' : 'change';
                 input.addEventListener(eventName, event => {
                     const id = Number(event.target.dataset.answerQuestion);
                     updateQuestionState(id);
@@ -342,6 +432,50 @@
                     }, eventName === 'input' ? 650 : 0));
                 });
             });
+
+            const countWords = value => value.trim() === '' ? 0 : value.trim().split(/\s+/u).length;
+            document.querySelectorAll('.essay-editor').forEach(editor => {
+                const render = () => {
+                    const counter = document.querySelector(`[data-word-count="${editor.dataset.answerQuestion}"]`);
+                    if (counter) counter.textContent = `${countWords(editor.value)}/${editor.dataset.wordLimit} từ`;
+                };
+                editor.addEventListener('input', render);
+                render();
+            });
+
+            const sandboxDocument = code => `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:"></head><body>${code}</body></html>`;
+            document.querySelectorAll('[data-preview-code]').forEach(button => button.addEventListener('click', () => {
+                const id = button.dataset.previewCode;
+                const card = document.querySelector(`[data-question-id="${id}"]`);
+                card.querySelector(`[data-preview-frame="${id}"]`).srcdoc = sandboxDocument(card.querySelector('[data-code-input]').value);
+            }));
+
+            const bindDeleteAttachment = button => button.addEventListener('click', async () => {
+                if (!confirm('Xóa tệp đính kèm này?')) return;
+                await request(button.dataset.deleteUrl, 'DELETE', {});
+                const item = button.closest('[data-attachment-id]');
+                const questionId = Number(button.closest('[data-attachment-box]').dataset.attachmentBox);
+                item.remove();
+                updateQuestionState(questionId);
+            });
+            document.querySelectorAll('.attachment-delete').forEach(bindDeleteAttachment);
+            document.querySelectorAll('[data-attachment-input]').forEach(input => input.addEventListener('change', async () => {
+                const box = input.closest('[data-attachment-box]');
+                if (!input.files[0]) return;
+                const form = new FormData();
+                form.append('file', input.files[0]);
+                const response = await fetch(box.dataset.uploadUrl, {method:'POST', credentials:'same-origin', headers:{'Accept':'application/json','X-CSRF-TOKEN':csrf}, body:form});
+                if (!response.ok) { alert('Không thể tải tệp. Hãy kiểm tra định dạng và dung lượng.'); return; }
+                const file = await response.json();
+                const item = document.createElement('div');
+                item.className = 'attachment-item';
+                item.dataset.attachmentId = file.id;
+                item.innerHTML = `<a href="${file.download_url}"><i class="fa-solid fa-file"></i> ${file.name.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]))}</a><button type="button" class="attachment-delete" data-delete-url="${file.delete_url}" aria-label="Xóa tệp"><i class="fa-solid fa-trash"></i></button>`;
+                box.querySelector('[data-attachment-list]').appendChild(item);
+                bindDeleteAttachment(item.querySelector('button'));
+                input.value = '';
+                updateQuestionState(Number(box.dataset.attachmentBox));
+            }));
 
             document.querySelectorAll('[data-flag-question]').forEach(button => button.addEventListener('click', async () => {
                 const id = Number(button.dataset.flagQuestion);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use App\Models\QuizSession;
 use App\Models\User;
 use App\Services\QuizExamService;
@@ -114,8 +115,8 @@ class QuizSessionController extends Controller
             'candidates' => $session->candidates->map(function (User $candidate) use ($attempts) {
                 $attempt = $attempts->get($candidate->id);
                 $status = 'not_started';
-                if ($attempt?->status === 'submitted') {
-                    $status = 'submitted';
+                if (in_array($attempt?->status, [QuizAttempt::STATUS_PENDING_GRADING, QuizAttempt::STATUS_GRADED, QuizAttempt::STATUS_RELEASED, QuizAttempt::STATUS_SUBMITTED], true)) {
+                    $status = $attempt->status;
                 } elseif ($attempt?->status === 'in_progress') {
                     $status = $attempt->last_seen_at?->lt(now()->subSeconds(45)) ? 'disconnected' : 'in_progress';
                 }
@@ -141,10 +142,18 @@ class QuizSessionController extends Controller
         $releasedAt = now();
         DB::transaction(function () use ($session, $releasedAt) {
             $session->update(['results_released_at' => $releasedAt]);
-            $session->attempts()->whereNotNull('completed_at')->update(['result_released_at' => $releasedAt]);
+            $session->attempts()
+                ->whereNotNull('completed_at')
+                ->whereNotNull('score')
+                ->whereIn('status', [QuizAttempt::STATUS_SUBMITTED, QuizAttempt::STATUS_GRADED, QuizAttempt::STATUS_RELEASED])
+                ->update(['status' => QuizAttempt::STATUS_RELEASED, 'result_released_at' => $releasedAt]);
         });
 
-        return back()->with('success', 'Đã công bố kết quả cho ca thi.');
+        $pending = $session->attempts()->where('status', QuizAttempt::STATUS_PENDING_GRADING)->count();
+
+        return back()->with('success', $pending > 0
+            ? "Đã công bố các bài chấm xong; còn {$pending} bài đang chờ giáo viên chấm."
+            : 'Đã công bố kết quả cho ca thi.');
     }
 
     private function validated(Request $request, Quiz $quiz): array
@@ -207,7 +216,10 @@ class QuizSessionController extends Controller
             'not_started' => $session->candidates->count() - $attempts->count(),
             'in_progress' => $active->filter(fn ($attempt) => $attempt->last_seen_at?->gte(now()->subSeconds(45)))->count(),
             'disconnected' => $active->filter(fn ($attempt) => ! $attempt->last_seen_at || $attempt->last_seen_at->lt(now()->subSeconds(45)))->count(),
-            'submitted' => $attempts->where('status', 'submitted')->count(),
+            'submitted' => $attempts->whereIn('status', [QuizAttempt::STATUS_SUBMITTED, QuizAttempt::STATUS_PENDING_GRADING, QuizAttempt::STATUS_GRADED, QuizAttempt::STATUS_RELEASED])->count(),
+            'pending_grading' => $attempts->where('status', QuizAttempt::STATUS_PENDING_GRADING)->count(),
+            'graded' => $attempts->where('status', QuizAttempt::STATUS_GRADED)->count(),
+            'released' => $attempts->where('status', QuizAttempt::STATUS_RELEASED)->count(),
         ];
     }
 }

@@ -11,7 +11,7 @@
         $allAttempts = $quiz->sessions->flatMap->attempts;
         $totalCandidates = $quiz->sessions->sum(fn($item) => $item->candidates->count());
         $totalInProgress = $allAttempts->where('status', 'in_progress')->count();
-        $totalSubmitted = $allAttempts->where('status', 'submitted')->count();
+        $totalSubmitted = $allAttempts->whereNotNull('completed_at')->count();
         $liveSessions = $quiz->sessions->filter(fn($item) => $item->isOpen())->count();
     @endphp
 
@@ -78,7 +78,7 @@
         <div class="session-grid">
             @forelse($quiz->sessions as $session)
                 @php
-                    $submitted = $session->attempts->where('status', 'submitted')->count();
+                    $submitted = $session->attempts->whereNotNull('completed_at')->count();
                     $inProgress = $session->attempts->where('status', 'in_progress')->count();
                     $candidateCount = $session->candidates->count();
                     $notStarted = max($candidateCount - $submitted - $inProgress, 0);

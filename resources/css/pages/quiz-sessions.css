@@ -271,6 +271,9 @@
 .monitor-status.in_progress { background: var(--sl-primary-soft); color: var(--sl-primary); }
 .monitor-status.disconnected { background: var(--sl-warning-soft); color: var(--sl-warning); }
 .monitor-status.submitted { background: var(--sl-success-soft); color: var(--sl-success); }
+.monitor-status.pending_grading { background: var(--sl-warning-soft); color: #b45309; }
+.monitor-status.graded { background: #eef2ff; color: #4f46e5; }
+.monitor-status.released { background: var(--sl-success-soft); color: var(--sl-success); }
 .monitor-progress-wrap { min-width: 150px; }
 .monitor-progress-meta { display: flex; justify-content: space-between; margin-bottom: 5px; color: var(--sl-text-muted); font-size: 10.5px; }
 .monitor-progress { height: 7px; overflow: hidden; border-radius: var(--sl-radius-pill); background: #e8edf5; }

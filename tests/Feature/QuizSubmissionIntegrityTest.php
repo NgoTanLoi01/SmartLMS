@@ -39,8 +39,10 @@ class QuizSubmissionIntegrityTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['quiz_attempts', 'options', 'questions', 'quizzes', 'course_question_bank', 'class_course', 'class_user', 'classes', 'courses', 'users'] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach (['quiz_attempts', 'options', 'questions', 'quizzes', 'course_question_bank', 'class_course', 'class_user', 'classes', 'courses', 'users'] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
 
         parent::tearDown();

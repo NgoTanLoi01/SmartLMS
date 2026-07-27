@@ -16,6 +16,10 @@ class Question extends Model
 
     public const TYPE_NUMERIC = 'numeric';
 
+    public const TYPE_ESSAY = 'essay';
+
+    public const TYPE_CODE_DEBUG = 'code_debug';
+
     public const STATUS_PUBLISHED = 'published';
 
     public const STATUS_ARCHIVED = 'archived';
@@ -36,6 +40,8 @@ class Question extends Model
             self::TYPE_TRUE_FALSE_GROUP => 'Đúng/Sai theo nhóm',
             self::TYPE_FILL_BLANK => 'Điền khuyết',
             self::TYPE_NUMERIC => 'Trả lời số',
+            self::TYPE_ESSAY => 'Tự luận',
+            self::TYPE_CODE_DEBUG => 'Sửa lỗi HTML/CSS',
         ];
     }
 
@@ -61,6 +67,7 @@ class Question extends Model
             self::TYPE_TRUE_FALSE_GROUP => $this->options->map(fn ($option) => $option->option_text.': '.($option->is_correct ? 'Đúng' : 'Sai'))->implode(' · '),
             self::TYPE_FILL_BLANK => collect($this->answer_config['blanks'] ?? [])->map(fn ($blank) => collect($blank['accepted'] ?? [])->first())->filter()->implode(' · '),
             self::TYPE_NUMERIC => (string) ($this->answer_config['target'] ?? ''),
+            self::TYPE_ESSAY, self::TYPE_CODE_DEBUG => 'Giáo viên chấm theo rubric',
             default => (string) ($this->options->firstWhere('is_correct', true)?->option_text ?? ''),
         } ?: 'Chưa cấu hình đáp án';
     }
@@ -76,8 +83,16 @@ class Question extends Model
             })->orWhere(function ($structured) {
                 $structured->whereIn('question_type', [self::TYPE_FILL_BLANK, self::TYPE_NUMERIC])
                     ->whereNotNull('answer_config');
+            })->orWhere(function ($manual) {
+                $manual->whereIn('question_type', [self::TYPE_ESSAY, self::TYPE_CODE_DEBUG])
+                    ->whereNotNull('answer_config');
             });
         });
+    }
+
+    public function isManuallyGraded(): bool
+    {
+        return in_array($this->question_type, [self::TYPE_ESSAY, self::TYPE_CODE_DEBUG], true);
     }
 
     public function scopeNotArchived($query)

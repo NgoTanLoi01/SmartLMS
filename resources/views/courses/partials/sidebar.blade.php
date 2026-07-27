@@ -388,7 +388,7 @@
     @if ($course->quizzes->count() > 0)
         @php
             $doneQuizCount = $isStudent
-                ? $course->quizzes->filter(fn($q) => isset($userQuizAttempts[$q->id]) && $userQuizAttempts[$q->id]->status === 'submitted')->count()
+                ? $course->quizzes->filter(fn($q) => isset($userQuizAttempts[$q->id]) && $userQuizAttempts[$q->id]->completed_at)->count()
                 : 0;
         @endphp
         <div class="accordion-item" style="background:#faf8ff;">
@@ -433,23 +433,33 @@
                                         ? $userQuizAttempts[$quiz->id]
                                         : null;
                                 $resultReleased = $attempt?->resultIsReleased() ?? false;
+                                $attemptCompleted = (bool) $attempt?->completed_at;
+                                $attemptState = match (true) {
+                                    ! $attempt => 'not_started',
+                                    $attempt->isInProgress() => 'in_progress',
+                                    ! $attemptCompleted => 'not_started',
+                                    $resultReleased => 'released',
+                                    $attempt->status === 'pending_grading' => 'pending_grading',
+                                    $attempt->status === 'graded' => 'graded_private',
+                                    default => 'submitted_private',
+                                };
                             @endphp
-                            <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper {{ $attempt?->status === 'submitted' ? 'completed' : '' }} d-flex align-items-center justify-content-between shadow-none"
+                            <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper {{ $attemptCompleted ? 'completed' : '' }} d-flex align-items-center justify-content-between shadow-none"
                                 style="min-width:0;">
 
                                 <a href="javascript:void(0)"
                                     class="quiz-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 py-2 pe-2 ps-4"
                                     style="min-width:0;" data-id="{{ $quiz->id }}"
                                     data-title="{{ $quiz->title }}" data-duration="{{ $quiz->time_limit }}"
-                                    data-status="{{ $attempt?->status === 'submitted' ? 'completed' : ($attempt?->status === 'in_progress' ? 'in_progress' : 'pending') }}"
+                                    data-status="{{ $attemptState }}"
                                     data-score="{{ $attempt && $resultReleased ? $attempt->score : '' }}"
                                     data-result-released="{{ $resultReleased ? '1' : '0' }}"
                                     data-attempt-id="{{ $attempt ? $attempt->id : '' }}">
 
                                     <div
                                         style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                                        background:{{ $attempt?->status === 'submitted' ? '#dcfce7' : '#ede9fe' }};">
-                                        @if ($attempt?->status === 'submitted')
+                                        background:{{ $attemptCompleted ? '#dcfce7' : '#ede9fe' }};">
+                                        @if ($attemptCompleted)
                                             <i class="fa-solid fa-check" style="font-size:11px;color:#16a34a;"></i>
                                         @else
                                             <i class="fa-solid fa-stopwatch" style="font-size: 11px;color:#7c3aed;"></i>
@@ -458,16 +468,20 @@
 
                                     <div style="min-width:0;">
                                         <div class="lesson-name-text fw-semibold"
-                                            style="color:{{ $attempt?->status === 'submitted' ? '#166534' : '#5b21b6' }};">
+                                            style="color:{{ $attemptCompleted ? '#166534' : '#5b21b6' }};">
                                             {{ $quiz->title }}
                                         </div>
                                         @if ($isStudent)
                                             <div class="sidebar-status-row">
-                                                @if ($attempt?->status === 'submitted')
+                                                @if ($attemptCompleted)
                                                     <span class="sidebar-status-pill done"><i
                                                             class="fa-solid fa-check"></i>Đã làm</span>
-                                                    @if($resultReleased)
+                                                    @if($attempt?->status === 'pending_grading')
+                                                        <span class="sidebar-status-pill pending"><i class="fa-solid fa-hourglass-half"></i>Chờ giáo viên chấm</span>
+                                                    @elseif($resultReleased)
                                                         <span class="sidebar-status-pill pending">{{ $attempt->score }}/10 điểm</span>
+                                                    @elseif($attemptState === 'graded_private')
+                                                        <span class="sidebar-status-pill pending"><i class="fa-solid fa-lock"></i>Đã chấm · Chờ công bố</span>
                                                     @else
                                                         <span class="sidebar-status-pill pending"><i class="fa-solid fa-lock"></i>Chờ công bố</span>
                                                     @endif

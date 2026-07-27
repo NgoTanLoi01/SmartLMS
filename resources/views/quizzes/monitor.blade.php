@@ -109,6 +109,9 @@
                 <button class="monitor-filter" type="button" data-status-filter="in_progress">Đang thi <span data-filter-count="in_progress">0</span></button>
                 <button class="monitor-filter" type="button" data-status-filter="disconnected">Mất kết nối <span data-filter-count="disconnected">0</span></button>
                 <button class="monitor-filter" type="button" data-status-filter="submitted">Đã nộp <span data-filter-count="submitted">0</span></button>
+                <button class="monitor-filter" type="button" data-status-filter="pending_grading">Chờ chấm <span data-filter-count="pending_grading">0</span></button>
+                <button class="monitor-filter" type="button" data-status-filter="graded">Đã chấm <span data-filter-count="graded">0</span></button>
+                <button class="monitor-filter" type="button" data-status-filter="released">Đã công bố <span data-filter-count="released">0</span></button>
             </div>
 
             <div class="monitor-table-wrap">
@@ -134,7 +137,10 @@
                 not_started: { label: 'Chưa bắt đầu', priority: 3 },
                 in_progress: { label: 'Đang thi', priority: 1 },
                 disconnected: { label: 'Mất kết nối', priority: 0 },
-                submitted: { label: 'Đã nộp', priority: 2 }
+                submitted: { label: 'Đã nộp', priority: 2 },
+                pending_grading: { label: 'Chờ chấm', priority: 2 },
+                graded: { label: 'Đã chấm', priority: 3 },
+                released: { label: 'Đã công bố', priority: 4 }
             };
             const table = document.getElementById('candidate-table');
             const refreshButton = document.getElementById('refresh-monitor');
@@ -153,7 +159,7 @@
             const render = () => {
                 const query = state.query.toLocaleLowerCase('vi');
                 const visible = state.candidates
-                    .filter(candidate => state.filter === 'all' || candidate.status === state.filter)
+                    .filter(candidate => state.filter === 'all' || candidate.status === state.filter || (state.filter === 'submitted' && ['submitted','pending_grading','graded','released'].includes(candidate.status)))
                     .filter(candidate => `${candidate.name} ${candidate.student_code || ''}`.toLocaleLowerCase('vi').includes(query))
                     .sort((a, b) => (statusMeta[a.status]?.priority ?? 9) - (statusMeta[b.status]?.priority ?? 9) || a.name.localeCompare(b.name, 'vi'));
 
@@ -170,7 +176,7 @@
                     return `<tr>
                         <td data-label="Thí sinh"><div class="monitor-person"><div class="monitor-avatar">${escapeHtml(initials(candidate.name))}</div><div><strong>${escapeHtml(candidate.name)}</strong><small>${escapeHtml(candidate.student_code || 'Chưa có mã học viên')}</small></div></div></td>
                         <td data-label="Trạng thái"><span class="monitor-status ${escapeHtml(candidate.status)}">${meta.label}</span></td>
-                        <td data-label="Tiến độ"><div class="monitor-progress-wrap"><div class="monitor-progress-meta"><span>${answered}/${total} câu</span><strong>${percent}%</strong></div><div class="monitor-progress ${candidate.status === 'submitted' ? 'complete' : ''}"><span style="width:${percent}%"></span></div></div></td>
+                        <td data-label="Tiến độ"><div class="monitor-progress-wrap"><div class="monitor-progress-meta"><span>${answered}/${total} câu</span><strong>${percent}%</strong></div><div class="monitor-progress ${['submitted','pending_grading','graded','released'].includes(candidate.status) ? 'complete' : ''}"><span style="width:${percent}%"></span></div></div></td>
                         <td data-label="Bắt đầu"><span class="monitor-time">${escapeHtml(candidate.started_at || '—')}</span></td>
                         <td data-label="Kết nối cuối"><span class="monitor-time">${escapeHtml(candidate.last_seen_at || '—')}</span></td>
                         <td data-label="Nộp bài"><span class="monitor-time">${escapeHtml(candidate.completed_at || '—')}</span></td>
@@ -183,7 +189,7 @@
                     const element = document.querySelector(`[data-summary="${key}"]`);
                     if (element) element.textContent = value;
                 });
-                ['not_started','in_progress','disconnected','submitted'].forEach(status => {
+                ['not_started','in_progress','disconnected','submitted','pending_grading','graded','released'].forEach(status => {
                     const element = document.querySelector(`[data-filter-count="${status}"]`);
                     if (element) element.textContent = summary[status] || 0;
                 });

@@ -311,7 +311,7 @@ class DashboardController extends Controller
                         ->from('quiz_attempts')
                         ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
                         ->where('quiz_attempts.user_id', $user->id)
-                        ->where('quiz_attempts.status', 'submitted');
+                        ->whereIn('quiz_attempts.status', ['submitted', 'graded', 'released']);
                 })
 
                 ->select('quizzes.*', 'courses.title as course_title', 'courses.id as course_id')
@@ -333,7 +333,7 @@ class DashboardController extends Controller
                         ->from('quiz_attempts')
                         ->whereColumn('quiz_attempts.quiz_id', 'quizzes.id')
                         ->where('quiz_attempts.user_id', $user->id)
-                        ->where('quiz_attempts.status', 'submitted');
+                        ->whereIn('quiz_attempts.status', ['submitted', 'graded', 'released']);
                 })
                 ->count();
             // ==========================================

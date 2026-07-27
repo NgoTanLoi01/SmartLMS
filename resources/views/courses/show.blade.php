@@ -635,8 +635,7 @@
                     <div id="quiz-content-area" class="d-none flex-column align-items-center">
                         <div class="w-100" style="max-width:520px;">
                             <div class="text-center mb-4">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                                    style="width:68px;height:68px;background:var(--purple-50);">
+                                <div id="quiz-main-icon-wrap" class="quiz-main-icon-wrap mb-3">
                                     <i id="quiz-main-icon" class="fa-solid fa-stopwatch fa-2x"
                                         style="color:var(--purple-600);"></i>
                                 </div>
@@ -653,11 +652,9 @@
                                 @if (auth()->user()->role === 'student')
                                     <div class="quiz-stat-card">
                                         <div class="quiz-stat-label"><i class="fa-solid fa-list-check me-1"></i> Trạng thái</div>
-                                        <div><span id="quiz-status-text" class="fw-bold text-warning"
-                                                style="font-size:.95rem;">Chưa làm</span></div>
+                                        <div><span id="quiz-status-text" class="quiz-status-value is-not-started">Chưa làm</span></div>
                                     </div>
-                                    <div id="quiz-score-box" class="quiz-stat-card d-none"
-                                        style="background:var(--green-50);border-color:#bbf7d0;">
+                                    <div id="quiz-score-box" class="quiz-stat-card quiz-score-card d-none">
                                         <div class="quiz-stat-label text-success"><i class="fa-solid fa-star me-1"></i> Điểm số
                                         </div>
                                         <div class="quiz-stat-value text-success"><span id="quiz-score-text">0</span>/10
@@ -682,15 +679,17 @@
                                     </a>
                                 </div>
                                 <div id="quiz-completed-msg" class="d-none">
-                                    <div class="text-center p-4 rounded-4 mb-3"
-                                        style="background:var(--green-100);color:var(--green-900);">
-                                        <i class="fa-solid fa-circle-check fa-2x mb-2 d-block text-success"></i>
-                                        <h5 class="fw-bold mb-1">Hoàn thành!</h5>
-                                        <p class="mb-0 small">Bài kiểm tra đã được nộp thành công.</p>
+                                    <div id="quiz-result-panel" class="quiz-result-panel is-submitted" role="status" aria-live="polite">
+                                        <div class="quiz-result-icon"><i id="quiz-result-icon" class="fa-solid fa-circle-check"></i></div>
+                                        <div class="quiz-result-copy">
+                                            <span id="quiz-result-eyebrow" class="quiz-result-eyebrow">Đã ghi nhận bài làm</span>
+                                            <h5 id="quiz-result-title" class="quiz-result-title">Đã nộp bài</h5>
+                                            <p id="quiz-result-description" class="quiz-result-description">Bài kiểm tra đã được nộp thành công.</p>
+                                        </div>
                                     </div>
                                     <a href="#" id="review-quiz-btn"
-                                        class="btn btn-success rounded-pill w-100 py-3 fw-bold">
-                                        <i class="fa-solid fa-search me-2"></i> Xem chi tiết bài làm
+                                        class="btn quiz-review-button w-100 d-none">
+                                        <i class="fa-solid fa-magnifying-glass-chart me-2"></i> Xem kết quả và bài làm
                                     </a>
                                 </div>
                             @else

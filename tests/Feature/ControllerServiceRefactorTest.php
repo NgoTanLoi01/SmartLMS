@@ -141,8 +141,10 @@ class ControllerServiceRefactorTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['options', 'questions', 'course_question_bank', 'question_banks', 'quizzes', 'assignments', 'lessons', 'modules', 'courses', 'users'] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach (['options', 'questions', 'course_question_bank', 'question_banks', 'quizzes', 'assignments', 'lessons', 'modules', 'courses', 'users'] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
 
         parent::tearDown();

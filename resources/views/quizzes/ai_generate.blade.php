@@ -305,7 +305,7 @@
                                 <div class="col-12">
                                     <label class="form-label fw-bold small text-uppercase text-muted">Hình thức câu hỏi</label>
                                     <select class="form-select ai-input" id="question_type">
-                                        @foreach(\App\Models\Question::typeLabels() as $type => $label)
+                                        @foreach(collect(\App\Models\Question::typeLabels())->except(['essay', 'code_debug']) as $type => $label)
                                             <option value="{{ $type }}" @selected(request('question_type', 'single_choice') === $type)>{{ $label }}</option>
                                         @endforeach
                                     </select>

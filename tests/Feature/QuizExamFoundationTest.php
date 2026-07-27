@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\QuizSession;
+use App\Models\QuizAttempt;
 use App\Models\User;
 use App\Services\QuestionAiQualityService;
 use App\Services\QuestionDifficultyAnalyticsService;
@@ -31,18 +32,21 @@ class QuizExamFoundationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->requireIsolatedSqliteDatabase();
         $this->createSchema();
         $this->seedExam();
     }
 
     protected function tearDown(): void
     {
-        foreach ([
-            'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions',
-            'quiz_attempts', 'options', 'questions', 'quiz_passages', 'course_question_bank', 'question_banks',
-            'quizzes', 'courses', 'users',
-        ] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach ([
+                'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions',
+                'quiz_attempts', 'options', 'questions', 'quiz_passages', 'course_question_bank', 'question_banks',
+                'quizzes', 'courses', 'users',
+            ] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
 
         parent::tearDown();
@@ -87,7 +91,7 @@ class QuizExamFoundationTest extends TestCase
 
         $submitted = $service->submit($attempt);
 
-        $this->assertSame('submitted', $submitted->status);
+        $this->assertSame(QuizAttempt::STATUS_GRADED, $submitted->status);
         $this->assertSame(10.0, (float) $submitted->score);
         $this->assertFalse($submitted->resultIsReleased());
     }
@@ -156,6 +160,50 @@ class QuizExamFoundationTest extends TestCase
         $this->assertFalse((bool) $multiple->answer()->first()->is_correct);
         $this->assertFalse((bool) $numeric->answer()->first()->is_correct);
         $this->assertTrue((bool) $fill->answer()->first()->is_correct);
+    }
+
+    public function test_essay_moves_from_pending_grading_to_graded_and_released(): void
+    {
+        $essay = Question::create([
+            'course_id' => $this->quiz->course_id,
+            'question_type' => Question::TYPE_ESSAY,
+            'question_text' => 'Trình bày vai trò của CSS.',
+            'answer_config' => [
+                'grading_mode' => 'manual',
+                'max_score' => 3,
+                'word_limit' => 100,
+                'allow_attachments' => true,
+                'rubric' => [
+                    ['criterion' => 'Nội dung', 'max_score' => 2],
+                    ['criterion' => 'Trình bày', 'max_score' => 1],
+                ],
+            ],
+            'difficulty' => 'easy',
+            'status' => 'published',
+        ]);
+        $this->quiz->update(['easy_count' => 2]);
+
+        $service = app(QuizExamService::class);
+        $attempt = $service->startOrResume($this->quiz->fresh(), $this->student, $this->session);
+        $questions = $attempt->attemptQuestions->keyBy('question_type');
+        $service->saveAnswer($attempt, $questions[Question::TYPE_SINGLE_CHOICE]->id, data_get($questions[Question::TYPE_SINGLE_CHOICE]->answer_key_snapshot, 'option_ids.0'), false, 1);
+        $service->saveAnswer($attempt, $questions[Question::TYPE_ESSAY]->id, ['text' => 'CSS kiểm soát cách trình bày và bố cục trang web.'], false, 2);
+
+        $submitted = $service->submit($attempt->fresh());
+        $this->assertSame(QuizAttempt::STATUS_PENDING_GRADING, $submitted->status);
+        $this->assertNull($submitted->score);
+        $essayAnswer = $submitted->answers()->where('quiz_attempt_question_id', $questions[Question::TYPE_ESSAY]->id)->firstOrFail();
+        $teacher = User::findOrFail($this->quiz->course->teacher_id);
+
+        $graded = $service->gradeManualAnswer($submitted, $essayAnswer, [2, 1], 'Đáp ứng tốt yêu cầu.', $teacher);
+        $this->assertSame(QuizAttempt::STATUS_GRADED, $graded->status);
+        $this->assertSame(10.0, (float) $graded->score);
+        $this->assertFalse($graded->resultIsReleased());
+
+        $this->session->update(['results_released_at' => now()]);
+        $released = $service->gradeManualAnswer($graded, $essayAnswer->fresh(), [2, 1], 'Đã duyệt.', $teacher);
+        $this->assertSame(QuizAttempt::STATUS_RELEASED, $released->status);
+        $this->assertTrue($released->resultIsReleased());
     }
 
     public function test_questions_are_selected_by_exact_type_and_difficulty_distribution(): void
@@ -379,6 +427,8 @@ class QuizExamFoundationTest extends TestCase
             $table->unsignedBigInteger('user_id');
             $table->string('status');
             $table->float('score')->nullable();
+            $table->float('auto_score')->nullable();
+            $table->float('manual_score')->nullable();
             $table->json('student_answers')->nullable();
             $table->timestamp('started_at')->nullable();
             $table->timestamp('expires_at')->nullable();
@@ -386,6 +436,7 @@ class QuizExamFoundationTest extends TestCase
             $table->unsignedInteger('current_position')->default(1);
             $table->json('flagged_question_ids')->nullable();
             $table->timestamp('completed_at')->nullable();
+            $table->timestamp('graded_at')->nullable();
             $table->timestamp('result_released_at')->nullable();
             $table->timestamps();
             $table->unique(['quiz_id', 'user_id']);
@@ -395,6 +446,8 @@ class QuizExamFoundationTest extends TestCase
             $table->unsignedBigInteger('quiz_attempt_id');
             $table->unsignedBigInteger('question_id')->nullable();
             $table->string('question_type')->default('single_choice');
+            $table->string('grading_mode')->default('auto');
+            $table->float('max_score')->default(1);
             $table->unsignedInteger('position');
             $table->text('question_text');
             $table->string('passage_title')->nullable();
@@ -413,7 +466,25 @@ class QuizExamFoundationTest extends TestCase
             $table->unsignedBigInteger('selected_option_id')->nullable();
             $table->json('answer_payload')->nullable();
             $table->boolean('is_correct')->nullable();
+            $table->string('grading_status')->default('ungraded');
+            $table->float('score')->nullable();
+            $table->json('rubric_scores')->nullable();
+            $table->text('teacher_feedback')->nullable();
+            $table->unsignedBigInteger('graded_by')->nullable();
+            $table->timestamp('graded_at')->nullable();
             $table->timestamp('answered_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('quiz_attempt_attachments', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('quiz_attempt_id');
+            $table->unsignedBigInteger('quiz_attempt_question_id');
+            $table->unsignedBigInteger('uploaded_by')->nullable();
+            $table->string('disk')->default('local');
+            $table->string('path');
+            $table->string('original_name');
+            $table->string('mime_type')->nullable();
+            $table->unsignedBigInteger('size');
             $table->timestamps();
         });
     }

@@ -49,7 +49,7 @@ class QuizAttemptController extends Controller
                 ->with('error', 'Bài thi đã hết thời gian và được tự động nộp.');
         }
 
-        $attempt->load(['attemptQuestions.answer', 'session']);
+        $attempt->load(['attemptQuestions.answer', 'attemptQuestions.attachments', 'session']);
         $remainingSeconds = $examService->remainingSeconds($attempt);
 
         return view('quizzes.attempt', compact('quiz', 'attempt', 'remainingSeconds'));
@@ -70,7 +70,9 @@ class QuizAttemptController extends Controller
             $attempt = $examService->submit($attempt);
             $message = $attempt->resultIsReleased()
                 ? "Nộp bài thành công! Điểm của bạn: {$attempt->score}/10"
-                : 'Nộp bài thành công! Kết quả sẽ được công bố theo chính sách của ca thi.';
+                : ($attempt->status === QuizAttempt::STATUS_PENDING_GRADING
+                    ? 'Nộp bài thành công! Bài có nội dung tự luận đang chờ giáo viên chấm.'
+                    : 'Nộp bài thành công! Kết quả sẽ được công bố theo chính sách của ca thi.');
 
             return redirect()->route('courses.show', $quiz->course_id)->with('success', $message);
         }
@@ -176,7 +178,7 @@ class QuizAttemptController extends Controller
     // ==========================================
     public function review($attempt_id)
     {
-        $attempt = QuizAttempt::with(['quiz.course', 'session', 'attemptQuestions.answer'])->findOrFail($attempt_id);
+        $attempt = QuizAttempt::with(['quiz.course', 'session', 'attemptQuestions.answer.grader', 'attemptQuestions.attachments'])->findOrFail($attempt_id);
 
         Gate::authorize('view', $attempt);
 

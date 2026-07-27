@@ -42,13 +42,13 @@
                                         <div class="small text-muted">{{ $attempt->user->email }}</div>
                                     </td>
                                     <td class="px-4">
-                                        <span class="badge {{ $attempt->status === 'submitted' ? 'bg-success' : 'bg-primary' }}">
-                                            {{ $attempt->status === 'submitted' ? 'Đã nộp' : 'Đang thi' }}
+                                        <span class="badge {{ $attempt->status === 'pending_grading' ? 'bg-warning text-dark' : (in_array($attempt->status, ['graded','released','submitted']) ? 'bg-success' : 'bg-primary') }}">
+                                            {{ match($attempt->status) {'pending_grading' => 'Chờ chấm', 'graded' => 'Đã chấm', 'released' => 'Đã công bố', 'submitted' => 'Đã nộp', default => 'Đang thi'} }}
                                         </span>
                                         @if($attempt->session)<div class="small text-muted mt-1">{{ $attempt->session->name }}</div>@endif
                                     </td>
                                     <td class="px-4 text-center">
-                                        @if($attempt->status === 'submitted')<span
+                                        @if($attempt->score !== null)<span
                                             class="badge rounded-pill fs-6 {{ $attempt->score >= 5 ? 'bg-success bg-opacity-10 text-success border border-success' : 'bg-danger bg-opacity-10 text-danger border border-danger' }}">
                                             {{ $attempt->score }} / 10
                                         </span>@else — @endif
@@ -57,9 +57,9 @@
                                         {{ $attempt->completed_at?->format('H:i - d/m/Y') ?? '—' }}
                                     </td>
                                     <td class="px-4 text-end">
-                                        @if($attempt->status === 'submitted')<a href="{{ route('quizzes.review', $attempt->id) }}"
+                                        @if($attempt->completed_at)<a href="{{ route('quiz-attempts.grade', $attempt) }}"
                                             class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
-                                            <i class="fa-solid fa-eye me-1"></i> Xem chi tiết
+                                            <i class="fa-solid fa-pen-to-square me-1"></i> {{ $attempt->status === 'pending_grading' ? 'Chấm bài' : 'Xem bài' }}
                                         </a>@endif
                                     </td>
                                 </tr>

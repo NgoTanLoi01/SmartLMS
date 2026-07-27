@@ -62,11 +62,13 @@ class AuthorizationIsolationTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach ([
-            'assignment_submissions', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
-            'quizzes', 'assignments', 'lessons', 'modules', 'class_course', 'class_user', 'classes', 'courses', 'users',
-        ] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach ([
+                'assignment_submissions', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
+                'quizzes', 'assignments', 'lessons', 'modules', 'class_course', 'class_user', 'classes', 'courses', 'users',
+            ] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
 
         parent::tearDown();

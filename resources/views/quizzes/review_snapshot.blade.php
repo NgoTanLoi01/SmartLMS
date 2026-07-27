@@ -22,7 +22,8 @@
             @php
                 $answer = $question->answer?->answer_payload ?? $question->answer?->selected_option_id;
                 $isCorrect = (bool) $question->answer?->is_correct;
-                $hasAnswer = is_array($answer) ? collect($answer)->contains(fn($value) => $value !== null && trim((string) $value) !== '') : $answer !== null && trim((string) $answer) !== '';
+                $hasAnswer = is_array($answer) ? collect($answer)->contains(fn($value) => !is_array($value) && $value !== null && trim((string) $value) !== '') : $answer !== null && trim((string) $answer) !== '';
+                $isManual = $question->requiresManualGrading();
             @endphp
             <article class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
                 @if($question->passage_content)
@@ -32,7 +33,7 @@
                     </div>
                 @endif
                 <div class="card-header bg-white p-4 border-bottom">
-                    <div class="d-flex align-items-start gap-2 flex-wrap"><div class="fw-bold flex-grow-1"><span class="{{ $isCorrect ? 'text-success' : 'text-danger' }}">Câu {{ $question->position }}.</span> {{ $question->question_text }}</div><span class="badge rounded-pill text-bg-light border">{{ $question->typeLabel() }}</span></div>
+                    <div class="d-flex align-items-start gap-2 flex-wrap"><div class="fw-bold flex-grow-1"><span class="{{ $isManual ? 'text-primary' : ($isCorrect ? 'text-success' : 'text-danger') }}">Câu {{ $question->position }}.</span> {{ $question->question_text }}</div><span class="badge rounded-pill text-bg-light border">{{ $question->typeLabel() }}</span></div>
                     @if(!$hasAnswer)<span class="badge bg-secondary mt-2">Chưa trả lời</span>@endif
                 </div>
                 <div class="card-body p-4">
@@ -84,10 +85,22 @@
                                 <div class="col-md-5 text-success">Chấp nhận: <strong>{{ collect($blank['accepted'] ?? [])->implode(' / ') }}</strong></div>
                             </div>
                         @endforeach
-                    @else
+                    @elseif($question->question_type === 'numeric')
                         <div class="border rounded-3 p-3 {{ $isCorrect ? 'border-success bg-success bg-opacity-10' : 'border-danger bg-danger bg-opacity-10' }}">
                             <div>Bạn trả lời: <strong>{{ $answer ?: '—' }} {{ data_get($question->response_schema_snapshot, 'unit') }}</strong></div>
                             <div class="text-success mt-2">Đáp án: <strong>{{ data_get($question->answer_key_snapshot, 'target') }} ± {{ data_get($question->answer_key_snapshot, 'tolerance', 0) }} {{ data_get($question->response_schema_snapshot, 'unit') }}</strong></div>
+                        </div>
+                    @elseif($question->question_type === 'essay')
+                        <div class="border rounded-3 p-3 bg-light" style="white-space:pre-wrap;line-height:1.7">{{ data_get($answer, 'text', '—') }}</div>
+                    @elseif($question->question_type === 'code_debug')
+                        <pre class="rounded-3 p-3 bg-dark text-light"><code>{{ data_get($answer, 'code', '') }}</code></pre>
+                        @if(data_get($question->response_schema_snapshot, 'explanation_mode') !== 'disabled')<div class="border rounded-3 p-3 mt-2"><strong>Giải thích:</strong><div style="white-space:pre-wrap">{{ data_get($answer, 'explanation', '—') }}</div></div>@endif
+                    @endif
+                    @if($question->attachments->isNotEmpty())<div class="mt-3 d-flex flex-wrap gap-2">@foreach($question->attachments as $file)<a class="btn btn-sm btn-outline-primary" href="{{ route('quiz-attempt-attachments.download', $file) }}"><i class="fa-solid fa-paperclip"></i> {{ $file->original_name }}</a>@endforeach</div>@endif
+                    @if($isManual)
+                        <div class="alert {{ $question->answer?->grading_status === 'graded' ? 'alert-success' : 'alert-warning' }} mt-3 mb-0">
+                            <strong>{{ $question->answer?->grading_status === 'graded' ? 'Điểm: '.number_format((float) $question->answer->score, 2).'/'.number_format((float) $question->max_score, 2) : 'Đang chờ giáo viên chấm' }}</strong>
+                            @if($question->answer?->teacher_feedback)<div class="mt-2"><strong>Phản hồi:</strong> {{ $question->answer->teacher_feedback }}</div>@endif
                         </div>
                     @endif
                 </div>

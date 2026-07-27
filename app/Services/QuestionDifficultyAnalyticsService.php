@@ -20,7 +20,7 @@ class QuestionDifficultyAnalyticsService
             ->join('quiz_attempt_questions as issued', 'issued.id', '=', 'answers.quiz_attempt_question_id')
             ->join('quiz_attempts as attempts', 'attempts.id', '=', 'answers.quiz_attempt_id')
             ->whereIn('issued.question_id', $ids)
-            ->where('attempts.status', 'submitted')
+            ->whereIn('attempts.status', ['submitted', 'pending_grading', 'graded', 'released'])
             ->whereNotNull('answers.is_correct')
             ->groupBy('issued.question_id')
             ->selectRaw('issued.question_id, COUNT(*) as sample_size, SUM(CASE WHEN answers.is_correct = 1 THEN 1 ELSE 0 END) as correct_count')

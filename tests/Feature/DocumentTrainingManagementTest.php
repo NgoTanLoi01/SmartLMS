@@ -46,9 +46,11 @@ class DocumentTrainingManagementTest extends TestCase
 
     protected function tearDown(): void
     {
-        Schema::connection('pgsql')->dropIfExists('document_chunks');
-        DB::purge('pgsql');
-        Schema::dropIfExists('users');
+        if ($this->usesIsolatedSqliteDatabase()) {
+            Schema::connection('pgsql')->dropIfExists('document_chunks');
+            DB::purge('pgsql');
+            Schema::dropIfExists('users');
+        }
 
         parent::tearDown();
     }

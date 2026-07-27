@@ -10,6 +10,8 @@ class QuizAttemptQuestion extends Model
         'quiz_attempt_id',
         'question_id',
         'question_type',
+        'grading_mode',
+        'max_score',
         'position',
         'question_text',
         'passage_title',
@@ -35,6 +37,16 @@ class QuizAttemptQuestion extends Model
     public function answer()
     {
         return $this->hasOne(QuizAttemptAnswer::class);
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(QuizAttemptAttachment::class);
+    }
+
+    public function requiresManualGrading(): bool
+    {
+        return $this->grading_mode === 'manual';
     }
 
     public function typeLabel(): string

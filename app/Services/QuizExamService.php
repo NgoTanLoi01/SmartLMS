@@ -87,6 +87,8 @@ class QuizExamService
                     'quiz_attempt_id' => $attempt->id,
                     'question_id' => $question->id,
                     'question_type' => $type,
+                    'grading_mode' => $question->isManuallyGraded() ? 'manual' : 'auto',
+                    'max_score' => (float) ($question->answer_config['max_score'] ?? 1),
                     'position' => $index + 1,
                     'question_text' => $question->question_text,
                     'passage_title' => $question->passage?->title,
@@ -138,6 +140,8 @@ class QuizExamService
                         'selected_option_id' => $question->question_type === Question::TYPE_SINGLE_CHOICE ? $normalizedPayload : null,
                         'answer_payload' => $normalizedPayload,
                         'is_correct' => null,
+                        'grading_status' => 'ungraded',
+                        'score' => null,
                         'answered_at' => now(),
                     ]
                 );
@@ -176,32 +180,71 @@ class QuizExamService
             }
 
             $questions = $lockedAttempt->attemptQuestions()->with('answer')->get();
-            $correct = 0;
+            $autoEarned = 0.0;
             $studentAnswers = [];
+            $manualQuestions = $questions->where('grading_mode', 'manual');
+            $totalMaxScore = max((float) $questions->sum('max_score'), 1.0);
 
             foreach ($questions as $question) {
                 $payload = $question->answer?->answer_payload ?? $question->answer?->selected_option_id;
-                $isCorrect = $this->gradeAnswer($question, $payload);
                 $studentAnswers[$question->question_id ?: 'snapshot_'.$question->id] = $payload;
-                $question->answer?->update(['is_correct' => $isCorrect]);
 
-                if ($isCorrect) {
-                    $correct++;
+                if ($question->requiresManualGrading()) {
+                    QuizAttemptAnswer::updateOrCreate(
+                        [
+                            'quiz_attempt_id' => $lockedAttempt->id,
+                            'quiz_attempt_question_id' => $question->id,
+                        ],
+                        [
+                            'answer_payload' => $payload,
+                            'is_correct' => null,
+                            'grading_status' => 'pending',
+                            'score' => null,
+                            'answered_at' => $question->answer?->answered_at,
+                        ]
+                    );
+                    continue;
                 }
+
+                $isCorrect = $this->gradeAnswer($question, $payload);
+                $earned = $isCorrect ? (float) $question->max_score : 0.0;
+                $autoEarned += $earned;
+                QuizAttemptAnswer::updateOrCreate(
+                    [
+                        'quiz_attempt_id' => $lockedAttempt->id,
+                        'quiz_attempt_question_id' => $question->id,
+                    ],
+                    [
+                        'answer_payload' => $payload,
+                        'selected_option_id' => $question->question_type === Question::TYPE_SINGLE_CHOICE ? $payload : null,
+                        'is_correct' => $isCorrect,
+                        'grading_status' => 'auto_graded',
+                        'score' => $earned,
+                        'graded_at' => now(),
+                        'answered_at' => $question->answer?->answered_at,
+                    ]
+                );
             }
 
-            $score = $questions->isNotEmpty() ? round(($correct / $questions->count()) * 10, 1) : 0;
+            $autoScore = round(($autoEarned / $totalMaxScore) * 10, 2);
+            $needsManualGrading = $manualQuestions->isNotEmpty();
             $releaseNow = ! $lockedAttempt->quiz_session_id
                 || $lockedAttempt->session?->result_release_policy === QuizSession::RELEASE_IMMEDIATE;
             $completedAt = $lockedAttempt->expires_at?->isPast() ? $lockedAttempt->expires_at : now();
+            $status = $needsManualGrading
+                ? QuizAttempt::STATUS_PENDING_GRADING
+                : ($releaseNow ? QuizAttempt::STATUS_RELEASED : QuizAttempt::STATUS_GRADED);
 
             $lockedAttempt->update([
-                'status' => 'submitted',
-                'score' => $score,
+                'status' => $status,
+                'score' => $needsManualGrading ? null : $autoScore,
+                'auto_score' => $autoScore,
+                'manual_score' => $needsManualGrading ? null : 0,
                 'student_answers' => $studentAnswers,
                 'completed_at' => $completedAt,
+                'graded_at' => $needsManualGrading ? null : now(),
                 'last_seen_at' => now(),
-                'result_released_at' => $releaseNow ? now() : null,
+                'result_released_at' => ! $needsManualGrading && $releaseNow ? now() : null,
             ]);
 
             return $lockedAttempt->fresh(['quiz', 'session']);
@@ -212,6 +255,51 @@ class QuizExamService
         );
 
         return $submitted;
+    }
+
+    public function gradeManualAnswer(
+        QuizAttempt $attempt,
+        QuizAttemptAnswer $answer,
+        array $rubricScores,
+        ?string $feedback,
+        User $grader
+    ): QuizAttempt {
+        return DB::transaction(function () use ($attempt, $answer, $rubricScores, $feedback, $grader) {
+            $lockedAttempt = QuizAttempt::query()->lockForUpdate()->with('session')->findOrFail($attempt->id);
+            $question = QuizAttemptQuestion::query()
+                ->where('quiz_attempt_id', $lockedAttempt->id)
+                ->where('grading_mode', 'manual')
+                ->findOrFail($answer->quiz_attempt_question_id);
+
+            if ((int) $answer->quiz_attempt_id !== (int) $lockedAttempt->id) {
+                throw ValidationException::withMessages(['answer' => 'Câu trả lời không thuộc bài làm này.']);
+            }
+
+            $rubric = collect($question->answer_key_snapshot['rubric'] ?? []);
+            $normalizedScores = $rubric->map(function ($criterion, $index) use ($rubricScores) {
+                $value = (float) ($rubricScores[$index] ?? 0);
+                $maximum = (float) ($criterion['max_score'] ?? 0);
+                if ($value < 0 || $value > $maximum) {
+                    throw ValidationException::withMessages([
+                        "rubric_scores.{$index}" => 'Điểm tiêu chí phải nằm trong thang điểm đã cấu hình.',
+                    ]);
+                }
+
+                return $value;
+            })->values()->all();
+            $score = round(array_sum($normalizedScores), 2);
+
+            $answer->update([
+                'grading_status' => 'graded',
+                'score' => $score,
+                'rubric_scores' => $normalizedScores,
+                'teacher_feedback' => trim((string) $feedback) ?: null,
+                'graded_by' => $grader->id,
+                'graded_at' => now(),
+            ]);
+
+            return $this->finalizeGradingIfComplete($lockedAttempt);
+        }, 3);
     }
 
     public function submitExpiredForSession(QuizSession $session): int
@@ -231,7 +319,9 @@ class QuizExamService
 
     public function remainingSeconds(QuizAttempt $attempt): int
     {
-        return max(0, now()->diffInSeconds(Carbon::parse($attempt->expires_at), false));
+        $remaining = now()->diffInSeconds(Carbon::parse($attempt->expires_at), false);
+
+        return max(0, (int) floor($remaining));
     }
 
     private function ensureAttemptIsWritable(QuizAttempt $attempt): void
@@ -269,6 +359,31 @@ class QuizExamService
                     'tolerance' => (float) ($question->answer_config['tolerance'] ?? 0),
                 ],
                 ['unit' => (string) ($question->answer_config['unit'] ?? '')],
+            ],
+            Question::TYPE_ESSAY => [
+                [
+                    'grading_mode' => 'manual',
+                    'rubric' => $question->answer_config['rubric'] ?? [],
+                ],
+                [
+                    'word_limit' => (int) ($question->answer_config['word_limit'] ?? 500),
+                    'allow_attachments' => (bool) ($question->answer_config['allow_attachments'] ?? false),
+                    'allowed_extensions' => $question->answer_config['allowed_extensions'] ?? [],
+                    'max_files' => (int) ($question->answer_config['max_files'] ?? 3),
+                    'max_file_size_kb' => (int) ($question->answer_config['max_file_size_kb'] ?? 10240),
+                ],
+            ],
+            Question::TYPE_CODE_DEBUG => [
+                [
+                    'grading_mode' => 'manual',
+                    'rubric' => $question->answer_config['rubric'] ?? [],
+                ],
+                [
+                    'language' => 'html_css',
+                    'starter_code' => (string) ($question->answer_config['starter_code'] ?? ''),
+                    'explanation_mode' => (string) ($question->answer_config['explanation_mode'] ?? 'optional'),
+                    'explanation_word_limit' => (int) ($question->answer_config['explanation_word_limit'] ?? 150),
+                ],
             ],
             default => [
                 ['option_ids' => [(int) $options->firstWhere('is_correct', true)?->id]],
@@ -329,6 +444,33 @@ class QuizExamService
             return mb_substr(trim((string) ($payload ?? '')), 0, 100);
         }
 
+        if ($question->question_type === Question::TYPE_ESSAY) {
+            $text = is_array($payload) ? ($payload['text'] ?? '') : $payload;
+            $text = trim((string) $text);
+            $wordLimit = (int) ($question->response_schema_snapshot['word_limit'] ?? 500);
+            if ($this->wordCount($text) > $wordLimit) {
+                throw ValidationException::withMessages(['answer' => "Bài tự luận không được vượt quá {$wordLimit} từ."]);
+            }
+
+            return ['text' => mb_substr($text, 0, 50000)];
+        }
+
+        if ($question->question_type === Question::TYPE_CODE_DEBUG) {
+            $values = is_array($payload) ? $payload : [];
+            $code = mb_substr((string) ($values['code'] ?? ''), 0, 50000);
+            $explanation = trim(mb_substr((string) ($values['explanation'] ?? ''), 0, 20000));
+            $mode = (string) ($question->response_schema_snapshot['explanation_mode'] ?? 'optional');
+            $wordLimit = (int) ($question->response_schema_snapshot['explanation_word_limit'] ?? 150);
+            if ($mode === 'required' && $explanation === '') {
+                throw ValidationException::withMessages(['answer' => 'Câu này yêu cầu giải thích nguyên nhân lỗi.']);
+            }
+            if ($wordLimit > 0 && $this->wordCount($explanation) > $wordLimit) {
+                throw ValidationException::withMessages(['answer' => "Phần giải thích không được vượt quá {$wordLimit} từ."]);
+            }
+
+            return ['code' => $code, 'explanation' => $mode === 'disabled' ? '' : $explanation];
+        }
+
         throw ValidationException::withMessages(['answer' => 'Loại câu hỏi không được hỗ trợ.']);
     }
 
@@ -339,6 +481,8 @@ class QuizExamService
             Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_TRUE_FALSE_GROUP => empty($payload),
             Question::TYPE_FILL_BLANK => collect($payload)->every(fn ($value) => trim((string) $value) === ''),
             Question::TYPE_NUMERIC => trim((string) $payload) === '',
+            Question::TYPE_ESSAY => trim((string) ($payload['text'] ?? '')) === '',
+            Question::TYPE_CODE_DEBUG => trim((string) ($payload['code'] ?? '')) === '',
             default => true,
         };
     }
@@ -392,5 +536,45 @@ class QuizExamService
         $value = preg_replace('/\s+/u', ' ', trim((string) $value));
 
         return $caseSensitive ? $value : mb_strtolower($value);
+    }
+
+    private function finalizeGradingIfComplete(QuizAttempt $attempt): QuizAttempt
+    {
+        $attempt->load(['attemptQuestions.answer', 'session']);
+        $manualQuestions = $attempt->attemptQuestions->where('grading_mode', 'manual');
+        $pending = $manualQuestions->contains(fn ($question) => $question->answer?->grading_status !== 'graded');
+        if ($pending) {
+            $attempt->update(['status' => QuizAttempt::STATUS_PENDING_GRADING, 'score' => null]);
+
+            return $attempt->fresh();
+        }
+
+        $totalMax = max((float) $attempt->attemptQuestions->sum('max_score'), 1.0);
+        $manualEarned = (float) $manualQuestions->sum(fn ($question) => (float) ($question->answer?->score ?? 0));
+        $autoEarned = (float) $attempt->attemptQuestions->where('grading_mode', 'auto')
+            ->sum(fn ($question) => (float) ($question->answer?->score ?? 0));
+        $finalScore = round((($autoEarned + $manualEarned) / $totalMax) * 10, 2);
+        $manualScore = round(($manualEarned / $totalMax) * 10, 2);
+        $releaseNow = ! $attempt->quiz_session_id
+            || $attempt->session?->result_release_policy === QuizSession::RELEASE_IMMEDIATE
+            || $attempt->session?->results_released_at?->lte(now())
+            || ($attempt->session?->result_release_policy === QuizSession::RELEASE_AFTER_SESSION && $attempt->session?->ends_at?->isPast());
+
+        $attempt->update([
+            'status' => $releaseNow ? QuizAttempt::STATUS_RELEASED : QuizAttempt::STATUS_GRADED,
+            'score' => $finalScore,
+            'manual_score' => $manualScore,
+            'graded_at' => now(),
+            'result_released_at' => $releaseNow ? now() : null,
+        ]);
+
+        return $attempt->fresh(['session']);
+    }
+
+    private function wordCount(string $text): int
+    {
+        $text = trim(strip_tags($text));
+
+        return $text === '' ? 0 : count(preg_split('/\s+/u', $text) ?: []);
     }
 }

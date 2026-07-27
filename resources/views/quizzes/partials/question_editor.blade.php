@@ -18,6 +18,8 @@
             'true_false_group' => ['fa-toggle-on', 'Đúng / Sai', 'Nhiều nhận định'],
             'fill_blank' => ['fa-i-cursor', 'Điền khuyết', 'Một hoặc nhiều ô'],
             'numeric' => ['fa-calculator', 'Trả lời số', 'Có khoảng sai số'],
+            'essay' => ['fa-pen-to-square', 'Tự luận', 'Giáo viên chấm'],
+            'code_debug' => ['fa-code', 'Sửa lỗi HTML/CSS', 'Mã và giải thích'],
         ] as $value => [$icon, $label, $hint])
             <label class="type-card">
                 <input type="radio" name="question_type" value="{{ $value }}" @checked($value === 'single_choice')>
@@ -97,6 +99,31 @@
             <div><label class="form-label-sm">Sai số ±</label><input type="number" step="any" min="0" name="numeric_tolerance" data-field="numeric_tolerance" value="0" class="form-ctrl"></div>
             <div><label class="form-label-sm">Đơn vị</label><input type="text" name="numeric_unit" data-field="numeric_unit" class="form-ctrl" placeholder="cm, kg, m/s..."></div>
         </div>
+    </section>
+
+    <section class="editor-section answer-designer" data-answer-section="essay" hidden>
+        <div class="designer-heading"><div><strong>Cấu hình câu tự luận</strong><small>Giáo viên chấm theo từng tiêu chí sau khi thí sinh nộp bài.</small></div></div>
+        <div class="numeric-grid">
+            <div><label class="form-label-sm">Điểm tối đa</label><input type="number" step="0.25" min="0.25" max="100" name="max_score" data-field="essay_max_score" value="1" class="form-ctrl"></div>
+            <div><label class="form-label-sm">Giới hạn từ</label><input type="number" min="10" max="5000" name="word_limit" data-field="word_limit" value="500" class="form-ctrl"></div>
+            <label class="case-toggle align-self-end"><input type="checkbox" name="allow_attachments" value="1" data-field="allow_attachments"> Cho phép đính kèm tối đa 3 tệp</label>
+        </div>
+        <div class="mt-3">
+            <label class="form-label-sm">Rubric chấm điểm</label>
+            <textarea name="rubric_text" data-field="essay_rubric_text" class="form-ctrl" rows="4" placeholder="Mỗi dòng: Tên tiêu chí | điểm">Mức độ đáp ứng yêu cầu | 1</textarea>
+            <div class="field-helper mt-1">Tổng điểm rubric phải bằng điểm tối đa. Ví dụ: Nội dung chính xác | 3</div>
+        </div>
+    </section>
+
+    <section class="editor-section answer-designer" data-answer-section="code_debug" hidden>
+        <div class="designer-heading"><div><strong>Cấu hình bài sửa lỗi HTML/CSS</strong><small>Mã chỉ được xem trước trong iframe sandbox, không chạy JavaScript.</small></div></div>
+        <div class="numeric-grid">
+            <div><label class="form-label-sm">Điểm tối đa</label><input type="number" step="0.25" min="0.25" max="100" name="max_score" data-field="code_max_score" value="1" class="form-ctrl"></div>
+            <div><label class="form-label-sm">Phần giải thích</label><select name="explanation_mode" data-field="explanation_mode" class="form-ctrl"><option value="required">Bắt buộc</option><option value="optional">Không bắt buộc</option><option value="disabled">Không sử dụng</option></select></div>
+            <div><label class="form-label-sm">Giới hạn từ giải thích</label><input type="number" min="10" max="2000" name="explanation_word_limit" data-field="explanation_word_limit" value="150" class="form-ctrl"></div>
+        </div>
+        <div class="mt-3"><label class="form-label-sm">Mã HTML/CSS có lỗi ban đầu</label><textarea name="starter_code" data-field="starter_code" class="form-ctrl" rows="9" maxlength="50000" spellcheck="false" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace" placeholder="Nhập một tài liệu HTML hoàn chỉnh hoặc đoạn HTML/CSS cần sửa..."></textarea></div>
+        <div class="mt-3"><label class="form-label-sm">Rubric chấm điểm</label><textarea name="rubric_text" data-field="code_rubric_text" class="form-ctrl" rows="4" placeholder="Mỗi dòng: Tên tiêu chí | điểm">Mã sửa đúng và hiển thị đúng | 1</textarea></div>
     </section>
 
     <div class="editor-guidance" data-editor-guidance><i class="fa-solid fa-wand-magic-sparkles"></i><span>Thứ tự phương án sẽ được xáo trộn khi phát đề.</span></div>

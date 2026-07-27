@@ -20,6 +20,7 @@ class QuizPermanentDeletionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->requireIsolatedSqliteDatabase();
         $this->createSchema();
         $this->teacher = User::create([
             'name' => 'Giáo viên',
@@ -38,8 +39,10 @@ class QuizPermanentDeletionTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'quizzes', 'courses', 'users'] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach (['quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'quizzes', 'courses', 'users'] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
         parent::tearDown();
     }

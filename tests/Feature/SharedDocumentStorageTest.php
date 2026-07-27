@@ -54,8 +54,10 @@ class SharedDocumentStorageTest extends TestCase
 
     protected function tearDown(): void
     {
-        Schema::dropIfExists('shared_documents');
-        Schema::dropIfExists('users');
+        if ($this->usesIsolatedSqliteDatabase()) {
+            Schema::dropIfExists('shared_documents');
+            Schema::dropIfExists('users');
+        }
 
         parent::tearDown();
     }

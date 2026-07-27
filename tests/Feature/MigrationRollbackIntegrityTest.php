@@ -28,8 +28,10 @@ class MigrationRollbackIntegrityTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'class_user', 'classes', 'courses', 'users'] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach (['quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'class_user', 'classes', 'courses', 'users'] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
 
         parent::tearDown();
@@ -151,6 +153,35 @@ class MigrationRollbackIntegrityTest extends TestCase
 
         $this->assertFalse(Schema::hasColumn('quizzes', 'question_distribution'));
 
+        $quizBundle->down();
+    }
+
+    public function test_manual_quiz_grading_migration_is_reversible(): void
+    {
+        $quizBundle = require database_path('migrations/2026_04_16_113843_create_quizzes_and_questions_tables.php');
+        $quizBundle->up();
+        $foundation = require database_path('migrations/2026_07_26_000001_create_quiz_exam_foundation.php');
+        $foundation->up();
+        Schema::table('questions', fn (Blueprint $table) => $table->string('difficulty')->default('medium'));
+        $mixedTypes = require database_path('migrations/2026_07_27_000002_add_mixed_question_types.php');
+        $mixedTypes->up();
+
+        $manualGrading = require database_path('migrations/2026_07_27_000005_add_manual_quiz_grading.php');
+        $manualGrading->up();
+
+        $this->assertTrue(Schema::hasColumn('quiz_attempts', 'manual_score'));
+        $this->assertTrue(Schema::hasColumn('quiz_attempt_questions', 'grading_mode'));
+        $this->assertTrue(Schema::hasColumn('quiz_attempt_answers', 'teacher_feedback'));
+        $this->assertTrue(Schema::hasTable('quiz_attempt_attachments'));
+
+        $manualGrading->down();
+        $this->assertFalse(Schema::hasColumn('quiz_attempts', 'manual_score'));
+        $this->assertFalse(Schema::hasColumn('quiz_attempt_questions', 'grading_mode'));
+        $this->assertFalse(Schema::hasColumn('quiz_attempt_answers', 'teacher_feedback'));
+        $this->assertFalse(Schema::hasTable('quiz_attempt_attachments'));
+
+        $mixedTypes->down();
+        $foundation->down();
         $quizBundle->down();
     }
 

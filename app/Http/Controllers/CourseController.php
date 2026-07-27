@@ -558,7 +558,7 @@ class CourseController extends Controller
 
         $quizAttempted = QuizAttempt::whereIn('user_id', $studentIds)
             ->whereIn('quiz_id', $quizIds)
-            ->where('status', 'submitted')
+            ->whereIn('status', ['submitted', 'graded', 'released'])
             ->select('user_id', 'quiz_id')
             ->distinct()
             ->get()
@@ -577,7 +577,7 @@ class CourseController extends Controller
             'assignment_submission_rate' => $assignmentTotal > 0 ? round(($assignmentSubmitted / $assignmentTotal) * 100) : 0,
             'quiz_completion_rate' => $quizTotal > 0 ? round(($quizAttempted / $quizTotal) * 100) : 0,
             'pending_grades' => $pendingGrades,
-            'average_score' => QuizAttempt::whereIn('user_id', $studentIds)->whereIn('quiz_id', $quizIds)->where('status', 'submitted')->avg('score'),
+            'average_score' => QuizAttempt::whereIn('user_id', $studentIds)->whereIn('quiz_id', $quizIds)->whereIn('status', ['submitted', 'graded', 'released'])->avg('score'),
         ];
     }
 }

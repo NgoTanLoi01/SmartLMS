@@ -796,24 +796,64 @@
                 const actionArea = document.getElementById('quiz-student-action-area');
                 const completedMsg = document.getElementById('quiz-completed-msg');
                 const mainIcon = document.getElementById('quiz-main-icon');
+                const mainIconWrap = document.getElementById('quiz-main-icon-wrap');
                 const reviewBtn = document.getElementById('review-quiz-btn');
+                const resultPanel = document.getElementById('quiz-result-panel');
+                const resultIcon = document.getElementById('quiz-result-icon');
+                const resultEyebrow = document.getElementById('quiz-result-eyebrow');
+                const resultTitle = document.getElementById('quiz-result-title');
+                const resultDescription = document.getElementById('quiz-result-description');
+
+                const completedStates = ['pending_grading', 'submitted_private', 'graded_private', 'released'];
+                const isCompleted = completedStates.includes(status);
+                const stateUi = {
+                    pending_grading: {
+                        status: 'Đã nộp · Chờ chấm', statusClass: 'is-pending', panelClass: 'is-pending',
+                        icon: 'fa-solid fa-hourglass-half', eyebrow: 'Bài làm đã được ghi nhận',
+                        title: 'Đang chờ giáo viên chấm',
+                        description: 'Bài có câu tự luận hoặc sửa mã cần giáo viên đánh giá. Điểm sẽ hiển thị sau khi chấm và công bố.'
+                    },
+                    submitted_private: {
+                        status: 'Đã nộp · Chờ công bố', statusClass: 'is-private', panelClass: 'is-private',
+                        icon: 'fa-solid fa-lock', eyebrow: 'Bài làm đã được ghi nhận',
+                        title: 'Đã hoàn thành bài thi',
+                        description: 'Kết quả đang được giữ kín theo chính sách của ca thi. Bạn không thể làm lại hoặc thay đổi đáp án.'
+                    },
+                    graded_private: {
+                        status: 'Đã chấm · Chờ công bố', statusClass: 'is-private', panelClass: 'is-private',
+                        icon: 'fa-solid fa-lock', eyebrow: 'Giáo viên đã hoàn tất chấm bài',
+                        title: 'Kết quả chưa được công bố',
+                        description: 'Điểm số và chi tiết bài làm sẽ xuất hiện khi giáo viên công bố kết quả.'
+                    },
+                    released: {
+                        status: 'Đã công bố kết quả', statusClass: 'is-released', panelClass: 'is-released',
+                        icon: 'fa-solid fa-circle-check', eyebrow: 'Kết quả chính thức',
+                        title: 'Bạn đã hoàn thành bài thi',
+                        description: 'Điểm số đã được công bố. Bạn có thể xem lại đáp án, phản hồi và chi tiết chấm bài.'
+                    }
+                };
 
                 if (statusText) {
-                    if (status === 'completed') {
-                        // Đã làm bài: Hiện điểm, Ẩn form, Đổi icon xanh
-                        statusText.innerText = 'Đã hoàn thành';
-                        statusText.className = 'mb-0 fw-bold text-success fs-5 mt-2';
+                    if (isCompleted) {
+                        const ui = stateUi[status];
+                        statusText.innerText = ui.status;
+                        statusText.className = `quiz-status-value ${ui.statusClass}`;
 
                         if (scoreBox) scoreBox.classList.toggle('d-none', !resultReleased);
                         if (scoreText && resultReleased) scoreText.innerText = score;
                         if (actionArea) actionArea.classList.add('d-none');
                         if (mainIcon) {
-                            mainIcon.className = 'fa-solid fa-circle-check fa-5x mb-4 text-success';
+                            mainIcon.className = `${ui.icon} fa-2x`;
                             mainIcon.style.color = '';
                         }
+                        if (mainIconWrap) mainIconWrap.className = `quiz-main-icon-wrap mb-3 ${ui.panelClass}`;
 
-                        // HIỆN KHUNG THÔNG BÁO VÀ GÁN LINK VÀO NÚT
                         if (completedMsg) completedMsg.classList.remove('d-none');
+                        if (resultPanel) resultPanel.className = `quiz-result-panel ${ui.panelClass}`;
+                        if (resultIcon) resultIcon.className = ui.icon;
+                        if (resultEyebrow) resultEyebrow.innerText = ui.eyebrow;
+                        if (resultTitle) resultTitle.innerText = ui.title;
+                        if (resultDescription) resultDescription.innerText = ui.description;
                         if (reviewBtn && attemptId && resultReleased) {
                             reviewBtn.href = `/attempts/${attemptId}/review`;
                             reviewBtn.classList.remove('d-none');
@@ -822,20 +862,19 @@
                         }
 
                     } else {
-                        // Chưa làm bài
                         statusText.innerText = status === 'in_progress' ? 'Đang làm bài' : 'Chưa làm';
-                        statusText.className = status === 'in_progress'
-                            ? 'mb-0 fw-bold text-primary fs-5 mt-2'
-                            : 'mb-0 fw-bold text-warning fs-5 mt-2';
+                        statusText.className = `quiz-status-value ${status === 'in_progress' ? 'is-progress' : 'is-not-started'}`;
 
                         if (scoreBox) scoreBox.classList.add('d-none');
                         if (actionArea) actionArea.classList.remove('d-none');
                         if (completedMsg) completedMsg.classList.add('d-none');
+                        if (reviewBtn) reviewBtn.classList.add('d-none');
 
                         if (mainIcon) {
-                            mainIcon.className = 'fa-solid fa-stopwatch fa-5x mb-4';
-                            mainIcon.style.color = '#6f42c1';
+                            mainIcon.className = `${status === 'in_progress' ? 'fa-solid fa-pen-to-square' : 'fa-solid fa-stopwatch'} fa-2x`;
+                            mainIcon.style.color = '';
                         }
+                        if (mainIconWrap) mainIconWrap.className = `quiz-main-icon-wrap mb-3 ${status === 'in_progress' ? 'is-progress' : ''}`;
                     }
                 }
 

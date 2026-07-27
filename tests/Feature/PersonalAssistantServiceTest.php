@@ -50,11 +50,13 @@ class PersonalAssistantServiceTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach ([
-            'smart_notifications', 'assignment_submissions', 'assignments', 'schedules',
-            'class_course', 'class_user', 'classes', 'courses', 'users',
-        ] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach ([
+                'smart_notifications', 'assignment_submissions', 'assignments', 'schedules',
+                'class_course', 'class_user', 'classes', 'courses', 'users',
+            ] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
 
         Carbon::setTestNow();

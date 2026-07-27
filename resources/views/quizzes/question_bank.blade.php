@@ -158,7 +158,9 @@
                                 @else
                                     <span class="diff-badge diff-hard">Khó</span>
                                 @endif
-                                @php($difficultyMetrics = $question->difficulty_metrics ?? [])
+                                @php
+                                    $difficultyMetrics = $question->difficulty_metrics ?? [];
+                                @endphp
                                 @if($question->observedDifficultyLabel())
                                     <div class="small text-muted mt-1" title="Độ khó thực tế được tính từ kết quả làm bài">
                                         Thực tế: <strong>{{ $question->observedDifficultyLabel() }}</strong>
@@ -342,9 +344,9 @@
      MODAL: Thêm câu hỏi
 ══════════════════════════════ --}}
     <div class="modal fade" id="addQuestionModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <form action="{{ route('questions.storeBank') }}" method="POST">
+        <div class="modal-dialog modal-lg modal-dialog-centered question-editor-dialog">
+            <div class="modal-content question-editor-modal">
+                <form action="{{ route('questions.storeBank') }}" method="POST" class="question-editor-form">
                     @csrf
                     @include('quizzes.partials.question_editor', ['mode' => 'add', 'editorId' => 'add'])
                 </form>
@@ -356,9 +358,9 @@
      MODAL: Sửa câu hỏi
 ══════════════════════════════ --}}
     <div class="modal fade" id="editQuestionModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <form action="" method="POST" id="editQuestionForm">
+        <div class="modal-dialog modal-lg modal-dialog-centered question-editor-dialog">
+            <div class="modal-content question-editor-modal">
+                <form action="" method="POST" id="editQuestionForm" class="question-editor-form">
                     @csrf @method('PUT')
                     @include('quizzes.partials.question_editor', ['mode' => 'edit', 'editorId' => 'edit'])
                 </form>
@@ -510,7 +512,9 @@
                     root.querySelectorAll('[data-answer-section]').forEach(section => {
                         const active = (section.dataset.answerSection === 'options' && ['single_choice', 'multiple_choice', 'true_false_group'].includes(currentType))
                             || (section.dataset.answerSection === 'blanks' && currentType === 'fill_blank')
-                            || (section.dataset.answerSection === 'numeric' && currentType === 'numeric');
+                            || (section.dataset.answerSection === 'numeric' && currentType === 'numeric')
+                            || (section.dataset.answerSection === 'essay' && currentType === 'essay')
+                            || (section.dataset.answerSection === 'code_debug' && currentType === 'code_debug');
                         section.hidden = !active;
                         section.querySelectorAll('input,select,textarea').forEach(input => input.disabled = !active);
                     });
@@ -518,7 +522,7 @@
                     root.querySelector('[data-add-option]').hidden = currentType === 'true_false_group' && state.options.length >= 10;
                     root.querySelector('[data-options-title]').textContent = currentType === 'true_false_group' ? 'Các nhận định' : 'Các phương án';
                     root.querySelector('[data-options-hint]').textContent = currentType === 'single_choice' ? 'Chọn một đáp án đúng.' : currentType === 'multiple_choice' ? 'Chọn từ hai đáp án đúng; chấm theo nguyên tắc chọn đủ.' : 'Xác định Đúng hoặc Sai cho từng nhận định.';
-                    root.querySelector('[data-editor-guidance] span').textContent = currentType === 'fill_blank' ? 'Có thể khai báo nhiều cách viết đúng bằng dấu |.' : currentType === 'numeric' ? 'Ví dụ 10 ± 0.5 sẽ chấp nhận kết quả từ 9.5 đến 10.5.' : currentType === 'true_false_group' ? 'Học sinh phải trả lời đầy đủ từng nhận định để được tính đúng.' : 'Thứ tự phương án sẽ được xáo trộn khi phát đề.';
+                    root.querySelector('[data-editor-guidance] span').textContent = currentType === 'fill_blank' ? 'Có thể khai báo nhiều cách viết đúng bằng dấu |.' : currentType === 'numeric' ? 'Ví dụ 10 ± 0.5 sẽ chấp nhận kết quả từ 9.5 đến 10.5.' : currentType === 'true_false_group' ? 'Học sinh phải trả lời đầy đủ từng nhận định để được tính đúng.' : currentType === 'essay' ? 'Điểm chỉ được công bố sau khi giáo viên chấm xong tất cả câu tự luận.' : currentType === 'code_debug' ? 'Preview bị cô lập và không cho phép thực thi JavaScript.' : 'Thứ tự phương án sẽ được xáo trộn khi phát đề.';
                 };
 
                 root.querySelectorAll('[name="question_type"]').forEach(input => input.addEventListener('change', applyType));
@@ -527,6 +531,10 @@
                     if (state.options.length >= (type() === 'true_false_group' ? 10 : 8)) return;
                     state.options.push({text: '', correct: false});
                     renderOptions();
+                });
+                root.querySelector('[data-field="explanation_mode"]')?.addEventListener('change', event => {
+                    const limit = root.querySelector('[data-field="explanation_word_limit"]');
+                    limit.disabled = event.target.value === 'disabled' || type() !== 'code_debug';
                 });
                 textInput.addEventListener('input', () => {
                     if (type() === 'fill_blank') renderBlanks();
@@ -559,6 +567,15 @@
                 root.querySelector('[data-field="numeric_answer"]').value = config.target ?? '';
                 root.querySelector('[data-field="numeric_tolerance"]').value = config.tolerance ?? 0;
                 root.querySelector('[data-field="numeric_unit"]').value = config.unit ?? '';
+                root.querySelector('[data-field="essay_max_score"]').value = config.max_score ?? 1;
+                root.querySelector('[data-field="word_limit"]').value = config.word_limit ?? 500;
+                root.querySelector('[data-field="allow_attachments"]').checked = Boolean(config.allow_attachments);
+                root.querySelector('[data-field="essay_rubric_text"]').value = (config.rubric || []).map(item => `${item.criterion} | ${item.max_score}`).join('\n') || 'Mức độ đáp ứng yêu cầu | 1';
+                root.querySelector('[data-field="code_max_score"]').value = config.max_score ?? 1;
+                root.querySelector('[data-field="starter_code"]').value = config.starter_code ?? '';
+                root.querySelector('[data-field="explanation_mode"]').value = config.explanation_mode ?? 'optional';
+                root.querySelector('[data-field="explanation_word_limit"]').value = config.explanation_word_limit ?? 150;
+                root.querySelector('[data-field="code_rubric_text"]').value = (config.rubric || []).map(item => `${item.criterion} | ${item.max_score}`).join('\n') || 'Mã sửa đúng và hiển thị đúng | 1';
                 root.querySelector('[data-option-rows]').innerHTML = '';
                 state.applyType();
             });
