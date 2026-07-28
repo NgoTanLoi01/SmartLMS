@@ -104,18 +104,18 @@ return new class extends Migration
 
         if (! Schema::hasTable('quiz_attempt_attachments')) {
             Schema::create('quiz_attempt_attachments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('quiz_attempt_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('quiz_attempt_question_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('disk')->default('local');
-            $table->string('path');
-            $table->string('original_name');
-            $table->string('mime_type', 150)->nullable();
-            $table->unsignedBigInteger('size');
-            $table->timestamps();
+                $table->id();
+                $table->foreignId('quiz_attempt_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('quiz_attempt_question_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
+                $table->string('disk')->default('local');
+                $table->string('path');
+                $table->string('original_name');
+                $table->string('mime_type', 150)->nullable();
+                $table->unsignedBigInteger('size');
+                $table->timestamps();
 
-            $table->index(['quiz_attempt_id', 'quiz_attempt_question_id'], 'quiz_attachment_question_index');
+                $table->index(['quiz_attempt_id', 'quiz_attempt_question_id'], 'quiz_attachment_question_index');
             });
         }
     }
@@ -124,17 +124,23 @@ return new class extends Migration
     {
         Schema::dropIfExists('quiz_attempt_attachments');
 
-        if (Schema::hasTable('quiz_attempt_answers') && Schema::hasColumn('quiz_attempt_answers', 'grading_status')) Schema::table('quiz_attempt_answers', function (Blueprint $table) {
-            $table->dropForeign(['graded_by']);
-            $table->dropColumn(['grading_status', 'score', 'rubric_scores', 'teacher_feedback', 'graded_by', 'graded_at']);
-        });
+        if (Schema::hasTable('quiz_attempt_answers') && Schema::hasColumn('quiz_attempt_answers', 'grading_status')) {
+            Schema::table('quiz_attempt_answers', function (Blueprint $table) {
+                $table->dropForeign(['graded_by']);
+                $table->dropColumn(['grading_status', 'score', 'rubric_scores', 'teacher_feedback', 'graded_by', 'graded_at']);
+            });
+        }
 
-        if (Schema::hasTable('quiz_attempt_questions') && Schema::hasColumn('quiz_attempt_questions', 'grading_mode')) Schema::table('quiz_attempt_questions', function (Blueprint $table) {
-            $table->dropColumn(['grading_mode', 'max_score']);
-        });
+        if (Schema::hasTable('quiz_attempt_questions') && Schema::hasColumn('quiz_attempt_questions', 'grading_mode')) {
+            Schema::table('quiz_attempt_questions', function (Blueprint $table) {
+                $table->dropColumn(['grading_mode', 'max_score']);
+            });
+        }
 
-        if (Schema::hasColumn('quiz_attempts', 'auto_score')) Schema::table('quiz_attempts', function (Blueprint $table) {
-            $table->dropColumn(['auto_score', 'manual_score', 'graded_at']);
-        });
+        if (Schema::hasColumn('quiz_attempts', 'auto_score')) {
+            Schema::table('quiz_attempts', function (Blueprint $table) {
+                $table->dropColumn(['auto_score', 'manual_score', 'graded_at']);
+            });
+        }
     }
 };

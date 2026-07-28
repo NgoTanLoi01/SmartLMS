@@ -36,12 +36,46 @@ class AiResponseValidatorTest extends TestCase
             ['question_type' => 'true_false_group', 'question' => 'Xác định đúng sai', 'statements' => [['text' => 'Mệnh đề A', 'is_true' => true], ['text' => 'Mệnh đề B', 'is_true' => false]]],
             ['question_type' => 'fill_blank', 'question' => 'Thủ đô là [[1]]', 'blanks' => [['accepted' => ['Hà Nội', 'Hanoi']]]],
             ['question_type' => 'numeric', 'question' => 'Kết quả phép tính', 'numeric_answer' => 10, 'numeric_tolerance' => 0.2, 'numeric_unit' => 'cm'],
-        ], 4);
+            ['question_type' => 'essay', 'question' => 'Phân tích vai trò của semantic HTML', 'max_score' => 10, 'word_limit' => 500, 'allow_attachments' => false, 'rubric' => [['criterion' => 'Nội dung', 'max_score' => 7], ['criterion' => 'Trình bày', 'max_score' => 3]]],
+            ['question_type' => 'code_debug', 'question' => 'Sửa lỗi CSS cho nút', 'max_score' => 10, 'starter_code' => '<style>.btn { color red; }</style><button class="btn">Lưu</button>', 'explanation_mode' => 'required', 'explanation_word_limit' => 150, 'rubric' => [['criterion' => 'Sửa mã', 'max_score' => 8], ['criterion' => 'Giải thích', 'max_score' => 2]]],
+        ], 6);
 
         $this->assertSame([1, 3], $questions[0]['correct_indexes']);
         $this->assertFalse($questions[1]['statements'][1]['is_true']);
         $this->assertSame(['Hà Nội', 'Hanoi'], $questions[2]['blanks'][0]['accepted']);
         $this->assertSame(0.2, $questions[3]['numeric_tolerance']);
+        $this->assertSame(10.0, $questions[4]['max_score']);
+        $this->assertSame(500, $questions[4]['word_limit']);
+        $this->assertSame('required', $questions[5]['explanation_mode']);
+        $this->assertSame(10.0, array_sum(array_column($questions[5]['rubric'], 'max_score')));
+    }
+
+    public function test_it_rejects_manual_question_when_rubric_total_does_not_match_max_score(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+
+        $this->validator->quizQuestions([[
+            'question_type' => 'essay',
+            'question' => 'Trình bày kiến thức',
+            'max_score' => 10,
+            'word_limit' => 300,
+            'rubric' => [['criterion' => 'Nội dung', 'max_score' => 8]],
+        ]], 1);
+    }
+
+    public function test_it_rejects_javascript_in_html_css_debug_question(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+
+        $this->validator->quizQuestions([[
+            'question_type' => 'code_debug',
+            'question' => 'Sửa giao diện',
+            'max_score' => 10,
+            'starter_code' => '<script>alert(1)</script>',
+            'explanation_mode' => 'required',
+            'explanation_word_limit' => 100,
+            'rubric' => [['criterion' => 'Sửa mã', 'max_score' => 10]],
+        ]], 1);
     }
 
     public function test_it_normalizes_ai_quiz_distribution_draft(): void

@@ -19,6 +19,33 @@
             border-bottom: none;
         }
 
+        .ai-tip-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, .09), rgba(33, 150, 243, .06));
+            border: 1px solid rgba(102, 126, 234, .18) !important;
+        }
+
+        @media (min-width: 992px) {
+            .card-ai-config.sticky-top {
+                max-height: calc(100vh - 40px);
+                overflow-y: auto;
+                scrollbar-gutter: stable;
+            }
+
+            .card-ai-config .card-header {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+            }
+        }
+
+        @media (max-width: 991px) {
+            .card-ai-config.sticky-top {
+                position: static !important;
+                max-height: none;
+                overflow: visible;
+            }
+        }
+
         /* Form inputs styling */
         .form-control.ai-input,
         .form-select.ai-input {
@@ -208,12 +235,35 @@
         .ai-quality.good { background:#f0fdf4; color:#166534; }
         .ai-quality.needs_review { background:#fff7ed; color:#9a3412; }
         .ai-quality ul { margin:6px 0 0; padding-left:18px; }
+        .ai-manual-grid { display:grid; gap:10px; grid-template-columns:repeat(3,minmax(0,1fr)); margin-bottom:12px; }
+        .ai-manual-panel { background:#f8fafc; border:1px solid #dbe3ef; border-radius:12px; padding:14px; }
+        .ai-code-editor { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; min-height:220px; tab-size:2; white-space:pre; }
+        .ai-rubric-row { display:grid; gap:8px; grid-template-columns:minmax(0,1fr) 120px; margin-top:8px; }
+        .ai-check-control { align-items:center; display:flex; gap:8px; min-height:42px; }
+        .question-type-help { background:#eff6ff; border:1px solid #bfdbfe; border-radius:9px; color:#1e40af; font-size:11.5px; line-height:1.5; margin-top:8px; padding:8px 10px; }
+        .ai-form-error { background:#fef2f2; border:1px solid #fecaca; border-radius:10px; color:#b91c1c; font-size:12px; font-weight:600; line-height:1.5; margin-bottom:12px; padding:10px 12px; }
+        .ai-field-error { color:#dc2626; display:block; font-size:11.5px; font-weight:600; margin-top:6px; }
+        #aiGenForm [aria-invalid="true"] { border-color:#ef4444 !important; box-shadow:0 0 0 3px rgba(239,68,68,.12) !important; }
+        @media (max-width: 767px) { .ai-manual-grid { grid-template-columns:1fr; } .ai-rubric-row { grid-template-columns:1fr; } }
     </style>
 
     <div class="container py-5">
         <div class="row g-4">
             {{-- Cột trái: Cấu hình thông số --}}
             <div class="col-lg-4">
+                <div class="alert ai-tip-card border-0 rounded-4 p-3 shadow-sm mb-4">
+                    <div class="d-flex align-items-start">
+                        <div class="me-3 text-primary h5 mb-0"><i class="fa-solid fa-lightbulb"></i></div>
+                        <div>
+                            <h6 class="fw-bold text-dark mb-1">Mẹo nhỏ từ AI</h6>
+                            <p class="small text-muted mb-0">
+                                Chủ đề càng chi tiết, AI càng tạo câu hỏi chính xác. Với tự luận hoặc sửa lỗi HTML/CSS,
+                                nên nêu rõ năng lực cần đánh giá và kết quả mong đợi.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card shadow border-0 card-ai-config mb-4 sticky-top" style="top: 20px;">
                     <div class="card-header py-3">
                         <h6 class="mb-0 fw-bold text-white d-flex align-items-center">
@@ -221,7 +271,7 @@
                         </h6>
                     </div>
                     <div class="card-body p-4">
-                        <form id="aiGenForm">
+                        <form id="aiGenForm" novalidate>
                             <div class="mb-4">
                                 <label class="form-label fw-bold small text-uppercase text-muted">Môn học / Khóa học</label>
                                 <select class="form-select ai-input" id="course_id" required>
@@ -232,7 +282,7 @@
                                 </select>
                                 <div class="form-text mt-2 d-flex align-items-center">
                                     <i class="fa-solid fa-circle-info me-1 text-primary"></i>
-                                    AI có thể dùng nội dung bài học, tài liệu upload hoặc chủ đề nhập tay.
+                                    Luôn chọn khóa học để xác định ngân hàng lưu câu hỏi, kể cả khi dùng chủ đề nhập tay.
                                 </div>
                             </div>
 
@@ -305,10 +355,11 @@
                                 <div class="col-12">
                                     <label class="form-label fw-bold small text-uppercase text-muted">Hình thức câu hỏi</label>
                                     <select class="form-select ai-input" id="question_type">
-                                        @foreach(collect(\App\Models\Question::typeLabels())->except(['essay', 'code_debug']) as $type => $label)
+                                        @foreach(\App\Models\Question::typeLabels() as $type => $label)
                                             <option value="{{ $type }}" @selected(request('question_type', 'single_choice') === $type)>{{ $label }}</option>
                                         @endforeach
                                     </select>
+                                    <div class="question-type-help" id="questionTypeHelp">AI sinh câu hỏi, đáp án và tự kiểm định chất lượng trước khi giáo viên duyệt.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-uppercase text-muted">Độ khó</label>
@@ -325,6 +376,7 @@
                                 </div>
                             </div>
 
+                            <div class="ai-form-error d-none" id="aiFormError" role="alert" aria-live="polite"></div>
                             <button type="submit" class="btn btn-primary btn-ai-generate w-100 py-3 fw-bold shadow-sm"
                                 id="btnGenerate">
                                 <i class="fa-solid fa-microchip me-2"></i> SINH CÂU HỎI
@@ -333,18 +385,6 @@
                     </div>
                 </div>
 
-                <div class="alert border-0 rounded-4 p-4 shadow-sm" style="background: rgba(102, 126, 234, 0.05);">
-                    <div class="d-flex">
-                        <div class="me-3 text-primary h5 mb-0"><i class="fa-solid fa-lightbulb"></i></div>
-                        <div>
-                            <h6 class="fw-bold text-dark mb-1">Mẹo nhỏ từ AI</h6>
-                            <p class="small text-muted mb-0">
-                                Chủ đề càng chi tiết (VD: "Eloquent ORM relationships" thay vì "Laravel"), AI càng đưa ra
-                                câu hỏi chính xác.
-                            </p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {{-- Cột phải: Kết quả hiển thị --}}
@@ -417,9 +457,55 @@
         const topicInput = document.getElementById('topic');
         const topicOptionalLabel = document.getElementById('topicOptionalLabel');
         const topicHelpText = document.getElementById('topicHelpText');
+        const questionTypeSelect = document.getElementById('question_type');
+        const questionTypeHelp = document.getElementById('questionTypeHelp');
+        const aiFormError = document.getElementById('aiFormError');
 
         function selectedSourceType() {
             return document.querySelector('.source-type-input:checked')?.value || 'course_content';
+        }
+
+        function clearFormError() {
+            aiFormError.classList.add('d-none');
+            aiFormError.textContent = '';
+            document.querySelectorAll('#aiGenForm .ai-field-error').forEach(error => error.remove());
+            document.querySelectorAll('#aiGenForm [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+        }
+
+        function showFormError(message, field = null) {
+            aiFormError.textContent = message;
+            aiFormError.classList.remove('d-none');
+            if (field) {
+                field.setAttribute('aria-invalid', 'true');
+                const fieldError = document.createElement('span');
+                fieldError.className = 'ai-field-error';
+                fieldError.textContent = message;
+                field.insertAdjacentElement('afterend', fieldError);
+                const configCard = field.closest('.card-ai-config');
+                if (configCard) configCard.scrollTo({top: 0, behavior: 'smooth'});
+                window.setTimeout(() => field.focus({preventScroll: true}), 180);
+            }
+        }
+
+        function validateGenerationForm() {
+            document.querySelectorAll('#aiGenForm [aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+            if (!courseSelect.value) {
+                return {message: 'Vui lòng chọn khóa học để xác định ngân hàng lưu câu hỏi.', field: courseSelect};
+            }
+            if (selectedSourceType() === 'topic' && !topicInput.value.trim()) {
+                return {message: 'Vui lòng nhập chủ đề trọng tâm để AI tạo câu hỏi.', field: topicInput};
+            }
+            if (selectedSourceType() === 'course_content' && ['module', 'lesson'].includes(contentScopeSelect.value) && !moduleSelect.value) {
+                return {message: 'Vui lòng chọn chương hoặc module cần dùng.', field: moduleSelect};
+            }
+            if (selectedSourceType() === 'course_content' && contentScopeSelect.value === 'lesson' && !lessonSelect.value) {
+                return {message: 'Vui lòng chọn bài học cần dùng.', field: lessonSelect};
+            }
+            const quantity = Number(document.getElementById('quantity').value);
+            if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+                return {message: 'Số lượng câu hỏi phải từ 1 đến 20.', field: document.getElementById('quantity')};
+            }
+            return null;
         }
 
         function fillSelect(select, options, placeholder) {
@@ -494,15 +580,34 @@
         moduleSelect.addEventListener('change', refreshLessonOptions);
         contentScopeSelect.addEventListener('change', syncScopeUi);
         sourceInputs.forEach((input) => input.addEventListener('change', syncSourceUi));
+        questionTypeSelect.addEventListener('change', syncQuestionTypeHelp);
+        document.getElementById('aiGenForm').addEventListener('input', clearFormError);
+        document.getElementById('aiGenForm').addEventListener('change', clearFormError);
+
+        function syncQuestionTypeHelp() {
+            const help = {
+                essay: 'AI tạo yêu cầu tự luận, giới hạn từ, điểm tối đa, rubric và hướng dẫn chấm. Giáo viên vẫn là người chấm.',
+                code_debug: 'AI tạo mã HTML/CSS có lỗi, yêu cầu sửa, rubric và lời giải tham khảo. JavaScript không được phép.',
+            };
+            questionTypeHelp.textContent = help[questionTypeSelect.value] || 'AI sinh câu hỏi, đáp án và tự kiểm định chất lượng trước khi giáo viên duyệt.';
+        }
 
         refreshModuleOptions();
         syncSourceUi();
+        syncQuestionTypeHelp();
 
         // ==========================================
         // 1. XỬ LÝ SINH CÂU HỎI
         // ==========================================
         document.getElementById('aiGenForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+
+            clearFormError();
+            const validationError = validateGenerationForm();
+            if (validationError) {
+                showFormError(validationError.message, validationError.field);
+                return;
+            }
 
             document.getElementById('emptyState').classList.add('d-none');
             document.getElementById('questionPreviewList').classList.add('d-none');
@@ -538,7 +643,9 @@
                 let data = await response.json();
 
                 if (!response.ok) {
-                    alert("Lỗi: " + (data.error || data.message || "Không thể sinh câu hỏi."));
+                    const message = data.error || data.message || Object.values(data.errors || {}).flat()[0] || 'Không thể sinh câu hỏi.';
+                    showFormError(message);
+                    alert("Lỗi: " + message);
                     resetUI();
                     return;
                 }
@@ -577,7 +684,9 @@
 
             } catch (error) {
                 console.error(error);
-                alert("Lỗi kết nối máy chủ AI. Vui lòng thử lại!");
+                const message = error.message || 'Lỗi kết nối máy chủ AI. Vui lòng thử lại!';
+                showFormError(message);
+                alert(message);
                 resetUI();
             } finally {
                 btnGenerate.disabled = false;
@@ -616,11 +725,26 @@
                 answerHtml = (q.statements || []).map((statement, statementIndex) => `<div class="ai-answer-row"><input type="text" value="${escapeHtml(statement.text)}" data-statement-text="${statementIndex}"><select class="form-select form-select-sm" style="width:90px" data-statement-value="${statementIndex}"><option value="1" ${statement.is_true ? 'selected' : ''}>Đúng</option><option value="0" ${!statement.is_true ? 'selected' : ''}>Sai</option></select></div>`).join('');
             } else if (q.question_type === 'fill_blank') {
                 answerHtml = (q.blanks || []).map((blank, blankIndex) => `<div class="ai-answer-row"><strong>Ô ${blankIndex + 1}</strong><input type="text" value="${escapeHtml((blank.accepted || []).join(' | '))}" data-blank-index="${blankIndex}" placeholder="Ngăn cách các cách viết đúng bằng dấu |"></div>`).join('');
+            } else if (q.question_type === 'essay') {
+                answerHtml = manualEditorHtml(q, false);
+            } else if (q.question_type === 'code_debug') {
+                answerHtml = manualEditorHtml(q, true);
             } else {
                 answerHtml = `<div class="row g-2"><div class="col-md-4"><label class="ai-editor-label">Đáp án số</label><input class="ai-editor-control" type="number" step="any" value="${q.numeric_answer ?? ''}" data-numeric="numeric_answer"></div><div class="col-md-4"><label class="ai-editor-label">Sai số ±</label><input class="ai-editor-control" type="number" step="any" min="0" value="${q.numeric_tolerance ?? 0}" data-numeric="numeric_tolerance"></div><div class="col-md-4"><label class="ai-editor-label">Đơn vị</label><input class="ai-editor-control" value="${escapeHtml(q.numeric_unit || '')}" data-numeric="numeric_unit"></div></div>`;
             }
 
-            return `<div class="card shadow-sm ai-question-card mb-4" data-temp-id="${q.tempId}"><div class="card-body p-4"><div class="d-flex justify-content-between align-items-start mb-3"><div><span class="badge q-badge">Câu ${index + 1}</span><span class="badge bg-light text-dark ms-2">${escapeHtml(typeLabels[q.question_type] || q.question_type)}</span></div><button type="button" class="btn btn-sm border-0 btn-remove-q" title="Bỏ câu"><i class="fa-solid fa-trash-can text-danger"></i></button></div><label class="ai-editor-label">Nội dung câu hỏi</label><textarea class="ai-editor-control mb-3" rows="3" data-question-field="question">${escapeHtml(q.question || '')}</textarea><label class="ai-editor-label">Đáp án</label>${answerHtml}<label class="ai-editor-label mt-3">Giải thích đáp án</label><textarea class="ai-editor-control" rows="2" data-question-field="explanation">${escapeHtml(q.explanation || '')}</textarea>${qualityHtml}</div></div>`;
+            const isManual = ['essay', 'code_debug'].includes(q.question_type);
+            const explanationLabel = isManual ? 'Đáp án tham khảo / hướng dẫn chấm' : 'Giải thích đáp án';
+            return `<div class="card shadow-sm ai-question-card mb-4" data-temp-id="${q.tempId}"><div class="card-body p-4"><div class="d-flex justify-content-between align-items-start mb-3"><div><span class="badge q-badge">Câu ${index + 1}</span><span class="badge bg-light text-dark ms-2">${escapeHtml(typeLabels[q.question_type] || q.question_type)}</span>${isManual ? '<span class="badge bg-warning-subtle text-warning-emphasis ms-2">Giáo viên chấm</span>' : ''}</div><button type="button" class="btn btn-sm border-0 btn-remove-q" title="Bỏ câu"><i class="fa-solid fa-trash-can text-danger"></i></button></div><label class="ai-editor-label">Nội dung câu hỏi</label><textarea class="ai-editor-control mb-3" rows="3" data-question-field="question">${escapeHtml(q.question || '')}</textarea><label class="ai-editor-label">${isManual ? 'Cấu hình chấm thủ công' : 'Đáp án'}</label>${answerHtml}<label class="ai-editor-label mt-3">${explanationLabel}</label><textarea class="ai-editor-control" rows="3" data-question-field="explanation">${escapeHtml(q.explanation || '')}</textarea>${qualityHtml}</div></div>`;
+        }
+
+        function manualEditorHtml(q, isCodeDebug) {
+            const rubricHtml = (q.rubric || []).map((item, rubricIndex) => `<div class="ai-rubric-row"><input class="ai-editor-control" value="${escapeHtml(item.criterion || '')}" data-rubric-criterion="${rubricIndex}" placeholder="Tên tiêu chí"><input class="ai-editor-control" type="number" min="0.25" max="100" step="0.25" value="${item.max_score ?? ''}" data-rubric-score="${rubricIndex}" aria-label="Điểm tối đa tiêu chí"></div>`).join('');
+            const commonFields = `<div><label class="ai-editor-label">Điểm tối đa</label><input class="ai-editor-control" type="number" min="0.25" max="100" step="0.25" value="${q.max_score ?? 10}" data-manual-field="max_score"></div>`;
+            if (!isCodeDebug) {
+                return `<div class="ai-manual-panel"><div class="ai-manual-grid">${commonFields}<div><label class="ai-editor-label">Giới hạn từ</label><input class="ai-editor-control" type="number" min="10" max="5000" value="${q.word_limit ?? 500}" data-manual-field="word_limit"></div><label class="ai-check-control"><input type="checkbox" ${q.allow_attachments ? 'checked' : ''} data-manual-field="allow_attachments"> Cho phép tệp đính kèm</label></div><label class="ai-editor-label">Rubric chấm điểm</label>${rubricHtml}</div>`;
+            }
+            return `<div class="ai-manual-panel"><div class="ai-manual-grid">${commonFields}<div><label class="ai-editor-label">Yêu cầu giải thích</label><select class="ai-editor-control" data-manual-field="explanation_mode"><option value="required" ${q.explanation_mode === 'required' ? 'selected' : ''}>Bắt buộc</option><option value="optional" ${q.explanation_mode === 'optional' ? 'selected' : ''}>Không bắt buộc</option><option value="disabled" ${q.explanation_mode === 'disabled' ? 'selected' : ''}>Không sử dụng</option></select></div><div><label class="ai-editor-label">Giới hạn từ</label><input class="ai-editor-control" type="number" min="10" max="2000" value="${q.explanation_word_limit ?? 150}" data-manual-field="explanation_word_limit" ${q.explanation_mode === 'disabled' ? 'disabled' : ''}></div></div><label class="ai-editor-label">Mã HTML/CSS có lỗi</label><textarea class="ai-editor-control ai-code-editor mb-3" data-manual-field="starter_code" spellcheck="false">${escapeHtml(q.starter_code || '')}</textarea><label class="ai-editor-label">Rubric chấm điểm</label>${rubricHtml}</div>`;
         }
 
         document.getElementById('questionsContainer').addEventListener('input', updateQuestionFromEditor);
@@ -654,6 +778,23 @@
             if (target.dataset.statementValue !== undefined) question.statements[Number(target.dataset.statementValue)].is_true = target.value === '1';
             if (target.dataset.blankIndex !== undefined) question.blanks[Number(target.dataset.blankIndex)].accepted = target.value.split('|').map(value => value.trim()).filter(Boolean);
             if (target.dataset.numeric) question[target.dataset.numeric] = target.dataset.numeric === 'numeric_unit' ? target.value : Number(target.value);
+            if (target.dataset.manualField) {
+                const field = target.dataset.manualField;
+                question[field] = target.type === 'checkbox' ? target.checked : (target.type === 'number' ? Number(target.value) : target.value);
+                if (field === 'explanation_mode') {
+                    const limit = card.querySelector('[data-manual-field="explanation_word_limit"]');
+                    if (limit) {
+                        limit.disabled = target.value === 'disabled';
+                        if (target.value === 'disabled') question.explanation_word_limit = 0;
+                        else if (!question.explanation_word_limit) {
+                            question.explanation_word_limit = 150;
+                            limit.value = 150;
+                        }
+                    }
+                }
+            }
+            if (target.dataset.rubricCriterion !== undefined) question.rubric[Number(target.dataset.rubricCriterion)].criterion = target.value;
+            if (target.dataset.rubricScore !== undefined) question.rubric[Number(target.dataset.rubricScore)].max_score = Number(target.value);
             question.quality = {status: 'needs_review', score: 0, warnings: ['Nội dung đã được chỉnh sửa; hãy bấm Kiểm tra lại.']};
             const qualityBox = card.querySelector('.ai-quality');
             qualityBox.className = 'ai-quality needs_review';

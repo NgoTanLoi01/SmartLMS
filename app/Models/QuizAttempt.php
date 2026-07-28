@@ -10,9 +10,13 @@ class QuizAttempt extends Model
     use HasFactory;
 
     public const STATUS_IN_PROGRESS = 'in_progress';
+
     public const STATUS_SUBMITTED = 'submitted';
+
     public const STATUS_PENDING_GRADING = 'pending_grading';
+
     public const STATUS_GRADED = 'graded';
+
     public const STATUS_RELEASED = 'released';
 
     // 1. Phải khai báo cột student_answers ở đây thì Laravel mới cho phép lưu
@@ -52,16 +56,16 @@ class QuizAttempt extends Model
         return $query->whereNotNull('completed_at')
             ->whereIn('status', [self::STATUS_SUBMITTED, self::STATUS_GRADED, self::STATUS_RELEASED])
             ->where(function ($query) {
-            $query->whereNull('quiz_session_id')
-                ->orWhere('result_released_at', '<=', now())
-                ->orWhereHas('session', function ($sessionQuery) {
-                    $sessionQuery->where('result_release_policy', QuizSession::RELEASE_IMMEDIATE)
-                        ->orWhere('results_released_at', '<=', now())
-                        ->orWhere(function ($afterSession) {
-                            $afterSession->where('result_release_policy', QuizSession::RELEASE_AFTER_SESSION)
-                                ->where('ends_at', '<=', now());
-                        });
-                });
+                $query->whereNull('quiz_session_id')
+                    ->orWhere('result_released_at', '<=', now())
+                    ->orWhereHas('session', function ($sessionQuery) {
+                        $sessionQuery->where('result_release_policy', QuizSession::RELEASE_IMMEDIATE)
+                            ->orWhere('results_released_at', '<=', now())
+                            ->orWhere(function ($afterSession) {
+                                $afterSession->where('result_release_policy', QuizSession::RELEASE_AFTER_SESSION)
+                                    ->where('ends_at', '<=', now());
+                            });
+                    });
             });
     }
 

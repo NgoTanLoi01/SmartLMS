@@ -373,7 +373,7 @@ class QuestionController extends Controller
             'lesson_id' => 'nullable|integer',
             'topic' => 'nullable|string|max:255',
             'difficulty' => 'required|string|in:Dễ,Trung bình,Khó',
-            'question_type' => 'required|in:single_choice,multiple_choice,true_false_group,fill_blank,numeric',
+            'question_type' => 'required|in:single_choice,multiple_choice,true_false_group,fill_blank,numeric,essay,code_debug',
             'quantity' => 'required|integer|min:1|max:20',
         ]);
 
@@ -398,6 +398,7 @@ class QuestionController extends Controller
         $questionType = (string) $request->question_type;
         $typeLabel = Question::typeLabels()[$questionType];
         $questionSchema = $this->aiQuestionSchema($questionType);
+        $typeInstruction = $this->aiQuestionTypeInstruction($questionType);
 
         // 3. Gửi cho DeepSeek để soạn câu hỏi dưới dạng JSON
         $prompt = "Dựa trên nguồn nội dung: {$sourceLabel}
@@ -416,7 +417,8 @@ class QuestionController extends Controller
         }
         4. Luôn đặt question_type là {$questionType}; giải thích phải nêu được vì sao đáp án đúng.
         5. quality_review là mảng cảnh báo tự kiểm định; để [] nếu không phát hiện vấn đề.
-        6. Không thêm markdown, không thêm chữ giải thích ngoài JSON.";
+        6. {$typeInstruction}
+        7. Không thêm markdown, không thêm chữ giải thích ngoài JSON.";
 
         $operation = AiOperation::create([
             'user_id' => $request->user()->id, 'feature' => 'quiz_generation', 'provider' => 'deepseek',
@@ -647,7 +649,18 @@ class QuestionController extends Controller
             Question::TYPE_TRUE_FALSE_GROUP => '{\"question_type\":\"true_false_group\",\"question\":\"Xác định đúng sai\",\"statements\":[{\"text\":\"Nhận định 1\",\"is_true\":true},{\"text\":\"Nhận định 2\",\"is_true\":false}],\"explanation\":\"Giải thích\",\"quality_review\":[]}',
             Question::TYPE_FILL_BLANK => '{\"question_type\":\"fill_blank\",\"question\":\"Nội dung [[1]] và [[2]]\",\"blanks\":[{\"accepted\":[\"đáp án 1\",\"cách viết khác\"]},{\"accepted\":[\"đáp án 2\"]}],\"case_sensitive\":false,\"explanation\":\"Giải thích\",\"quality_review\":[]}',
             Question::TYPE_NUMERIC => '{\"question_type\":\"numeric\",\"question\":\"Nội dung\",\"numeric_answer\":10,\"numeric_tolerance\":0.1,\"numeric_unit\":\"cm\",\"explanation\":\"Giải thích\",\"quality_review\":[]}',
+            Question::TYPE_ESSAY => '{\"question_type\":\"essay\",\"question\":\"Yêu cầu tự luận rõ ràng\",\"max_score\":10,\"word_limit\":500,\"allow_attachments\":false,\"rubric\":[{\"criterion\":\"Nội dung chính xác\",\"max_score\":6},{\"criterion\":\"Lập luận và trình bày\",\"max_score\":4}],\"explanation\":\"Đáp án tham khảo và hướng dẫn chấm\",\"quality_review\":[]}',
+            Question::TYPE_CODE_DEBUG => '{\"question_type\":\"code_debug\",\"question\":\"Mô tả lỗi HTML/CSS cần sửa và kết quả mong đợi\",\"max_score\":10,\"starter_code\":\"<!doctype html><html><head><style>.box { color red; }</style></head><body><div class=\\\"box\\\">Nội dung</div></body></html>\",\"explanation_mode\":\"required\",\"explanation_word_limit\":150,\"rubric\":[{\"criterion\":\"Mã sửa đúng và hiển thị đúng\",\"max_score\":7},{\"criterion\":\"Giải thích đúng nguyên nhân\",\"max_score\":3}],\"explanation\":\"Mã đã sửa và nguyên nhân lỗi\",\"quality_review\":[]}',
             default => '{\"question_type\":\"single_choice\",\"question\":\"Nội dung\",\"options\":[\"A\",\"B\",\"C\",\"D\"],\"correct_indexes\":[0],\"explanation\":\"Giải thích\",\"quality_review\":[]}',
+        };
+    }
+
+    private function aiQuestionTypeInstruction(string $type): string
+    {
+        return match ($type) {
+            Question::TYPE_ESSAY => 'Câu tự luận phải có yêu cầu cụ thể, rubric đo được; tổng max_score của rubric phải bằng max_score câu hỏi. explanation là đáp án tham khảo và hướng dẫn chấm.',
+            Question::TYPE_CODE_DEBUG => 'Chỉ tạo bài sửa lỗi HTML/CSS, tuyệt đối không dùng JavaScript. starter_code phải có lỗi thật và đủ ngữ cảnh; tổng max_score của rubric phải bằng max_score. explanation phải nêu mã sửa đúng và nguyên nhân lỗi.',
+            default => 'Câu hỏi và đáp án phải rõ ràng, duy nhất và phù hợp với độ khó đã chọn.',
         };
     }
 
@@ -676,6 +689,25 @@ class QuestionController extends Controller
                 'target' => $question['numeric_answer'],
                 'tolerance' => $question['numeric_tolerance'],
                 'unit' => $question['numeric_unit'],
+            ], []],
+            Question::TYPE_ESSAY => [[
+                'grading_mode' => 'manual',
+                'max_score' => $question['max_score'],
+                'word_limit' => $question['word_limit'],
+                'allow_attachments' => $question['allow_attachments'],
+                'allowed_extensions' => ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg'],
+                'max_files' => 3,
+                'max_file_size_kb' => 10240,
+                'rubric' => $question['rubric'],
+            ], []],
+            Question::TYPE_CODE_DEBUG => [[
+                'grading_mode' => 'manual',
+                'max_score' => $question['max_score'],
+                'language' => 'html_css',
+                'starter_code' => $question['starter_code'],
+                'explanation_mode' => $question['explanation_mode'],
+                'explanation_word_limit' => $question['explanation_word_limit'],
+                'rubric' => $question['rubric'],
             ], []],
         };
     }

@@ -203,6 +203,7 @@ class QuizExamService
                             'answered_at' => $question->answer?->answered_at,
                         ]
                     );
+
                     continue;
                 }
 

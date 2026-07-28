@@ -36,6 +36,8 @@ class AiResponseValidator
                 Question::TYPE_TRUE_FALSE_GROUP => $this->normalizeTrueFalse($question),
                 Question::TYPE_FILL_BLANK => $this->normalizeFillBlank($question, $text),
                 Question::TYPE_NUMERIC => $this->normalizeNumeric($question),
+                Question::TYPE_ESSAY => $this->normalizeEssay($question),
+                Question::TYPE_CODE_DEBUG => $this->normalizeCodeDebug($question),
             });
         })->all();
     }
@@ -136,6 +138,94 @@ class AiResponseValidator
             'numeric_tolerance' => (float) $tolerance,
             'numeric_unit' => mb_substr(trim((string) ($question['numeric_unit'] ?? $question['unit'] ?? '')), 0, 50),
         ];
+    }
+
+    private function normalizeEssay(array $question): array
+    {
+        $maxScore = $this->normalizeManualMaxScore($question);
+        $wordLimit = filter_var($question['word_limit'] ?? null, FILTER_VALIDATE_INT);
+        if ($wordLimit === false || $wordLimit < 10 || $wordLimit > 5000) {
+            throw new \UnexpectedValueException('Câu tự luận cần giới hạn từ trong khoảng 10–5000.');
+        }
+
+        return [
+            'max_score' => $maxScore,
+            'word_limit' => $wordLimit,
+            'allow_attachments' => filter_var($question['allow_attachments'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'rubric' => $this->normalizeManualRubric($question, $maxScore),
+        ];
+    }
+
+    private function normalizeCodeDebug(array $question): array
+    {
+        $maxScore = $this->normalizeManualMaxScore($question);
+        $starterCode = trim((string) ($question['starter_code'] ?? ''));
+        if ($starterCode === '' || mb_strlen($starterCode) > 50000) {
+            throw new \UnexpectedValueException('Câu sửa lỗi cần có mã HTML/CSS ban đầu, tối đa 50.000 ký tự.');
+        }
+        if (preg_match('/<\s*script\b|\bon[a-z]+\s*=|javascript\s*:/iu', $starterCode)) {
+            throw new \UnexpectedValueException('Bài sửa lỗi HTML/CSS không được chứa JavaScript.');
+        }
+
+        $mode = (string) ($question['explanation_mode'] ?? 'required');
+        if (! in_array($mode, ['disabled', 'optional', 'required'], true)) {
+            throw new \UnexpectedValueException('Chế độ giải thích của câu sửa lỗi không hợp lệ.');
+        }
+
+        $wordLimit = $mode === 'disabled'
+            ? 0
+            : filter_var($question['explanation_word_limit'] ?? null, FILTER_VALIDATE_INT);
+        if ($mode !== 'disabled' && ($wordLimit === false || $wordLimit < 10 || $wordLimit > 2000)) {
+            throw new \UnexpectedValueException('Giới hạn phần giải thích phải trong khoảng 10–2000 từ.');
+        }
+
+        return [
+            'max_score' => $maxScore,
+            'starter_code' => $starterCode,
+            'explanation_mode' => $mode,
+            'explanation_word_limit' => (int) $wordLimit,
+            'rubric' => $this->normalizeManualRubric($question, $maxScore),
+        ];
+    }
+
+    private function normalizeManualMaxScore(array $question): float
+    {
+        $maxScore = $question['max_score'] ?? null;
+        if (! is_numeric($maxScore) || (float) $maxScore < 0.25 || (float) $maxScore > 100) {
+            throw new \UnexpectedValueException('Câu chấm thủ công cần điểm tối đa từ 0,25 đến 100.');
+        }
+
+        return (float) $maxScore;
+    }
+
+    private function normalizeManualRubric(array $question, float $maxScore): array
+    {
+        $rubric = $question['rubric'] ?? null;
+        if (! is_array($rubric) || ! array_is_list($rubric) || $rubric === [] || count($rubric) > 10) {
+            throw new \UnexpectedValueException('Rubric phải có từ 1 đến 10 tiêu chí chấm.');
+        }
+
+        $normalized = collect($rubric)->map(function ($item) {
+            if (! is_array($item)) {
+                throw new \UnexpectedValueException('Mỗi tiêu chí rubric phải có tên và điểm tối đa.');
+            }
+            $criterion = mb_substr(trim((string) ($item['criterion'] ?? '')), 0, 500);
+            $score = $item['max_score'] ?? null;
+            if ($criterion === '' || ! is_numeric($score) || (float) $score <= 0) {
+                throw new \UnexpectedValueException('Mỗi tiêu chí rubric phải có tên và điểm tối đa hợp lệ.');
+            }
+
+            return ['criterion' => $criterion, 'max_score' => (float) $score];
+        })->values();
+
+        if ($normalized->pluck('criterion')->map(fn ($value) => mb_strtolower($value))->unique()->count() !== $normalized->count()) {
+            throw new \UnexpectedValueException('Các tiêu chí rubric không được trùng nhau.');
+        }
+        if (abs($normalized->sum('max_score') - $maxScore) > 0.001) {
+            throw new \UnexpectedValueException('Tổng điểm rubric phải bằng điểm tối đa của câu.');
+        }
+
+        return $normalized->all();
     }
 
     public function assignmentAnalysis(array $analysis, float $scale): array
