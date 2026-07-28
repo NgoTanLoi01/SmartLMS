@@ -250,6 +250,8 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::delete('/question-bank/passages/{passage}', [QuestionController::class, 'destroyPassage'])->name('questions.passages.destroy');
         Route::post('/question-bank', [QuestionController::class, 'storeBank'])->name('questions.storeBank');
         Route::post('/question-bank/import', [QuestionController::class, 'importBank'])->name('questions.importBank');
+        Route::delete('/question-bank/bulk', [QuestionController::class, 'bulkDestroyBank'])->name('questions.bulkDestroyBank');
+        Route::patch('/question-bank/{id}/restore', [QuestionController::class, 'restoreBank'])->name('questions.restoreBank');
         Route::put('/question-bank/{id}', [QuestionController::class, 'updateBank'])->name('questions.updateBank');
         Route::delete('/question-bank/{id}', [QuestionController::class, 'destroyBank'])->name('questions.destroyBank');
     });

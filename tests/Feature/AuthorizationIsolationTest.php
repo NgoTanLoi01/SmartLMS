@@ -179,6 +179,75 @@ class AuthorizationIsolationTest extends TestCase
         $this->assertFalse(Gate::forUser($this->otherTeacher)->allows('view', $submission));
     }
 
+    public function test_owner_can_bulk_archive_questions(): void
+    {
+        $secondQuestion = Question::create([
+            'course_id' => $this->course->id,
+            'question_bank_id' => $this->questionBank->id,
+            'question_text' => 'Câu hỏi thứ hai của A',
+            'difficulty' => 'medium',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->delete(route('questions.bulkDestroyBank'), [
+                'question_ids' => [$this->question->id, $secondQuestion->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('questions', [
+            'id' => $this->question->id,
+            'status' => Question::STATUS_ARCHIVED,
+        ]);
+        $this->assertDatabaseHas('questions', [
+            'id' => $secondQuestion->id,
+            'status' => Question::STATUS_ARCHIVED,
+        ]);
+    }
+
+    public function test_teacher_cannot_bulk_archive_another_teachers_questions(): void
+    {
+        $this->actingAs($this->otherTeacher)
+            ->delete(route('questions.bulkDestroyBank'), [
+                'question_ids' => [$this->question->id],
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('questions', [
+            'id' => $this->question->id,
+            'status' => Question::STATUS_PUBLISHED,
+        ]);
+    }
+
+    public function test_owner_can_restore_an_archived_question(): void
+    {
+        $this->question->update(['status' => Question::STATUS_ARCHIVED]);
+
+        $this->actingAs($this->owner)
+            ->patch(route('questions.restoreBank', $this->question))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('questions', [
+            'id' => $this->question->id,
+            'status' => Question::STATUS_PUBLISHED,
+        ]);
+    }
+
+    public function test_teacher_cannot_restore_another_teachers_archived_question(): void
+    {
+        $this->question->update(['status' => Question::STATUS_ARCHIVED]);
+
+        $this->actingAs($this->otherTeacher)
+            ->patch(route('questions.restoreBank', $this->question))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('questions', [
+            'id' => $this->question->id,
+            'status' => Question::STATUS_ARCHIVED,
+        ]);
+    }
+
     private function createSchema(): void
     {
         Schema::create('users', function (Blueprint $table) {

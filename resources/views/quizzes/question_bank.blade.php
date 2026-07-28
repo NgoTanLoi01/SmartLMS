@@ -52,6 +52,9 @@
             @if (request('question_type'))
                 <input type="hidden" name="question_type" value="{{ request('question_type') }}">
             @endif
+            @if (request('status'))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
         </form>
 
         <form action="{{ route('questions.index') }}" method="GET" class="filter-group">
@@ -64,6 +67,7 @@
             </select>
             @if(request('course_id'))<input type="hidden" name="course_id" value="{{ request('course_id') }}">@endif
             @if(request('question_bank_id'))<input type="hidden" name="question_bank_id" value="{{ request('question_bank_id') }}">@endif
+            @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
         </form>
 
         <form action="{{ route('questions.index') }}" method="GET" class="filter-group">
@@ -82,6 +86,21 @@
             @if (request('question_type'))
                 <input type="hidden" name="question_type" value="{{ request('question_type') }}">
             @endif
+            @if (request('status'))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
+        </form>
+
+        <form action="{{ route('questions.index') }}" method="GET" class="filter-group filter-group-status">
+            <label class="filter-label">Trạng thái</label>
+            <select name="status" onchange="this.form.submit()">
+                <option value="active" @selected(request('status', 'active') === 'active')>Đang sử dụng</option>
+                <option value="archived" @selected(request('status') === 'archived')>Đã lưu trữ</option>
+                <option value="all" @selected(request('status') === 'all')>Tất cả trạng thái</option>
+            </select>
+            @if(request('course_id'))<input type="hidden" name="course_id" value="{{ request('course_id') }}">@endif
+            @if(request('question_type'))<input type="hidden" name="question_type" value="{{ request('question_type') }}">@endif
+            @if(request('question_bank_id'))<input type="hidden" name="question_bank_id" value="{{ request('question_bank_id') }}">@endif
         </form>
 
         <div>
@@ -105,10 +124,36 @@
 
     {{-- ── Table ── --}}
     <div class="table-card">
+        @if($questions->contains(fn ($question) => $question->status !== \App\Models\Question::STATUS_ARCHIVED))
+            <div class="bulk-toolbar" id="question-bulk-toolbar">
+                <div class="bulk-selection-info">
+                    <span class="bulk-selection-icon"><i class="fa-solid fa-check-double"></i></span>
+                    <div>
+                        <strong><span id="selected-question-count">0</span> câu hỏi đã chọn</strong>
+                        <small>Chọn từng câu hoặc chọn tất cả câu trên trang hiện tại.</small>
+                    </div>
+                </div>
+                <form id="bulk-question-form" action="{{ route('questions.bulkDestroyBank') }}" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="bulk-delete-button" id="bulk-delete-button" disabled>
+                        <i class="fa-solid fa-box-archive"></i> Lưu trữ đã chọn
+                    </button>
+                </form>
+            </div>
+        @endif
         <div style="overflow-x:auto;">
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th class="selection-column">
+                            @if($questions->contains(fn ($question) => $question->status !== \App\Models\Question::STATUS_ARCHIVED))
+                                <input type="checkbox" class="question-checkbox" id="select-all-questions"
+                                    aria-label="Chọn tất cả câu hỏi trên trang">
+                            @else
+                                <i class="fa-solid fa-box-archive" title="Danh sách câu hỏi đã lưu trữ"></i>
+                            @endif
+                        </th>
                         <th style="width:52px;">ID</th>
                         <th style="width:36%;">Nội dung câu hỏi</th>
                         <th>Hình thức</th>
@@ -121,10 +166,22 @@
                 </thead>
                 <tbody>
                     @forelse($questions as $question)
-                        <tr>
+                        <tr data-question-row="{{ $question->id }}" @class(['is-archived' => $question->status === \App\Models\Question::STATUS_ARCHIVED])>
+                            <td class="selection-column">
+                                @if($question->status !== \App\Models\Question::STATUS_ARCHIVED)
+                                    <input type="checkbox" class="question-checkbox question-row-checkbox"
+                                        name="question_ids[]" value="{{ $question->id }}" form="bulk-question-form"
+                                        aria-label="Chọn câu hỏi {{ $question->id }}">
+                                @else
+                                    <i class="fa-solid fa-box-archive archived-row-icon" title="Câu hỏi đã lưu trữ"></i>
+                                @endif
+                            </td>
                             <td><span class="q-id">#{{ $question->id }}</span></td>
                             <td>
                                 <div class="q-text">{{ Str::limit($question->question_text, 80) }}</div>
+                                @if($question->status === \App\Models\Question::STATUS_ARCHIVED)
+                                    <span class="question-status-badge"><i class="fa-solid fa-box-archive"></i> Đã lưu trữ</span>
+                                @endif
                                 @if($question->passage)
                                     <div class="small text-primary mt-1"><i class="fa-solid fa-file-lines"></i> {{ Str::limit($question->passage->title, 55) }}</div>
                                 @endif
@@ -188,6 +245,7 @@
                                     ], JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_TAG | JSON_HEX_QUOT);
                                 @endphp
                                 <div style="display:flex; gap:6px; justify-content:flex-end;">
+                                    @if($question->status !== \App\Models\Question::STATUS_ARCHIVED)
                                     <button type="button" class="action-btn" data-bs-toggle="modal"
                                         data-bs-target="#editQuestionModal" data-id="{{ $question->id }}"
                                         data-update-url="{{ route('questions.updateBank', $question->id) }}"
@@ -207,14 +265,23 @@
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>
+                                    @else
+                                    <form action="{{ route('questions.restoreBank', $question->id) }}" method="POST" style="display:inline;">
+                                        @csrf @method('PATCH')
+                                        <button type="submit" class="action-btn restore" title="Khôi phục"
+                                            onclick="return confirm('Khôi phục câu hỏi này vào danh sách đang sử dụng?')">
+                                            <i class="fa-solid fa-rotate-left"></i>
+                                        </button>
+                                    </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr class="empty-row">
-                            <td colspan="8">
+                            <td colspan="9">
                                 <i class="fa-solid fa-box-open"></i>
-                                <p>Kho câu hỏi trống. Hãy thêm câu hỏi mới!</p>
+                                <p>{{ request('status') === 'archived' ? 'Chưa có câu hỏi nào được lưu trữ.' : 'Kho câu hỏi trống. Hãy thêm câu hỏi mới!' }}</p>
                             </td>
                         </tr>
                     @endforelse
@@ -579,6 +646,40 @@
                 root.querySelector('[data-option-rows]').innerHTML = '';
                 state.applyType();
             });
+
+            const selectAll = document.getElementById('select-all-questions');
+            const rowCheckboxes = Array.from(document.querySelectorAll('.question-row-checkbox'));
+            const selectedCount = document.getElementById('selected-question-count');
+            const bulkToolbar = document.getElementById('question-bulk-toolbar');
+            const bulkDeleteButton = document.getElementById('bulk-delete-button');
+            const bulkForm = document.getElementById('bulk-question-form');
+
+            const updateBulkSelection = () => {
+                const checked = rowCheckboxes.filter(checkbox => checkbox.checked);
+                if (selectedCount) selectedCount.textContent = checked.length;
+                if (bulkDeleteButton) bulkDeleteButton.disabled = checked.length === 0;
+                if (bulkToolbar) bulkToolbar.classList.toggle('has-selection', checked.length > 0);
+                if (selectAll) {
+                    selectAll.checked = rowCheckboxes.length > 0 && checked.length === rowCheckboxes.length;
+                    selectAll.indeterminate = checked.length > 0 && checked.length < rowCheckboxes.length;
+                }
+                rowCheckboxes.forEach(checkbox => {
+                    checkbox.closest('[data-question-row]')?.classList.toggle('is-selected', checkbox.checked);
+                });
+            };
+
+            selectAll?.addEventListener('change', () => {
+                rowCheckboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
+                updateBulkSelection();
+            });
+            rowCheckboxes.forEach(checkbox => checkbox.addEventListener('change', updateBulkSelection));
+            bulkForm?.addEventListener('submit', event => {
+                const count = rowCheckboxes.filter(checkbox => checkbox.checked).length;
+                if (count === 0 || !confirm(`Lưu trữ ${count} câu hỏi đã chọn? Các đề đã phát và dữ liệu bài làm vẫn được giữ nguyên.`)) {
+                    event.preventDefault();
+                }
+            });
+            updateBulkSelection();
         });
     </script>
 @endpush

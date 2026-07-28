@@ -37,13 +37,15 @@ class QuestionController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+        $status = $request->validate([
+            'status' => ['nullable', 'in:active,archived,all'],
+        ])['status'] ?? 'active';
 
         // Admin thấy tất cả khóa học, Giáo viên chỉ thấy khóa mình dạy
         if ($user->role === 'admin') {
             $courses = Course::with('questionBanks')->get();
             $questionBanks = QuestionBank::with(['teacher', 'courses'])->latest()->get();
-            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options', 'passage'])
-                ->notArchived();
+            $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options', 'passage']);
         } else {
             $courses = Course::with('questionBanks')->where('teacher_id', $user->id)->get();
             $courseIds = $courses->pluck('id');
@@ -55,8 +57,13 @@ class QuestionController extends Controller
                 ->latest()
                 ->get();
             $query = Question::with(['questionBank.teacher', 'questionBank.courses', 'course.teacher', 'options', 'passage'])
-                ->notArchived()
                 ->whereIn('question_bank_id', $questionBanks->pluck('id'));
+        }
+
+        if ($status === 'archived') {
+            $query->where('status', Question::STATUS_ARCHIVED);
+        } elseif ($status === 'active') {
+            $query->notArchived();
         }
 
         if ($request->filled('question_bank_id')) {
@@ -253,6 +260,43 @@ class QuestionController extends Controller
         $question->update(['status' => Question::STATUS_ARCHIVED]);
 
         return back()->with('success', 'Đã lưu trữ câu hỏi. Đáp án và dữ liệu liên quan vẫn được giữ lại!');
+    }
+
+    public function bulkDestroyBank(Request $request)
+    {
+        $data = $request->validate([
+            'question_ids' => ['required', 'array', 'min:1', 'max:200'],
+            'question_ids.*' => ['required', 'integer', 'distinct', 'exists:questions,id'],
+        ]);
+
+        $ids = collect($data['question_ids'])->map(fn ($id) => (int) $id)->unique()->values();
+        $questions = Question::query()->whereKey($ids)->get();
+        abort_unless($questions->count() === $ids->count(), 422, 'Danh sách câu hỏi không hợp lệ.');
+
+        $questions->each(fn (Question $question) => $this->authorizeQuestionAccess($question));
+
+        DB::transaction(function () use ($questions) {
+            Question::query()
+                ->whereKey($questions->modelKeys())
+                ->update(['status' => Question::STATUS_ARCHIVED, 'updated_at' => now()]);
+        });
+
+        return back()->with('success', 'Đã lưu trữ '.$questions->count().' câu hỏi. Các đề đã phát và dữ liệu bài làm không bị thay đổi.');
+    }
+
+    public function restoreBank($id)
+    {
+        $question = Question::findOrFail($id);
+
+        $this->authorizeQuestionAccess($question);
+
+        if ($question->status !== Question::STATUS_ARCHIVED) {
+            return back()->with('info', 'Câu hỏi này đang được sử dụng, không cần khôi phục.');
+        }
+
+        $question->update(['status' => Question::STATUS_PUBLISHED]);
+
+        return back()->with('success', 'Đã khôi phục câu hỏi vào Ngân hàng câu hỏi.');
     }
 
     // ==========================================

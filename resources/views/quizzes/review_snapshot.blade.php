@@ -2,6 +2,29 @@
 
 @section('title', 'Chi tiết bài làm: ' . $attempt->quiz->title)
 
+@push('styles')
+    <style>
+        .manual-grade-panel { margin-top:18px; overflow:hidden; border:1px solid #e2e8f0; border-radius:14px; background:#fff; }
+        .manual-grade-summary { display:flex; align-items:center; gap:12px; padding:14px 16px; background:#fffbeb; color:#92400e; }
+        .manual-grade-panel.is-graded .manual-grade-summary { background:#f0fdf4; color:#166534; }
+        .manual-grade-icon { width:38px; height:38px; flex:0 0 38px; display:grid; place-items:center; border-radius:11px; background:rgba(255,255,255,.8); }
+        .manual-grade-label { display:block; font-size:.68rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; opacity:.75; }
+        .manual-grade-title { margin-top:2px; font-size:.9rem; font-weight:800; }
+        .manual-grade-score { margin-left:auto; padding:6px 10px; border-radius:999px; background:#fff; font-size:.85rem; font-weight:850; white-space:nowrap; }
+        .rubric-result-list { display:grid; gap:8px; padding:14px 16px; border-top:1px solid #dcfce7; background:#fbfffc; }
+        .rubric-result-row { display:flex; justify-content:space-between; gap:16px; color:#475569; font-size:.78rem; }
+        .rubric-result-row strong { color:#166534; white-space:nowrap; }
+        .teacher-feedback-box { margin:14px 16px 16px; padding:14px; border:1px solid #dbeafe; border-radius:12px; background:#f8fbff; }
+        .teacher-feedback-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:9px; }
+        .teacher-feedback-title { color:#1d4ed8; font-size:.78rem; font-weight:850; }
+        .teacher-feedback-meta { color:#64748b; font-size:.7rem; }
+        .teacher-feedback-content { position:relative; padding-left:22px; color:#1e293b; font-size:.88rem; line-height:1.7; white-space:pre-wrap; }
+        .teacher-feedback-content::before { content:'\201C'; position:absolute; top:-8px; left:0; color:#60a5fa; font:28px Georgia,serif; }
+        .feedback-empty { padding:13px 16px; border-top:1px solid #e2e8f0; color:#64748b; background:#f8fafc; font-size:.78rem; }
+        @media(max-width:576px) { .manual-grade-summary { align-items:flex-start; flex-wrap:wrap; } .manual-grade-score { margin-left:50px; } }
+    </style>
+@endpush
+
 @section('content')
     <div class="container py-4" style="max-width:900px">
         <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-4">
@@ -98,10 +121,47 @@
                     @endif
                     @if($question->attachments->isNotEmpty())<div class="mt-3 d-flex flex-wrap gap-2">@foreach($question->attachments as $file)<a class="btn btn-sm btn-outline-primary" href="{{ route('quiz-attempt-attachments.download', $file) }}"><i class="fa-solid fa-paperclip"></i> {{ $file->original_name }}</a>@endforeach</div>@endif
                     @if($isManual)
-                        <div class="alert {{ $question->answer?->grading_status === 'graded' ? 'alert-success' : 'alert-warning' }} mt-3 mb-0">
-                            <strong>{{ $question->answer?->grading_status === 'graded' ? 'Điểm: '.number_format((float) $question->answer->score, 2).'/'.number_format((float) $question->max_score, 2) : 'Đang chờ giáo viên chấm' }}</strong>
-                            @if($question->answer?->teacher_feedback)<div class="mt-2"><strong>Phản hồi:</strong> {{ $question->answer->teacher_feedback }}</div>@endif
-                        </div>
+                        @php
+                            $graded = $question->answer?->grading_status === 'graded';
+                            $rubric = collect(data_get($question->answer_key_snapshot, 'rubric', []));
+                            $rubricScores = collect($question->answer?->rubric_scores ?? []);
+                        @endphp
+                        <section class="manual-grade-panel {{ $graded ? 'is-graded' : '' }}">
+                            <div class="manual-grade-summary">
+                                <span class="manual-grade-icon"><i class="fa-solid {{ $graded ? 'fa-circle-check' : 'fa-hourglass-half' }}"></i></span>
+                                <div>
+                                    <span class="manual-grade-label">Kết quả chấm thủ công</span>
+                                    <div class="manual-grade-title">{{ $graded ? 'Giáo viên đã hoàn tất chấm câu này' : 'Câu trả lời đang chờ giáo viên chấm' }}</div>
+                                </div>
+                                @if($graded)
+                                    <span class="manual-grade-score">{{ rtrim(rtrim(number_format((float) $question->answer->score, 2), '0'), '.') }}/{{ rtrim(rtrim(number_format((float) $question->max_score, 2), '0'), '.') }} điểm</span>
+                                @endif
+                            </div>
+                            @if($graded && $rubric->isNotEmpty())
+                                <div class="rubric-result-list">
+                                    @foreach($rubric as $index => $criterion)
+                                        <div class="rubric-result-row">
+                                            <span>{{ $criterion['criterion'] ?? 'Tiêu chí '.($index + 1) }}</span>
+                                            <strong>{{ rtrim(rtrim(number_format((float) $rubricScores->get($index, 0), 2), '0'), '.') }}/{{ rtrim(rtrim(number_format((float) ($criterion['max_score'] ?? 0), 2), '0'), '.') }}</strong>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @if($question->answer?->teacher_feedback)
+                                <div class="teacher-feedback-box">
+                                    <div class="teacher-feedback-head">
+                                        <span class="teacher-feedback-title"><i class="fa-solid fa-comment-dots me-1"></i> Phản hồi của giáo viên</span>
+                                        <span class="teacher-feedback-meta">
+                                            @if($question->answer->grader){{ $question->answer->grader->name }}@endif
+                                            @if($question->answer->graded_at){{ $question->answer->grader ? ' · ' : '' }}{{ $question->answer->graded_at->format('d/m/Y H:i') }}@endif
+                                        </span>
+                                    </div>
+                                    <div class="teacher-feedback-content">{{ $question->answer->teacher_feedback }}</div>
+                                </div>
+                            @elseif($graded)
+                                <div class="feedback-empty"><i class="fa-regular fa-comment me-1"></i> Giáo viên chưa để lại nhận xét cho câu này.</div>
+                            @endif
+                        </section>
                     @endif
                 </div>
             </article>

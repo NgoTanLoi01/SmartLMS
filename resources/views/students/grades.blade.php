@@ -148,23 +148,112 @@
         }
 
         .feedback-card {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            gap: 12px;
             border-top: 1px solid #e2e8f0;
-            padding: 14px 16px;
+            padding: 16px;
         }
 
         .feedback-card:first-child {
             border-top: 0;
         }
 
+        .feedback-icon {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .feedback-icon.is-quiz {
+            background: #f5f3ff;
+            color: #7c3aed;
+        }
+
+        .feedback-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
         .feedback-title {
             font-weight: 800;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
+        }
+
+        .feedback-type {
+            display: inline-flex;
+            margin-left: 6px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 800;
+            vertical-align: middle;
         }
 
         .feedback-meta {
             color: #64748b;
             font-size: 12.5px;
             margin-bottom: 8px;
+        }
+
+        .feedback-context {
+            margin-bottom: 9px;
+            color: #475569;
+            font-size: 12.5px;
+            line-height: 1.5;
+        }
+
+        .feedback-message {
+            position: relative;
+            padding: 12px 14px 12px 34px;
+            border: 1px solid #dbeafe;
+            border-radius: 10px;
+            background: #f8fbff;
+            color: #1e293b;
+            font-size: 13.5px;
+            line-height: 1.65;
+            white-space: pre-wrap;
+        }
+
+        .feedback-message::before {
+            content: '\201C';
+            position: absolute;
+            top: 3px;
+            left: 12px;
+            color: #60a5fa;
+            font-size: 30px;
+            font-family: Georgia, serif;
+        }
+
+        .feedback-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .feedback-preview {
+            display: inline-flex;
+            align-items: flex-start;
+            gap: 7px;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .feedback-preview i {
+            margin-top: 3px;
+            color: #3b82f6;
         }
 
         .empty-state {
@@ -211,6 +300,15 @@
 
             .grades-panel-head {
                 padding: 12px 14px;
+            }
+
+            .feedback-card {
+                grid-template-columns: 1fr;
+            }
+
+            .feedback-icon {
+                width: 36px;
+                height: 36px;
             }
         }
     </style>
@@ -311,7 +409,7 @@
                                     </td>
                                     <td style="max-width:260px;">
                                         @if (trim((string) $submission->feedback))
-                                            <span class="text-muted">{{ \Illuminate\Support\Str::limit($submission->feedback, 90) }}</span>
+                                            <span class="feedback-preview"><i class="fa-solid fa-comment-dots"></i><span>{{ \Illuminate\Support\Str::limit($submission->feedback, 90) }}</span></span>
                                         @else
                                             <span class="text-muted">—</span>
                                         @endif
@@ -385,17 +483,40 @@
                     Chưa có nhận xét nào từ giáo viên.
                 </div>
             @else
-                @foreach ($recentFeedback as $submission)
-                    <div class="feedback-card">
-                        <div class="feedback-title">{{ $submission->assignment?->title ?? 'Bài tập' }}</div>
-                        <div class="feedback-meta">
-                            {{ $submission->assignment?->course?->title ?? '—' }}
-                            @if ($submission->grade !== null)
-                                · Điểm {{ rtrim(rtrim(number_format((float) $submission->grade, 1), '0'), '.') }}/{{ $submission->assignment?->grading_scale ?: 10 }}
+                @foreach ($recentFeedback as $feedback)
+                    <article class="feedback-card">
+                        <div class="feedback-icon {{ $feedback['type'] === 'quiz' ? 'is-quiz' : '' }}">
+                            <i class="fa-solid {{ $feedback['type'] === 'quiz' ? 'fa-clipboard-check' : 'fa-file-pen' }}"></i>
+                        </div>
+                        <div>
+                            <div class="feedback-head">
+                                <div>
+                                    <div class="feedback-title">
+                                        {{ $feedback['title'] }}
+                                        <span class="feedback-type">{{ $feedback['type_label'] }}</span>
+                                    </div>
+                                    <div class="feedback-meta">
+                                        {{ $feedback['course'] }}
+                                        @if($feedback['grader']) · {{ $feedback['grader'] }} @endif
+                                        @if($feedback['date']) · {{ $feedback['date']->format('d/m/Y H:i') }} @endif
+                                    </div>
+                                </div>
+                                @if ($feedback['score'] !== null)
+                                    <span class="score-pill">{{ rtrim(rtrim(number_format($feedback['score'], 2), '0'), '.') }}<span>/{{ rtrim(rtrim(number_format($feedback['scale'], 2), '0'), '.') }}</span></span>
+                                @endif
+                            </div>
+                            @if(!empty($feedback['subtitle']))
+                                <div class="feedback-context">{{ \Illuminate\Support\Str::limit($feedback['subtitle'], 180) }}</div>
+                            @endif
+                            <div class="feedback-message">{{ $feedback['feedback'] }}</div>
+                            @if($feedback['url'])
+                                <div class="feedback-footer">
+                                    <span class="text-muted small"><i class="fa-solid fa-circle-check text-success me-1"></i>Phản hồi chính thức từ giáo viên</span>
+                                    <a href="{{ $feedback['url'] }}" class="btn btn-sm btn-light border rounded-pill">Xem chi tiết</a>
+                                </div>
                             @endif
                         </div>
-                        <div>{{ $submission->feedback }}</div>
-                    </div>
+                    </article>
                 @endforeach
             @endif
         </div>
