@@ -49,6 +49,23 @@ class QuizAttemptQuestion extends Model
         return $this->grading_mode === 'manual';
     }
 
+    public function gradingRubric(): array
+    {
+        $rubric = collect($this->answer_key_snapshot['rubric'] ?? [])
+            ->filter(fn ($criterion) => is_array($criterion) && trim((string) ($criterion['criterion'] ?? '')) !== '')
+            ->map(fn ($criterion) => [
+                'criterion' => trim((string) $criterion['criterion']),
+                'max_score' => max(0, (float) ($criterion['max_score'] ?? 0)),
+            ])
+            ->values()
+            ->all();
+
+        return $rubric ?: [[
+            'criterion' => 'Mức độ đáp ứng yêu cầu',
+            'max_score' => max(0, (float) $this->max_score),
+        ]];
+    }
+
     public function typeLabel(): string
     {
         return Question::typeLabels()[$this->question_type] ?? 'Một đáp án';

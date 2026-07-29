@@ -276,7 +276,7 @@
                 </script>
 
                 <div class="footer-links">
-                    &copy; {{ date('Y') }} SmartLMS v1.1.6<br>
+                    &copy; {{ date('Y') }} SmartLMS v2.1.2<br>
                     Phát triển bởi
                     <a href="mailto:ngotanloi2424@gmail.com">
                         <strong>NgoTanLoi</strong>

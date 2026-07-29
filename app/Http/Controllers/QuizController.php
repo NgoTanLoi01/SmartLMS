@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use App\Services\NotificationCenter;
 use App\Services\QuizQuestionSelectionService;
 use Illuminate\Http\Request;
@@ -146,13 +147,57 @@ class QuizController extends Controller
             ->with('success', 'Đã xóa vĩnh viễn bài kiểm tra và các ca thi chưa phát sinh bài làm.');
     }
 
-    public function submissions($id)
+    public function submissions(Request $request, $id)
     {
-        $quiz = Quiz::with(['course.teacher', 'attempts.user', 'attempts.session'])->findOrFail($id);
+        $quiz = Quiz::with(['course.teacher'])->findOrFail($id);
         Gate::authorize('viewSubmissions', $quiz);
 
-        $attempts = $quiz->attempts()->orderBy('completed_at', 'desc')->get();
+        $allowedStatuses = [
+            QuizAttempt::STATUS_PENDING_GRADING,
+            QuizAttempt::STATUS_GRADED,
+            QuizAttempt::STATUS_RELEASED,
+            QuizAttempt::STATUS_SUBMITTED,
+        ];
+        $status = in_array($request->input('status'), $allowedStatuses, true)
+            ? $request->input('status')
+            : 'all';
+        $search = mb_substr(trim((string) $request->input('search')), 0, 100);
+        $sessionId = $request->integer('session_id') ?: null;
+        if ($sessionId && ! $quiz->sessions()->whereKey($sessionId)->exists()) {
+            $sessionId = null;
+        }
 
-        return view('quizzes.submissions', compact('quiz', 'attempts'));
+        $baseQuery = $quiz->attempts()->whereNotNull('completed_at');
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->where('status', QuizAttempt::STATUS_PENDING_GRADING)->count(),
+            'graded' => (clone $baseQuery)->where('status', QuizAttempt::STATUS_GRADED)->count(),
+            'released' => (clone $baseQuery)->where('status', QuizAttempt::STATUS_RELEASED)->count(),
+        ];
+
+        $attempts = $baseQuery
+            ->with(['user', 'session'])
+            ->withCount([
+                'attemptQuestions as manual_questions_count' => fn ($query) => $query->where('grading_mode', 'manual'),
+                'attemptQuestions as graded_manual_questions_count' => fn ($query) => $query
+                    ->where('grading_mode', 'manual')
+                    ->whereHas('answer', fn ($answer) => $answer->where('grading_status', 'graded')),
+            ])
+            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            ->when($sessionId, fn ($query) => $query->where('quiz_session_id', $sessionId))
+            ->when($search !== '', fn ($query) => $query->whereHas('user', function ($userQuery) use ($search) {
+                $userQuery->where(function ($candidate) use ($search) {
+                    $candidate->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('student_code', 'like', "%{$search}%");
+                });
+            }))
+            ->orderByRaw("CASE status WHEN 'pending_grading' THEN 0 WHEN 'graded' THEN 1 WHEN 'released' THEN 2 ELSE 3 END")
+            ->orderByDesc('completed_at')
+            ->paginate(15)
+            ->withQueryString();
+        $sessions = $quiz->sessions()->orderByDesc('starts_at')->get();
+
+        return view('quizzes.submissions', compact('quiz', 'attempts', 'stats', 'sessions', 'status', 'search', 'sessionId'));
     }
 }

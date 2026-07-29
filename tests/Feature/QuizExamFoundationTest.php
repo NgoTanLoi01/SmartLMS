@@ -195,15 +195,55 @@ class QuizExamFoundationTest extends TestCase
         $essayAnswer = $submitted->answers()->where('quiz_attempt_question_id', $questions[Question::TYPE_ESSAY]->id)->firstOrFail();
         $teacher = User::findOrFail($this->quiz->course->teacher_id);
 
+        $draft = $service->saveManualAnswerDraft($submitted, $essayAnswer, [1, null], 'Bản nháp nhận xét.', $teacher);
+        $this->assertSame(QuizAttempt::STATUS_PENDING_GRADING, $draft->status);
+        $this->assertNull($draft->score);
+        $this->assertSame([1, null], $essayAnswer->fresh()->rubric_scores);
+        $this->assertNull($essayAnswer->fresh()->graded_at);
+
         $graded = $service->gradeManualAnswer($submitted, $essayAnswer, [2, 1], 'Đáp ứng tốt yêu cầu.', $teacher);
         $this->assertSame(QuizAttempt::STATUS_GRADED, $graded->status);
         $this->assertSame(10.0, (float) $graded->score);
         $this->assertFalse($graded->resultIsReleased());
 
-        $this->session->update(['results_released_at' => now()]);
-        $released = $service->gradeManualAnswer($graded, $essayAnswer->fresh(), [2, 1], 'Đã duyệt.', $teacher);
+        $released = $service->releaseResult($graded);
         $this->assertSame(QuizAttempt::STATUS_RELEASED, $released->status);
         $this->assertTrue($released->resultIsReleased());
+        $this->assertNotNull($released->result_released_at);
+
+        $this->expectException(ValidationException::class);
+        $service->gradeManualAnswer($released, $essayAnswer->fresh(), [2, 1], 'Sửa sau công bố.', $teacher);
+    }
+
+    public function test_manual_grade_requires_every_rubric_criterion_before_completion(): void
+    {
+        $essay = Question::create([
+            'course_id' => $this->quiz->course_id,
+            'question_type' => Question::TYPE_ESSAY,
+            'question_text' => 'Giải thích semantic HTML.',
+            'answer_config' => [
+                'grading_mode' => 'manual',
+                'max_score' => 2,
+                'rubric' => [
+                    ['criterion' => 'Nội dung', 'max_score' => 1],
+                    ['criterion' => 'Ví dụ', 'max_score' => 1],
+                ],
+            ],
+            'difficulty' => 'easy',
+            'status' => 'published',
+        ]);
+        $this->quiz->update(['easy_count' => 2]);
+
+        $service = app(QuizExamService::class);
+        $attempt = $service->startOrResume($this->quiz->fresh(), $this->student, $this->session);
+        $question = $attempt->attemptQuestions->firstWhere('question_id', $essay->id);
+        $service->saveAnswer($attempt, $question->id, ['text' => 'Dùng thẻ có ý nghĩa.'], false, 2);
+        $submitted = $service->submit($attempt->fresh());
+        $answer = $submitted->answers()->where('quiz_attempt_question_id', $question->id)->firstOrFail();
+        $teacher = User::findOrFail($this->quiz->course->teacher_id);
+
+        $this->expectException(ValidationException::class);
+        $service->gradeManualAnswer($submitted, $answer, [1, null], null, $teacher);
     }
 
     public function test_questions_are_selected_by_exact_type_and_difficulty_distribution(): void

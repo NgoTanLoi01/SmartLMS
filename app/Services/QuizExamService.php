@@ -265,8 +265,59 @@ class QuizExamService
         ?string $feedback,
         User $grader
     ): QuizAttempt {
-        return DB::transaction(function () use ($attempt, $answer, $rubricScores, $feedback, $grader) {
+        return $this->persistManualGrade($attempt, $answer, $rubricScores, $feedback, $grader, true);
+    }
+
+    public function saveManualAnswerDraft(
+        QuizAttempt $attempt,
+        QuizAttemptAnswer $answer,
+        array $rubricScores,
+        ?string $feedback,
+        User $grader
+    ): QuizAttempt {
+        return $this->persistManualGrade($attempt, $answer, $rubricScores, $feedback, $grader, false);
+    }
+
+    public function releaseResult(QuizAttempt $attempt): QuizAttempt
+    {
+        return DB::transaction(function () use ($attempt) {
+            $lockedAttempt = QuizAttempt::query()->lockForUpdate()->findOrFail($attempt->id);
+
+            if ($lockedAttempt->status === QuizAttempt::STATUS_RELEASED) {
+                return $lockedAttempt;
+            }
+
+            if ($lockedAttempt->status !== QuizAttempt::STATUS_GRADED || $lockedAttempt->score === null) {
+                throw ValidationException::withMessages([
+                    'attempt' => 'Chỉ có thể công bố bài đã chấm hoàn tất.',
+                ]);
+            }
+
+            $lockedAttempt->update([
+                'status' => QuizAttempt::STATUS_RELEASED,
+                'result_released_at' => now(),
+            ]);
+
+            return $lockedAttempt->fresh(['session']);
+        }, 3);
+    }
+
+    private function persistManualGrade(
+        QuizAttempt $attempt,
+        QuizAttemptAnswer $answer,
+        array $rubricScores,
+        ?string $feedback,
+        User $grader,
+        bool $complete
+    ): QuizAttempt {
+        return DB::transaction(function () use ($attempt, $answer, $rubricScores, $feedback, $grader, $complete) {
             $lockedAttempt = QuizAttempt::query()->lockForUpdate()->with('session')->findOrFail($attempt->id);
+            if ($lockedAttempt->status === QuizAttempt::STATUS_RELEASED) {
+                throw ValidationException::withMessages([
+                    'attempt' => 'Kết quả đã được công bố nên không thể thay đổi điểm.',
+                ]);
+            }
+
             $question = QuizAttemptQuestion::query()
                 ->where('quiz_attempt_id', $lockedAttempt->id)
                 ->where('grading_mode', 'manual')
@@ -276,9 +327,20 @@ class QuizExamService
                 throw ValidationException::withMessages(['answer' => 'Câu trả lời không thuộc bài làm này.']);
             }
 
-            $rubric = collect($question->answer_key_snapshot['rubric'] ?? []);
-            $normalizedScores = $rubric->map(function ($criterion, $index) use ($rubricScores) {
-                $value = (float) ($rubricScores[$index] ?? 0);
+            $rubric = collect($question->gradingRubric());
+            $normalizedScores = $rubric->map(function ($criterion, $index) use ($rubricScores, $complete) {
+                $rawValue = $rubricScores[$index] ?? null;
+                if ($rawValue === null || $rawValue === '') {
+                    if ($complete) {
+                        throw ValidationException::withMessages([
+                            "rubric_scores.{$index}" => 'Vui lòng chấm đủ tất cả tiêu chí trước khi hoàn tất.',
+                        ]);
+                    }
+
+                    return null;
+                }
+
+                $value = (float) $rawValue;
                 $maximum = (float) ($criterion['max_score'] ?? 0);
                 if ($value < 0 || $value > $maximum) {
                     throw ValidationException::withMessages([
@@ -288,16 +350,26 @@ class QuizExamService
 
                 return $value;
             })->values()->all();
-            $score = round(array_sum($normalizedScores), 2);
+            $score = $complete ? round(array_sum($normalizedScores), 2) : null;
 
             $answer->update([
-                'grading_status' => 'graded',
+                'grading_status' => $complete ? 'graded' : 'pending',
                 'score' => $score,
                 'rubric_scores' => $normalizedScores,
                 'teacher_feedback' => trim((string) $feedback) ?: null,
                 'graded_by' => $grader->id,
-                'graded_at' => now(),
+                'graded_at' => $complete ? now() : null,
             ]);
+
+            if (! $complete) {
+                $lockedAttempt->update([
+                    'status' => QuizAttempt::STATUS_PENDING_GRADING,
+                    'score' => null,
+                    'graded_at' => null,
+                ]);
+
+                return $lockedAttempt->fresh(['session']);
+            }
 
             return $this->finalizeGradingIfComplete($lockedAttempt);
         }, 3);

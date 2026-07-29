@@ -276,6 +276,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::post('/quiz-sessions/{session}/release', [QuizSessionController::class, 'release'])->name('quiz-sessions.release');
         Route::get('/attempts/{attempt}/grade', [QuizGradingController::class, 'show'])->name('quiz-attempts.grade');
         Route::put('/attempts/{attempt}/answers/{answer}/grade', [QuizGradingController::class, 'update'])->name('quiz-attempts.grade-answer');
+        Route::post('/attempts/{attempt}/release', [QuizGradingController::class, 'release'])->name('quiz-attempts.release');
 
         // Quản lý câu hỏi trong đề thi cụ thể
         Route::post('/quizzes/{id}/questions', [QuestionController::class, 'store'])->name('questions.store');
