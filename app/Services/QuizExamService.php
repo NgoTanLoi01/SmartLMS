@@ -18,6 +18,7 @@ class QuizExamService
     public function __construct(
         private QuizQuestionSelectionService $questionSelector,
         private QuestionDifficultyAnalyticsService $difficultyAnalytics,
+        private HtmlCssCodeFormatter $codeFormatter,
     ) {}
 
     public function startOrResume(Quiz $quiz, User $student, ?QuizSession $session): QuizAttempt
@@ -453,7 +454,7 @@ class QuizExamService
                 ],
                 [
                     'language' => 'html_css',
-                    'starter_code' => (string) ($question->answer_config['starter_code'] ?? ''),
+                    'starter_code' => $this->codeFormatter->format((string) ($question->answer_config['starter_code'] ?? '')),
                     'explanation_mode' => (string) ($question->answer_config['explanation_mode'] ?? 'optional'),
                     'explanation_word_limit' => (int) ($question->answer_config['explanation_word_limit'] ?? 150),
                 ],

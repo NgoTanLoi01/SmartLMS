@@ -10,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 
 class QuestionDefinitionService
 {
+    public function __construct(private HtmlCssCodeFormatter $codeFormatter) {}
+
     public function validate(Request $request): array
     {
         $common = $request->validate([
@@ -219,7 +221,7 @@ class QuestionDefinitionService
                 'grading_mode' => 'manual',
                 'max_score' => (float) $data['max_score'],
                 'language' => 'html_css',
-                'starter_code' => $data['starter_code'],
+                'starter_code' => $this->codeFormatter->format($data['starter_code']),
                 'explanation_mode' => $data['explanation_mode'],
                 'explanation_word_limit' => (int) ($data['explanation_word_limit'] ?? 0),
                 'rubric' => $this->parseRubric($data['rubric_text'] ?? null, (float) $data['max_score']),

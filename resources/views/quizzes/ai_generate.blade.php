@@ -567,6 +567,8 @@
         </div>
     </div>
 
+    @include('quizzes.partials.code_editor_assets')
+
     <script>
         const processUrl = "{{ route('quizzes.ai_generate.process') }}";
         const saveUrl = "{{ route('quizzes.ai_generate.save') }}";
@@ -862,6 +864,7 @@
         function renderQuestions() {
             const container = document.getElementById('questionsContainer');
             container.innerHTML = generatedQuestions.map((q, index) => questionEditorHtml(q, index)).join('');
+            window.SmartLmsCodeEditor?.mount(container);
         }
 
         function escapeHtml(value) {
@@ -919,7 +922,7 @@
             if (!isCodeDebug) {
                 return `<div class="ai-manual-panel"><div class="ai-manual-grid">${commonFields}<div><label class="ai-editor-label">Giới hạn từ</label><input class="ai-editor-control" type="number" min="10" max="5000" value="${q.word_limit ?? 500}" data-manual-field="word_limit"></div><label class="ai-check-control"><input type="checkbox" ${q.allow_attachments ? 'checked' : ''} data-manual-field="allow_attachments"> Cho phép tệp đính kèm</label></div><label class="ai-editor-label">Rubric chấm điểm</label>${rubricHtml}</div>`;
             }
-            return `<div class="ai-manual-panel"><div class="ai-manual-grid">${commonFields}<div><label class="ai-editor-label">Yêu cầu giải thích</label><select class="ai-editor-control" data-manual-field="explanation_mode"><option value="required" ${q.explanation_mode === 'required' ? 'selected' : ''}>Bắt buộc</option><option value="optional" ${q.explanation_mode === 'optional' ? 'selected' : ''}>Không bắt buộc</option><option value="disabled" ${q.explanation_mode === 'disabled' ? 'selected' : ''}>Không sử dụng</option></select></div><div><label class="ai-editor-label">Giới hạn từ</label><input class="ai-editor-control" type="number" min="10" max="2000" value="${q.explanation_word_limit ?? 150}" data-manual-field="explanation_word_limit" ${q.explanation_mode === 'disabled' ? 'disabled' : ''}></div></div><label class="ai-editor-label">Mã HTML/CSS có lỗi</label><textarea class="ai-editor-control ai-code-editor mb-3" data-manual-field="starter_code" spellcheck="false">${escapeHtml(q.starter_code || '')}</textarea><label class="ai-editor-label">Rubric chấm điểm</label>${rubricHtml}</div>`;
+            return `<div class="ai-manual-panel"><div class="ai-manual-grid">${commonFields}<div><label class="ai-editor-label">Yêu cầu giải thích</label><select class="ai-editor-control" data-manual-field="explanation_mode"><option value="required" ${q.explanation_mode === 'required' ? 'selected' : ''}>Bắt buộc</option><option value="optional" ${q.explanation_mode === 'optional' ? 'selected' : ''}>Không bắt buộc</option><option value="disabled" ${q.explanation_mode === 'disabled' ? 'selected' : ''}>Không sử dụng</option></select></div><div><label class="ai-editor-label">Giới hạn từ</label><input class="ai-editor-control" type="number" min="10" max="2000" value="${q.explanation_word_limit ?? 150}" data-manual-field="explanation_word_limit" ${q.explanation_mode === 'disabled' ? 'disabled' : ''}></div></div><label class="ai-editor-label">Mã HTML/CSS có lỗi</label><div class="sl-code-editor sl-code-editor--compact mb-3" data-code-editor><div class="sl-code-editor__toolbar"><span class="sl-code-editor__meta"><i class="fa-solid fa-code"></i> Mã đề bài <span class="sl-code-editor__language">HTML/CSS</span></span><button type="button" class="sl-code-editor__format" data-format-code><i class="fa-solid fa-wand-magic-sparkles"></i> Định dạng mã</button></div><div class="sl-code-editor__stage"><pre class="sl-code-editor__highlight" aria-hidden="true"><code data-code-highlight></code></pre><textarea class="sl-code-editor__source" data-code-source data-manual-field="starter_code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Mã HTML và CSS có lỗi">${escapeHtml(q.starter_code || '')}</textarea></div></div><label class="ai-editor-label">Rubric chấm điểm</label>${rubricHtml}</div>`;
         }
 
         document.getElementById('questionsContainer').addEventListener('input', updateQuestionFromEditor);

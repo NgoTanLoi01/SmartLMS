@@ -59,9 +59,7 @@
         .numeric-entry { display:flex; align-items:center; gap:10px; }
         .numeric-entry .structured-input { max-width:320px; }
         .numeric-unit { padding:9px 12px; border-radius:9px; background:#f1f5f9; color:#475569; font-size:.85rem; font-weight:700; }
-        .essay-editor,.code-editor { min-height:250px; resize:vertical; line-height:1.65; }
-        .code-editor { min-height:400px; border:0; border-radius:0; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:.86rem; line-height:1.65; tab-size:2; background:#fbfdff; }
-        .code-editor:focus { box-shadow:inset 0 0 0 2px rgba(37,99,235,.55); }
+        .essay-editor { min-height:250px; resize:vertical; line-height:1.65; }
         .answer-toolbar { display:flex; justify-content:space-between; gap:12px; align-items:center; color:#64748b; font-size:.75rem; }
         .code-workspace { display:grid; grid-template-columns:minmax(420px,1.18fr) minmax(320px,.82fr); border:1px solid #cbd5e1; border-radius:12px; overflow:hidden; background:#fff; }
         .code-pane { min-width:0; display:flex; flex-direction:column; }
@@ -120,7 +118,7 @@
             .true-false-row { grid-template-columns:30px minmax(0,1fr); }
             .truth-buttons { grid-column:1 / -1; width:100%; }
             .blank-entry { grid-template-columns:1fr; gap:5px; }
-            .code-editor { min-height:320px; }
+            .sl-code-editor__stage { height:320px; }
             .preview-frame { min-height:260px; }
         }
         @media(max-width:520px) {
@@ -264,8 +262,16 @@
                                 <div class="structured-answer">
                                     <div class="code-workspace">
                                         <div class="code-pane">
-                                            <div class="code-pane-head"><span><i class="fa-solid fa-code"></i> Mã đã sửa</span><span class="code-language">HTML/CSS</span></div>
-                                            <textarea class="structured-input code-editor" data-answer-question="{{ $question->id }}" data-code-input spellcheck="false" aria-label="Mã HTML và CSS đã sửa">{{ $codePayload['code'] ?? $starterCode }}</textarea>
+                                            <div class="sl-code-editor border-0 rounded-0" data-code-editor>
+                                                <div class="sl-code-editor__toolbar">
+                                                    <span class="sl-code-editor__meta"><i class="fa-solid fa-code"></i> Mã HTML/CSS đã sửa <span class="sl-code-editor__language">HTML/CSS</span></span>
+                                                    <button type="button" class="sl-code-editor__format" data-format-code><i class="fa-solid fa-wand-magic-sparkles"></i> Định dạng mã</button>
+                                                </div>
+                                                <div class="sl-code-editor__stage">
+                                                    <pre class="sl-code-editor__highlight" aria-hidden="true"><code data-code-highlight></code></pre>
+                                                    <textarea class="sl-code-editor__source" data-code-source data-answer-question="{{ $question->id }}" data-code-input spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Mã HTML và CSS đã sửa">{{ $codePayload['code'] ?? $starterCode }}</textarea>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="preview-pane"><div class="preview-head"><span>Xem trước an toàn</span><button type="button" class="preview-button" data-preview-code="{{ $question->id }}"><i class="fa-solid fa-play"></i> Chạy thử</button></div><iframe class="preview-frame" sandbox="" data-preview-frame="{{ $question->id }}" title="Xem trước HTML/CSS"></iframe></div>
                                     </div>
@@ -307,6 +313,8 @@
             </aside>
         </div>
     </div>
+
+    @include('quizzes.partials.code_editor_assets')
 
     <script>
         (() => {

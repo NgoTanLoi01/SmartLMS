@@ -6,6 +6,11 @@ use App\Models\Question;
 
 class AiResponseValidator
 {
+    public function __construct(private ?HtmlCssCodeFormatter $codeFormatter = null)
+    {
+        $this->codeFormatter ??= new HtmlCssCodeFormatter;
+    }
+
     public function quizQuestions(array $questions, int $expectedQuantity): array
     {
         if (! array_is_list($questions) || count($questions) !== $expectedQuantity) {
@@ -181,7 +186,7 @@ class AiResponseValidator
 
         return [
             'max_score' => $maxScore,
-            'starter_code' => $starterCode,
+            'starter_code' => $this->codeFormatter->format($starterCode),
             'explanation_mode' => $mode,
             'explanation_word_limit' => (int) $wordLimit,
             'rubric' => $this->normalizeManualRubric($question, $maxScore),

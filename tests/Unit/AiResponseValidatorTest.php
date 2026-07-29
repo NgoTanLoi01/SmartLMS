@@ -47,6 +47,7 @@ class AiResponseValidatorTest extends TestCase
         $this->assertSame(10.0, $questions[4]['max_score']);
         $this->assertSame(500, $questions[4]['word_limit']);
         $this->assertSame('required', $questions[5]['explanation_mode']);
+        $this->assertStringContainsString("<style>\n  .btn {\n    color red;", $questions[5]['starter_code']);
         $this->assertSame(10.0, array_sum(array_column($questions[5]['rubric'], 'max_score')));
     }
 
