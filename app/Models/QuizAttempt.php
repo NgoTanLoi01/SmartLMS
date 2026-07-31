@@ -54,11 +54,15 @@ class QuizAttempt extends Model
 
     public function scopeResultsReleased($query)
     {
-        return $query->whereNotNull('completed_at')
-            ->whereIn('status', [self::STATUS_SUBMITTED, self::STATUS_GRADED, self::STATUS_RELEASED])
+        $table = $query->getModel()->getTable();
+
+        return $query->whereNotNull("{$table}.completed_at")
+            ->whereIn("{$table}.status", [self::STATUS_SUBMITTED, self::STATUS_GRADED, self::STATUS_RELEASED])
             ->where(function ($query) {
-                $query->whereNull('quiz_session_id')
-                    ->orWhere('result_released_at', '<=', now())
+                $table = $query->getModel()->getTable();
+
+                $query->whereNull("{$table}.quiz_session_id")
+                    ->orWhere("{$table}.result_released_at", '<=', now())
                     ->orWhereHas('session', function ($sessionQuery) {
                         $sessionQuery->where('result_release_policy', QuizSession::RELEASE_IMMEDIATE)
                             ->orWhere('results_released_at', '<=', now())

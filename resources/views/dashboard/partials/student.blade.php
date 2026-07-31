@@ -5,7 +5,7 @@
                 $recentFeedback = $data['recent_feedback'] ?? collect();
             @endphp
 
-            <div class="section-heading anim-2">Hôm nay của em</div>
+            <div class="section-heading anim-2">Hôm nay của bạn</div>
             <div class="teacher-command-grid anim-2 mb-4">
                 <div class="teacher-next-class">
                     <div class="teacher-next-class__eyebrow">Lịch học tiếp theo</div>
@@ -24,7 +24,7 @@
                         <a href="{{ route('courses.show', $studentNextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fa-solid fa-arrow-right"></i> Mở khóa học</a>
                     @else
                         <h3 class="teacher-next-class__title">Chưa có lịch học sắp tới</h3>
-                        <div class="teacher-next-class__meta"><span><i class="fa-solid fa-calendar-check"></i>Em có thể tiếp tục bài học đang dở.</span></div>
+                        <div class="teacher-next-class__meta"><span><i class="fa-solid fa-calendar-check"></i>Bạn có thể tiếp tục bài học đang dở.</span></div>
                     @endif
                 </div>
 
@@ -57,6 +57,9 @@
                         <div class="stat-card__body">
                             <div class="stat-card__label">Bài tập còn thiếu</div>
                             <div class="stat-card__value">{{ $data['missing_assignments_count'] ?? 0 }}</div>
+                            @if (($data['overdue_assignments_count'] ?? 0) > 0)
+                                <div class="stat-card__hint text-danger">{{ $data['overdue_assignments_count'] }} bài đã quá hạn</div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -64,7 +67,7 @@
                     <div class="stat-card stat-card--violet">
                         <div class="stat-card__icon"><i class="fa-solid fa-clipboard-list"></i></div>
                         <div class="stat-card__body">
-                            <div class="stat-card__label">Quiz chưa làm</div>
+                            <div class="stat-card__label">Quiz có thể làm</div>
                             <div class="stat-card__value">{{ $data['pending_quizzes_count'] ?? 0 }}</div>
                         </div>
                     </div>
@@ -114,30 +117,34 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <span class="icon-dot idot--amber"><i class="fa-solid fa-clock"></i></span>
-                                Deadline & Bài kiểm tra
+                                Việc cần làm ngay
                             </h6>
                         </div>
                         <div style="max-height:300px;overflow-y:auto">
                             @php
-                                $deadlines = $data['upcoming_deadlines'] ?? [];
+                                $assignments = $data['pending_assignments'] ?? [];
                                 $quizzes = $data['pending_quizzes'] ?? [];
                             @endphp
 
-                            @foreach ($deadlines as $dl)
-                                <div class="todo-item">
+                            @foreach ($assignments as $assignment)
+                                @php
+                                    $dueDate = $assignment->due_date ? \Carbon\Carbon::parse($assignment->due_date) : null;
+                                    $isOverdue = $dueDate?->isPast() ?? false;
+                                @endphp
+                                <div class="todo-item {{ $isOverdue ? 'todo-item--overdue' : '' }}">
                                     <div>
-                                        <span class="bdg bdg--warning mb-1">Bài tập</span>
-                                        <div class="todo-item__label">{{ $dl->title }}</div>
+                                        <span class="bdg {{ $isOverdue ? 'bdg--danger' : 'bdg--warning' }} mb-1">{{ $isOverdue ? 'Quá hạn' : 'Bài tập' }}</span>
+                                        <div class="todo-item__label">{{ $assignment->title }}</div>
                                         <div class="todo-item__sub"><i
-                                                class="fa-solid fa-book me-1"></i>{{ $dl->course_title ?? 'N/A' }}</div>
+                                                class="fa-solid fa-book me-1"></i>{{ $assignment->course_title ?? 'N/A' }}</div>
                                     </div>
                                     <div style="text-align:right;flex-shrink:0">
-                                        <div class="todo-item__deadline">
+                                        <div class="todo-item__deadline {{ $isOverdue ? 'text-danger' : '' }}">
                                             <i class="fa-solid fa-hourglass-half me-1"></i>
-                                            {{ \Carbon\Carbon::parse($dl->due_date)->format('H:i - d/m/Y') }}
+                                            {{ $dueDate ? $dueDate->format('H:i - d/m/Y') : 'Không có hạn' }}
                                         </div>
-                                        <a href="{{ route('courses.show', $dl->course_id ?? 0) }}"
-                                            class="btn-xs btn-xs--warning">Nộp bài</a>
+                                        <a href="{{ route('courses.show', $assignment->course_id ?? 0) }}"
+                                            class="btn-xs {{ $isOverdue ? 'btn-xs--danger' : 'btn-xs--warning' }}">Nộp bài</a>
                                     </div>
                                 </div>
                             @endforeach
@@ -149,23 +156,26 @@
                                         <div class="todo-item__label" style="color:var(--brand)">{{ $quiz->title }}
                                         </div>
                                         <div class="todo-item__sub"><i
-                                                class="fa-solid fa-book me-1"></i>{{ $quiz->course_title ?? 'N/A' }}</div>
+                                                class="fa-solid fa-book me-1"></i>{{ $quiz->course?->title ?? 'N/A' }}</div>
+                                        @if ($quiz->dashboard_session_name)
+                                            <div class="todo-item__sub"><i class="fa-solid fa-users-rectangle me-1"></i>{{ $quiz->dashboard_session_name }}</div>
+                                        @endif
                                     </div>
                                     <div style="text-align:right;flex-shrink:0">
                                         <div class="todo-item__time-limit">
                                             <i class="fa-solid fa-stopwatch me-1"></i>{{ $quiz->time_limit }} phút
                                         </div>
-                                        <a href="{{ route('courses.show', $quiz->course_id ?? 0) }}"
-                                            class="btn-xs btn-xs--primary">Làm ngay</a>
+                                        <a href="{{ route('quizzes.attempt', $quiz) }}"
+                                            class="btn-xs btn-xs--primary">{{ $quiz->dashboard_action_label }}</a>
                                     </div>
                                 </div>
                             @endforeach
 
-                            @if (count($deadlines) === 0 && count($quizzes) === 0)
+                            @if (count($assignments) === 0 && count($quizzes) === 0)
                                 <div class="empty-state">
                                     <div class="empty-icon" style="color:var(--success)"><i
                                             class="fa-solid fa-glass-cheers"></i></div>
-                                    <p>Tuyệt vời! Bạn đã hoàn thành hết các nhiệm vụ.</p>
+                                    <p>Tuyệt vời! Hiện không có nhiệm vụ nào cần xử lý ngay.</p>
                                 </div>
                             @endif
                         </div>

@@ -2,9 +2,9 @@
 
             <div class="section-heading anim-2">Cần xử lý</div>
             <div class="teacher-priority-grid anim-2 mb-4">
-                <a href="{{ route('courses.index', ['status' => 'draft']) }}" class="teacher-priority-card teacher-priority-card--amber">
-                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-file-pen"></i></span>
-                    <span><span class="teacher-priority-card__label">Khóa học bản nháp</span><span class="teacher-priority-card__value">{{ $data['draft_courses_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Nội dung chưa được xuất bản.</span></span>
+                <a href="{{ route('users.index') }}" class="teacher-priority-card teacher-priority-card--amber">
+                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-user-shield"></i></span>
+                    <span><span class="teacher-priority-card__label">Tài khoản cần rà soát</span><span class="teacher-priority-card__value">{{ $data['account_attention_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Ngừng hoạt động hoặc đã hết hạn.</span></span>
                     <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
                 <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--danger">
@@ -17,9 +17,9 @@
                     <span><span class="teacher-priority-card__label">Lớp chưa có khóa</span><span class="teacher-priority-card__value">{{ $data['classes_without_courses_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Cần gắn nội dung học tập.</span></span>
                     <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
-                <a href="{{ route('courses.index', ['status' => 'archived']) }}" class="teacher-priority-card teacher-priority-card--green">
-                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-box-archive"></i></span>
-                    <span><span class="teacher-priority-card__label">Đã lưu trữ</span><span class="teacher-priority-card__value">{{ $data['archived_courses_count'] ?? 0 }}</span><span class="teacher-priority-card__hint">Khóa học đang được lưu trữ.</span></span>
+                <a href="{{ route('assignments.index') }}" class="teacher-priority-card teacher-priority-card--green">
+                    <span class="teacher-priority-card__icon"><i class="fa-solid fa-pen-to-square"></i></span>
+                    <span><span class="teacher-priority-card__label">Tồn đọng chấm bài</span><span class="teacher-priority-card__value">{{ $data['pending_grades'] ?? 0 }}</span><span class="teacher-priority-card__hint">{{ $data['pending_assignment_grades'] ?? 0 }} bài tập · {{ $data['pending_quiz_grades'] ?? 0 }} quiz.</span></span>
                     <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
             </div>
@@ -29,7 +29,7 @@
                     <div class="stat-card stat-card--blue">
                         <div class="stat-card__icon"><i class="fa-solid fa-users"></i></div>
                         <div class="stat-card__body">
-                            <div class="stat-card__label">Học sinh</div>
+                            <div class="stat-card__label">Học sinh hoạt động</div>
                             <div class="stat-card__value">{{ $data['total_students'] }}</div>
                         </div>
                     </div>
@@ -38,7 +38,7 @@
                     <div class="stat-card stat-card--teal">
                         <div class="stat-card__icon"><i class="fa-solid fa-chalkboard-teacher"></i></div>
                         <div class="stat-card__body">
-                            <div class="stat-card__label">Giáo viên</div>
+                            <div class="stat-card__label">Giáo viên hoạt động</div>
                             <div class="stat-card__value">{{ $data['total_teachers'] }}</div>
                         </div>
                     </div>
@@ -57,13 +57,38 @@
                 </div>
                 <div class="col-6 col-md-3">
                     <div class="stat-card stat-card--amber">
-                        <div class="stat-card__icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <div class="stat-card__icon"><i class="fa-solid fa-address-card"></i></div>
                         <div class="stat-card__body">
-                            <div class="stat-card__label">Bài chờ chấm</div>
-                            <div class="stat-card__value">{{ $data['pending_grades'] ?? 0 }}</div>
+                            <div class="stat-card__label">Tổng tài khoản</div>
+                            <div class="stat-card__value">{{ $data['total_accounts'] ?? 0 }}</div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="admin-health-grid anim-3 mb-4">
+                <a href="{{ route('courses.index', ['status' => 'draft']) }}" class="admin-health-item">
+                    <span><i class="fa-solid fa-file-pen"></i> Khóa triển khai nháp</span>
+                    <strong>{{ $data['draft_courses_count'] ?? 0 }}</strong>
+                </a>
+                <a href="{{ route('courses.index') }}" class="admin-health-item">
+                    <span><i class="fa-solid fa-arrows-rotate"></i> Chờ đồng bộ mẫu</span>
+                    <strong>{{ $data['template_sync_pending_count'] ?? 0 }}</strong>
+                </a>
+                <a href="{{ route('operations.dashboard') }}" class="admin-health-item">
+                    <span><i class="fa-solid fa-triangle-exclamation"></i> Queue thất bại</span>
+                    <strong>{{ $data['failed_jobs_count'] ?? 0 }}</strong>
+                </a>
+                <a href="{{ route('system.backups.index') }}" class="admin-health-item">
+                    <span><i class="fa-solid fa-database"></i> Backup gần nhất</span>
+                    <strong class="admin-health-item__text {{ ($data['latest_backup']?->status ?? null) === 'success' ? 'text-success' : 'text-warning' }}">
+                        @if ($data['latest_backup'] ?? null)
+                            {{ $data['latest_backup']->status === 'success' ? 'Thành công' : 'Cần kiểm tra' }}
+                        @else
+                            Chưa có
+                        @endif
+                    </strong>
+                </a>
             </div>
 
             <div class="row g-3 anim-4">
@@ -106,6 +131,9 @@
                                                     class="bdg {{ $r === 'teacher' ? 'bdg--info' : ($r === 'admin' ? 'bdg--dark' : 'bdg--primary') }}">
                                                     {{ strtoupper($r) }}
                                                 </span>
+                                                @if (!$user->canAccessSystem())
+                                                    <span class="bdg bdg--danger">Ngừng hoạt động</span>
+                                                @endif
                                             </td>
                                             <td
                                                 style="color:var(--text-muted);font-size:.78rem;font-family:var(--font-mono)">

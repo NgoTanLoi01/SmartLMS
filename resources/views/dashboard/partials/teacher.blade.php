@@ -4,7 +4,7 @@
                 $todaySchedules = $data['today_schedules_count'] ?? 0;
                 $attentionCount = $data['attention_students_count'] ?? 0;
                 $nextSchedule = $data['next_schedule'] ?? null;
-                $prioritySubmissions = $data['priority_submissions'] ?? collect();
+                $gradingQueue = $data['grading_queue'] ?? collect();
                 $prioritySuggestions = $data['teacher_priority_suggestions'] ?? [];
             @endphp
 
@@ -16,7 +16,7 @@
                     <span>
                         <span class="teacher-priority-card__label">Cần chấm</span>
                         <span class="teacher-priority-card__value">{{ $pendingGrades }}</span>
-                        <span class="teacher-priority-card__hint">Bài nộp đang chờ giáo viên phản hồi.</span>
+                        <span class="teacher-priority-card__hint">{{ $data['pending_assignment_grades'] ?? 0 }} bài tập · {{ $data['pending_quiz_grades'] ?? 0 }} quiz tự luận.</span>
                     </span>
                     <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
@@ -80,8 +80,7 @@
                         </div>
                         <div class="d-flex flex-wrap gap-2">
                             <a href="{{ route('courses.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fa-solid fa-book-open"></i> Vào khóa học</a>
-                            <a href="{{ route('attendance.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--ghost"><i class="fa-solid fa-user-check"></i> Điểm danh</a>
-                            <a href="{{ route('courses.show', ['course' => $nextSchedule->course_id, 'presentation' => 1]) }}" class="btn-xs btn-xs--ghost"><i class="fa-solid fa-display"></i> Trình chiếu</a>
+                            <a href="{{ route('attendance.show', $nextSchedule->course_id) }}" class="btn-xs btn-xs--primary"><i class="fa-solid fa-user-check"></i> Điểm danh</a>
                         </div>
                     @else
                         <h3 class="teacher-next-class__title">Chưa có ca dạy sắp tới</h3>
@@ -194,6 +193,14 @@
                                             class="bdg {{ $student->avg_grade !== null && $student->avg_grade < 5 ? 'bdg--danger' : 'bdg--muted' }} mb-1">
                                             TB {{ $student->avg_grade !== null ? round($student->avg_grade, 1) : 'N/A' }}
                                         </div>
+                                        <div class="d-flex flex-wrap gap-1 justify-content-end mb-2">
+                                            @if (($student->missing_count ?? 0) > 0)
+                                                <span class="bdg bdg--warning">Thiếu {{ $student->missing_count }} bài</span>
+                                            @endif
+                                            @if (($student->absence_count ?? 0) >= 3)
+                                                <span class="bdg bdg--danger">Vắng {{ $student->absence_count }} buổi</span>
+                                            @endif
+                                        </div>
                                         <a href="{{ route('classes.students.show', ['classId' => $student->class_id, 'studentId' => $student->id]) }}"
                                             class="btn-xs btn-xs--primary">
                                             Hồ sơ
@@ -222,39 +229,35 @@
                                 <span class="icon-dot idot--red"><i class="fa-solid fa-inbox"></i></span>
                                 Bài cần chấm ưu tiên
                             </h6>
-                            <span class="bdg bdg--danger">{{ $prioritySubmissions->count() }} bài</span>
+                            <span class="bdg bdg--danger">{{ $pendingGrades }} mục</span>
                         </div>
                         <div class="teacher-list-scroll">
-                            @forelse ($prioritySubmissions as $sub)
+                            @forelse ($gradingQueue as $item)
                                 @php
-                                    $dueDate = $sub->due_date ? \Carbon\Carbon::parse($sub->due_date) : null;
-                                    $submittedAt = $sub->submitted_at
-                                        ? \Carbon\Carbon::parse($sub->submitted_at)
-                                        : \Carbon\Carbon::parse($sub->created_at);
-                                    $isOverdue = $dueDate && $dueDate->isPast();
+                                    $queuedAt = \Carbon\Carbon::parse($item->queued_at);
+                                    $isQuiz = $item->type === 'quiz';
                                 @endphp
                                 <div class="priority-submission">
                                     <div class="priority-submission__main">
                                         <span
-                                            class="feed-item__avatar">{{ mb_strtoupper(mb_substr($sub->student_name, 0, 1)) }}</span>
+                                            class="feed-item__avatar">{{ mb_strtoupper(mb_substr($item->student_name, 0, 1)) }}</span>
                                         <div class="min-w-0">
-                                            <div class="priority-submission__title">{{ $sub->assignment_title ?? 'N/A' }}
+                                            <div class="priority-submission__title">{{ $item->title }}
                                             </div>
                                             <div class="priority-submission__meta">
-                                                {{ $sub->student_name }} · {{ $sub->course_title ?? 'N/A' }}
+                                                {{ $item->student_name }} · {{ $item->course_title }}
                                             </div>
                                             <div class="d-flex flex-wrap gap-2 mt-2">
-                                                <span class="bdg {{ $isOverdue ? 'bdg--danger' : 'bdg--warning' }}">
-                                                    {{ $isOverdue ? 'Quá hạn' : 'Đến hạn' }}
-                                                    {{ $dueDate ? $dueDate->format('d/m H:i') : 'chưa rõ' }}
+                                                <span class="bdg {{ $isQuiz ? 'bdg--primary' : 'bdg--warning' }}">
+                                                    {{ $isQuiz ? 'Quiz tự luận · lượt '.($item->attempt_number ?? 1) : 'Bài tập' }}
                                                 </span>
                                                 <span class="bdg bdg--muted">
-                                                    Nộp {{ $submittedAt->diffForHumans() }}
+                                                    Chờ {{ $queuedAt->diffForHumans(null, true) }}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <a href="{{ route('assignments.submissions.review', $sub->id) }}"
+                                    <a href="{{ $item->action_url }}"
                                         class="btn-xs btn-xs--danger">
                                         <i class="fa-solid fa-pen"></i> Chấm ngay
                                     </a>
@@ -263,7 +266,7 @@
                                 <div class="empty-state">
                                     <div class="empty-icon" style="color:var(--success)"><i
                                             class="fa-solid fa-circle-check"></i></div>
-                                    <p>Tuyệt vời! Thầy / Cô đã chấm hết bài.</p>
+                                    <p>Tuyệt vời! Thầy / Cô đã xử lý hết bài tập và quiz tự luận.</p>
                                 </div>
                             @endforelse
                         </div>

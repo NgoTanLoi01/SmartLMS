@@ -1487,7 +1487,7 @@ body {
     gap: 24px;
     margin-bottom: 24px;
     overflow: hidden;
-    padding: 28px;
+    padding: 22px 26px;
     position: relative;
 }
 
@@ -1573,7 +1573,7 @@ body {
 }
 
 .lms-hero__side img {
-    max-height: 170px;
+    max-height: 140px;
     object-fit: contain;
     width: min(240px, 100%);
     animation: heroCharacterFloat 5s ease-in-out infinite;
@@ -1685,6 +1685,71 @@ body {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 18px;
+}
+
+.admin-health-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-health-item {
+    align-items: center;
+    background: rgba(255, 255, 255, .94);
+    border: 1px solid rgba(226, 232, 240, .95);
+    border-radius: 18px;
+    color: #475569;
+    display: flex;
+    font-size: 13px;
+    font-weight: 800;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 14px 16px;
+    text-decoration: none;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.admin-health-item:hover {
+    border-color: rgba(37, 99, 235, .28);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, .07);
+    color: #1d4ed8;
+    transform: translateY(-2px);
+}
+
+.admin-health-item span {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.admin-health-item strong {
+    color: #0f172a;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.admin-health-item__text {
+    font-size: 13px !important;
+    white-space: nowrap;
+}
+
+.admin-health-item strong.text-success {
+    color: #15803d;
+}
+
+.admin-health-item strong.text-warning {
+    color: #b45309;
+}
+
+.stat-card__hint {
+    font-size: 11px;
+    font-weight: 800;
+    margin-top: 3px;
+}
+
+.todo-item--overdue {
+    background: rgba(254, 242, 242, .7);
+    border-color: rgba(239, 68, 68, .22);
 }
 
 .teacher-priority-card,
@@ -1871,6 +1936,10 @@ body {
 }
 
 @media (max-width: 1199.98px) {
+    .admin-health-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .teacher-priority-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1882,6 +1951,9 @@ body {
 }
 
 @media (max-width: 767.98px) {
+    .admin-health-grid {
+        grid-template-columns: 1fr;
+    }
     .dashboard-wrap {
         padding: 14px !important;
     }

@@ -66,7 +66,7 @@
                             type: 'donut',
                             height: 280
                         },
-                        colors: ['#10b981', '#f43f5e'],
+                        colors: ['#10b981', '#f59e0b', '#8b5cf6'],
                         plotOptions: {
                             pie: {
                                 donut: {

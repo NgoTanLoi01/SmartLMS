@@ -672,11 +672,11 @@
                     SmartLMS
                 </div>
                 <h1 class="page-title">
-                    {{ auth()->user()->role === 'student' ? 'Khóa học của em' : 'Khóa học của tôi' }}
+                    {{ auth()->user()->role === 'student' ? 'Khóa học của bạn' : 'Khóa học của tôi' }}
                 </h1>
                 <p class="page-subtitle">
                     {{ auth()->user()->role === 'student'
-                        ? 'Tiếp tục học các khóa đang tham gia và theo dõi tiến độ của em.'
+                        ? 'Tiếp tục học các khóa đang tham gia và theo dõi tiến độ của bạn.'
                         : 'Quản lý khóa đang dạy, khóa mẫu và nội dung học tập trên SmartLMS.' }}
                 </p>
             </div>

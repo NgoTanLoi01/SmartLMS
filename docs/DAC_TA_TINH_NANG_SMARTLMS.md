@@ -69,15 +69,16 @@ Admin có phạm vi dữ liệu toàn hệ thống và kế thừa hầu hết c
 
 **Chức năng đã có:**
 
-- Thống kê tổng số Student, Teacher, lớp và khóa học triển khai.
-- Biểu đồ phân bố tài khoản theo vai trò.
-- Hiển thị số bài nộp đang chờ chấm.
+- Thống kê riêng Student/Teacher còn quyền truy cập, tổng tài khoản, lớp và khóa học triển khai.
+- Biểu đồ phân bố tài khoản đang hoạt động theo vai trò; người dùng mới bị khóa/hết hạn được đánh dấu.
+- Hiển thị tổng hàng đợi chấm gồm bài tập và quiz tự luận.
 - Hiển thị lịch học trong ngày.
 - Danh sách người dùng mới tạo gần đây.
 - Tổng quan các lớp đông học sinh, giáo viên phụ trách và khóa học được gắn.
 - Danh sách khóa học mới gần đây.
-- Cảnh báo số khóa học nháp, khóa học đã lưu trữ, lớp chưa phân giáo viên và lớp chưa gắn khóa học.
-- Liên kết nhanh đến các khu vực quản lý liên quan.
+- Cảnh báo tài khoản cần rà soát, lớp chưa phân giáo viên và lớp chưa gắn khóa học.
+- Theo dõi nhanh khóa triển khai nháp, khóa chờ đồng bộ mẫu, failed job và trạng thái backup gần nhất.
+- Liên kết nhanh đến quản lý người dùng, lớp, khóa học, vận hành, backup và huấn luyện AI.
 
 ## ADM-02. Quản lý tài khoản người dùng
 
@@ -415,12 +416,12 @@ Teacher có gần đủ công cụ đào tạo như Admin nhưng bị giới h�
 
 ## TCH-01. Dashboard giáo viên
 
-- Thống kê số khóa học, lớp, học sinh và bài nộp chờ chấm thuộc phạm vi của mình.
-- Biểu đồ bài nộp đã chấm/chờ chấm.
+- Thống kê số khóa học, lớp, học sinh và tổng hàng đợi chấm thuộc phạm vi của mình.
+- Biểu đồ tách bài tập đã chấm, bài tập chờ chấm và quiz tự luận.
 - Hiển thị lịch dạy tuần này, số ca hôm nay và ca dạy tiếp theo.
 - Truy cập nhanh vào khóa học, điểm danh và chế độ trình chiếu.
-- Danh sách bài nộp mới/chờ chấm ưu tiên.
-- Danh sách học sinh có điểm trung bình dưới 5 cần chú ý.
+- Hàng đợi hợp nhất bài tập và quiz tự luận, ưu tiên mục đã chờ lâu nhất.
+- Danh sách học sinh cần chú ý theo điểm đã quy đổi về thang 10, bài quá hạn chưa nộp hoặc từ 3 lượt vắng.
 - Gợi ý ưu tiên dựa trên lịch sắp tới, bài chờ chấm và học sinh cần theo dõi.
 
 ## TCH-02. Chương trình và khóa học của mình
@@ -526,9 +527,9 @@ Student là vai trò học tập; phạm vi luôn bị giới hạn theo lớp �
 - Xem lịch học tiếp theo và lịch trong tuần.
 - Tiếp tục khóa học đang học dở.
 - Xem tiến độ tối đa 5 khóa học gần đây theo số bài đã hoàn thành.
-- Xem tối đa 5 bài tập sắp đến hạn chưa nộp và tổng số bài còn thiếu.
-- Xem tối đa 5 quiz chưa làm và tổng số quiz đang chờ.
-- Xem điểm quiz trung bình và biểu đồ 5 kết quả gần đây.
+- Xem tối đa 5 bài tập chưa nộp, ưu tiên bài quá hạn, và tổng số bài còn thiếu/quá hạn.
+- Xem tối đa 5 quiz thực sự có thể bắt đầu, tiếp tục hoặc làm lại trong ca hiện tại.
+- Xem điểm quiz trung bình theo kết quả tốt nhất của từng quiz và biểu đồ 5 quiz gần đây.
 - Xem tối đa 4 điểm/nhận xét bài tập mới nhất.
 - Nhận diện lịch có ghi chú thi bằng hiển thị nổi bật.
 

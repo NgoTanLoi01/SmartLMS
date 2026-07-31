@@ -36,7 +36,7 @@
                 </p>
                 <div class="lms-hero__date">
                     <i class="fa-regular fa-calendar-days"></i>
-                    {{ \Carbon\Carbon::now()->translatedFormat('l, d/m/Y') }}
+                    {{ \Carbon\Carbon::now($data['dashboard_timezone'] ?? config('app.timezone'))->translatedFormat('l, d/m/Y') }}
                 </div>
             </div>
             <div class="lms-hero__side">
@@ -63,10 +63,14 @@
                         học</a>
                     <a href="{{ route('documents.upload') }}" class="quick-action"><i class="fa-solid fa-robot"></i> Huấn luyện
                         AI</a>
+                    <a href="{{ route('operations.dashboard') }}" class="quick-action"><i class="fa-solid fa-gauge-high"></i> Vận hành</a>
+                    <a href="{{ route('system.backups.index') }}" class="quick-action"><i class="fa-solid fa-database"></i> Backup</a>
                 @else
                     <a href="{{ route('courses.index') }}" class="quick-action"><i class="fa-solid fa-book-open"></i> Vào học</a>
                     <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fa-solid fa-paper-plane"></i> Bài
                         tập</a>
+                    <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fa-solid fa-calendar-days"></i> Lịch học</a>
+                    <a href="{{ route('students.grades') }}" class="quick-action"><i class="fa-solid fa-chart-line"></i> Điểm số</a>
                 @endif
             </div>
         @endif
