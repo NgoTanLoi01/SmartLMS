@@ -55,7 +55,7 @@
                 <a href="{{ route('quizzes.submissions', $attempt->quiz) }}" class="btn btn-sm btn-light bg-white bg-opacity-10 border border-white border-opacity-25 text-white rounded-pill px-3 mb-3"><i class="fa-solid fa-arrow-left me-1"></i> Danh sách bài nộp</a>
                 <div class="small text-uppercase fw-bold opacity-75">{{ $attempt->quiz->title }}</div>
                 <h1 class="grade-topbar__title">{{ $attempt->user->name }}</h1>
-                <div class="opacity-75 small">{{ $attempt->user->student_code ?: $attempt->user->email }} · Nộp lúc {{ $attempt->completed_at?->format('H:i, d/m/Y') }}</div>
+                <div class="opacity-75 small">{{ $attempt->user->student_code ?: $attempt->user->email }} · Lượt {{ $attempt->attempt_number ?? 1 }} · Nộp lúc {{ $attempt->completed_at?->format('H:i, d/m/Y') }}</div>
             </div>
             <div class="col-lg-4">
                 <div class="d-flex justify-content-between small fw-bold mb-2"><span>Tiến độ chấm câu tự luận</span><span>{{ $gradingProgress['graded'] }}/{{ $gradingProgress['total'] }}</span></div>

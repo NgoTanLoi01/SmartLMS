@@ -11,6 +11,7 @@ use App\Models\LearningProgram;
 use App\Models\Lesson;
 use App\Models\Question;
 use App\Models\QuizAttempt;
+use App\Models\QuizSession;
 use App\Services\CourseCloningService;
 use App\Services\QuizQuestionSelectionService;
 use App\Services\StoredAssetReferenceService;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CourseController extends Controller
 {
@@ -126,7 +129,7 @@ class CourseController extends Controller
             'teacher',
             'classes',
             'modules.lessons.assignments',
-            'quizzes',
+            'quizzes.sessions:id,quiz_id',
             'archivedQuizzes:id,course_id,title,status',
         ])->findOrFail($id);
         $this->authorizeCourseAccess($course);
@@ -229,15 +232,41 @@ class CourseController extends Controller
             $userSubmissions = AssignmentSubmission::where('user_id', $user->id)->whereIn('assignment_id', $assignmentIds)->get()->keyBy('assignment_id'); // Key hóa theo ID bài tập để View check cực nhanh
         }
         $userQuizAttempts = [];
+        $userQuizCanRetry = [];
         if (auth()->check() && auth()->user()->role === 'student') {
-            $userQuizAttempts = QuizAttempt::where('user_id', auth()->id())
+            $attemptsByQuiz = QuizAttempt::where('user_id', auth()->id())
                 ->with('session')
                 ->whereIn('quiz_id', $course->quizzes->pluck('id'))
+                ->orderBy('attempt_number')
+                ->get()
+                ->groupBy('quiz_id');
+            $userQuizAttempts = $attemptsByQuiz->map->last();
+
+            $openSessions = QuizSession::query()
+                ->whereIn('quiz_id', $course->quizzes->pluck('id'))
+                ->whereHas('candidates', fn ($query) => $query->where('users.id', auth()->id()))
+                ->whereIn('status', [QuizSession::STATUS_SCHEDULED, QuizSession::STATUS_OPEN])
+                ->where('starts_at', '<=', now())
+                ->where('ends_at', '>=', now())
+                ->orderBy('starts_at')
                 ->get()
                 ->keyBy('quiz_id');
+
+            foreach ($course->quizzes as $quiz) {
+                $quizAttempts = $attemptsByQuiz->get($quiz->id, collect());
+                $openSession = $openSessions->get($quiz->id);
+                $attemptsInScope = $openSession
+                    ? $quizAttempts->where('quiz_session_id', $openSession->id)->count()
+                    : $quizAttempts->whereNull('quiz_session_id')->count();
+                $hasSessions = $quiz->sessions->isNotEmpty();
+
+                $userQuizCanRetry[$quiz->id] = $hasSessions
+                    ? $openSession && $attemptsInScope < max(1, (int) $quiz->max_attempts)
+                    : $attemptsInScope < max(1, (int) $quiz->max_attempts);
+            }
         }
 
-        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards', 'quizQuestionAvailability', 'quizQuestionTypeLabels', 'quizDifficultyLabels'));
+        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'userQuizCanRetry', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards', 'quizQuestionAvailability', 'quizQuestionTypeLabels', 'quizDifficultyLabels'));
     }
 
     public function create()
@@ -309,13 +338,36 @@ class CourseController extends Controller
 
     public function edit($id)
     {
-        $course = Course::findOrFail($id);
+        $course = Course::with('sourceTemplate')->findOrFail($id);
 
         // Chỉ cho phép giáo viên của khóa học hoặc admin sửa
         $this->authorizeCourseOwner($course);
         $programs = $this->availablePrograms($course);
 
         return view('courses.edit', compact('course', 'programs'));
+    }
+
+    public function syncTemplate(Request $request, Course $course)
+    {
+        $this->authorizeCourseOwner($course);
+        abort_if($course->isTemplate() || ! $course->source_template_id, 422, 'Khóa học này không được tạo từ khóa mẫu.');
+
+        $data = $request->validate([
+            'sections' => ['required', 'array', 'min:1'],
+            'sections.*' => ['string', Rule::in(array_keys(CourseCloningService::SECTION_LABELS))],
+        ]);
+        $template = Course::findOrFail($course->source_template_id);
+        Gate::authorize('view', $template);
+
+        $result = $this->courseCloner->syncFromTemplate($template, $course, $data['sections']);
+        $labels = collect($data['sections'])
+            ->map(fn ($section) => CourseCloningService::SECTION_LABELS[$section])
+            ->implode(', ');
+
+        return back()->with(
+            'success',
+            "Đã đồng bộ {$labels} từ bản mẫu v{$result['template_version']}. Nội dung riêng của khóa triển khai được giữ nguyên."
+        );
     }
 
     public function update(Request $request, $id)
@@ -331,6 +383,17 @@ class CourseController extends Controller
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
+
+        if ($course->source_template_id && $request->input('course_type') !== 'delivery') {
+            throw ValidationException::withMessages([
+                'course_type' => 'Khóa đang liên kết với bản mẫu phải giữ loại “Khóa đang dạy”.',
+            ]);
+        }
+        if ($course->isTemplate() && $request->input('course_type') !== 'template' && $course->derivedCourses()->exists()) {
+            throw ValidationException::withMessages([
+                'course_type' => 'Không thể đổi loại vì khóa mẫu đang có khóa triển khai liên kết.',
+            ]);
+        }
 
         $this->authorizeProgramSelection($request->input('learning_program_id'), $course);
 
@@ -476,6 +539,7 @@ class CourseController extends Controller
             'quizzes',
             'questionBanks',
         ]);
+        $query->where('course_type', 'template')->notArchived();
 
         if (auth()->user()->role === 'teacher') {
             $query->where('teacher_id', auth()->id());

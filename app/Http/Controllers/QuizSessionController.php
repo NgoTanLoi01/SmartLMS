@@ -34,7 +34,7 @@ class QuizSessionController extends Controller
     {
         Gate::authorize('update', $quiz);
         $data = $this->validated($request, $quiz);
-        $this->ensureCandidatesAreAvailable($quiz, $data['candidate_ids']);
+        $this->ensureCandidatesHaveNoOverlappingSession($quiz, $data);
 
         DB::transaction(function () use ($quiz, $data) {
             $session = $quiz->sessions()->create([
@@ -54,7 +54,7 @@ class QuizSessionController extends Controller
     {
         Gate::authorize('update', $session->quiz);
         $data = $this->validated($request, $session->quiz);
-        $this->ensureCandidatesAreAvailable($session->quiz, $data['candidate_ids'], $session);
+        $this->ensureCandidatesHaveNoOverlappingSession($session->quiz, $data, $session);
 
         $startedCandidateIds = $session->attempts()->pluck('user_id');
         $removedStartedCandidates = $startedCandidateIds->diff($data['candidate_ids']);
@@ -94,7 +94,7 @@ class QuizSessionController extends Controller
     {
         Gate::authorize('viewSubmissions', $session->quiz);
         $examService->submitExpiredForSession($session);
-        $session->load(['quiz.course', 'candidates', 'attempts.user']);
+        $session->load(['quiz.course', 'candidates', 'attempts' => fn ($query) => $query->with('user')->orderBy('attempt_number')]);
 
         return view('quizzes.monitor', compact('session'));
     }
@@ -107,7 +107,10 @@ class QuizSessionController extends Controller
             'candidates',
             'attempts' => fn ($query) => $query->withCount(['answers', 'attemptQuestions']),
         ]);
-        $attempts = $session->attempts->keyBy('user_id');
+        $attempts = $session->attempts
+            ->sortByDesc('attempt_number')
+            ->unique('user_id')
+            ->keyBy('user_id');
 
         return response()->json([
             'server_time' => now()->toIso8601String(),
@@ -190,25 +193,28 @@ class QuizSessionController extends Controller
         ])->all();
     }
 
-    private function ensureCandidatesAreAvailable(Quiz $quiz, array $candidateIds, ?QuizSession $except = null): void
+    private function ensureCandidatesHaveNoOverlappingSession(Quiz $quiz, array $data, ?QuizSession $except = null): void
     {
         $assigned = DB::table('quiz_session_user')
             ->join('quiz_sessions', 'quiz_sessions.id', '=', 'quiz_session_user.quiz_session_id')
             ->where('quiz_sessions.quiz_id', $quiz->id)
             ->when($except, fn ($query) => $query->where('quiz_sessions.id', '!=', $except->id))
-            ->whereIn('quiz_session_user.user_id', $candidateIds)
+            ->whereNotIn('quiz_sessions.status', [QuizSession::STATUS_CANCELLED])
+            ->where('quiz_sessions.starts_at', '<', $data['ends_at'])
+            ->where('quiz_sessions.ends_at', '>', $data['starts_at'])
+            ->whereIn('quiz_session_user.user_id', $data['candidate_ids'])
             ->pluck('quiz_session_user.user_id');
 
         if ($assigned->isNotEmpty()) {
             throw ValidationException::withMessages([
-                'candidate_ids' => 'Một hoặc nhiều thí sinh đã được xếp vào ca thi khác của đề này.',
+                'candidate_ids' => 'Một hoặc nhiều thí sinh đã được xếp vào ca thi khác bị trùng thời gian. Ca thi bù không trùng giờ vẫn được phép.',
             ]);
         }
     }
 
     private function summary(QuizSession $session): array
     {
-        $attempts = $session->attempts;
+        $attempts = $session->attempts->sortByDesc('attempt_number')->unique('user_id');
         $active = $attempts->where('status', 'in_progress');
 
         return [

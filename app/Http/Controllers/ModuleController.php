@@ -6,6 +6,7 @@ use App\Models\Assignments;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Services\TemplateVersionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -83,6 +84,7 @@ class ModuleController extends Controller
                 ->where('id', $moduleId)
                 ->update(['order' => $index + 1]);
         }
+        app(TemplateVersionService::class)->bumpForCourse($course, 'content');
 
         return response()->json(['message' => 'Đã cập nhật thứ tự chương.']);
     }

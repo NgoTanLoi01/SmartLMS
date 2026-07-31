@@ -433,6 +433,7 @@
                                         ? $userQuizAttempts[$quiz->id]
                                         : null;
                                 $resultReleased = $attempt?->resultIsReleased() ?? false;
+                                $canRetry = $isStudent && ($userQuizCanRetry[$quiz->id] ?? false);
                                 $attemptCompleted = (bool) $attempt?->completed_at;
                                 $attemptState = match (true) {
                                     ! $attempt => 'not_started',
@@ -454,6 +455,7 @@
                                     data-status="{{ $attemptState }}"
                                     data-score="{{ $attempt && $resultReleased ? $attempt->score : '' }}"
                                     data-result-released="{{ $resultReleased ? '1' : '0' }}"
+                                    data-can-retry="{{ $canRetry ? '1' : '0' }}"
                                     data-attempt-id="{{ $attempt ? $attempt->id : '' }}">
 
                                     <div

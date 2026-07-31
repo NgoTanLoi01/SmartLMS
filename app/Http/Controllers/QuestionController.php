@@ -10,6 +10,7 @@ use App\Models\Option;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\QuizPassage;
+use App\Rules\SafeSpreadsheet;
 use App\Services\AiResponseValidator;
 use App\Services\GeminiEmbeddingService;
 use App\Services\QuestionAiQualityService;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use Throwable;
 
 class QuestionController extends Controller
 {
@@ -307,7 +309,7 @@ class QuestionController extends Controller
         $request->validate([
             'course_id' => 'required|exists:courses,id',
             'question_bank_id' => 'nullable|exists:question_banks,id',
-            'file' => 'required|file|max:5120', // Tạm bỏ "mimes" để chống lỗi chặn file Excel ẩn
+            'file' => ['required', 'file', 'max:5120', new SafeSpreadsheet],
         ]);
 
         try {
@@ -321,13 +323,16 @@ class QuestionController extends Controller
 
             $import = new QuestionImport($request->course_id, $bank->id);
 
-            // Chạy Import
-            Excel::import($import, $request->file('file'));
+            // Import nguyên tử: file lỗi giữa chừng sẽ không để lại bộ câu hỏi dở dang.
+            DB::transaction(fn () => Excel::import($import, $request->file('file')));
 
             return back()->with('success', "Thành công! Đã thêm {$import->importedCount} câu hỏi vào Ngân hàng.");
-        } catch (\Exception $e) {
-            // Nếu có lỗi hệ thống, báo lỗi đỏ ra màn hình để ta biết đường sửa
-            return back()->with('error', 'Lỗi khi đọc file: '.$e->getMessage());
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Không thể đọc file bảng tính. Vui lòng kiểm tra đúng mẫu 7 cột, định dạng .xlsx/.xls/.csv rồi thử lại.');
         }
     }
 
@@ -521,7 +526,7 @@ class QuestionController extends Controller
         $searchTopic = trim((string) $request->topic) ?: $course->title;
         try {
             $queryVector = $this->embeddingService->embed($searchTopic);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::warning('Gemini quiz context embedding failed', ['error' => $e->getMessage()]);
 
             return ['text' => '', 'error' => 'Không thể tìm kiếm tài liệu AI lúc này. Vui lòng thử lại sau.'];

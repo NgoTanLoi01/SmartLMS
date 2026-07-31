@@ -21,7 +21,7 @@ class Assignments extends Model
     // Khai báo rõ tên bảng vì tên Model đang là số nhiều
     protected $table = 'assignments';
 
-    protected $fillable = ['course_id', 'lesson_id', 'type', 'title', 'instructions', 'grading_rubric', 'grading_scale', 'ai_grading_enabled', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'published_at', 'available_from'];
+    protected $fillable = ['course_id', 'template_origin_id', 'lesson_id', 'type', 'title', 'instructions', 'grading_rubric', 'grading_scale', 'ai_grading_enabled', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
         'instructions' => SanitizedHtml::class,
@@ -72,5 +72,10 @@ class Assignments extends Model
     public function lesson()
     {
         return $this->belongsTo(Lesson::class);
+    }
+
+    public function templateOrigin()
+    {
+        return $this->belongsTo(self::class, 'template_origin_id');
     }
 }

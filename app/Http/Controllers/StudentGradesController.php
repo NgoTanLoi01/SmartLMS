@@ -68,8 +68,10 @@ class StudentGradesController extends Controller
             ->values()
             ->all());
 
+        // Nhiều lượt không được làm lệch điểm tổng kết: mỗi quiz đóng góp điểm cao nhất đã công bố.
         $quizScores = collect($quizAttempts
-            ->pluck('score')
+            ->groupBy('quiz_id')
+            ->map(fn ($attempts) => $attempts->pluck('score')->filter(fn ($score) => $score !== null)->max())
             ->filter(fn ($score) => $score !== null)
             ->map(fn ($score) => (float) $score)
             ->values()
@@ -125,7 +127,7 @@ class StudentGradesController extends Controller
             'quiz_average' => $quizScores->isNotEmpty() ? round($quizScores->avg(), 1) : null,
             'graded_assignments' => $assignmentGrades->count(),
             'pending_assignments' => $assignmentSubmissions->whereNull('grade')->count(),
-            'completed_quizzes' => $quizAttempts->count(),
+            'completed_quizzes' => $quizAttempts->pluck('quiz_id')->unique()->count(),
             'feedback_count' => $feedbackItems->count(),
         ];
 

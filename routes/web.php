@@ -134,6 +134,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::get('/courses/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
         Route::put('/courses/{course}', [CourseController::class, 'update'])->name('courses.update');
         Route::patch('/courses/{course}', [CourseController::class, 'update']);
+        Route::post('/courses/{course}/sync-template', [CourseController::class, 'syncTemplate'])->name('courses.sync-template');
         Route::post('/courses/{course}/quality-check', [CourseQualityController::class, 'check'])->name('courses.quality-check');
         Route::post('/courses/{course}/ai-plan/generate', [CoursePlannerController::class, 'generate'])
             ->middleware('throttle:ai-generation')
@@ -262,6 +263,8 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     Route::middleware('role:admin,teacher')->group(function () {
         Route::post('/quizzes', [QuizController::class, 'store'])->name('quizzes.store');
         Route::get('/courses/{course}/quizzes/archived', [QuizController::class, 'archived'])->name('quizzes.archived');
+        Route::get('/quizzes/{quiz}/edit', [QuizController::class, 'edit'])->name('quizzes.edit');
+        Route::put('/quizzes/{quiz}', [QuizController::class, 'update'])->name('quizzes.update');
         Route::get('/quizzes/{id}', [QuizController::class, 'show'])->name('quizzes.show');
         Route::delete('/quizzes/{id}', [QuizController::class, 'destroy'])->name('quizzes.destroy');
         Route::patch('/quizzes/{id}/restore', [QuizController::class, 'restore'])->name('quizzes.restore');

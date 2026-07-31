@@ -24,6 +24,7 @@ class QuizAttempt extends Model
         'quiz_id',
         'quiz_session_id',
         'user_id',
+        'attempt_number',
         'status',
         'score',
         'auto_score',

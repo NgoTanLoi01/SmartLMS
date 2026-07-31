@@ -511,6 +511,12 @@
                 </div>
 
                 <div class="cm-field">
+                    <label class="cm-label">Số lượt làm tối đa</label>
+                    <input type="number" name="max_attempts" class="cm-ctrl" value="1" min="1" max="10" required>
+                    <div class="cm-hint">Nếu có ca thi, giới hạn này được tính riêng cho từng ca.</div>
+                </div>
+
+                <div class="cm-field">
                     <label class="cm-label">Nguồn AI gợi ý</label>
                     <select id="addQuizLessonSource" class="cm-ctrl">
                         <option value="" disabled selected>-- Chọn bài hoặc chương để AI gợi ý quiz --</option>

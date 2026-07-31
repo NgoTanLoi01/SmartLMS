@@ -15,12 +15,13 @@ class Quiz extends Model
     public const STATUS_ARCHIVED = 'archived';
 
     // Cập nhật thêm các cột cấu hình số lượng câu hỏi
-    protected $fillable = ['course_id', 'title', 'time_limit', 'is_random', 'easy_count', 'medium_count', 'hard_count', 'question_distribution', 'status', 'published_at', 'available_from'];
+    protected $fillable = ['course_id', 'template_origin_id', 'title', 'time_limit', 'max_attempts', 'is_random', 'easy_count', 'medium_count', 'hard_count', 'question_distribution', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
         'published_at' => 'datetime',
         'available_from' => 'datetime',
         'question_distribution' => 'array',
+        'max_attempts' => 'integer',
     ];
 
     public function scopeVisibleToStudents($query)

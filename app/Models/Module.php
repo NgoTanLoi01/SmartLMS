@@ -10,7 +10,7 @@ class Module extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
-    protected $fillable = ['course_id', 'title', 'order', 'status'];
+    protected $fillable = ['course_id', 'template_origin_id', 'title', 'order', 'status'];
 
     public function scopeNotArchived($query)
     {
@@ -30,5 +30,10 @@ class Module extends Model
     public function lessons()
     {
         return $this->hasMany(Lesson::class)->notArchived()->orderBy('order');
+    }
+
+    public function templateOrigin()
+    {
+        return $this->belongsTo(self::class, 'template_origin_id');
     }
 }

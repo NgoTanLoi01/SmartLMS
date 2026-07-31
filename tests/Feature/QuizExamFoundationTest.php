@@ -74,6 +74,40 @@ class QuizExamFoundationTest extends TestCase
         $this->assertSame('Đọc đoạn văn mẫu.', $resumed->attemptQuestions->first()->passage_content);
     }
 
+    public function test_attempt_policy_allows_retake_in_same_session_and_new_makeup_session(): void
+    {
+        $this->quiz->update(['max_attempts' => 2]);
+        $service = app(QuizExamService::class);
+
+        $first = $service->startOrResume($this->quiz->fresh(), $this->student, $this->session);
+        $service->submit($first);
+        $second = $service->startOrResume($this->quiz->fresh(), $this->student, $this->session);
+
+        $this->assertSame(2, $second->attempt_number);
+        $this->assertSame($this->session->id, $second->quiz_session_id);
+        $service->submit($second);
+
+        try {
+            $service->startOrResume($this->quiz->fresh(), $this->student, $this->session);
+            $this->fail('Ca thi phải chặn khi học viên đã dùng hết số lượt.');
+        } catch (ValidationException) {
+            $this->assertDatabaseCount('quiz_attempts', 2);
+        }
+
+        $makeup = QuizSession::create([
+            'quiz_id' => $this->quiz->id,
+            'name' => 'Ca thi bù',
+            'starts_at' => now()->subMinute(),
+            'ends_at' => now()->addMinutes(40),
+            'status' => QuizSession::STATUS_OPEN,
+            'result_release_policy' => QuizSession::RELEASE_AFTER_SESSION,
+        ]);
+        $makeupAttempt = $service->startOrResume($this->quiz->fresh(), $this->student, $makeup);
+
+        $this->assertSame(3, $makeupAttempt->attempt_number);
+        $this->assertSame($makeup->id, $makeupAttempt->quiz_session_id);
+    }
+
     public function test_autosave_flag_and_submit_are_persisted_with_delayed_result(): void
     {
         $service = app(QuizExamService::class);
@@ -390,6 +424,7 @@ class QuizExamFoundationTest extends TestCase
             $table->unsignedBigInteger('course_id');
             $table->string('title');
             $table->integer('time_limit');
+            $table->unsignedTinyInteger('max_attempts')->default(1);
             $table->boolean('is_random')->default(true);
             $table->integer('easy_count')->default(0);
             $table->integer('medium_count')->default(0);
@@ -465,6 +500,7 @@ class QuizExamFoundationTest extends TestCase
             $table->unsignedBigInteger('quiz_id');
             $table->unsignedBigInteger('quiz_session_id')->nullable();
             $table->unsignedBigInteger('user_id');
+            $table->unsignedSmallInteger('attempt_number')->default(1);
             $table->string('status');
             $table->float('score')->nullable();
             $table->float('auto_score')->nullable();
@@ -479,7 +515,7 @@ class QuizExamFoundationTest extends TestCase
             $table->timestamp('graded_at')->nullable();
             $table->timestamp('result_released_at')->nullable();
             $table->timestamps();
-            $table->unique(['quiz_id', 'user_id']);
+            $table->unique(['quiz_id', 'user_id', 'attempt_number']);
         });
         Schema::create('quiz_attempt_questions', function (Blueprint $table) {
             $table->id();

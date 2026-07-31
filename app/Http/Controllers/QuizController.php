@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Services\NotificationCenter;
@@ -18,10 +19,11 @@ class QuizController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'title' => 'required|string|max:255',
-            'time_limit' => 'required|integer|min:1',
+            'time_limit' => 'required|integer|min:1|max:480',
+            'max_attempts' => 'nullable|integer|min:1|max:10',
             'question_distribution' => ['required', 'array'],
             'question_distribution.*' => ['array'],
             'question_distribution.*.*' => ['nullable', 'integer', 'min:0', 'max:500'],
@@ -29,24 +31,25 @@ class QuizController extends Controller
             'available_from' => 'nullable|date',
         ]);
 
-        $course = Course::findOrFail($request->integer('course_id'));
+        $course = Course::findOrFail((int) $data['course_id']);
         Gate::authorize('create', [Quiz::class, $course]);
-        $distribution = $this->questionSelector->normalizeDistribution($request->input('question_distribution', []));
+        $distribution = $this->questionSelector->normalizeDistribution($data['question_distribution']);
         $this->questionSelector->assertAvailable($course, $distribution);
         $totals = $this->questionSelector->totalsByDifficulty($distribution);
 
         $quiz = Quiz::create([
-            'course_id' => $request->course_id,
-            'title' => $request->title,
-            'time_limit' => $request->time_limit,
+            'course_id' => $data['course_id'],
+            'title' => $data['title'],
+            'time_limit' => $data['time_limit'],
+            'max_attempts' => $data['max_attempts'] ?? 1,
             'is_random' => true,
             'easy_count' => $totals['easy'],
             'medium_count' => $totals['medium'],
             'hard_count' => $totals['hard'],
             'question_distribution' => $distribution,
-            'status' => $request->input('status', 'published'),
-            'published_at' => $request->input('status', 'published') === 'published' ? now() : null,
-            'available_from' => $request->available_from,
+            'status' => $data['status'] ?? Quiz::STATUS_PUBLISHED,
+            'published_at' => ($data['status'] ?? Quiz::STATUS_PUBLISHED) === Quiz::STATUS_PUBLISHED ? now() : null,
+            'available_from' => $data['available_from'] ?? null,
         ]);
 
         if ($quiz->status === Quiz::STATUS_PUBLISHED) {
@@ -62,6 +65,66 @@ class QuizController extends Controller
         }
 
         return back()->with('success', 'Đã tạo cấu hình bài kiểm tra ngẫu nhiên thành công!');
+    }
+
+    public function edit(Quiz $quiz)
+    {
+        Gate::authorize('update', $quiz);
+        $quiz->load('course');
+
+        return view('quizzes.edit', [
+            'quiz' => $quiz,
+            'availability' => $this->questionSelector->availableCounts($quiz->course),
+            'typeLabels' => Question::typeLabels(),
+            'difficultyLabels' => QuizQuestionSelectionService::DIFFICULTIES,
+        ]);
+    }
+
+    public function update(Request $request, Quiz $quiz)
+    {
+        Gate::authorize('update', $quiz);
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'time_limit' => ['required', 'integer', 'min:1', 'max:480'],
+            'max_attempts' => ['required', 'integer', 'min:1', 'max:10'],
+            'question_distribution' => ['required', 'array'],
+            'question_distribution.*' => ['array'],
+            'question_distribution.*.*' => ['nullable', 'integer', 'min:0', 'max:500'],
+            'status' => ['required', 'in:draft,published,hidden'],
+            'available_from' => ['nullable', 'date'],
+        ]);
+
+        $distribution = $this->questionSelector->normalizeDistribution($data['question_distribution']);
+        $this->questionSelector->assertAvailable($quiz->course, $distribution);
+        $totals = $this->questionSelector->totalsByDifficulty($distribution);
+        $wasPublished = $quiz->status === Quiz::STATUS_PUBLISHED;
+
+        $quiz->update([
+            'title' => $data['title'],
+            'time_limit' => $data['time_limit'],
+            'max_attempts' => $data['max_attempts'],
+            'easy_count' => $totals['easy'],
+            'medium_count' => $totals['medium'],
+            'hard_count' => $totals['hard'],
+            'question_distribution' => $distribution,
+            'status' => $data['status'],
+            'published_at' => $data['status'] === Quiz::STATUS_PUBLISHED ? ($quiz->published_at ?? now()) : null,
+            'available_from' => $data['available_from'] ?? null,
+        ]);
+
+        if (! $wasPublished && $quiz->status === Quiz::STATUS_PUBLISHED) {
+            app(NotificationCenter::class)->notifyCourseStudents(
+                $quiz->course_id,
+                'quiz',
+                'Có bài kiểm tra mới',
+                "Bài kiểm tra \"{$quiz->title}\" vừa được đăng.",
+                route('courses.show', $quiz->course_id),
+                ['quiz_id' => $quiz->id],
+                "quiz:{$quiz->id}:published"
+            );
+        }
+
+        return redirect()->route('quizzes.show', $quiz)->with('success', 'Đã cập nhật cấu hình bài kiểm tra. Các bài đang làm tiếp tục dùng đề và thời hạn đã được cấp.');
     }
 
     public function show($id)

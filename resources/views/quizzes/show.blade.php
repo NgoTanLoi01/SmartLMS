@@ -626,9 +626,14 @@
                         <span><i class="fa-solid fa-list-ol me-1"></i> Tổng câu: <strong>{{ $total }} câu</strong></span>
                     </div>
                 </div>
-                <button onclick="window.location.reload()" class="qp-reload-btn">
-                    <i class="fa-solid fa-rotate"></i> Tải đề ngẫu nhiên khác
-                </button>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ route('quizzes.edit', $quiz) }}" class="qp-reload-btn" style="background:var(--qp-purple); text-decoration:none; box-shadow:none;">
+                        <i class="fa-solid fa-sliders"></i> Cập nhật cấu hình
+                    </a>
+                    <button onclick="window.location.reload()" class="qp-reload-btn">
+                        <i class="fa-solid fa-rotate"></i> Tải đề ngẫu nhiên khác
+                    </button>
+                </div>
             </div>
 
             {{-- Grid --}}

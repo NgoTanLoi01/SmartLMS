@@ -128,6 +128,8 @@ Admin có phạm vi dữ liệu toàn hệ thống và kế thừa hầu hết c
 - Gắn một hoặc nhiều lớp khi tạo khóa triển khai.
 - Tạo khóa học từ khóa mẫu.
 - Khi nhân bản từ mẫu, hệ thống sao chép chương, bài học, file bài học, bài tập, quiz, câu hỏi riêng và liên kết ngân hàng câu hỏi.
+- Khóa mẫu có phiên bản tổng và phiên bản theo từng nhóm nội dung: bài học, bài tập, quiz và ngân hàng câu hỏi.
+- Khóa triển khai mới ghi nhận nguồn mẫu và có thể đồng bộ có chọn lọc từng nhóm nội dung; nội dung tạo riêng tại khóa triển khai được giữ nguyên.
 - Cập nhật tên, mô tả, chương trình, loại, trạng thái và lịch mở.
 - Lưu trữ khóa học mà vẫn giữ dữ liệu học tập.
 - Chỉ Admin được xóa vĩnh viễn khóa học đã lưu trữ; thao tác xóa cả dữ liệu liên quan và file bài nộp/file bài học được lập chỉ mục.
@@ -248,7 +250,7 @@ Admin có phạm vi dữ liệu toàn hệ thống và kế thừa hầu hết c
 - Tạo ngân hàng câu hỏi dùng chung và gắn với nhiều khóa học.
 - Tạo/cập nhật/lưu trữ câu hỏi trắc nghiệm theo mức dễ, trung bình, khó.
 - Mỗi câu hỏi có đúng 4 lựa chọn và một đáp án đúng.
-- Import câu hỏi từ Excel tối đa 5 MB.
+- Import câu hỏi từ XLSX, XLS hoặc CSV tối đa 5 MB; kiểm tra cả phần mở rộng lẫn chữ ký nội dung file, xử lý atomic và không đưa nội dung exception nội bộ ra giao diện.
 - AI tạo tối đa 20 câu/lần từ:
   - Toàn khóa học, một chương hoặc một bài học.
   - Tài liệu RAG đã upload cho khóa học.
@@ -257,8 +259,9 @@ Admin có phạm vi dữ liệu toàn hệ thống và kế thừa hầu hết c
 
 **Bài kiểm tra:**
 
-- Tạo quiz với tên, thời lượng, số câu dễ/trung bình/khó, trạng thái và lịch mở.
+- Tạo và cập nhật quiz với tên, thời lượng, số câu dễ/trung bình/khó, số lượt tối đa, trạng thái và lịch mở.
 - Tự bốc ngẫu nhiên câu hỏi và xáo trộn thứ tự câu/đáp án.
+- Cấu hình đã cập nhật áp dụng cho lượt thi mới; lượt đang làm tiếp tục dùng đề và hạn giờ đã snapshot phía server.
 - Preview đề quiz.
 - Xem danh sách lượt làm, học sinh, điểm và thời điểm hoàn thành.
 - Lưu trữ quiz nhưng giữ lịch sử và điểm.
@@ -572,7 +575,8 @@ Student là vai trò học tập; phạm vi luôn bị giới hạn theo lớp �
 - Khi hết thời gian, hệ thống từ chối kết quả quá hạn ngoài khoảng ân hạn 30 giây.
 - Hệ thống chỉ chấm câu hỏi/đáp án thuộc đúng đề đã phát, chống sửa ID từ form.
 - Chấm tự động theo thang 10.
-- Mỗi Student chỉ có một lượt được ghi nhận cho mỗi quiz; chống gửi lặp bằng lock và unique constraint.
+- Số lượt tối đa do giáo viên cấu hình (1–10), được tính riêng theo từng ca thi; ca thi bổ sung có hạn mức lượt riêng.
+- Hệ thống ưu tiên tiếp tục lượt đang làm trong đúng ca, đánh số lượt tuần tự và chống tạo/nộp trùng bằng lock cùng unique constraint.
 - Xem lại điểm, từng câu đã chọn, câu đúng/sai và đáp án đúng.
 
 ## STD-07. Lịch học cá nhân
@@ -636,16 +640,15 @@ Thông báo hiện là thông báo trong ứng dụng. Email/push notification c
 2. **Chưa có chứng chỉ:** Chưa tự sinh PDF certificate khi hoàn thành khóa học.
 3. **Chưa có email/push:** Thông báo chỉ nằm trong ứng dụng.
 4. **Chưa multi-tenant:** Chưa tách dữ liệu cho nhiều trung tâm độc lập.
-5. **Quiz chỉ một lượt:** Student không thể làm lại quiz sau khi đã có kết quả.
-6. **Quiz chưa có chức năng cập nhật cấu hình riêng:** Hiện có tạo, xem/preview, xem kết quả và lưu trữ; chưa có route update quiz.
-7. **Container ngân hàng câu hỏi chưa có CRUD đầy đủ:** Có tạo và gắn ngân hàng; CRUD hiện tập trung vào câu hỏi, chưa có route sửa/xóa chính ngân hàng.
-8. **Hạn nộp bài đang khóa chủ yếu ở giao diện:** Giao diện khóa nộp/sửa sau hạn, nhưng controller nộp bài chưa kiểm tra `due_date`; cần bổ sung kiểm tra server-side nếu xem đây là quy tắc bắt buộc.
-9. **Điều kiện mở học liệu theo bài học chưa kiểm tra hoàn thành:** Trường `unlock_when_lesson_id` và nhãn khóa đã có, nhưng logic hiện chưa đối chiếu bài học đó đã được Student hoàn thành; cần hoàn thiện trước khi nghiệm thu tính năng prerequisite.
-10. **Đánh dấu bài học hiện là một chiều:** Endpoint chỉ đánh dấu hoàn thành, chưa có thao tác bỏ đánh dấu.
-11. **AI chấm file scan/ảnh:** OCR có trong pipeline PDF huấn luyện RAG, nhưng bộ trích xuất file bài nộp cho AI chấm chưa OCR ảnh/PDF scan.
-12. **AI và lưu trữ phụ thuộc hạ tầng:** Cần cấu hình DeepSeek, Gemini, PostgreSQL/pgvector, queue worker, Tesseract/Poppler và R2 tùy tính năng.
-13. **Trò chơi phụ thuộc realtime:** Cờ vua/Caro cần broadcasting/Reverb/Pusher; luồng kết thúc phòng cờ vua cần kiểm thử tích hợp thêm.
-14. **Chưa có kiểm chứng tải 10.000+ người dùng đồng thời:** Đây vẫn là hạng mục lộ trình.
+5. **Khóa triển khai cũ chưa có liên kết nguồn mẫu:** Các bản clone tạo trước migration không thể tự backfill ánh xạ nội dung một cách an toàn; cần clone lại hoặc migration dữ liệu thủ công nếu muốn dùng đồng bộ chọn lọc.
+6. **Container ngân hàng câu hỏi chưa có CRUD đầy đủ:** Có tạo và gắn ngân hàng; CRUD hiện tập trung vào câu hỏi, chưa có route sửa/xóa chính ngân hàng.
+7. **Hạn nộp bài đang khóa chủ yếu ở giao diện:** Giao diện khóa nộp/sửa sau hạn, nhưng controller nộp bài chưa kiểm tra `due_date`; cần bổ sung kiểm tra server-side nếu xem đây là quy tắc bắt buộc.
+8. **Điều kiện mở học liệu theo bài học chưa kiểm tra hoàn thành:** Trường `unlock_when_lesson_id` và nhãn khóa đã có, nhưng logic hiện chưa đối chiếu bài học đó đã được Student hoàn thành; cần hoàn thiện trước khi nghiệm thu tính năng prerequisite.
+9. **Đánh dấu bài học hiện là một chiều:** Endpoint chỉ đánh dấu hoàn thành, chưa có thao tác bỏ đánh dấu.
+10. **AI chấm file scan/ảnh:** OCR có trong pipeline PDF huấn luyện RAG, nhưng bộ trích xuất file bài nộp cho AI chấm chưa OCR ảnh/PDF scan.
+11. **AI và lưu trữ phụ thuộc hạ tầng:** Cần cấu hình DeepSeek, Gemini, PostgreSQL/pgvector, queue worker, Tesseract/Poppler và R2 tùy tính năng.
+12. **Trò chơi phụ thuộc realtime:** Cờ vua/Caro cần broadcasting/Reverb/Pusher; luồng kết thúc phòng cờ vua cần kiểm thử tích hợp thêm.
+13. **Chưa có kiểm chứng tải 10.000+ người dùng đồng thời:** Đây vẫn là hạng mục lộ trình.
 
 # 8. Yêu cầu phi chức năng và bảo mật đã thể hiện trong mã nguồn
 
@@ -654,7 +657,7 @@ Thông báo hiện là thông báo trong ứng dụng. Email/push notification c
 - Kiểm tra quyền khi tải/preview file; không trả đường dẫn storage trực tiếp.
 - Nội dung HTML bài học/bài tập được sanitize trước khi lưu/hiển thị.
 - Rate limit riêng cho đăng nhập, chatbot và các luồng sinh AI.
-- Quiz lưu đề server-side, kiểm tra option thuộc question, khóa nộp trùng và unique một lượt.
+- Quiz lưu đề server-side, kiểm tra option thuộc question, khóa nộp trùng và unique theo số lượt.
 - Tài liệu RAG chỉ tìm chunk đang hoạt động và thuộc phạm vi khóa học người dùng được xem.
 - Dữ liệu gửi sang AI được loại email/số điện thoại; phân tích lớp dùng mã học viên thay tên.
 - Kết quả JSON của AI được kiểm tra schema trước khi dùng.
@@ -671,4 +674,3 @@ Thông báo hiện là thông báo trong ứng dụng. Email/push notification c
 - `app/Services/*`: AI, RAG, backup, thông báo, lưu trữ và xử lý bài nộp.
 - `resources/views/*`: chức năng thực tế được đưa ra giao diện.
 - `tests/Feature/*` và `tests/Unit/*`: các trường hợp phân quyền, toàn vẹn quiz/import, AI/RAG, notification, backup storage và vòng đời tài khoản.
-

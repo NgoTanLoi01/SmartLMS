@@ -20,6 +20,7 @@ use App\Models\SharedDocument;
 use App\Models\SmartNotification;
 use App\Models\TeachingContract;
 use App\Models\TeachingRecord;
+use App\Observers\TemplateContentObserver;
 use App\Policies\AssignmentPolicy;
 use App\Policies\AssignmentSubmissionPolicy;
 use App\Policies\AttendanceColumnPolicy;
@@ -55,6 +56,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Module::observe(TemplateContentObserver::class);
+        Lesson::observe(TemplateContentObserver::class);
+        Assignments::observe(TemplateContentObserver::class);
+        Quiz::observe(TemplateContentObserver::class);
+        Question::observe(TemplateContentObserver::class);
+
         RateLimiter::for('ai-chatbot', fn (Request $request) => Limit::perMinute(
             max(1, (int) config('ai.rate_limits.chat_per_minute', 20))
         )->by('ai-chatbot:'.($request->user()?->id ?? $request->ip())));

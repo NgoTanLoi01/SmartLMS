@@ -14,6 +14,7 @@ use App\Services\SubmissionFileService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -44,6 +45,11 @@ class ControllerServiceRefactorTest extends TestCase
             $table->unsignedBigInteger('teacher_id');
             $table->unsignedBigInteger('learning_program_id')->nullable();
             $table->string('course_type')->default('delivery');
+            $table->unsignedInteger('template_version')->default(1);
+            $table->unsignedBigInteger('source_template_id')->nullable();
+            $table->unsignedInteger('synced_template_version')->nullable();
+            $table->json('template_section_versions')->nullable();
+            $table->json('template_sync_state')->nullable();
             $table->string('status')->default('published');
             $table->timestamp('published_at')->nullable();
             $table->timestamp('available_from')->nullable();
@@ -52,6 +58,7 @@ class ControllerServiceRefactorTest extends TestCase
         Schema::create('modules', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('course_id');
+            $table->unsignedBigInteger('template_origin_id')->nullable();
             $table->string('title');
             $table->unsignedInteger('order')->default(0);
             $table->string('status')->nullable();
@@ -60,6 +67,7 @@ class ControllerServiceRefactorTest extends TestCase
         Schema::create('lessons', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('module_id');
+            $table->unsignedBigInteger('template_origin_id')->nullable();
             $table->string('title');
             $table->longText('content')->nullable();
             $table->string('video_url')->nullable();
@@ -78,6 +86,7 @@ class ControllerServiceRefactorTest extends TestCase
         Schema::create('assignments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('course_id');
+            $table->unsignedBigInteger('template_origin_id')->nullable();
             $table->unsignedBigInteger('lesson_id')->nullable();
             $table->string('type')->default('file');
             $table->string('title');
@@ -97,8 +106,10 @@ class ControllerServiceRefactorTest extends TestCase
         Schema::create('quizzes', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('course_id');
+            $table->unsignedBigInteger('template_origin_id')->nullable();
             $table->string('title');
             $table->unsignedInteger('time_limit')->nullable();
+            $table->unsignedTinyInteger('max_attempts')->default(1);
             $table->boolean('is_random')->default(false);
             $table->unsignedInteger('easy_count')->default(0);
             $table->unsignedInteger('medium_count')->default(0);
@@ -124,8 +135,11 @@ class ControllerServiceRefactorTest extends TestCase
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('course_id')->nullable();
+            $table->unsignedBigInteger('template_origin_id')->nullable();
             $table->unsignedBigInteger('question_bank_id')->nullable();
+            $table->string('question_type')->default('single_choice');
             $table->text('question_text');
+            $table->json('answer_config')->nullable();
             $table->string('difficulty')->nullable();
             $table->string('status')->nullable();
             $table->timestamps();
@@ -218,6 +232,74 @@ class ControllerServiceRefactorTest extends TestCase
         Storage::disk('public')->assertExists($targetLesson->attachment);
         $this->assertSame($targetLesson->id, $targetAssignment->lesson_id);
         $this->assertSame('Quiz 1', $target->quizzes()->firstOrFail()->title);
+    }
+
+    public function test_template_sync_updates_selected_sections_without_replacing_delivery_records(): void
+    {
+        $teacher = User::create([
+            'name' => 'Teacher',
+            'email' => 'template-sync@example.test',
+            'password' => Hash::make('password'),
+            'role' => 'teacher',
+        ]);
+        $template = Course::create([
+            'title' => 'Mẫu PHP',
+            'teacher_id' => $teacher->id,
+            'course_type' => 'template',
+            'status' => 'published',
+        ]);
+        $module = Module::create(['course_id' => $template->id, 'title' => 'Chương cũ', 'order' => 1, 'status' => 'published']);
+        $lesson = Lesson::create(['module_id' => $module->id, 'title' => 'Bài cũ', 'order' => 1, 'status' => 'published']);
+        $assignment = Assignments::create([
+            'course_id' => $template->id,
+            'lesson_id' => $lesson->id,
+            'type' => 'essay',
+            'title' => 'Bài tập cũ',
+            'instructions' => 'Mô tả',
+            'grading_scale' => 10,
+            'status' => 'published',
+        ]);
+        $quiz = Quiz::create([
+            'course_id' => $template->id,
+            'title' => 'Quiz cũ',
+            'time_limit' => 20,
+            'max_attempts' => 1,
+            'is_random' => true,
+            'easy_count' => 1,
+            'medium_count' => 0,
+            'hard_count' => 0,
+            'status' => 'published',
+        ]);
+        $delivery = Course::create([
+            'title' => 'Lớp PHP',
+            'teacher_id' => $teacher->id,
+            'course_type' => 'delivery',
+            'status' => 'published',
+        ]);
+
+        $service = app(CourseCloningService::class);
+        $service->cloneContent($template->fresh(), $delivery);
+        $deliveryModule = Module::where('course_id', $delivery->id)->where('template_origin_id', $module->id)->firstOrFail();
+        $deliveryAssignment = Assignments::where('course_id', $delivery->id)->where('template_origin_id', $assignment->id)->firstOrFail();
+        $deliveryQuiz = Quiz::where('course_id', $delivery->id)->where('template_origin_id', $quiz->id)->firstOrFail();
+        Module::create(['course_id' => $delivery->id, 'title' => 'Nội dung riêng', 'order' => 99, 'status' => 'published']);
+
+        $module->update(['title' => 'Chương mới']);
+        $assignment->update(['title' => 'Bài tập mới']);
+        $quiz->update(['title' => 'Quiz mới', 'max_attempts' => 3]);
+
+        $service->syncFromTemplate($template->fresh(), $delivery->fresh(), ['content']);
+        $this->assertSame('Chương mới', $deliveryModule->fresh()->title);
+        $this->assertSame('Bài tập cũ', $deliveryAssignment->fresh()->title);
+        $this->assertSame('Quiz cũ', $deliveryQuiz->fresh()->title);
+        $this->assertDatabaseHas('modules', ['course_id' => $delivery->id, 'title' => 'Nội dung riêng']);
+
+        $service->syncFromTemplate($template->fresh(), $delivery->fresh(), ['assignments', 'quizzes']);
+        $this->assertSame($deliveryAssignment->id, Assignments::where('course_id', $delivery->id)->where('template_origin_id', $assignment->id)->firstOrFail()->id);
+        $this->assertSame('Bài tập mới', $deliveryAssignment->fresh()->title);
+        $this->assertSame($deliveryQuiz->id, Quiz::where('course_id', $delivery->id)->where('template_origin_id', $quiz->id)->firstOrFail()->id);
+        $this->assertSame('Quiz mới', $deliveryQuiz->fresh()->title);
+        $this->assertSame(3, $deliveryQuiz->fresh()->max_attempts);
     }
 
     public function test_submission_file_service_detects_preview_types_and_deletes_stored_file(): void

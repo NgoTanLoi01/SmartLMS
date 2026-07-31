@@ -7,6 +7,7 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Services\NotificationCenter;
 use App\Services\StoredAssetReferenceService;
+use App\Services\TemplateVersionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -177,6 +178,7 @@ class LessonController extends Controller
                 ->where('id', $lessonId)
                 ->update(['order' => $index + 1]);
         }
+        app(TemplateVersionService::class)->bumpForCourse($module->course, 'content');
 
         return response()->json(['message' => 'Đã cập nhật thứ tự bài học.']);
     }

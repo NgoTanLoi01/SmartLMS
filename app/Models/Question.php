@@ -24,7 +24,7 @@ class Question extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
-    protected $fillable = ['course_id', 'question_bank_id', 'quiz_passage_id', 'question_type', 'question_text', 'answer_config', 'difficulty', 'observed_difficulty', 'difficulty_metrics', 'difficulty_evaluated_at', 'status'];
+    protected $fillable = ['course_id', 'template_origin_id', 'question_bank_id', 'quiz_passage_id', 'question_type', 'question_text', 'answer_config', 'difficulty', 'observed_difficulty', 'difficulty_metrics', 'difficulty_evaluated_at', 'status'];
 
     protected $casts = [
         'answer_config' => 'array',

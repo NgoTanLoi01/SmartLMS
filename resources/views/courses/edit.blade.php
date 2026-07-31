@@ -94,6 +94,63 @@
                         </form>
                     </div>
                 </div>
+
+                @if ($course->isTemplate())
+                    <div class="alert alert-primary border-0 shadow-sm mt-4 d-flex align-items-center gap-3">
+                        <i class="fa-solid fa-code-branch fs-3"></i>
+                        <div>
+                            <div class="fw-bold">Phiên bản khóa mẫu v{{ $course->template_version ?? 1 }}</div>
+                            <div class="small">Phiên bản tự tăng khi chương, bài học, bài tập, quiz hoặc câu hỏi của khóa mẫu thay đổi.</div>
+                        </div>
+                    </div>
+                @elseif ($course->sourceTemplate)
+                    @php
+                        $syncState = $course->template_sync_state ?? [];
+                        $sourceVersion = (int) ($course->sourceTemplate->template_version ?? 1);
+                        $sourceSectionVersions = $course->sourceTemplate->template_section_versions ?? [];
+                    @endphp
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-header bg-white border-0 px-4 pt-4">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                <div>
+                                    <h4 class="fw-bold mb-1"><i class="fa-solid fa-arrows-rotate me-2 text-primary"></i>Đồng bộ từ khóa mẫu</h4>
+                                    <div class="text-muted">Nguồn: <strong>{{ $course->sourceTemplate->title }}</strong> · phiên bản hiện tại v{{ $sourceVersion }}</div>
+                                </div>
+                                <span class="badge {{ (int) $course->synced_template_version === $sourceVersion ? 'text-bg-success' : 'text-bg-warning' }} fs-6">
+                                    {{ (int) $course->synced_template_version === $sourceVersion ? 'Đã đồng bộ đầy đủ' : 'Có thay đổi mới' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <form action="{{ route('courses.sync-template', $course) }}" method="POST">
+                                @csrf
+                                <p class="text-muted small">Chỉ các bản ghi có nguồn từ khóa mẫu được cập nhật tại chỗ. Nội dung tạo riêng trong khóa này được giữ nguyên; mục đã bỏ khỏi mẫu sẽ chuyển sang lưu trữ để bảo toàn dữ liệu học tập.</p>
+                                <div class="row g-3 mb-4">
+                                    @foreach (\App\Services\CourseCloningService::SECTION_LABELS as $section => $label)
+                                        @php
+                                            $sectionVersion = (int) ($syncState[$section] ?? 0);
+                                            $sourceSectionVersion = (int) ($sourceSectionVersions[$section] ?? $sourceVersion);
+                                        @endphp
+                                        <div class="col-md-6">
+                                            <label class="border rounded-3 p-3 w-100 d-flex align-items-center gap-3">
+                                                <input class="form-check-input m-0" type="checkbox" name="sections[]" value="{{ $section }}" @checked($sectionVersion < $sourceSectionVersion)>
+                                                <span class="flex-grow-1">
+                                                    <strong class="d-block">{{ $label }}</strong>
+                                                    <small class="{{ $sectionVersion === $sourceSectionVersion ? 'text-success' : 'text-warning' }}">
+                                                        {{ $sectionVersion === $sourceSectionVersion ? "Đã ở v{$sourceSectionVersion}" : "Đang ở v{$sectionVersion} · có bản mới v{$sourceSectionVersion}" }}
+                                                    </small>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold" onclick="return confirm('Đồng bộ các nhóm nội dung đã chọn từ khóa mẫu?')">
+                                    <i class="fa-solid fa-arrows-rotate me-2"></i>Đồng bộ phần đã chọn
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

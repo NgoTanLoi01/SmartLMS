@@ -788,6 +788,7 @@
                 const score = this.getAttribute('data-score');
                 const attemptId = this.getAttribute('data-attempt-id');
                 const resultReleased = this.getAttribute('data-result-released') === '1';
+                const canRetry = this.getAttribute('data-can-retry') === '1';
 
                 // Các thành phần UI của học sinh
                 const statusText = document.getElementById('quiz-status-text');
@@ -841,7 +842,7 @@
 
                         if (scoreBox) scoreBox.classList.toggle('d-none', !resultReleased);
                         if (scoreText && resultReleased) scoreText.innerText = score;
-                        if (actionArea) actionArea.classList.add('d-none');
+                        if (actionArea) actionArea.classList.toggle('d-none', !canRetry);
                         if (mainIcon) {
                             mainIcon.className = `${ui.icon} fa-2x`;
                             mainIcon.style.color = '';
@@ -884,7 +885,9 @@
                 if (startBtn) startBtn.href = `/quizzes/${id}/attempt`;
                 if (startBtn) startBtn.innerHTML = status === 'in_progress'
                     ? 'TIẾP TỤC BÀI THI <i class="fa-solid fa-arrow-right ms-2"></i>'
-                    : 'BẮT ĐẦU LÀM BÀI <i class="fa-solid fa-arrow-right ms-2"></i>';
+                    : (isCompleted && canRetry
+                        ? 'LÀM LƯỢT TIẾP THEO <i class="fa-solid fa-arrow-right ms-2"></i>'
+                        : 'BẮT ĐẦU LÀM BÀI <i class="fa-solid fa-arrow-right ms-2"></i>');
                 if (manageBtn) manageBtn.href = `/quizzes/${id}`;
 
                 quizArea.scrollIntoView({

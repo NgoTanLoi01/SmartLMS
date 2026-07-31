@@ -156,7 +156,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="small fw-semibold">{{ $attempt->session?->name ?? 'Không theo ca' }}</span></td>
+                            <td><span class="small fw-semibold">{{ $attempt->session?->name ?? 'Không theo ca' }}</span><div class="small text-muted">Lượt {{ $attempt->attempt_number ?? 1 }}</div></td>
                             <td><span class="grading-status grading-status--{{ $statusMeta[0] }}"><i class="fa-solid {{ $statusMeta[1] }}"></i>{{ $statusMeta[2] }}</span></td>
                             <td>
                                 @if($manualTotal > 0)

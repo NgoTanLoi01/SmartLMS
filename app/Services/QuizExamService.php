@@ -24,11 +24,18 @@ class QuizExamService
     public function startOrResume(Quiz $quiz, User $student, ?QuizSession $session): QuizAttempt
     {
         return DB::transaction(function () use ($quiz, $student, $session) {
-            $attempt = QuizAttempt::query()
+            // Khóa cấu hình quiz để tuần tự hóa hai request bắt đầu đồng thời của cùng đề.
+            Quiz::query()->whereKey($quiz->id)->lockForUpdate()->firstOrFail();
+
+            $studentAttempts = QuizAttempt::query()
                 ->where('quiz_id', $quiz->id)
                 ->where('user_id', $student->id)
                 ->lockForUpdate()
-                ->first();
+                ->get();
+
+            $attempt = $studentAttempts
+                ->where('quiz_session_id', $session?->id)
+                ->first(fn (QuizAttempt $candidate) => $candidate->isInProgress());
 
             if ($attempt) {
                 if (! $attempt->isInProgress()) {
@@ -38,6 +45,14 @@ class QuizExamService
                 }
 
                 return $attempt->load(['attemptQuestions.answer', 'session']);
+            }
+
+            $attemptsInPolicyScope = $studentAttempts->where('quiz_session_id', $session?->id)->count();
+            $maxAttempts = max(1, (int) ($quiz->max_attempts ?: 1));
+            if ($attemptsInPolicyScope >= $maxAttempts) {
+                throw ValidationException::withMessages([
+                    'attempt' => "Bạn đã sử dụng hết {$maxAttempts} lượt làm bài trong ".($session ? 'ca thi này.' : 'bài kiểm tra này.'),
+                ]);
             }
 
             $questions = $this->questionSelector->selectForQuiz($quiz);
@@ -68,6 +83,7 @@ class QuizExamService
                 'quiz_id' => $quiz->id,
                 'quiz_session_id' => $session?->id,
                 'user_id' => $student->id,
+                'attempt_number' => ((int) $studentAttempts->max('attempt_number')) + 1,
                 'status' => 'in_progress',
                 'started_at' => $startedAt,
                 'expires_at' => $expiresAt,

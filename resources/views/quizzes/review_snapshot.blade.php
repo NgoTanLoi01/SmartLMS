@@ -33,7 +33,7 @@
                     <i class="fa-solid fa-arrow-left"></i> Quay lại khóa học
                 </a>
                 <h3 class="fw-bold mb-1">{{ $attempt->quiz->title }}</h3>
-                @if($attempt->session)<div class="text-muted">{{ $attempt->session->name }}</div>@endif
+                <div class="text-muted">{{ $attempt->session?->name ?? 'Không theo ca' }} · Lượt {{ $attempt->attempt_number ?? 1 }}</div>
             </div>
             <div class="card border-0 shadow-sm rounded-4 px-4 py-3 text-center">
                 <div class="small text-muted fw-bold">KẾT QUẢ</div>

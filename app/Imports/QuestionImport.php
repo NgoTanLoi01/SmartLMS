@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\Option;
 use App\Models\Question;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow; // Thêm thư viện này
 
@@ -30,18 +31,31 @@ class QuestionImport implements ToCollection, WithStartRow
 
     public function collection(Collection $rows)
     {
+        $rowNumber = $this->startRow() - 1;
+
         foreach ($rows as $row) {
-            // Kiểm tra: Bỏ qua nếu cột Nội dung câu hỏi (Cột A) bị rỗng
-            if (! isset($row[0]) || trim($row[0]) === '') {
+            $rowNumber++;
+            $cells = collect($row)->values()->map(fn ($value) => trim((string) $value));
+
+            if ($cells->filter(fn ($value) => $value !== '')->isEmpty()) {
                 continue;
             }
 
-            $questionText = trim($row[0]);
+            $requiredCells = $cells->take(7);
+            if ($requiredCells->count() !== 7 || $requiredCells->contains(fn ($value) => $value === '')) {
+                $this->rejectRow($rowNumber, 'phải có đủ 7 cột và không được để trống nội dung, độ khó, 4 lựa chọn hoặc đáp án đúng.');
+            }
 
-            // Cột 1: Độ khó (Mặc định là medium nếu bỏ trống)
-            $difficulty = isset($row[1]) ? strtolower(trim($row[1])) : 'medium';
+            if ($cells->slice(7)->contains(fn ($value) => $value !== '')) {
+                $this->rejectRow($rowNumber, 'chỉ được có đúng 7 cột dữ liệu.');
+            }
+
+            $questionText = $cells[0];
+
+            // Cột B: Độ khó.
+            $difficulty = strtolower($cells[1]);
             if (! in_array($difficulty, ['easy', 'medium', 'hard'])) {
-                $difficulty = 'medium';
+                $this->rejectRow($rowNumber, 'cột độ khó chỉ nhận easy, medium hoặc hard.');
             }
 
             // 1. Tạo câu hỏi
@@ -54,18 +68,21 @@ class QuestionImport implements ToCollection, WithStartRow
                 'status' => Question::STATUS_PUBLISHED,
             ]);
 
-            // Cột 2, 3, 4, 5: Đáp án A, B, C, D (Nếu trống thì gán mặc định)
+            // Cột C, D, E, F: Đáp án A, B, C, D.
             $optionsData = [
-                'A' => isset($row[2]) && trim($row[2]) !== '' ? trim($row[2]) : 'Đáp án A',
-                'B' => isset($row[3]) && trim($row[3]) !== '' ? trim($row[3]) : 'Đáp án B',
-                'C' => isset($row[4]) && trim($row[4]) !== '' ? trim($row[4]) : 'Đáp án C',
-                'D' => isset($row[5]) && trim($row[5]) !== '' ? trim($row[5]) : 'Đáp án D',
+                'A' => $cells[2],
+                'B' => $cells[3],
+                'C' => $cells[4],
+                'D' => $cells[5],
             ];
+            if (count(array_unique(array_map('mb_strtolower', $optionsData))) !== 4) {
+                $this->rejectRow($rowNumber, '4 lựa chọn phải khác nhau.');
+            }
 
-            // Cột 6: Đáp án đúng (G)
-            $correctLetter = isset($row[6]) ? strtoupper(trim($row[6])) : 'A';
+            // Cột G: Đáp án đúng.
+            $correctLetter = strtoupper($cells[6]);
             if (! in_array($correctLetter, ['A', 'B', 'C', 'D'])) {
-                $correctLetter = 'A'; // Chống lỗi: Nếu nhập sai, mặc định A là đúng
+                $this->rejectRow($rowNumber, 'đáp án đúng chỉ nhận A, B, C hoặc D.');
             }
 
             // 2. Tạo 4 đáp án vào CSDL
@@ -79,5 +96,18 @@ class QuestionImport implements ToCollection, WithStartRow
 
             $this->importedCount++; // Tăng biến đếm
         }
+
+        if ($this->importedCount === 0) {
+            throw ValidationException::withMessages([
+                'file' => 'File không có dòng câu hỏi hợp lệ để nhập.',
+            ]);
+        }
+    }
+
+    private function rejectRow(int $rowNumber, string $message): never
+    {
+        throw ValidationException::withMessages([
+            'file' => "Dòng {$rowNumber} {$message}",
+        ]);
     }
 }

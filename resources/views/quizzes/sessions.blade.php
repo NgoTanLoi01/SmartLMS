@@ -8,7 +8,10 @@
 
 @section('content')
     @php
-        $allAttempts = $quiz->sessions->flatMap->attempts;
+        $latestAttemptsBySession = $quiz->sessions->mapWithKeys(fn($session) => [
+            $session->id => $session->attempts->sortByDesc('attempt_number')->unique('user_id')->values(),
+        ]);
+        $allAttempts = $latestAttemptsBySession->flatten(1);
         $totalCandidates = $quiz->sessions->sum(fn($item) => $item->candidates->count());
         $totalInProgress = $allAttempts->where('status', 'in_progress')->count();
         $totalSubmitted = $allAttempts->whereNotNull('completed_at')->count();
@@ -78,8 +81,9 @@
         <div class="session-grid">
             @forelse($quiz->sessions as $session)
                 @php
-                    $submitted = $session->attempts->whereNotNull('completed_at')->count();
-                    $inProgress = $session->attempts->where('status', 'in_progress')->count();
+                    $latestAttempts = $latestAttemptsBySession->get($session->id, collect());
+                    $submitted = $latestAttempts->whereNotNull('completed_at')->count();
+                    $inProgress = $latestAttempts->where('status', 'in_progress')->count();
                     $candidateCount = $session->candidates->count();
                     $notStarted = max($candidateCount - $submitted - $inProgress, 0);
                     $completion = $candidateCount > 0 ? round(($submitted / $candidateCount) * 100) : 0;

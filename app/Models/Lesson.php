@@ -15,7 +15,7 @@ class Lesson extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
-    protected $fillable = ['module_id', 'title', 'content', 'video_url', 'attachment_path', 'attachment', 'attachment_disk', 'attachment_original_name', 'attachment_mime_type', 'attachment_size', 'order', 'status', 'published_at', 'available_from'];
+    protected $fillable = ['module_id', 'template_origin_id', 'title', 'content', 'video_url', 'attachment_path', 'attachment', 'attachment_disk', 'attachment_original_name', 'attachment_mime_type', 'attachment_size', 'order', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
         'content' => SanitizedHtml::class,
@@ -68,5 +68,10 @@ class Lesson extends Model
     public function materialAssignments()
     {
         return $this->hasMany(LearningMaterialAssignment::class);
+    }
+
+    public function templateOrigin()
+    {
+        return $this->belongsTo(self::class, 'template_origin_id');
     }
 }

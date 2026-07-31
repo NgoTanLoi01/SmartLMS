@@ -14,11 +14,15 @@ class Course extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
-    protected $fillable = ['title', 'description', 'teacher_id', 'learning_program_id', 'course_type', 'status', 'published_at', 'available_from'];
+    protected $fillable = ['title', 'description', 'teacher_id', 'learning_program_id', 'course_type', 'template_version', 'source_template_id', 'synced_template_version', 'template_section_versions', 'template_sync_state', 'status', 'published_at', 'available_from'];
 
     protected $casts = [
         'published_at' => 'datetime',
         'available_from' => 'datetime',
+        'template_version' => 'integer',
+        'synced_template_version' => 'integer',
+        'template_section_versions' => 'array',
+        'template_sync_state' => 'array',
     ];
 
     public function scopeVisibleToStudents($query)
@@ -53,6 +57,16 @@ class Course extends Model
     public function isTemplate(): bool
     {
         return $this->course_type === 'template';
+    }
+
+    public function sourceTemplate()
+    {
+        return $this->belongsTo(self::class, 'source_template_id');
+    }
+
+    public function derivedCourses()
+    {
+        return $this->hasMany(self::class, 'source_template_id');
     }
 
     public function modules()
