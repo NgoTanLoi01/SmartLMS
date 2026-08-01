@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,18 +16,35 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'name' => 'System Admin',
-            'email' => 'ngotanloi2424@gmail.com',
-            'password' => bcrypt('12345678'),
-            'role' => 'admin',
-        ]);
+        $accounts = [
+            [
+                'name' => 'System Admin',
+                'email' => 'ngotanloi2424@gmail.com',
+                'role' => User::ROLE_ADMIN,
+                'password' => env('SMARTLMS_SEED_ADMIN_PASSWORD'),
+            ],
+            [
+                'name' => 'Ngô Tấn Lợi',
+                'email' => 'ngotanloi123321@gmail.com',
+                'role' => User::ROLE_TEACHER,
+                'password' => env('SMARTLMS_SEED_TEACHER_PASSWORD'),
+            ],
+        ];
 
-        User::create([
-            'name' => 'Ngô Tấn Lợi',
-            'email' => 'ngotanloi123321@gmail.com',
-            'password' => bcrypt('12345678'),
-            'role' => 'teacher',
-        ]);
+        foreach ($accounts as $account) {
+            $password = $account['password'];
+            unset($account['password']);
+
+            if (blank($password)) {
+                $this->command?->warn("Bỏ qua {$account['role']} {$account['email']}: chưa cấu hình mật khẩu seed.");
+
+                continue;
+            }
+
+            User::updateOrCreate(
+                ['email' => $account['email']],
+                [...$account, 'password' => Hash::make($password)]
+            );
+        }
     }
 }

@@ -106,6 +106,19 @@ class DashboardMetricsTest extends TestCase
         $this->assertSame($classId, DB::table('class_user')->where('user_id', $student->id)->value('class_id'));
     }
 
+    public function test_student_dashboard_links_to_the_personal_schedule(): void
+    {
+        $teacher = $this->user('schedule-teacher@example.com', User::ROLE_TEACHER);
+        $student = $this->user('schedule-student@example.com', User::ROLE_STUDENT);
+        $this->courseAndClass($teacher, $student);
+
+        $this->actingAs($student)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('href="'.route('students.schedule').'"', false)
+            ->assertDontSee('href="'.route('schedules.index').'" class="quick-action"', false);
+    }
+
     public function test_teacher_dashboard_combines_grading_queue_and_normalizes_attention_scores(): void
     {
         $teacher = $this->user('teacher-dashboard@example.com', User::ROLE_TEACHER);
@@ -464,6 +477,18 @@ class DashboardMetricsTest extends TestCase
             $table->id();
             $table->text('exception')->nullable();
         });
+        Schema::create('smart_notifications', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type')->nullable();
+            $table->string('title');
+            $table->text('message');
+            $table->string('action_url')->nullable();
+            $table->json('data')->nullable();
+            $table->string('dedupe_key')->nullable();
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
     }
 
     private function tables(): array
@@ -472,6 +497,7 @@ class DashboardMetricsTest extends TestCase
             'users', 'courses', 'classes', 'class_user', 'class_course', 'modules', 'lessons', 'lesson_user',
             'assignments', 'assignment_submissions', 'quizzes', 'quiz_sessions', 'quiz_session_user',
             'quiz_attempts', 'schedules', 'attendance_columns', 'attendance_data', 'backup_runs', 'failed_jobs',
+            'smart_notifications',
         ];
     }
 }

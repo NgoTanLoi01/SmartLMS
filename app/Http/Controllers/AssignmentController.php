@@ -12,9 +12,12 @@ use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
 use App\Services\SubmissionArchiveService;
 use App\Services\SubmissionFileService;
+use App\Support\AssignmentUploadTypes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class AssignmentController extends Controller
 {
@@ -94,6 +97,7 @@ class AssignmentController extends Controller
             'course_id', 'lesson_id', 'type', 'title', 'instructions', 'grading_rubric',
             'grading_scale', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'available_from',
         ]);
+        $data['allowed_extensions'] = $this->normalizeAllowedExtensions($data['allowed_extensions'] ?? null);
         $data['grading_scale'] = $data['grading_scale'] ?? 10;
         $data['ai_grading_enabled'] = $request->boolean('ai_grading_enabled');
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
@@ -367,16 +371,22 @@ class AssignmentController extends Controller
         $oldSubmission = AssignmentSubmission::where('assignment_id', $id)->where('user_id', $user->id)->first();
 
         // 2. Validate nội dung theo loại bài tập
-        $allowed = $assignment->allowed_extensions ?? 'pdf,docx,txt,md,html,htm,css,js,php,png,jpg,jpeg';
+        $allowed = AssignmentUploadTypes::safeExtensions($assignment->allowed_extensions);
         $maxSize = $assignment->max_file_size ?? 10240;
         $rules = [];
+
+        if ($allowed === []) {
+            throw ValidationException::withMessages([
+                'file' => 'Bài tập chưa có định dạng tệp an toàn. Vui lòng liên hệ giáo viên.',
+            ]);
+        }
 
         $hasExistingFile = $oldSubmission && ! empty($oldSubmission->file_path);
 
         if (in_array($assignment->type, ['file', 'mixed'], true) && ! $hasExistingFile) {
-            $rules['file'] = 'required|file|mimes:'.str_replace(' ', '', $allowed)."|max:{$maxSize}";
+            $rules['file'] = 'required|file|mimes:'.implode(',', $allowed)."|max:{$maxSize}";
         } else {
-            $rules['file'] = 'nullable|file|mimes:'.str_replace(' ', '', $allowed)."|max:{$maxSize}";
+            $rules['file'] = 'nullable|file|mimes:'.implode(',', $allowed)."|max:{$maxSize}";
         }
 
         if (in_array($assignment->type, ['essay', 'mixed'], true)) {
@@ -394,14 +404,14 @@ class AssignmentController extends Controller
 
         // 4. Lưu file mới vào folder assignments
         $filePath = $oldSubmission?->file_path;
-        $fileDisk = $oldSubmission?->file_disk ?: 'public';
+        $fileDisk = $oldSubmission?->file_disk ?: config('filesystems.submission_disk', 'local');
         $originalFilename = $oldSubmission?->original_filename;
         $mimeType = $oldSubmission?->mime_type;
         $fileSize = $oldSubmission?->file_size;
 
         if ($request->hasFile('file')) {
             $file = $request->file('file');
-            $fileDisk = config('filesystems.submission_disk', env('SUBMISSION_FILESYSTEM_DISK', 'public'));
+            $fileDisk = config('filesystems.submission_disk', 'local');
             $originalFilename = $file->getClientOriginalName();
             $mimeType = $file->getClientMimeType();
             $fileSize = $file->getSize();
@@ -411,7 +421,7 @@ class AssignmentController extends Controller
             $filePath = $file->storeAs("assignments/{$assignment->id}/students/{$user->id}", $storedName, $fileDisk);
         } elseif ($assignment->type === 'essay') {
             $filePath = null;
-            $fileDisk = 'public';
+            $fileDisk = config('filesystems.submission_disk', 'local');
             $originalFilename = null;
             $mimeType = null;
             $fileSize = null;
@@ -422,7 +432,7 @@ class AssignmentController extends Controller
             ['assignment_id' => $id, 'user_id' => $user->id],
             [
                 'file_path' => $filePath,
-                'file_disk' => $filePath ? $fileDisk : 'public',
+                'file_disk' => $filePath ? $fileDisk : config('filesystems.submission_disk', 'local'),
                 'original_filename' => $originalFilename,
                 'mime_type' => $mimeType,
                 'file_size' => $fileSize,
@@ -473,7 +483,13 @@ class AssignmentController extends Controller
             'type' => 'nullable|in:file,essay,mixed',
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
+            'allowed_extensions' => 'nullable|string|max:255',
+            'max_file_size' => 'nullable|integer|min:1|max:20480',
         ]);
+
+        if ($request->has('allowed_extensions')) {
+            $validated['allowed_extensions'] = $this->normalizeAllowedExtensions($validated['allowed_extensions'] ?? null);
+        }
 
         $lesson = Lesson::with('module')->findOrFail($validated['lesson_id']);
         abort_unless((int) $lesson->module?->course_id === (int) $assignment->course_id, 422, 'Bài học không thuộc khóa học của bài tập.');
@@ -536,5 +552,16 @@ class AssignmentController extends Controller
         Gate::authorize('view', $submission);
 
         return $this->submissionFiles->preview($submission);
+    }
+
+    private function normalizeAllowedExtensions(?string $extensions): string
+    {
+        try {
+            return AssignmentUploadTypes::normalize($extensions);
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'allowed_extensions' => $exception->getMessage(),
+            ]);
+        }
     }
 }

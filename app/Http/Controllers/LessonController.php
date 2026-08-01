@@ -186,7 +186,7 @@ class LessonController extends Controller
     private function storeAttachment(Request $request): array
     {
         $file = $request->file('attachment');
-        $disk = config('filesystems.lesson_attachment_disk', 'public');
+        $disk = config('filesystems.lesson_attachment_disk', 'local');
         $originalName = $file->getClientOriginalName();
         $extension = $file->getClientOriginalExtension();
         $safeName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) ?: 'lesson-attachment';

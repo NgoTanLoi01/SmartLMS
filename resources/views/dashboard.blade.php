@@ -69,7 +69,7 @@
                     <a href="{{ route('courses.index') }}" class="quick-action"><i class="fa-solid fa-book-open"></i> Vào học</a>
                     <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fa-solid fa-paper-plane"></i> Bài
                         tập</a>
-                    <a href="{{ route('schedules.index') }}" class="quick-action"><i class="fa-solid fa-calendar-days"></i> Lịch học</a>
+                    <a href="{{ route('students.schedule') }}" class="quick-action"><i class="fa-solid fa-calendar-days"></i> Lịch học</a>
                     <a href="{{ route('students.grades') }}" class="quick-action"><i class="fa-solid fa-chart-line"></i> Điểm số</a>
                 @endif
             </div>

@@ -90,6 +90,8 @@ class SubmissionFileService
             'Content-Type' => $this->previewContentType($submission),
             'Content-Disposition' => 'inline; filename="'.$fileName.'"',
             'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:",
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 

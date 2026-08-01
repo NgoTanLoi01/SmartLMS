@@ -15,9 +15,9 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
-    'submission_disk' => env('SUBMISSION_FILESYSTEM_DISK', 'public'),
+    'submission_disk' => env('SUBMISSION_FILESYSTEM_DISK', 'local'),
 
-    'lesson_attachment_disk' => env('LESSON_ATTACHMENT_FILESYSTEM_DISK', env('SUBMISSION_FILESYSTEM_DISK', 'public')),
+    'lesson_attachment_disk' => env('LESSON_ATTACHMENT_FILESYSTEM_DISK', env('SUBMISSION_FILESYSTEM_DISK', 'local')),
 
     'shared_document_disk' => env('SHARED_DOCUMENT_FILESYSTEM_DISK', 'r2'),
 
