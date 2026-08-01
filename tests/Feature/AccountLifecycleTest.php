@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class AccountLifecycleTest extends TestCase
@@ -155,7 +156,7 @@ class AccountLifecycleTest extends TestCase
     {
         $teacher = $this->createUser(['email' => 'attendance-navigation@example.com']);
         $this->actingAs($teacher);
-        view()->share('errors', new \Illuminate\Support\ViewErrorBag);
+        view()->share('errors', new ViewErrorBag);
 
         $course = (object) ['id' => 321, 'title' => 'Khóa học kiểm thử'];
         $html = view('attendance.show', [
