@@ -10,8 +10,15 @@
         {{-- ── TOOLBAR ── --}}
         <div class="att-toolbar">
             <div class="att-title-block">
-                <h5><i class="fa-solid fa-clipboard-check"></i> Điểm danh & Điểm số</h5>
-                <small>{{ $course->title }}{{ $isStudentView ? ' · Dữ liệu của bạn' : '' }}</small>
+                <div class="att-title-copy">
+                    <h5><i class="fa-solid fa-clipboard-check"></i> Điểm danh & Điểm số</h5>
+                    <small>{{ $course->title }}{{ $isStudentView ? ' · Dữ liệu của bạn' : '' }}</small>
+                </div>
+                <a href="{{ route('courses.show', $course->id) }}" class="chip-btn chip-neutral att-back-btn"
+                    data-testid="attendance-back-to-course">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                    <span>Quay lại khóa học</span>
+                </a>
             </div>
 
             <div class="att-actions">
@@ -19,7 +26,7 @@
                 <div class="att-primary-actions">
                     <div class="att-search">
                         <i class="fa-solid fa-search"></i>
-                        <input type="text" id="filterName" placeholder="Tìm tên học sinh...">
+                        <input type="text" id="filterName" placeholder="Tìm tên học viên...">
                     </div>
                     <a href="{{ route('attendance.export', $course->id) }}" class="chip-btn chip-green"
                         data-no-page-transition data-file-download>
@@ -154,7 +161,7 @@
                                 <td colspan="{{ count($columns) + 2 }}">
                                     <div class="att-empty">
                                         <i class="fa-solid fa-user-slash d-block"></i>
-                                        <p>Chưa có học sinh nào trong khóa học này</p>
+                                        <p>Chưa có học viên nào trong khóa học này</p>
                                     </div>
                                 </td>
                             </tr>
@@ -255,7 +262,7 @@
         document.querySelectorAll('.attendance-note-btn:not(:disabled)').forEach(button => {
             button.addEventListener('click', function() {
                 const noteInput = document.getElementById(this.dataset.noteInput);
-                const note = window.prompt('Ghi chú riêng cho học sinh trong buổi này:', noteInput.value);
+                const note = window.prompt('Ghi chú riêng cho học viên trong buổi này:', noteInput.value);
                 if (note === null) return;
                 noteInput.value = note.trim();
                 this.classList.toggle('has-note', noteInput.value !== '');

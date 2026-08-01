@@ -56,8 +56,8 @@ class SystemBackupController extends Controller
             'auditable_type' => BackupRun::class,
             'auditable_id' => $backup->id,
             'description' => $backup->isSuccessful()
-                ? 'Tạo backup database thủ công.'
-                : 'Tạo backup database thủ công thất bại.',
+                ? 'Tạo bản sao lưu cơ sở dữ liệu thủ công.'
+                : 'Tạo bản sao lưu cơ sở dữ liệu thủ công thất bại.',
             'metadata' => [
                 'filename' => $backup->filename,
                 'size_bytes' => $backup->size_bytes,
@@ -70,10 +70,10 @@ class SystemBackupController extends Controller
         ]);
 
         if ($backup->isSuccessful()) {
-            return back()->with('success', 'Đã tạo backup database thành công.');
+            return back()->with('success', 'Đã sao lưu cơ sở dữ liệu thành công.');
         }
 
-        return back()->with('error', 'Backup thất bại: '.$backup->error_message);
+        return back()->with('error', 'Sao lưu thất bại: '.$backup->error_message);
     }
 
     public function download(Request $request, BackupRun $backup)

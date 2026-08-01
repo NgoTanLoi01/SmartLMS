@@ -513,7 +513,7 @@
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{{ route('classes.students.index', $class->id) }}">
-                                            <i class="fa-solid fa-user-graduate" style="color:#16a34a;"></i> Quản lý học sinh
+                                            <i class="fa-solid fa-user-graduate" style="color:#16a34a;"></i> Quản lý học viên
                                         </a>
                                     </li>
                                     <li>
@@ -534,7 +534,7 @@
                                             @csrf @method('DELETE')
                                             <button type="submit" class="dropdown-item text-danger"
                                                 style="background:none; border:none; width:100%; text-align:left;"
-                                                onclick="return confirm('Lưu trữ lớp học này? Học sinh, khóa học và tiến độ vẫn được giữ lại.')">
+                                                onclick="return confirm('Lưu trữ lớp học này? Học viên, khóa học và tiến độ vẫn được giữ lại.')">
                                                 <i class="fa-solid fa-archive"></i> Lưu trữ lớp học
                                             </button>
                                         </form>
@@ -555,7 +555,7 @@
 
                     {{-- Manage button --}}
                     <a href="{{ route('classes.students.index', $class->id) }}" class="btn-manage">
-                        <i class="fa-solid fa-user-graduate"></i> Quản lý học sinh
+                        <i class="fa-solid fa-user-graduate"></i> Quản lý học viên
                     </a>
                 </div>
             @endforeach

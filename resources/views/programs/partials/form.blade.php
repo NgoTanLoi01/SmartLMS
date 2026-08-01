@@ -24,8 +24,8 @@
 <div class="mb-0">
     <label class="form-label fw-bold small text-muted">Trạng thái</label>
     <select name="status" class="form-select bg-light border-0 py-2" required>
-        <option value="draft" @selected($selectedStatus === 'draft')>Draft - Đang soạn</option>
-        <option value="published" @selected($selectedStatus === 'published')>Published - Đang sử dụng</option>
-        <option value="hidden" @selected($selectedStatus === 'hidden')>Hidden - Tạm ẩn</option>
+        <option value="draft" @selected($selectedStatus === 'draft')>Bản nháp - Đang soạn</option>
+        <option value="published" @selected($selectedStatus === 'published')>Đã xuất bản - Đang sử dụng</option>
+        <option value="hidden" @selected($selectedStatus === 'hidden')>Tạm ẩn</option>
     </select>
 </div>

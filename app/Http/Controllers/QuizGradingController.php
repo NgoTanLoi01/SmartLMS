@@ -104,6 +104,6 @@ class QuizGradingController extends Controller
         Gate::authorize('view', $attempt);
         $examService->releaseResult($attempt);
 
-        return back()->with('success', 'Đã công bố điểm và phản hồi cho học sinh.');
+        return back()->with('success', 'Đã công bố điểm và phản hồi cho học viên.');
     }
 }

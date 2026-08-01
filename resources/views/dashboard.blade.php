@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Bảng điều khiển')
+@section('title', 'Trang tổng quan')
 
 @push('styles')
     @vite('resources/css/pages/dashboard.css')
@@ -16,22 +16,22 @@
                 <div class="lms-hero__pill">
                     <span></span>
                     @if ($role === 'teacher')
-                        SmartLMS Teacher Workspace
+                        Không gian dành cho giáo viên
                     @elseif ($role === 'admin')
-                        SmartLMS Admin Workspace
+                        Không gian quản trị SmartLMS
                     @else
-                        SmartLMS Student Workspace
+                        Không gian học tập của học viên
                     @endif
                 </div>
                 <h1 class="lms-hero__title">Xin chào, {{ auth()->user()->name }}!</h1>
                 <p class="lms-hero__desc">
                     @if ($role === 'teacher')
-                        Theo dõi lớp sắp dạy, bài cần chấm, học sinh cần chú ý và các gợi ý ưu tiên trong một bảng điều khiển gọn
+                        Theo dõi lớp sắp dạy, bài cần chấm, học viên cần chú ý và các gợi ý ưu tiên trong một bảng điều khiển gọn
                         gàng.
                     @elseif ($role === 'admin')
                         Quản lý tổng quan người dùng, lớp học, khóa học và các hoạt động vận hành quan trọng của hệ thống.
                     @else
-                        Theo dõi khóa học, bài tập, quiz và tiến độ học tập của bạn trong một không gian rõ ràng.
+                        Theo dõi khóa học, bài tập, bài kiểm tra và tiến độ học tập của bạn trong một không gian rõ ràng.
                     @endif
                 </p>
                 <div class="lms-hero__date">
@@ -64,7 +64,7 @@
                     <a href="{{ route('documents.upload') }}" class="quick-action"><i class="fa-solid fa-robot"></i> Huấn luyện
                         AI</a>
                     <a href="{{ route('operations.dashboard') }}" class="quick-action"><i class="fa-solid fa-gauge-high"></i> Vận hành</a>
-                    <a href="{{ route('system.backups.index') }}" class="quick-action"><i class="fa-solid fa-database"></i> Backup</a>
+                    <a href="{{ route('system.backups.index') }}" class="quick-action"><i class="fa-solid fa-database"></i> Sao lưu</a>
                 @else
                     <a href="{{ route('courses.index') }}" class="quick-action"><i class="fa-solid fa-book-open"></i> Vào học</a>
                     <a href="{{ route('assignments.index') }}" class="quick-action"><i class="fa-solid fa-paper-plane"></i> Bài

@@ -46,7 +46,7 @@ class ClassManagementController extends Controller
 
         $studentCode = StudentLoginCode::normalizeStudentCode($request->student_code);
         if ($studentCode && $classroom->students()->where('student_code', $studentCode)->exists()) {
-            return back()->withErrors(['student_code' => 'Mã học sinh này đã tồn tại trong lớp.'])->withInput();
+            return back()->withErrors(['student_code' => 'Mã học viên này đã tồn tại trong lớp.'])->withInput();
         }
 
         $username = StudentLoginCode::generateFromName($request->name, $studentCode);
@@ -62,7 +62,7 @@ class ClassManagementController extends Controller
 
         $classroom->students()->attach($student->id);
 
-        return back()->with('success', "Đã tạo học sinh và gán vào lớp thành công! Tên đăng nhập: {$username}");
+        return back()->with('success', "Đã tạo học viên và gán vào lớp thành công! Tên đăng nhập: {$username}");
     }
 
     public function getStudentsByClass($classId)
@@ -199,7 +199,7 @@ class ClassManagementController extends Controller
         $students = $classroom->students;
         if ($request->filled('student_id')) {
             $students = $students->where('id', (int) $request->input('student_id'))->values();
-            abort_if($students->isEmpty(), 422, 'Học sinh không thuộc lớp này.');
+            abort_if($students->isEmpty(), 422, 'Học viên không thuộc lớp này.');
         }
 
         $snapshotContext = $this->loadSnapshotContext($courseIds, $students);
@@ -384,19 +384,19 @@ class ClassManagementController extends Controller
 
         $classroom->update(['status' => Classroom::STATUS_ARCHIVED]);
 
-        return back()->with('success', 'Đã lưu trữ lớp học. Học sinh, khóa học và tiến độ vẫn được giữ lại.');
+        return back()->with('success', 'Đã lưu trữ lớp học. Học viên, khóa học và tiến độ vẫn được giữ lại.');
     }
 
-    // Xóa học sinh khỏi lớp (Chỉ gỡ liên kết trong bảng class_user)
+    // Xóa học viên khỏi lớp (Chỉ gỡ liên kết trong bảng class_user)
     public function removeStudent($classId, $studentId)
     {
         $classroom = Classroom::findOrFail($classId);
         Gate::authorize('manageStudents', $classroom);
 
-        // detach() sẽ gỡ kết nối học sinh khỏi lớp mà không xóa tài khoản
+        // detach() sẽ gỡ kết nối học viên khỏi lớp mà không xóa tài khoản
         $classroom->students()->detach($studentId);
 
-        return back()->with('success', 'Đã xóa học sinh khỏi lớp.');
+        return back()->with('success', 'Đã xóa học viên khỏi lớp.');
     }
 
     public function importStudents(Request $request, $classId)

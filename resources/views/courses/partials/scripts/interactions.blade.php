@@ -685,7 +685,7 @@
 
                         if (!data.submissions || data.submissions.length === 0) {
                             tableBody.innerHTML =
-                                '<tr><td colspan="4" class="text-center text-muted py-4">Chưa có học sinh nào nộp bài</td></tr>';
+                                '<tr><td colspan="4" class="text-center text-muted py-4">Chưa có học viên nào nộp bài</td></tr>';
                             return;
                         }
 
@@ -790,7 +790,7 @@
                 const resultReleased = this.getAttribute('data-result-released') === '1';
                 const canRetry = this.getAttribute('data-can-retry') === '1';
 
-                // Các thành phần UI của học sinh
+                // Các thành phần UI của học viên
                 const statusText = document.getElementById('quiz-status-text');
                 const scoreBox = document.getElementById('quiz-score-box');
                 const scoreText = document.getElementById('quiz-score-text');

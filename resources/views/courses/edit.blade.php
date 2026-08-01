@@ -70,10 +70,10 @@
                                 <div class="col-12 col-md-6">
                                     <label for="status" class="form-label fw-bold">Trạng thái xuất bản</label>
                                     <select name="status" id="status" class="form-select">
-                                        <option value="published" @selected(old('status', $course->status) === 'published')>Published - Học sinh có thể thấy</option>
-                                        <option value="draft" @selected(old('status', $course->status) === 'draft')>Draft - Bản nháp</option>
-                                        <option value="hidden" @selected(old('status', $course->status) === 'hidden')>Hidden - Ẩn khỏi học sinh</option>
-                                        <option value="archived" @selected(old('status', $course->status) === 'archived')>Archived - Lưu trữ</option>
+                                        <option value="published" @selected(old('status', $course->status) === 'published')>Đã xuất bản - Học viên có thể xem</option>
+                                        <option value="draft" @selected(old('status', $course->status) === 'draft')>Bản nháp</option>
+                                        <option value="hidden" @selected(old('status', $course->status) === 'hidden')>Tạm ẩn khỏi học viên</option>
+                                        <option value="archived" @selected(old('status', $course->status) === 'archived')>Đã lưu trữ</option>
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-6">
@@ -100,7 +100,7 @@
                         <i class="fa-solid fa-code-branch fs-3"></i>
                         <div>
                             <div class="fw-bold">Phiên bản khóa mẫu v{{ $course->template_version ?? 1 }}</div>
-                            <div class="small">Phiên bản tự tăng khi chương, bài học, bài tập, quiz hoặc câu hỏi của khóa mẫu thay đổi.</div>
+                            <div class="small">Phiên bản tự tăng khi chương, bài học, bài tập, bài kiểm tra hoặc câu hỏi của khóa mẫu thay đổi.</div>
                         </div>
                     </div>
                 @elseif ($course->sourceTemplate)

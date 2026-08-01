@@ -19,7 +19,7 @@
                 </a>
                 <a href="{{ route('assignments.index') }}" class="teacher-priority-card teacher-priority-card--green">
                     <span class="teacher-priority-card__icon"><i class="fa-solid fa-pen-to-square"></i></span>
-                    <span><span class="teacher-priority-card__label">Tồn đọng chấm bài</span><span class="teacher-priority-card__value">{{ $data['pending_grades'] ?? 0 }}</span><span class="teacher-priority-card__hint">{{ $data['pending_assignment_grades'] ?? 0 }} bài tập · {{ $data['pending_quiz_grades'] ?? 0 }} quiz.</span></span>
+                    <span><span class="teacher-priority-card__label">Tồn đọng chấm bài</span><span class="teacher-priority-card__value">{{ $data['pending_grades'] ?? 0 }}</span><span class="teacher-priority-card__hint">{{ $data['pending_assignment_grades'] ?? 0 }} bài tập · {{ $data['pending_quiz_grades'] ?? 0 }} bài kiểm tra.</span></span>
                     <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
             </div>
@@ -29,7 +29,7 @@
                     <div class="stat-card stat-card--blue">
                         <div class="stat-card__icon"><i class="fa-solid fa-users"></i></div>
                         <div class="stat-card__body">
-                            <div class="stat-card__label">Học sinh hoạt động</div>
+                            <div class="stat-card__label">Học viên hoạt động</div>
                             <div class="stat-card__value">{{ $data['total_students'] }}</div>
                         </div>
                     </div>
@@ -76,11 +76,11 @@
                     <strong>{{ $data['template_sync_pending_count'] ?? 0 }}</strong>
                 </a>
                 <a href="{{ route('operations.dashboard') }}" class="admin-health-item">
-                    <span><i class="fa-solid fa-triangle-exclamation"></i> Queue thất bại</span>
+                    <span><i class="fa-solid fa-triangle-exclamation"></i> Tác vụ nền thất bại</span>
                     <strong>{{ $data['failed_jobs_count'] ?? 0 }}</strong>
                 </a>
                 <a href="{{ route('system.backups.index') }}" class="admin-health-item">
-                    <span><i class="fa-solid fa-database"></i> Backup gần nhất</span>
+                    <span><i class="fa-solid fa-database"></i> Bản sao lưu gần nhất</span>
                     <strong class="admin-health-item__text {{ ($data['latest_backup']?->status ?? null) === 'success' ? 'text-success' : 'text-warning' }}">
                         @if ($data['latest_backup'] ?? null)
                             {{ $data['latest_backup']->status === 'success' ? 'Thành công' : 'Cần kiểm tra' }}
@@ -127,10 +127,7 @@
                                                 style="color:var(--text-muted);font-family:var(--font-mono);font-size:.78rem">
                                                 {{ $user->email }}</td>
                                             <td>
-                                                <span
-                                                    class="bdg {{ $r === 'teacher' ? 'bdg--info' : ($r === 'admin' ? 'bdg--dark' : 'bdg--primary') }}">
-                                                    {{ strtoupper($r) }}
-                                                </span>
+                                                <x-ui.role-badge :role="$r" />
                                                 @if (!$user->canAccessSystem())
                                                     <span class="bdg bdg--danger">Ngừng hoạt động</span>
                                                 @endif

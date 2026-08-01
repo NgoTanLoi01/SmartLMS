@@ -38,7 +38,7 @@
                     @else
                         <li>
                             <form action="{{ route('courses.destroy', $course->id) }}" method="POST"
-                                onsubmit="return confirm('Lưu trữ khóa học này? Học sinh sẽ không còn thấy khóa học nhưng dữ liệu vẫn được giữ lại.')">
+                                onsubmit="return confirm('Lưu trữ khóa học này? Học viên sẽ không còn thấy khóa học nhưng dữ liệu vẫn được giữ lại.')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="dropdown-item text-danger"
                                     style="background:none; border:none; width:100%; text-align:left;">
@@ -107,7 +107,7 @@
             @if ($course->isTemplate())
                 <span><i class="fa-solid fa-folder-tree"></i> {{ $course->modules_count ?? 0 }} chương</span>
             @else
-                <span><i class="fa-solid fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học sinh</span>
+                <span><i class="fa-solid fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học viên</span>
             @endif
         </div>
 

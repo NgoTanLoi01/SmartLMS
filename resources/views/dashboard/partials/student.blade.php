@@ -67,7 +67,7 @@
                     <div class="stat-card stat-card--violet">
                         <div class="stat-card__icon"><i class="fa-solid fa-clipboard-list"></i></div>
                         <div class="stat-card__body">
-                            <div class="stat-card__label">Quiz có thể làm</div>
+                            <div class="stat-card__label">Bài kiểm tra có thể làm</div>
                             <div class="stat-card__value">{{ $data['pending_quizzes_count'] ?? 0 }}</div>
                         </div>
                     </div>
@@ -104,7 +104,7 @@
             <div class="row g-3 mb-4 anim-4">
                 <div class="col-md-4">
                     <div class="score-hero">
-                        <div class="score-hero__label">Điểm Quiz trung bình</div>
+                        <div class="score-hero__label">Điểm kiểm tra trung bình</div>
                         <div class="score-hero__ring">
                             <div class="score-hero__value" style="position:relative;z-index:1">
                                 {{ $data['average_score'] }}</div>
@@ -136,7 +136,7 @@
                                         <span class="bdg {{ $isOverdue ? 'bdg--danger' : 'bdg--warning' }} mb-1">{{ $isOverdue ? 'Quá hạn' : 'Bài tập' }}</span>
                                         <div class="todo-item__label">{{ $assignment->title }}</div>
                                         <div class="todo-item__sub"><i
-                                                class="fa-solid fa-book me-1"></i>{{ $assignment->course_title ?? 'N/A' }}</div>
+                                                class="fa-solid fa-book me-1"></i>{{ $assignment->course_title ?? 'Chưa có khóa học' }}</div>
                                     </div>
                                     <div style="text-align:right;flex-shrink:0">
                                         <div class="todo-item__deadline {{ $isOverdue ? 'text-danger' : '' }}">
@@ -156,7 +156,7 @@
                                         <div class="todo-item__label" style="color:var(--brand)">{{ $quiz->title }}
                                         </div>
                                         <div class="todo-item__sub"><i
-                                                class="fa-solid fa-book me-1"></i>{{ $quiz->course?->title ?? 'N/A' }}</div>
+                                                class="fa-solid fa-book me-1"></i>{{ $quiz->course?->title ?? 'Chưa có khóa học' }}</div>
                                         @if ($quiz->dashboard_session_name)
                                             <div class="todo-item__sub"><i class="fa-solid fa-users-rectangle me-1"></i>{{ $quiz->dashboard_session_name }}</div>
                                         @endif

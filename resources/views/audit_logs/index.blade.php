@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Audit log')
+@section('title', 'Nhật ký hệ thống')
 
 @push('styles')
     <style>
@@ -193,8 +193,8 @@
     <div class="audit-page">
         <div class="audit-header">
             <div>
-                <h1 class="audit-title">Audit log</h1>
-                <p class="audit-subtitle">Theo dõi thao tác nhạy cảm: điểm số, AI, import, lịch học và thanh toán.</p>
+                <h1 class="audit-title">Nhật ký hệ thống</h1>
+                <p class="audit-subtitle">Theo dõi thao tác nhạy cảm: điểm số, AI, nhập dữ liệu, lịch học và thanh toán.</p>
             </div>
             <form method="POST" action="{{ route('audit-logs.bulk-destroy') }}"
                 onsubmit="return confirm('Bạn chắc chắn muốn xóa các audit log theo bộ lọc hiện tại? Nếu chưa chọn bộ lọc, toàn bộ audit log sẽ bị xóa.');">
@@ -205,7 +205,7 @@
                 <input type="hidden" name="from_date" value="{{ $filters['from_date'] }}">
                 <input type="hidden" name="to_date" value="{{ $filters['to_date'] }}">
                 <button type="submit" class="btn btn-outline-danger rounded-pill px-4">
-                    <i class="fa-solid fa-trash-can me-1"></i> Xóa log theo bộ lọc
+                    <i class="fa-solid fa-trash-can me-1"></i> Xóa nhật ký theo bộ lọc
                 </button>
             </form>
         </div>
@@ -292,8 +292,8 @@
                                 <td class="px-3 py-3"><span
                                         class="audit-action {{ $actionClass }}">{{ $log->action }}</span></td>
                                 <td class="px-3 py-3">
-                                    <div class="fw-semibold">{{ class_basename($log->auditable_type) ?: 'N/A' }}</div>
-                                    <div class="text-muted small">ID: {{ $log->auditable_id ?? 'N/A' }}</div>
+                                    <div class="fw-semibold">{{ class_basename($log->auditable_type) ?: 'Chưa có' }}</div>
+                                    <div class="text-muted small">ID: {{ $log->auditable_id ?? 'Chưa có' }}</div>
                                 </td>
                                 <td class="px-3 py-3">{{ $log->description }}</td>
                                 <td class="px-3 py-3">

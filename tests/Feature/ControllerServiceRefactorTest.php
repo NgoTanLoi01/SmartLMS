@@ -331,11 +331,17 @@ class ControllerServiceRefactorTest extends TestCase
     <x-slot:meta><span>20 học sinh</span></x-slot:meta>
 </x-ui.page-header>
 <x-ui.stat-grid><x-ui.stat-card label="Cần chú ý" value="3" tone="danger" /></x-ui.stat-grid>
+<x-ui.role-badge role="admin" />
+<x-ui.status-badge status="published" />
+<x-ui.empty-state title="Chưa có khóa học" description="Hãy tạo khóa học đầu tiên." />
 BLADE);
 
         $this->assertStringContainsString('<header', $html);
         $this->assertStringContainsString('aria-label="breadcrumb"', $html);
         $this->assertStringContainsString('aria-current="page"', $html);
         $this->assertStringContainsString('lms-stat danger', $html);
+        $this->assertStringContainsString('Quản trị viên', $html);
+        $this->assertStringContainsString('Đang sử dụng', $html);
+        $this->assertStringContainsString('Chưa có khóa học', $html);
     }
 }

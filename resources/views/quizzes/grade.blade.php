@@ -98,15 +98,15 @@
                     </header>
                     <div class="grade-card__body">
                         @if($question->question_type === 'essay')
-                            <div class="small fw-bold text-muted mb-2">Bài làm của học sinh</div>
+                            <div class="small fw-bold text-muted mb-2">Bài làm của học viên</div>
                             <div class="answer-panel">{{ $payload['text'] ?? 'Thí sinh không nhập nội dung.' }}</div>
                         @elseif($question->question_type === 'code_debug')
                             <div class="row g-3">
                                 <div class="col-xl-7"><div class="small fw-bold text-muted mb-2">Mã HTML/CSS đã sửa</div><pre class="grade-code mb-0"><code>{{ $payload['code'] ?? '' }}</code></pre></div>
-                                <div class="col-xl-5"><div class="small fw-bold text-muted mb-2">Xem trước an toàn</div><iframe sandbox="" title="Xem trước HTML/CSS của học sinh" class="w-100 rounded-3 border bg-white" style="min-height:260px" data-grade-preview data-code="{{ base64_encode($payload['code'] ?? '') }}"></iframe></div>
+                                <div class="col-xl-5"><div class="small fw-bold text-muted mb-2">Xem trước an toàn</div><iframe sandbox="" title="Xem trước HTML/CSS của học viên" class="w-100 rounded-3 border bg-white" style="min-height:260px" data-grade-preview data-code="{{ base64_encode($payload['code'] ?? '') }}"></iframe></div>
                             </div>
                             @if(data_get($question->response_schema_snapshot, 'explanation_mode') !== 'disabled')
-                                <div class="mt-3"><div class="small fw-bold text-muted mb-2">Giải thích của học sinh</div><div class="answer-panel">{{ $payload['explanation'] ?: 'Không có giải thích.' }}</div></div>
+                                <div class="mt-3"><div class="small fw-bold text-muted mb-2">Giải thích của học viên</div><div class="answer-panel">{{ $payload['explanation'] ?: 'Không có giải thích.' }}</div></div>
                             @endif
                         @else
                             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 rounded-3 bg-light border">
@@ -137,9 +137,9 @@
                                     </div>
                                 @endforeach
                                 <div class="mt-3">
-                                    <label class="form-label fw-bold" for="feedback-{{ $question->id }}">Phản hồi cho học sinh</label>
+                                    <label class="form-label fw-bold" for="feedback-{{ $question->id }}">Phản hồi cho học viên</label>
                                     <textarea id="feedback-{{ $question->id }}" class="form-control rounded-3" name="teacher_feedback" rows="4" maxlength="10000" placeholder="Nêu điểm làm tốt, nội dung cần cải thiện và hướng khắc phục..." {{ $isReleased ? 'disabled' : '' }}>{{ old('teacher_feedback', $answer?->teacher_feedback) }}</textarea>
-                                    <div class="form-text">Phản hồi chỉ hiển thị với học sinh sau khi điểm được công bố.</div>
+                                    <div class="form-text">Phản hồi chỉ hiển thị với học viên sau khi điểm được công bố.</div>
                                 </div>
                                 @if(!$isReleased)
                                     <div class="grade-actions">
@@ -178,7 +178,7 @@
                     <div class="display-6 fw-bold text-primary my-2">{{ $attempt->score !== null ? number_format((float) $attempt->score, 2) : '—' }}<small class="fs-6 text-muted">/10</small></div>
                     <div class="small text-muted mb-3">Tự động: {{ number_format((float) ($attempt->auto_score ?? 0), 2) }} · Thủ công: {{ $attempt->manual_score !== null ? number_format((float) $attempt->manual_score, 2) : '—' }}</div>
                     @if($attempt->status === 'graded')
-                        <form method="POST" action="{{ route('quiz-attempts.release', $attempt) }}" onsubmit="return confirm('Sau khi công bố, học sinh sẽ xem được điểm và phản hồi. Tiếp tục?')">
+                        <form method="POST" action="{{ route('quiz-attempts.release', $attempt) }}" onsubmit="return confirm('Sau khi công bố, học viên sẽ xem được điểm và phản hồi. Tiếp tục?')">
                             @csrf
                             <button class="btn btn-success w-100 rounded-pill fw-bold py-2"><i class="fa-solid fa-paper-plane me-2"></i>Công bố điểm</button>
                         </form>

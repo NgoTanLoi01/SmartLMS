@@ -713,7 +713,7 @@
             </div>
             <div>
                 <h3>Huấn luyện Trí tuệ Nhân tạo</h3>
-                <p>Cung cấp tài liệu để AI học kiến thức và hỗ trợ học sinh hiệu quả hơn</p>
+                <p>Cung cấp tài liệu để AI học kiến thức và hỗ trợ học viên hiệu quả hơn</p>
             </div>
         </div>
 

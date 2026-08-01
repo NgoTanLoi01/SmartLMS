@@ -209,7 +209,7 @@
                             <select name="status" class="form-select bg-light border-0 py-2">
                                 <option value="published">Xuất bản ngay</option>
                                 <option value="draft">Lưu nháp</option>
-                                <option value="hidden">Ẩn khỏi học sinh</option>
+                                <option value="hidden">Ẩn khỏi học viên</option>
                                 <option value="archived">Lưu trữ</option>
                             </select>
                         </div>
@@ -646,13 +646,13 @@
                 const rows = Array.isArray(data.submissions) ? data.submissions : [];
                 submissionsTitle.textContent = data.assignment_title ? `Bài tập: ${data.assignment_title}` : 'Bài nộp';
                 submissionsMeta.textContent =
-                    `${data.course_title || 'Khóa học'} · ${data.submitted_count || 0}/${data.total_students || rows.length} học sinh đã nộp`;
+                    `${data.course_title || 'Khóa học'} · ${data.submitted_count || 0}/${data.total_students || rows.length} học viên đã nộp`;
 
                 if (!rows.length) {
                     submissionsContent.innerHTML = `
                         <div class="text-center py-5 text-muted">
                             <i class="fa-solid fa-users fa-2x mb-3 opacity-50"></i>
-                            <div>Chưa có học sinh nào trong lớp của khóa học này.</div>
+                            <div>Chưa có học viên nào trong lớp của khóa học này.</div>
                         </div>`;
                     return;
                 }
@@ -670,7 +670,7 @@
                             <select name="mode" class="bulk-download-mode" aria-label="Phạm vi tải">
                                 <option value="all">Tất cả bài đã nộp</option>
                                 <option value="ungraded">Chỉ bài chưa chấm</option>
-                                <option value="selected">Các học sinh đã chọn</option>
+                                <option value="selected">Các học viên đã chọn</option>
                             </select>
                             <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
                                 <i class="fa-solid fa-download me-1"></i>Tải ZIP
@@ -682,7 +682,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th style="width:42px"><input type="checkbox" class="submission-select select-all-submissions" aria-label="Chọn tất cả"></th>
-                                    <th>Học sinh</th>
+                                    <th>Học viên</th>
                                     <th>Trạng thái</th>
                                     <th>Thời gian nộp</th>
                                     <th>Điểm</th>
@@ -694,7 +694,7 @@
                                     <tr>
                                         <td>${row.submission_id ? `<input type="checkbox" class="submission-select submission-checkbox" name="submission_ids[]" value="${esc(row.submission_id)}">` : ''}</td>
                                         <td>
-                                            <div class="fw-bold">${esc(row.student_name || 'Học sinh')}</div>
+                                            <div class="fw-bold">${esc(row.student_name || 'Học viên')}</div>
                                             ${row.student_code ? `<div class="text-muted small">${esc(row.student_code)}</div>` : ''}
                                             <div class="text-muted small">${esc(row.student_email || '')}</div>
                                         </td>
@@ -726,7 +726,7 @@
                                 <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                     <div class="min-w-0">
                                         ${row.submission_id ? `<input type="checkbox" class="submission-select submission-checkbox float-start me-2 mt-1" name="submission_ids[]" value="${esc(row.submission_id)}">` : ''}
-                                        <div class="fw-bold text-dark">${esc(row.student_name || 'Học sinh')}</div>
+                                        <div class="fw-bold text-dark">${esc(row.student_name || 'Học viên')}</div>
                                         <div class="text-muted small text-break">${esc(row.student_email || '')}</div>
                                     </div>
                                     ${row.submission_id
@@ -766,7 +766,7 @@
                 const mode = form.querySelector('.bulk-download-mode')?.value;
                 if (mode === 'selected' && !form.querySelector('.submission-checkbox:checked')) {
                     event.preventDefault();
-                    alert('Vui lòng chọn ít nhất một học sinh đã nộp bài.');
+                    alert('Vui lòng chọn ít nhất một học viên đã nộp bài.');
                 }
             });
         });

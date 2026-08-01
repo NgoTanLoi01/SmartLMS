@@ -54,7 +54,7 @@ class CourseQualityController extends Controller
                 'type' => 'short_lesson',
                 'title' => $lesson->title,
                 'message' => 'Bài học khá ngắn và chưa có video/tài liệu đính kèm.',
-                'suggestion' => 'Bổ sung nội dung chính, ví dụ minh họa hoặc tài liệu để học sinh dễ tự học hơn.',
+                'suggestion' => 'Bổ sung nội dung chính, ví dụ minh họa hoặc tài liệu để học viên dễ tự học hơn.',
             ]);
     }
 
@@ -92,7 +92,7 @@ class CourseQualityController extends Controller
                     'type' => 'empty_quiz_config',
                     'title' => $quiz->title,
                     'message' => 'Quiz chưa cấu hình số lượng câu hỏi.',
-                    'suggestion' => 'Thiết lập số câu dễ/trung bình/khó trước khi mở cho học sinh.',
+                    'suggestion' => 'Thiết lập số câu dễ/trung bình/khó trước khi mở cho học viên.',
                 ]);
 
                 continue;
@@ -125,7 +125,7 @@ class CourseQualityController extends Controller
                 'type' => 'missing_chatbot_documents',
                 'title' => $course->title,
                 'message' => 'Khóa học chưa có tài liệu huấn luyện cho chatbot.',
-                'suggestion' => 'Upload tài liệu bài giảng để AI trả lời theo đúng nội dung khóa học hơn.',
+                'suggestion' => 'Tải tài liệu bài giảng lên để AI trả lời sát nội dung khóa học hơn.',
             ]);
         }
 
@@ -138,7 +138,7 @@ class CourseQualityController extends Controller
                     'type' => 'lesson_missing_context',
                     'title' => $lesson->title,
                     'message' => 'Bài học chưa có nội dung văn bản hoặc tài liệu để AI bám theo.',
-                    'suggestion' => 'Thêm mô tả bài học hoặc file tài liệu để chatbot hỗ trợ học sinh tốt hơn.',
+                    'suggestion' => 'Thêm mô tả bài học hoặc file tài liệu để chatbot hỗ trợ học viên tốt hơn.',
                 ]);
             });
 

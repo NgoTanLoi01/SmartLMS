@@ -7,9 +7,14 @@
     },
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:e2e": "playwright test",
+        "test:e2e:desktop": "playwright test --project=desktop",
+        "test:load:50": "LOAD_USERS=50 node scripts/load-test.mjs",
+        "test:load:100": "LOAD_USERS=100 node scripts/load-test.mjs"
     },
     "devDependencies": {
+        "@playwright/test": "^1.62.1",
         "@tailwindcss/vite": "^4.0.0",
         "concurrently": "^9.0.1",
         "laravel-echo": "^2.2.6",

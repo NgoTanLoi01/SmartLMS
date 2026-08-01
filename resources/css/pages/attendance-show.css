@@ -75,7 +75,15 @@ body {
 
 /* Title block */
 .att-title-block {
+    align-items: center;
+    display: flex;
     flex: 1 1 100%;
+    gap: 1rem;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.att-title-copy {
     min-width: 0;
 }
 
@@ -255,6 +263,22 @@ body {
 
 .chip-blue:hover {
     background: var(--blue-100);
+}
+
+.chip-neutral {
+    background: var(--surface);
+    border-color: var(--border-md);
+    color: var(--text-2);
+}
+
+.chip-neutral:hover {
+    background: var(--surface-2);
+    border-color: var(--blue-100);
+    color: var(--blue-600);
+}
+
+.att-back-btn {
+    flex: 0 0 auto;
 }
 
 /* ── TABLE WRAPPER ── */
@@ -691,6 +715,17 @@ thead .col-name {
         overflow: visible;
         text-overflow: clip;
         line-height: 1.35;
+    }
+
+    .att-title-block {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+
+    .att-back-btn {
+        justify-content: center;
+        width: 100%;
     }
 
     .att-actions {

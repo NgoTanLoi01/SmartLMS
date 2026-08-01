@@ -32,10 +32,12 @@
 </head>
 
 <body>
+    <a class="skip-link" href="#main-content">Bỏ qua menu, đến nội dung chính</a>
     @auth
         {{-- ── Navbar ── --}}
         <nav class="navbar">
-            <button class="hamburger me-3" id="sidebarToggle" aria-label="Mở menu">
+            <button class="hamburger me-3" id="sidebarToggle" type="button" aria-label="Mở menu"
+                aria-controls="sidebar" aria-expanded="false">
                 <i class="fa-solid fa-bars"></i>
             </button>
 
@@ -75,16 +77,18 @@
                 </div>
             </div>
 
-            <div class="user-btn dropdown" data-bs-toggle="dropdown" id="userMenuBtn" aria-expanded="false">
-                <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
-                <span>{{ Auth::user()->name }}</span>
-                <i class="fa-solid fa-chevron-down" style="font-size:11px; opacity:.6;"></i>
-            </div>
+            <button class="user-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" id="userMenuBtn"
+                aria-expanded="false" aria-label="Mở menu tài khoản">
+                <span class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</span>
+                <span class="user-btn__identity">
+                    <strong>{{ Auth::user()->name }}</strong>
+                    <small>{{ \App\Support\UiLabels::role(Auth::user()->role) }}</small>
+                </span>
+            </button>
             <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="userMenuBtn">
                 <li>
-                    <span class="dropdown-item text-muted"
-                        style="font-size:12px; font-weight:600; letter-spacing:.05em; cursor:default;">
-                        {{ strtoupper(Auth::user()->role) }}
+                    <span class="dropdown-item-text account-menu-role">
+                        {{ \App\Support\UiLabels::role(Auth::user()->role) }}
                     </span>
                 </li>
                 <li>
@@ -107,198 +111,7 @@
             </ul>
         </nav>
 
-        {{-- ── Sidebar ── --}}
-        <aside class="sidebar" id="sidebar">
-            <ul class="nav flex-column" style="list-style:none; padding:0; margin:0;">
-
-                {{-- Main --}}
-                <li>
-                    <a class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                        <i class="fa-solid fa-house-chimney"></i> Trang chủ
-                    </a>
-                </li>
-                <li>
-                    <a class="nav-link {{ request()->is('courses*') && !request()->routeIs('courses.materials.*') ? 'active' : '' }}"
-                        href="{{ route('courses.index') }}">
-                        <i class="fa-solid fa-graduation-cap"></i> Khóa học của tôi
-                    </a>
-                </li>
-                <li>
-                    <a class="nav-link {{ request()->routeIs('materials.index') || request()->routeIs('courses.materials.*') ? 'active' : '' }}"
-                        href="{{ route('materials.index') }}">
-                        <i class="fa-solid fa-folder-open"></i> Kho học liệu
-                    </a>
-                </li>
-                @if (Auth::user()->isAdmin() || Auth::user()->isTeacher())
-                    <li>
-                        <a class="nav-link {{ request()->routeIs('shared-documents.*') ? 'active' : '' }}"
-                            href="{{ route('shared-documents.index') }}">
-                            <i class="fa-solid fa-box-archive"></i> Tài liệu chung
-                        </a>
-                    </li>
-                @endif
-                @if (Auth::user()->role === 'student')
-                    <li>
-                        <a class="nav-link {{ request()->routeIs('students.schedule') ? 'active' : '' }}"
-                            href="{{ route('students.schedule') }}">
-                            <i class="fa-solid fa-calendar-days"></i> Lịch học cá nhân
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link {{ request()->routeIs('students.grades') ? 'active' : '' }}"
-                            href="{{ route('students.grades') }}">
-                            <i class="fa-solid fa-chart-line"></i> Điểm & nhận xét
-                        </a>
-                    </li>
-                @endif
-
-                {{-- Công cụ hỗ trợ --}}
-                <li>
-                    <a class="nav-link {{ request()->routeIs('tools.grade-calculator') ? 'active' : '' }}"
-                        data-bs-toggle="collapse" href="#toolsMenu" role="button"
-                        aria-expanded="{{ request()->routeIs('tools.grade-calculator') ? 'true' : 'false' }}">
-                        <i class="fa-solid fa-toolbox"></i> Công cụ hỗ trợ
-                        <i class="fa-solid fa-chevron-down chevron"></i>
-                    </a>
-                    <div class="collapse {{ request()->routeIs('tools.grade-calculator') ? 'show' : '' }}" id="toolsMenu">
-                        <ul class="sub-menu" style="list-style:none; padding:0; margin:0;">
-                            <li>
-                                <a class="nav-link {{ request()->routeIs('tools.grade-calculator') ? 'active-sub' : '' }}"
-                                    href="{{ route('tools.grade-calculator') }}">
-                                    <i class="fa-solid fa-calculator"></i> Tính điểm nghề
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" href="https://ngotanloi.my.canva.site/code-editer" target="_blank"
-                                    rel="noopener">
-                                    <i class="fa-solid fa-code"></i> Trình soạn thảo Code
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-
-                {{-- Góc giải trí --}}
-                <li>
-                    <a class="nav-link {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'active' : '' }}"
-                        data-bs-toggle="collapse" href="#entertainmentMenu" role="button"
-                        aria-expanded="{{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'true' : 'false' }}">
-                        <i class="fa-solid fa-gamepad"></i> Góc giải trí
-                        <i class="fa-solid fa-chevron-down chevron"></i>
-                    </a>
-                    <div class="collapse {{ request()->is('tools/chess*') || request()->is('tools/caro*') ? 'show' : '' }}"
-                        id="entertainmentMenu">
-                        <ul class="sub-menu" style="list-style:none; padding:0; margin:0;">
-                            <li>
-                                <a class="nav-link {{ request()->is('tools/chess*') ? 'active-sub' : '' }}"
-                                    href="{{ route('tools.chess.index') }}">
-                                    <i class="fa-solid fa-chess"></i> Cờ vua
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link {{ request()->is('tools/caro*') ? 'active-sub' : '' }}"
-                                    href="{{ route('tools.caro.index') }}">
-                                    <i class="fa-solid fa-circle-xmark"></i> Cờ Caro
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-
-                {{-- Admin / Teacher sections --}}
-                @if (in_array(Auth::user()->role, ['admin', 'teacher']))
-                    <div class="nav-section">Hệ thống AI</div>
-                    <li>
-                        <a class="nav-link {{ request()->is('documents*') ? 'active' : '' }}"
-                            href="{{ route('documents.upload') }}">
-                            <i class="fa-solid fa-robot"></i> Huấn luyện AI
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link {{ request()->is('question-bank*') ? 'active' : '' }}"
-                            href="{{ route('questions.index') }}">
-                            <i class="fa-solid fa-layer-group"></i> Ngân hàng câu hỏi
-                        </a>
-                    </li>
-
-                    <div class="nav-section">Quản lý</div>
-                    <li>
-                        <a class="nav-link {{ request()->is('programs*') ? 'active' : '' }}"
-                            href="{{ route('programs.index') }}">
-                            <i class="fa-solid fa-sitemap"></i> Chương trình học
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link {{ request()->is('classes*') ? 'active' : '' }}"
-                            href="{{ route('classes.index') }}">
-                            <i class="fa-solid fa-chalkboard"></i> Quản lý lớp học
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link {{ request()->is('schedules*') ? 'active' : '' }}"
-                            href="{{ Route::has('schedules.index') ? route('schedules.index') : '#' }}">
-                            <i class="fa-solid fa-calendar-days"></i> Quản lý lịch học
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link {{ request()->is('teaching*') ? 'active' : '' }}"
-                            href="{{ route('teaching.index') }}">
-                            <i class="fa-solid fa-briefcase"></i> Giảng dạy
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link {{ request()->is('payments*') ? 'active' : '' }}"
-                            href="{{ route('payments.index') }}">
-                            <i class="fa-solid fa-file-invoice-dollar"></i> Thanh toán
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link {{ request()->is('operations/dashboard*') ? 'active' : '' }}"
-                            href="{{ route('operations.dashboard') }}">
-                            <i class="fa-solid fa-chart-pie"></i> Dashboard vận hành
-                        </a>
-                    </li>
-                    <li>
-                        <a class="nav-link {{ request()->is('reports/operations*') ? 'active' : '' }}"
-                            href="{{ route('reports.operations') }}">
-                            <i class="fa-solid fa-chart-column"></i> Báo cáo vận hành
-                        </a>
-                    </li>
-                    @if (Auth::user()->role === 'admin')
-                        <li>
-                            <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}"
-                                href="{{ route('users.index') }}">
-                                <i class="fa-solid fa-user-cog"></i> Quản lý người dùng
-                            </a>
-                        </li>
-                        <li>
-                            <a class="nav-link {{ request()->is('system/storage*') ? 'active' : '' }}"
-                                href="{{ route('system.storage.index') }}">
-                                <i class="fa-solid fa-cloud"></i> Kiểm tra lưu trữ
-                            </a>
-                        </li>
-                        <li>
-                            <a class="nav-link {{ request()->is('system/backups*') ? 'active' : '' }}"
-                                href="{{ route('system.backups.index') }}">
-                                <i class="fa-solid fa-database"></i> Backup dữ liệu
-                            </a>
-                        </li>
-                        <li>
-                            <a class="nav-link {{ request()->is('audit-logs*') ? 'active' : '' }}"
-                                href="{{ route('audit-logs.index') }}">
-                                <i class="fa-solid fa-shield-halved"></i> Audit log
-                            </a>
-                        </li>
-                        <li>
-                            <a class="nav-link {{ request()->is('system/ai-operations*') ? 'active' : '' }}"
-                                href="{{ route('system.ai-operations.index') }}">
-                                <i class="fa-solid fa-microchip"></i> Theo dõi AI & Queue
-                            </a>
-                        </li>
-                    @endif
-                @endif
-            </ul>
-        </aside>
+        @include('layouts.partials.sidebar')
 
         {{-- ── Modal đổi mật khẩu ── --}}
         <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
@@ -326,7 +139,8 @@
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">Vai trò</label>
-                                <input type="text" class="form-control" value="{{ strtoupper(Auth::user()->role) }}"
+                                <input type="text" class="form-control"
+                                    value="{{ \App\Support\UiLabels::role(Auth::user()->role) }}"
                                     readonly>
                             </div>
                             @if (Auth::user()->username)
@@ -337,7 +151,7 @@
                             @endif
                             @if (Auth::user()->student_code)
                                 <div class="col-12">
-                                    <label class="form-label">Mã học sinh</label>
+                                    <label class="form-label">Mã học viên</label>
                                     <input type="text" class="form-control" value="{{ Auth::user()->student_code }}" readonly>
                                 </div>
                             @endif
@@ -388,7 +202,7 @@
     @endauth
 
     <div class="wrapper">
-        <main class="{{ Auth::check() ? 'main-content' : '' }}">
+        <main id="main-content" class="{{ Auth::check() ? 'main-content' : '' }}" tabindex="-1">
             <div class="container-fluid p-0">
                 @if (session('success'))
                     <div class="alert-success">
@@ -419,6 +233,8 @@
         (() => {
             const body = document.body;
             const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            const mobileToggle = document.getElementById('sidebarToggle');
             const toggle = document.getElementById('sidebarCollapseToggle');
             if (!sidebar || !toggle) return;
 
@@ -438,7 +254,7 @@
             try { storedCollapsed = localStorage.getItem(storageKey) === '1'; } catch (error) {}
             applyState(storedCollapsed, false);
 
-            sidebar.querySelectorAll('.nav-link').forEach((link) => {
+            sidebar.querySelectorAll('.sidebar-item, .sidebar-group__toggle').forEach((link) => {
                 const label = link.textContent.replace(/\s+/g, ' ').trim();
                 if (label) {
                     link.setAttribute('title', label);
@@ -454,6 +270,8 @@
                         event.preventDefault();
                         event.stopImmediatePropagation();
                         applyState(false);
+                        const target = document.querySelector(link.getAttribute('data-bs-target'));
+                        if (target) bootstrap.Collapse.getOrCreateInstance(target).show();
                     }
                 }, true);
             });
@@ -461,11 +279,24 @@
             window.addEventListener('resize', () => applyState(storedCollapsed = (() => {
                 try { return localStorage.getItem(storageKey) === '1'; } catch (error) { return false; }
             })(), false));
-        })();
 
-        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('show');
-        });
+            const closeMobileSidebar = () => {
+                sidebar.classList.remove('show');
+                backdrop?.classList.remove('show');
+                mobileToggle?.setAttribute('aria-expanded', 'false');
+            };
+
+            mobileToggle?.addEventListener('click', () => {
+                const open = sidebar.classList.toggle('show');
+                backdrop?.classList.toggle('show', open);
+                mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            backdrop?.addEventListener('click', closeMobileSidebar);
+            sidebar.querySelectorAll('a.sidebar-item').forEach((link) => link.addEventListener('click', closeMobileSidebar));
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') closeMobileSidebar();
+            });
+        })();
 
         (() => {
             const overlay = document.getElementById('pageTransition');
@@ -505,12 +336,7 @@
                 const link = event.target.closest('a[href]');
                 if (!shouldAnimate(link, event)) return;
 
-                event.preventDefault();
                 showTransition();
-
-                window.setTimeout(() => {
-                    window.location.href = link.href;
-                }, 420);
             });
 
             window.addEventListener('pageshow', function() {

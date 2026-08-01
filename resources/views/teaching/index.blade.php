@@ -552,7 +552,7 @@
                                     @if (auth()->user()->role === 'admin')
                                         <div class="cell-note" style="margin-top:3px">
                                             <i class="fa-solid fa-user-tie"
-                                                style="font-size:10px;margin-right:3px"></i>{{ $record->teacher?->name ?? 'N/A' }}
+                                                style="font-size:10px;margin-right:3px"></i>{{ $record->teacher?->name ?? 'Chưa có' }}
                                         </div>
                                     @endif
                                 </td>
@@ -561,7 +561,7 @@
                                     <div class="cell-note">{{ $record->center_name ?: 'Chưa cập nhật' }}</div>
                                 </td>
                                 <td>
-                                    <span class="tp-badge tp-badge--term">{{ $record->term_code ?: 'N/A' }}</span>
+                                    <span class="tp-badge tp-badge--term">{{ $record->term_code ?: 'Chưa có' }}</span>
                                 </td>
                                 <td>
                                     <span

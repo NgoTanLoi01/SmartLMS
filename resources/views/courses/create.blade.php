@@ -64,7 +64,7 @@
                                     <option value="delivery" @selected(old('course_type', request('course_type', 'delivery')) === 'delivery')>Khóa đang dạy - triển khai cho lớp thật</option>
                                     <option value="template" @selected(old('course_type', request('course_type')) === 'template')>Khóa mẫu - dùng để nhân bản nội dung</option>
                                 </select>
-                                <div class="form-text">Khóa mẫu sẽ không hiển thị cho học sinh và không tính tiến độ/học sinh.</div>
+                                <div class="form-text">Khóa mẫu sẽ không hiển thị cho học viên và không tính tiến độ/học viên.</div>
                             </div>
 
                             <div class="mb-4">
@@ -80,7 +80,7 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <div class="form-text">Copy module, bài học, bài tập, quiz và liên kết ngân hàng câu hỏi. Không copy học sinh, tiến độ, bài nộp, điểm danh.</div>
+                                <div class="form-text">Sao chép chương, bài học, bài tập, bài kiểm tra và liên kết ngân hàng câu hỏi. Không sao chép học viên, tiến độ, bài nộp hoặc điểm danh.</div>
                             </div>
 
                             <div class="mb-4" id="classSelectionGroup">
@@ -116,10 +116,10 @@
                                 <div class="col-12 col-md-6">
                                     <label for="status" class="form-label fw-bold">Trạng thái xuất bản</label>
                                     <select name="status" id="status" class="form-select">
-                                        <option value="published" @selected(old('status', 'published') === 'published')>Published - Học sinh có thể thấy</option>
-                                        <option value="draft" @selected(old('status') === 'draft')>Draft - Bản nháp</option>
-                                        <option value="hidden" @selected(old('status') === 'hidden')>Hidden - Ẩn khỏi học sinh</option>
-                                        <option value="archived" @selected(old('status') === 'archived')>Archived - Lưu trữ</option>
+                                        <option value="published" @selected(old('status', 'published') === 'published')>Đã xuất bản - Học viên có thể xem</option>
+                                        <option value="draft" @selected(old('status') === 'draft')>Bản nháp</option>
+                                        <option value="hidden" @selected(old('status') === 'hidden')>Tạm ẩn khỏi học viên</option>
+                                        <option value="archived" @selected(old('status') === 'archived')>Đã lưu trữ</option>
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-6">

@@ -122,12 +122,15 @@
     </style>
 
     <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <div>
-                <h3 class="fw-bold mb-0 text-dark">Hệ thống Người dùng</h3>
-                <p class="text-muted mb-0 small">Quản lý tài khoản Admin, Giáo viên và Học viên</p>
-            </div>
+        <x-ui.page-header title="Tài khoản người dùng" :breadcrumbs="[
+            ['label' => 'Trang tổng quan', 'url' => route('dashboard')],
+            ['label' => 'Tài khoản người dùng'],
+        ]" class="mb-4">
+            <x-slot:meta>
+                <span><i class="fa-solid fa-shield-halved"></i> Quản lý quyền truy cập và vòng đời tài khoản</span>
+            </x-slot:meta>
 
+            <x-slot:actions>
             <div class="user-toolbar-actions d-flex align-items-center gap-2">
                 <form action="{{ route('users.index') }}" method="GET"
                     class="user-filter-form input-group rounded-pill overflow-hidden shadow-sm"
@@ -139,7 +142,7 @@
                     <select name="role" class="form-select border-0 border-start shadow-none" aria-label="Lọc vai trò"
                         style="max-width: 140px; font-size: 0.9rem;">
                         <option value="">Mọi vai trò</option>
-                        <option value="admin" @selected(request('role') === 'admin')>Admin</option>
+                        <option value="admin" @selected(request('role') === 'admin')>Quản trị viên</option>
                         <option value="teacher" @selected(request('role') === 'teacher')>Giáo viên</option>
                         <option value="student" @selected(request('role') === 'student')>Học viên</option>
                     </select>
@@ -164,7 +167,8 @@
                     <i class="fa-solid fa-user-plus me-1"></i> Cấp tài khoản mới
                 </button>
             </div>
-        </div>
+            </x-slot:actions>
+        </x-ui.page-header>
 
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
             <div class="card-body p-0">
@@ -198,7 +202,7 @@
                                                 {{ $user->username }}
                                             </span>
                                             @if ($user->student_code)
-                                                <div class="text-muted small mt-1">Mã HS: {{ $user->student_code }}</div>
+                                                <div class="text-muted small mt-1">Mã HV: {{ $user->student_code }}</div>
                                             @endif
                                         @else
                                             <span class="text-muted small">Dùng email</span>
@@ -206,25 +210,15 @@
                                     </td>
                                     <td class="px-4 py-3 text-muted user-email">{{ $user->email }}</td>
                                     <td class="px-4 py-3">
-                                        @if ($user->role === 'admin')
-                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">Quản
-                                                trị viên</span>
-                                        @elseif($user->role === 'teacher')
-                                            <span
-                                                class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">Giảng
-                                                viên</span>
-                                        @else
-                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Học
-                                                viên</span>
-                                        @endif
+                                        <x-ui.role-badge :role="$user->role" />
                                     </td>
                                     <td class="px-4 py-3 small">
                                         @if (! $user->is_active)
-                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">Đã vô hiệu hóa</span>
+                                            <x-ui.status-badge status="inactive" />
                                         @elseif ($user->isExpired())
-                                            <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-3">Đã hết hạn</span>
+                                            <x-ui.status-badge status="expired" />
                                         @else
-                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Đang hoạt động</span>
+                                            <x-ui.status-badge status="active" />
                                         @endif
                                         <div class="text-muted mt-1">
                                             @if ($user->expires_at)
@@ -320,7 +314,7 @@
                         <div class="form-text">Bắt buộc với giáo viên/admin. Học viên có thể để trống, hệ thống sẽ tạo email nội bộ.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">Mã học sinh</label>
+                        <label class="form-label fw-bold small text-muted">Mã học viên</label>
                         <input type="text" name="student_code" class="form-control bg-light border-0 py-2"
                             placeholder="Chỉ cần nhập với học viên nếu có">
                         <div class="form-text">Nếu học viên trùng họ tên, mã này sẽ giúp tạo tên đăng nhập không trùng.</div>
@@ -333,9 +327,9 @@
                     <div class="mb-0">
                         <label class="form-label fw-bold small text-muted">Vai trò (Role)</label>
                         <select name="role" class="form-select bg-light border-0 py-2" required>
-                            <option value="teacher">Giáo viên (Teacher)</option>
-                            <option value="student">Học viên (Student)</option>
-                            <option value="admin">Quản trị viên (Admin)</option>
+                            <option value="teacher">Giáo viên</option>
+                            <option value="student">Học viên</option>
+                            <option value="admin">Quản trị viên</option>
                         </select>
                     </div>
                     <div class="mt-3 mb-0">

@@ -38,7 +38,7 @@
         </div>
 
         <div class="exam-section-heading">
-            <div><h2>Các bài đã lưu trữ</h2><p>Khôi phục về bản nháp hoặc xóa vĩnh viễn khỏi database.</p></div>
+            <div><h2>Các bài đã lưu trữ</h2><p>Khôi phục về bản nháp hoặc xóa vĩnh viễn khỏi cơ sở dữ liệu.</p></div>
         </div>
 
         <div class="session-grid">

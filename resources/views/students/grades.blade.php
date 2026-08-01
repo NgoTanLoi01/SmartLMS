@@ -317,7 +317,7 @@
         <div class="grades-header">
             <div>
                 <h1 class="grades-title">Điểm & nhận xét của tôi</h1>
-                <p class="grades-subtitle">Theo dõi điểm bài tập, quiz và phản hồi từ giáo viên.</p>
+                <p class="grades-subtitle">Theo dõi điểm bài tập, bài kiểm tra và phản hồi từ giáo viên.</p>
             </div>
         </div>
 
@@ -353,7 +353,7 @@
                 <div class="grades-stat-note">TB: {{ $stats['assignment_average'] !== null ? $stats['assignment_average'] . '/10' : '—' }}</div>
             </div>
             <div class="grades-stat">
-                <div class="grades-stat-label">Quiz đã làm</div>
+                <div class="grades-stat-label">Bài kiểm tra đã làm</div>
                 <div class="grades-stat-value">{{ $stats['completed_quizzes'] }}</div>
                 <div class="grades-stat-note">TB: {{ $stats['quiz_average'] !== null ? $stats['quiz_average'] . '/10' : '—' }}</div>
             </div>
@@ -431,7 +431,7 @@
 
         <div class="grades-panel">
             <div class="grades-panel-head">
-                <h2 class="grades-panel-title"><i class="fa-solid fa-clipboard-check text-success"></i>Quiz đã làm</h2>
+                <h2 class="grades-panel-title"><i class="fa-solid fa-clipboard-check text-success"></i>Bài kiểm tra đã làm</h2>
                 <span class="badge bg-success-subtle text-success rounded-pill">{{ $quizAttempts->count() }} lượt</span>
             </div>
             @if ($quizAttempts->isEmpty())
@@ -444,7 +444,7 @@
                     <table class="table grades-table align-middle">
                         <thead>
                             <tr>
-                                <th>Quiz</th>
+                                <th>Bài kiểm tra</th>
                                 <th>Khóa học</th>
                                 <th>Thời gian làm</th>
                                 <th>Điểm</th>
@@ -454,7 +454,7 @@
                         <tbody>
                             @foreach ($quizAttempts as $attempt)
                                 <tr>
-                                    <td class="fw-bold">{{ $attempt->quiz?->title ?? 'Quiz đã bị ẩn' }}</td>
+                                    <td class="fw-bold">{{ $attempt->quiz?->title ?? 'Bài kiểm tra đã bị ẩn' }}</td>
                                     <td>{{ $attempt->quiz?->course?->title ?? '—' }}</td>
                                     <td>{{ $attempt->completed_at ? \Illuminate\Support\Carbon::parse($attempt->completed_at)->format('d/m/Y H:i') : '—' }}</td>
                                     <td>

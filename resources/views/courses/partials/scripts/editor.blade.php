@@ -9,11 +9,11 @@
         const lessonContentBlocks = [
             {
                 text: 'Khối ghi nhớ',
-                content: '<div class="lesson-callout lesson-callout--note"><strong>Ghi nhớ</strong><p>Nhập ý chính học sinh cần nắm ở đây.</p></div><p></p>'
+                content: '<div class="lesson-callout lesson-callout--note"><strong>Ghi nhớ</strong><p>Nhập ý chính học viên cần nắm ở đây.</p></div><p></p>'
             },
             {
                 text: 'Khối ví dụ',
-                content: '<div class="lesson-callout lesson-callout--example"><strong>Ví dụ minh họa</strong><p>Thêm ví dụ cụ thể để học sinh dễ hình dung.</p></div><p></p>'
+                content: '<div class="lesson-callout lesson-callout--example"><strong>Ví dụ minh họa</strong><p>Thêm ví dụ cụ thể để học viên dễ hình dung.</p></div><p></p>'
             },
             {
                 text: 'Khối lưu ý',
@@ -21,7 +21,7 @@
             },
             {
                 text: 'Bài thực hành',
-                content: '<div class="lesson-callout lesson-callout--practice"><strong>Bài thực hành</strong><ol><li>Bước 1: mô tả việc cần làm.</li><li>Bước 2: yêu cầu học sinh thực hiện.</li></ol></div><p></p>'
+                content: '<div class="lesson-callout lesson-callout--practice"><strong>Bài thực hành</strong><ol><li>Bước 1: mô tả việc cần làm.</li><li>Bước 2: yêu cầu học viên thực hiện.</li></ol></div><p></p>'
             },
             {
                 text: 'Checklist',

@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Theo dõi AI & Queue')
+@section('title', 'Theo dõi AI và hàng đợi')
 
 @section('content')
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
-            <h3 class="fw-bold mb-1">Theo dõi AI & Queue</h3>
+            <h3 class="fw-bold mb-1">Theo dõi AI và hàng đợi</h3>
             <p class="text-muted mb-0">Trạng thái xử lý, lỗi, token và chi phí ước tính trong 30 ngày.</p>
         </div>
         <span class="badge bg-secondary">Tự làm mới khi tải lại trang</span>

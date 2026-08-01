@@ -213,11 +213,11 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                                     class="type-badge type-{{ $question->question_type }}">{{ $question->typeLabel() }}</span>
                             </td>
                             <td><span
-                                    class="q-course">{{ $question->questionBank->name ?? ($question->course->title ?? 'N/A') }}</span>
+                                    class="q-course">{{ $question->questionBank->name ?? ($question->course->title ?? 'Chưa có') }}</span>
                             </td>
                             <td>
                                 <span class="q-course">
-                                    {{ $question->questionBank?->courses?->pluck('title')->take(2)->implode(', ') ?: $question->course->title ?? 'N/A' }}
+                                    {{ $question->questionBank?->courses?->pluck('title')->take(2)->implode(', ') ?: $question->course->title ?? 'Chưa có' }}
                                     @if (($question->questionBank?->courses?->count() ?? 0) > 2)
                                         ...
                                     @endif
@@ -228,7 +228,7 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                                     <div class="teacher-avatar-sm"><i class="fa-solid fa-user-tie"
                                             style="font-size:10px;" aria-hidden="true"></i>
                                     </div>
-                                    {{ $question->questionBank->teacher->name ?? ($question->course->teacher->name ?? 'N/A') }}
+                                    {{ $question->questionBank->teacher->name ?? ($question->course->teacher->name ?? 'Chưa có') }}
                                 </div>
                             </td>
                             <td>
@@ -719,9 +719,9 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                 const guidanceCopy = {
                     fill_blank: 'Có thể khai báo nhiều cách viết đúng bằng dấu |.',
                     numeric: 'Ví dụ 10 ± 0.5 sẽ chấp nhận kết quả từ 9.5 đến 10.5.',
-                    true_false_group: 'Học sinh phải trả lời đầy đủ từng nhận định để được tính đúng.',
+                    true_false_group: 'Học viên phải trả lời đầy đủ từng nhận định để được tính đúng.',
                     essay: 'Điểm chỉ được công bố sau khi giáo viên chấm xong tất cả câu tự luận.',
-                    code_debug: 'Preview bị cô lập và không cho phép thực thi JavaScript.',
+                    code_debug: 'Bản xem trước được cô lập và không cho phép thực thi JavaScript.',
                     default: 'Thứ tự phương án sẽ được xáo trộn khi phát đề.',
                 };
 

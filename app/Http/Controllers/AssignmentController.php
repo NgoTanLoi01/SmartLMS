@@ -41,7 +41,7 @@ class AssignmentController extends Controller
             $courseIds = Course::where('teacher_id', $user->id)->notArchived()->pluck('id');
             $assignments = Assignments::with('course')->notArchived()->whereIn('course_id', $courseIds)->latest()->get();
         } else {
-            // Học sinh: Chỉ lấy bài tập trạng thái 'published' và thuộc lớp đang học
+            // Học viên: Chỉ lấy bài tập trạng thái 'published' và thuộc lớp đang học
             $classIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
             $courseIds = Course::visibleToStudents()
                 ->whereHas('classes', function ($q) use ($classIds) {
@@ -288,13 +288,13 @@ class AssignmentController extends Controller
         $assignment = Assignments::with('course.classes.students')->notArchived()->findOrFail($id);
         Gate::authorize('update', $assignment);
 
-        // Lấy danh sách ID học sinh thuộc các lớp có gán khóa học này
+        // Lấy danh sách ID học viên thuộc các lớp có gán khóa học này
         $students = $assignment->course->classes->flatMap->students->unique('id');
 
         // Lấy danh sách các bài đã nộp cho assignment này
         $submissions = AssignmentSubmission::where('assignment_id', $id)->get()->keyBy('user_id');
 
-        // Kết hợp dữ liệu: Học sinh + Bài nộp (nếu có)
+        // Kết hợp dữ liệu: Học viên + Bài nộp (nếu có)
         $data = $students->map(function ($student) use ($submissions) {
             $submission = $submissions->get($student->id);
 
@@ -364,7 +364,7 @@ class AssignmentController extends Controller
             ->isNotEmpty();
 
         if (! $hasAccess || ! $assignment->course->isVisibleToStudents() || ! $assignment->isVisibleToStudents()) {
-            return back()->withErrors(['Bài tập này chưa được mở cho học sinh.']);
+            return back()->withErrors(['Bài tập này chưa được mở cho học viên.']);
         }
 
         // 1. Lấy thông tin bài nộp cũ nếu có
@@ -444,7 +444,7 @@ class AssignmentController extends Controller
         return back()->with('success', 'Bạn đã cập nhật bài nộp thành công!');
     }
 
-    // Học sinh hủy bài đã nộp
+    // Học viên hủy bài đã nộp
     public function deleteSubmission($id)
     {
         $submission = AssignmentSubmission::where('id', $id)

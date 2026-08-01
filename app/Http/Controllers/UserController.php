@@ -69,7 +69,7 @@ class UserController extends Controller
             ? StudentLoginCode::normalizeStudentCode($request->student_code)
             : null;
         if ($studentCode && User::where('student_code', $studentCode)->exists()) {
-            return back()->withErrors(['student_code' => 'Mã học sinh này đã tồn tại.'])->withInput();
+            return back()->withErrors(['student_code' => 'Mã học viên này đã tồn tại.'])->withInput();
         }
 
         $username = $request->role === 'student'

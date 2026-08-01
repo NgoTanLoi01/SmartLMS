@@ -649,7 +649,7 @@
 
                             <div class="qp-alert">
                                 <i class="fa-solid fa-circle-info me-1"></i>
-                                Chế độ <strong>Ngân hàng câu hỏi</strong> đang hoạt động. Mỗi học sinh nhận đề khác nhau
+                                Chế độ <strong>Ngân hàng câu hỏi</strong> đang hoạt động. Mỗi học viên nhận đề khác nhau
                                 theo cấu trúc này.
                             </div>
 

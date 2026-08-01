@@ -721,10 +721,10 @@
                         <label class="course-filter-label">Trạng thái</label>
                         <select name="status" class="form-select course-filter-control">
                             <option value="">Tất cả</option>
-                            <option value="published" @selected(($filters['status'] ?? '') === 'published')>Published</option>
-                            <option value="draft" @selected(($filters['status'] ?? '') === 'draft')>Draft</option>
-                            <option value="hidden" @selected(($filters['status'] ?? '') === 'hidden')>Hidden</option>
-                            <option value="archived" @selected(($filters['status'] ?? '') === 'archived')>Archived</option>
+                            <option value="published" @selected(($filters['status'] ?? '') === 'published')>Đã xuất bản</option>
+                            <option value="draft" @selected(($filters['status'] ?? '') === 'draft')>Bản nháp</option>
+                            <option value="hidden" @selected(($filters['status'] ?? '') === 'hidden')>Tạm ẩn</option>
+                            <option value="archived" @selected(($filters['status'] ?? '') === 'archived')>Đã lưu trữ</option>
                         </select>
                     </div>
 
@@ -777,8 +777,8 @@
                                 </h2>
                                 <p class="course-section-subtitle">
                                     {{ auth()->user()->role === 'student'
-                                        ? 'Các khóa em đang tham gia trong lớp học của mình.'
-                                        : 'Các khóa triển khai cho lớp thật, có học sinh và tiến độ học tập.' }}
+                                        ? 'Các khóa bạn đang tham gia trong lớp học của mình.'
+                                        : 'Các khóa triển khai cho lớp thật, có học viên và tiến độ học tập.' }}
                                 </p>
                             </div>
                         </div>
@@ -803,7 +803,7 @@
                             <div>
                                 <h2 class="course-section-title">Khóa mẫu</h2>
                                 <p class="course-section-subtitle">
-                                    Nội dung chuẩn dùng để tạo nhanh khóa mới, không tính học sinh hay tiến độ.
+                                    Nội dung chuẩn dùng để tạo nhanh khóa mới, không tính học viên hay tiến độ.
                                 </p>
                             </div>
                         </div>

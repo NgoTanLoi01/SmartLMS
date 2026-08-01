@@ -572,7 +572,7 @@
                                     @if (auth()->user()->role === 'admin')
                                         <div class="pp-note">
                                             <i class="fa-solid fa-user-tie"
-                                                style="font-size:10px;margin-right:3px"></i>{{ $contract->teacher?->name ?? 'N/A' }}
+                                                style="font-size:10px;margin-right:3px"></i>{{ $contract->teacher?->name ?? 'Chưa có' }}
                                         </div>
                                     @endif
                                     @if ($contract->note)

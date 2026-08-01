@@ -299,7 +299,7 @@
                         @endif
                     </div>
                     <div class="brand-text">
-                        <div class="eyebrow">SmartLMS Operations</div>
+                        <div class="eyebrow">Vận hành SmartLMS</div>
                         <h1>Báo cáo giảng dạy & thanh toán</h1>
                         <div class="subtitle">Tổng hợp số môn, số buổi, hợp đồng và dòng tiền vận hành.</div>
                     </div>

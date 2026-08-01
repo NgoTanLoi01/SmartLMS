@@ -311,7 +311,7 @@
                                     <div class="mf-col-3">
                                         <label class="materials-label">Nguồn</label>
                                         <select name="source_type" class="form-select materials-input" required>
-                                            <option value="file">Upload file</option>
+                                            <option value="file">Tải tệp lên</option>
                                             <option value="link">Link ngoài</option>
                                         </select>
                                     </div>
@@ -359,8 +359,8 @@
                                     <div class="mf-col-4">
                                         <label class="materials-label">Trạng thái</label>
                                         <select name="status" class="form-select materials-input">
-                                            <option value="published">Published - mở</option>
-                                            <option value="hidden">Hidden - ẩn</option>
+                                            <option value="published">Đã xuất bản - đang mở</option>
+                                            <option value="hidden">Tạm ẩn</option>
                                         </select>
                                     </div>
                                     <div class="mf-col-4 d-flex align-items-end">
@@ -371,7 +371,7 @@
                                     <div class="mf-col-12">
                                         <label class="materials-label">Mô tả ngắn</label>
                                         <textarea name="description" rows="2" class="form-control materials-input"
-                                            placeholder="Ghi chú cho giáo viên/học sinh nếu cần"></textarea>
+                                            placeholder="Ghi chú cho giáo viên/học viên nếu cần"></textarea>
                                     </div>
                                 </div>
                             </form>
@@ -563,9 +563,9 @@
                                             <div class="mf-col-3">
                                                 <label class="materials-label">Trạng thái</label>
                                                 <select name="status" class="form-select materials-input">
-                                                    <option value="published" @selected($assignment->status === 'published')>Published
+                                                    <option value="published" @selected($assignment->status === 'published')>Đã xuất bản
                                                     </option>
-                                                    <option value="hidden" @selected($assignment->status === 'hidden')>Hidden</option>
+                                                    <option value="hidden" @selected($assignment->status === 'hidden')>Tạm ẩn</option>
                                                 </select>
                                             </div>
                                             <div class="mf-col-3 d-flex align-items-end">

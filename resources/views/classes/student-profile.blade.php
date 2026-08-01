@@ -542,7 +542,7 @@
                     <nav class="lms-breadcrumb">
                         <a href="{{ route('classes.students.index', $classroom->id) }}">{{ $classroom->name }}</a>
                         <span class="lms-breadcrumb-sep">›</span>
-                        <span>Hồ sơ học sinh</span>
+                        <span>Hồ sơ học viên</span>
                     </nav>
                     <h1 class="lms-profile-name">{{ $student->name }}</h1>
                     <div class="lms-profile-meta">
@@ -621,10 +621,10 @@
                 </div>
                 <div class="lms-stat-sub">{{ $studentProfile['assignment_missing_count'] }} thiếu ·
                     {{ $studentProfile['assignment_overdue_missing_count'] }} quá hạn</div>
-                <div class="lms-stat-sub">TB điểm: {{ $studentProfile['assignment_average'] ?? 'N/A' }}</div>
+                <div class="lms-stat-sub">Điểm trung bình: {{ $studentProfile['assignment_average'] ?? 'Chưa có' }}</div>
             </div>
             <div class="lms-stat">
-                <div class="lms-stat-label">Quiz TB</div>
+                <div class="lms-stat-label">Điểm kiểm tra trung bình</div>
                 <div class="lms-stat-value">{{ $studentProfile['quiz_average'] ?? '—' }}</div>
                 <div class="lms-stat-sub">
                     {{ $studentProfile['quiz_attempted_count'] }}/{{ $studentProfile['quiz_total'] }} đã làm</div>
@@ -695,13 +695,13 @@
                 {{-- Quiz --}}
                 <div class="lms-card">
                     <div class="lms-card-header">
-                        <h2 class="lms-card-title"><i class="fa-solid fa-clipboard-check"></i> Kết quả quiz</h2>
+                        <h2 class="lms-card-title"><i class="fa-solid fa-clipboard-check"></i> Kết quả bài kiểm tra</h2>
                     </div>
                     <div class="lms-table-wrap">
                         <table class="lms-table">
                             <thead>
                                 <tr>
-                                    <th>Quiz</th>
+                                    <th>Bài kiểm tra</th>
                                     <th>Khóa học</th>
                                     <th>Trạng thái</th>
                                     <th>Điểm</th>
@@ -728,7 +728,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="lms-td-empty">Chưa có quiz trong phạm vi đang xem.</td>
+                                        <td colspan="5" class="lms-td-empty">Chưa có bài kiểm tra trong phạm vi đang xem.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

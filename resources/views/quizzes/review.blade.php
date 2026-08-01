@@ -133,7 +133,7 @@
                                         '<span class="badge bg-success ms-auto"><i class="fa-solid fa-check me-1"></i> Đã chọn đúng</span>';
                                     $radioClass = 'radio-correct';
                                 } elseif ($isCorrect && !$isSelected) {
-                                    // Đáp án đúng (nhưng học sinh không chọn)
+                                    // Đáp án đúng (nhưng học viên không chọn)
                                     $bgColor = 'bg-success bg-opacity-10';
                                     $border = 'border-success border-opacity-50 border-dashed';
                                     $textColor = 'text-success fw-bold';

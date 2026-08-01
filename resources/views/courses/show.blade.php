@@ -125,13 +125,13 @@
                             <i class="fa-solid fa-pen-to-square me-1"></i>Quản lý
                         </button>
                         <button type="button" class="teacher-mode-btn" data-course-mode="preview">
-                            <i class="fa-solid fa-eye me-1"></i>Xem như học sinh
+                            <i class="fa-solid fa-eye me-1"></i>Xem như học viên
                         </button>
                     </div>
                 </div>
                 <div class="teacher-preview-banner">
                     <i class="fa-solid fa-eye"></i>
-                    <span>Đang xem ở chế độ học sinh. Nút sửa/xóa đang ẩn.</span>
+                    <span>Đang xem ở chế độ học viên. Nút sửa/xóa đang ẩn.</span>
                 </div>
                 <div class="teacher-quick-actions">
                     <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#aiCoursePlanModal">
@@ -172,7 +172,7 @@
         @if (auth()->user()->role !== 'student')
             <div class="course-dashboard-grid">
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fa-solid fa-users me-1 text-blue-500"></i> Học sinh</div>
+                    <div class="course-dashboard-label"><i class="fa-solid fa-users me-1 text-blue-500"></i> Học viên</div>
                     <div class="course-dashboard-value">{{ $courseDashboard['students_count'] }}</div>
                     <div class="course-dashboard-sub">{{ $courseDashboard['modules_count'] }} chương ·
                         {{ $courseDashboard['lessons_count'] }} bài</div>
@@ -191,10 +191,10 @@
                     <div class="course-dashboard-sub">{{ $courseDashboard['pending_grades'] }} bài chờ chấm</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fa-solid fa-stopwatch me-1 text-purple"></i> Quiz</div>
+                    <div class="course-dashboard-label"><i class="fa-solid fa-stopwatch me-1 text-purple"></i> Bài kiểm tra</div>
                     <div class="course-dashboard-value">{{ $courseDashboard['quiz_completion_rate'] }}%</div>
                     <div class="course-dashboard-sub">Điểm TB:
-                        {{ $courseDashboard['average_score'] !== null ? round($courseDashboard['average_score'], 1) : 'N/A' }}
+                        {{ $courseDashboard['average_score'] !== null ? round($courseDashboard['average_score'], 1) : 'Chưa có' }}
                     </div>
                 </div>
             </div>
@@ -457,7 +457,7 @@
                                                 <i class="fa-solid fa-stopwatch" style="color:var(--purple-600);"></i>
                                             </div>
                                             <div>
-                                                <div class="fw-bold" style="font-size:13px;">Quiz</div>
+                                                <div class="fw-bold" style="font-size:13px;">Bài kiểm tra</div>
                                                 <div class="text-muted" style="font-size:12px;line-height:1.5;">Bấm bắt
                                                     đầu khi sẵn sàng vì hệ thống sẽ tính giờ.</div>
                                             </div>
@@ -776,11 +776,11 @@
                         <div id="ai-plan-form-step">
                             <div class="ai-plan-intro mb-3"><strong>{{ $course->title }}</strong><br>Hãy cung cấp bối cảnh ngắn để kế hoạch sát với lớp học thực tế.</div>
                             <form id="ai-course-plan-form" class="ai-plan-form-grid">
-                                <div><label class="form-label fw-semibold">Đối tượng học sinh</label><input class="form-control" name="audience" placeholder="VD: Học sinh trung cấp năm 1" required></div>
+                                <div><label class="form-label fw-semibold">Đối tượng học viên</label><input class="form-control" name="audience" placeholder="VD: Học viên trung cấp năm 1" required></div>
                                 <div><label class="form-label fw-semibold">Trình độ hiện tại</label><input class="form-control" name="current_level" placeholder="VD: Đã biết HTML/CSS cơ bản" required></div>
                                 <div><label class="form-label fw-semibold">Số buổi</label><input class="form-control" name="session_count" type="number" min="1" max="60" value="10" required></div>
                                 <div><label class="form-label fw-semibold">Phút mỗi buổi</label><input class="form-control" name="minutes_per_session" type="number" min="30" max="480" value="135" required></div>
-                                <div class="ai-plan-span-2"><label class="form-label fw-semibold">Mục tiêu đầu ra</label><textarea class="form-control" name="learning_outcomes" rows="3" placeholder="Sau khóa học, học sinh có thể..." required></textarea></div>
+                                <div class="ai-plan-span-2"><label class="form-label fw-semibold">Mục tiêu đầu ra</label><textarea class="form-control" name="learning_outcomes" rows="3" placeholder="Sau khóa học, học viên có thể..." required></textarea></div>
                                 <div class="ai-plan-span-2"><label class="form-label fw-semibold">Yêu cầu hoặc lưu ý thêm</label><textarea class="form-control" name="notes" rows="2" placeholder="Chủ đề bắt buộc, cách tổ chức lớp, loại bài tập mong muốn..."></textarea></div>
                             </form>
                         </div>

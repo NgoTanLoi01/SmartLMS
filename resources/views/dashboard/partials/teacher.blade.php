@@ -34,16 +34,16 @@
                     <span>
                         <span class="teacher-priority-card__label">Cần chú ý</span>
                         <span class="teacher-priority-card__value">{{ $attentionCount }}</span>
-                        <span class="teacher-priority-card__hint">Học sinh nên được theo dõi sát hơn.</span>
+                        <span class="teacher-priority-card__hint">Học viên nên được theo dõi sát hơn.</span>
                     </span>
                     <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
                 <a href="{{ route('classes.index') }}" class="teacher-priority-card teacher-priority-card--green">
                     <span class="teacher-priority-card__icon"><i class="fa-solid fa-user-graduate"></i></span>
                     <span>
-                        <span class="teacher-priority-card__label">Học sinh</span>
+                        <span class="teacher-priority-card__label">Học viên</span>
                         <span class="teacher-priority-card__value">{{ $data['total_students'] }}</span>
-                        <span class="teacher-priority-card__hint">Học sinh trong các lớp đang phụ trách.</span>
+                        <span class="teacher-priority-card__hint">Học viên trong các lớp đang phụ trách.</span>
                     </span>
                     <i class="fa-solid fa-arrow-right teacher-priority-card__arrow"></i>
                 </a>
@@ -119,7 +119,7 @@
             </div>
 
             {{-- MANAGED CLASSES + STUDENTS NEEDING ATTENTION --}}
-            <div class="section-heading anim-4">Lớp học &amp; học sinh cần theo dõi</div>
+            <div class="section-heading anim-4">Lớp học &amp; học viên cần theo dõi</div>
             <div class="row g-3 mb-4 anim-4">
                 <div class="col-12 col-xl-7">
                     <div class="panel">
@@ -151,7 +151,7 @@
                                             </a>
                                             <a href="{{ route('classes.students.index', $class->id) }}"
                                                 class="btn-xs btn-xs--ghost">
-                                                <i class="fa-solid fa-user-graduate"></i> Học sinh
+                                                <i class="fa-solid fa-user-graduate"></i> Học viên
                                             </a>
                                         </div>
                                     </div>
@@ -172,7 +172,7 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <span class="icon-dot idot--amber"><i class="fa-solid fa-user-clock"></i></span>
-                                Học sinh cần chú ý
+                                Học viên cần chú ý
                             </h6>
                             <span class="bdg bdg--warning">Theo dõi</span>
                         </div>
@@ -191,7 +191,7 @@
                                     <div class="text-end" style="flex-shrink:0">
                                         <div
                                             class="bdg {{ $student->avg_grade !== null && $student->avg_grade < 5 ? 'bdg--danger' : 'bdg--muted' }} mb-1">
-                                            TB {{ $student->avg_grade !== null ? round($student->avg_grade, 1) : 'N/A' }}
+                                            Trung bình {{ $student->avg_grade !== null ? round($student->avg_grade, 1) : 'Chưa có' }}
                                         </div>
                                         <div class="d-flex flex-wrap gap-1 justify-content-end mb-2">
                                             @if (($student->missing_count ?? 0) > 0)
@@ -212,7 +212,7 @@
                             <div class="empty-state">
                                 <div class="empty-icon" style="color:var(--success)"><i class="fa-solid fa-circle-check"></i>
                                 </div>
-                                <p>Chưa có học sinh cần ưu tiên theo dõi.</p>
+                                <p>Chưa có học viên cần ưu tiên theo dõi.</p>
                             </div>
                         @endforelse
                     </div>
@@ -249,7 +249,7 @@
                                             </div>
                                             <div class="d-flex flex-wrap gap-2 mt-2">
                                                 <span class="bdg {{ $isQuiz ? 'bdg--primary' : 'bdg--warning' }}">
-                                                    {{ $isQuiz ? 'Quiz tự luận · lượt '.($item->attempt_number ?? 1) : 'Bài tập' }}
+                                                    {{ $isQuiz ? 'Bài kiểm tra tự luận · lượt '.($item->attempt_number ?? 1) : 'Bài tập' }}
                                                 </span>
                                                 <span class="bdg bdg--muted">
                                                     Chờ {{ $queuedAt->diffForHumans(null, true) }}
@@ -266,7 +266,7 @@
                                 <div class="empty-state">
                                     <div class="empty-icon" style="color:var(--success)"><i
                                             class="fa-solid fa-circle-check"></i></div>
-                                    <p>Tuyệt vời! Thầy / Cô đã xử lý hết bài tập và quiz tự luận.</p>
+                                    <p>Tuyệt vời! Thầy / Cô đã xử lý hết bài tập và bài kiểm tra tự luận.</p>
                                 </div>
                             @endforelse
                         </div>

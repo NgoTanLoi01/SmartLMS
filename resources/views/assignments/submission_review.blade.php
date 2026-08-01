@@ -58,11 +58,11 @@
                 {{-- LEFT: STUDENT QUEUE --}}
                 <aside class="grading-queue">
                     <div class="grading-queue__head">
-                        <h2 class="grading-queue__title">Danh sách học sinh</h2>
+                        <h2 class="grading-queue__title">Danh sách học viên</h2>
                         <div class="grading-queue__stats">{{ $queueStats['pending'] }} chờ chấm · {{ $queueStats['graded'] }} đã chấm</div>
                         <div class="grading-queue__search">
                             <i class="fa-solid fa-search"></i>
-                            <input type="search" id="queueSearch" placeholder="Tìm học sinh...">
+                            <input type="search" id="queueSearch" placeholder="Tìm học viên...">
                         </div>
                         <div class="grading-queue__filters" role="group" aria-label="Lọc trạng thái">
                             <button type="button" class="queue-filter active" data-queue-filter="all">Tất cả</button>
@@ -140,7 +140,7 @@
                         <div class="panel__head">
                             <div class="panel__label">
                                 <span class="icon-dot idot--green"><i class="fa-solid fa-pen-nib"></i></span>
-                                Bài làm học sinh
+                                Bài làm học viên
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <div class="submit-meta">
@@ -226,7 +226,7 @@
                                 <div class="student-avatar">
                                     {{ mb_strtoupper(mb_substr($submission->user?->name ?? 'HS', 0, 1)) }}</div>
                                 <div>
-                                    <div class="student-name">{{ $submission->user?->name ?? 'Học sinh' }}</div>
+                                    <div class="student-name">{{ $submission->user?->name ?? 'Học viên' }}</div>
                                     <div class="student-email">{{ $submission->user?->email }}</div>
                                 </div>
                             </div>
@@ -359,7 +359,7 @@
 
                                 <div class="form-group">
                                     <label class="form-lbl">Nhận xét</label>
-                                    <textarea name="feedback" id="feedbackInput" class="form-ctrl" placeholder="Nhập nhận xét cho học sinh...">{{ $submission->feedback }}</textarea>
+                                    <textarea name="feedback" id="feedbackInput" class="form-ctrl" placeholder="Nhập nhận xét cho học viên...">{{ $submission->feedback }}</textarea>
                                 </div>
 
                                 <div class="grading-actions">

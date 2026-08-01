@@ -9,7 +9,7 @@
 @section('content')
     <div class="lms-page">
 
-        <x-ui.page-header title="Dashboard tiến độ: {{ $classroom->name }}" :breadcrumbs="[
+        <x-ui.page-header title="Tổng quan tiến độ: {{ $classroom->name }}" :breadcrumbs="[
             ['label' => 'Lớp học', 'url' => route('classes.index')],
             ['label' => $classroom->code],
         ]">
@@ -17,14 +17,14 @@
                 <span><i class="fa-solid fa-chalkboard-teacher" aria-hidden="true"></i>
                     {{ $classroom->teacher->name }}</span>
                 <span><i class="fa-solid fa-users" aria-hidden="true"></i>
-                    {{ $classReport['student_count'] }} học sinh</span>
+                    {{ $classReport['student_count'] }} học viên</span>
             </x-slot:meta>
             <x-slot:actions>
                 <button type="button" class="lms-btn lms-btn-primary" data-ai-scope="class">
                     <i class="fa-solid fa-robot"></i> Phân tích AI toàn lớp
                 </button>
                 <a href="{{ route('classes.students.index', $classroom->id) }}" class="lms-btn lms-btn-outline">
-                    <i class="fa-solid fa-user-graduate"></i> Danh sách học sinh
+                    <i class="fa-solid fa-user-graduate"></i> Danh sách học viên
                 </a>
                 <a href="{{ route('classes.index') }}" class="lms-btn lms-btn-outline">
                     <i class="fa-solid fa-arrow-left"></i> Quay lại
@@ -74,7 +74,7 @@
                         <div class="lms-ai-col">
                             <div class="lms-ai-col-title">
                                 <i class="fa-solid fa-comment-dots" style="color:var(--lms-blue);"></i>
-                                Nhận xét học sinh
+                                Nhận xét học viên
                             </div>
                             <div id="aiComments"></div>
                         </div>
@@ -99,7 +99,7 @@
                     <label style="visibility:hidden;">x</label>
                     <label class="lms-checkbox-wrap">
                         <input type="checkbox" name="attention_only" value="1" @checked($filters['attention_only'])>
-                        Chỉ học sinh cần chú ý
+                        Chỉ học viên cần chú ý
                     </label>
                 </div>
                 <div style="display:flex; gap:8px; align-items:flex-end;">
@@ -132,12 +132,12 @@
                     {{ $classReport['assignment_submitted'] }}/{{ $classReport['assignment_total'] }} lượt</div>
             </x-ui.stat-card>
             <x-ui.stat-card label="Điểm trung bình" :value="$classReport['score_average'] ?? '—'">
-                <div class="lms-stat-sub">Bài tập & quiz đã có</div>
+                <div class="lms-stat-sub">Bài tập và bài kiểm tra đã có</div>
                 <div class="lms-stat-sub">Thiếu {{ $classReport['missing_assignment_total'] }} lượt bài</div>
             </x-ui.stat-card>
             <x-ui.stat-card label="Cần chú ý" :value="$classReport['needs_attention_count']" tone="danger">
                 <div class="lms-stat-sub">{{ $classReport['absence_total'] }} lượt vắng toàn lớp</div>
-                <div class="lms-stat-sub">{{ $classReport['pending_quiz_total'] }} lượt quiz chưa làm</div>
+                <div class="lms-stat-sub">{{ $classReport['pending_quiz_total'] }} lượt kiểm tra chưa làm</div>
             </x-ui.stat-card>
         </x-ui.stat-grid>
 
@@ -160,7 +160,7 @@
                             <span class="lms-course-tag"><i class="fa-solid fa-paperclip" style="font-size:11px;"></i> Nộp bài
                                 {{ $courseReport['report']['assignment_submission_rate'] }}%</span>
                             <span class="lms-course-tag"><i class="fa-solid fa-star" style="font-size:11px;"></i> TB
-                                {{ $courseReport['report']['score_average'] ?? 'N/A' }}</span>
+                                {{ $courseReport['report']['score_average'] ?? 'Chưa có' }}</span>
                             <span class="lms-course-tag"><i class="fa-solid fa-user-clock" style="font-size:11px;"></i>
                                 {{ $courseReport['report']['needs_attention_count'] }} cần chú ý</span>
                         </div>
@@ -179,17 +179,17 @@
         {{-- Student progress table --}}
         <div class="lms-card">
             <div class="lms-card-header">
-                <h2 class="lms-card-title"><i class="fa-solid fa-chart-line"></i> Tiến độ từng học sinh</h2>
+                <h2 class="lms-card-title"><i class="fa-solid fa-chart-line"></i> Tiến độ từng học viên</h2>
                 <span class="lms-count">{{ $studentProgress->count() }} kết quả</span>
             </div>
             <div class="lms-table-wrap">
                 <table class="lms-table">
                     <thead>
                         <tr>
-                            <th>Học sinh</th>
+                            <th>Học viên</th>
                             <th>Bài học</th>
                             <th>Bài tập</th>
-                            <th>Quiz</th>
+                            <th>Bài kiểm tra</th>
                             <th>Điểm TB</th>
                             <th>Vắng</th>
                             <th>Trạng thái</th>
@@ -289,7 +289,7 @@
                             <tr>
                                 <td colspan="8"
                                     style="text-align:center; padding:48px 20px; color:var(--lms-muted); font-size:13.5px;">
-                                    Không có học sinh phù hợp với bộ lọc hiện tại.
+                                    Không có học viên phù hợp với bộ lọc hiện tại.
                                 </td>
                             </tr>
                         @endforelse
@@ -345,10 +345,10 @@
                                         <div class="lms-modal-item">
                                             <div class="lms-modal-item-title">{{ $quiz['title'] }}</div>
                                             <div class="lms-modal-item-sub">{{ $quiz['course_title'] }} · Điểm
-                                                {{ $quiz['score'] ?? 'N/A' }}</div>
+                                                {{ $quiz['score'] ?? 'Chưa có' }}</div>
                                         </div>
                                     @empty
-                                        <div class="lms-modal-empty">Chưa làm quiz nào.</div>
+                                        <div class="lms-modal-empty">Chưa làm bài kiểm tra nào.</div>
                                     @endforelse
                                 </div>
                             </div>
@@ -419,15 +419,15 @@
                     if (!actions.length) return empty('Chưa có hành động đề xuất.');
                     return actions.map((a) => `<div class="lms-ai-item">
             <div class="lms-ai-item-name">${esc(a.action || '')}</div>
-            <div class="lms-ai-item-sub">${esc(a.student || 'Nhóm học sinh')} · Ưu tiên ${esc(a.priority || 'medium')}</div>
+            <div class="lms-ai-item-sub">${esc(a.student || 'Nhóm học viên')} · Ưu tiên ${esc(a.priority || 'medium')}</div>
             <div class="lms-ai-item-text">${esc(a.reason || '')}</div>
         </div>`).join('');
                 };
 
                 const renderComments = (comments = []) => {
-                    if (!comments.length) return empty('Chưa có nhận xét học sinh.');
+                    if (!comments.length) return empty('Chưa có nhận xét học viên.');
                     return comments.map((c) => `<div class="lms-ai-item">
-            <div class="lms-ai-item-name">${esc(c.student || 'Học sinh')}</div>
+            <div class="lms-ai-item-name">${esc(c.student || 'Học viên')}</div>
             <div class="lms-ai-item-text">${esc(c.comment || '')}</div>
         </div>`).join('');
                 };
@@ -450,7 +450,7 @@
                         const studentName = btn.dataset.studentName || '';
                         const courseId = document.querySelector('select[name="course_id"]')
                             ?.value || '';
-                        scopeLabel.textContent = studentId ? `Phân tích học sinh: ${studentName}` :
+                        scopeLabel.textContent = studentId ? `Phân tích học viên: ${studentName}` :
                             'Phân tích tổng quan toàn lớp';
                         setState('loading');
 

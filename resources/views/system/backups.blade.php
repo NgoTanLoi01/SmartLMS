@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Backup dữ liệu')
+@section('title', 'Sao lưu dữ liệu')
 
 @section('content')
     <style>
@@ -223,15 +223,15 @@
     <div class="backup-page">
         <div class="backup-header">
             <div>
-                <h1 class="backup-title">Backup dữ liệu</h1>
-                <p class="backup-subtitle">Theo dõi backup database, tải bản sao lưu và kiểm tra cấu hình lưu trữ dự phòng.</p>
+                <h1 class="backup-title">Sao lưu dữ liệu</h1>
+                <p class="backup-subtitle">Theo dõi các bản sao lưu cơ sở dữ liệu và cấu hình lưu trữ dự phòng.</p>
             </div>
 
             <div class="backup-actions">
                 <form method="POST" action="{{ route('system.backups.store') }}">
                     @csrf
                     <button type="submit" class="backup-btn">
-                        <i class="fa-solid fa-database"></i> Backup ngay
+                        <i class="fa-solid fa-database"></i> Sao lưu ngay
                     </button>
                 </form>
 
@@ -239,7 +239,7 @@
                     @csrf
                     <input type="hidden" name="upload_r2" value="1">
                     <button type="submit" class="backup-btn secondary">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Backup + upload R2
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Sao lưu và tải lên R2
                     </button>
                 </form>
             </div>
@@ -259,7 +259,7 @@
 
         <div class="backup-grid">
             <div class="backup-card">
-                <div class="backup-label">Backup thành công gần nhất</div>
+                <div class="backup-label">Bản sao lưu thành công gần nhất</div>
                 <div class="backup-value">
                     {{ $latestSuccessful?->finished_at?->timezone(config('backup.timezone'))->format('H:i d/m/Y') ?? 'Chưa có' }}
                 </div>
@@ -273,7 +273,7 @@
             </div>
 
             <div class="backup-card">
-                <div class="backup-label">Backup tự động</div>
+                <div class="backup-label">Sao lưu tự động</div>
                 <span class="backup-badge {{ $summary['schedule_enabled'] ? 'success' : 'neutral' }}">
                     <i class="fa-solid {{ $summary['schedule_enabled'] ? 'fa-circle-check' : 'fa-clock' }}"></i>
                     {{ $summary['schedule_enabled'] ? 'Đã bật' : 'Chưa bật' }}
@@ -295,7 +295,7 @@
             <div class="backup-panel">
                 <div class="backup-panel-header">
                     <h2 class="backup-panel-title text-danger">
-                        <i class="fa-solid fa-triangle-exclamation me-2"></i> Backup lỗi gần nhất
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i> Lần sao lưu lỗi gần nhất
                     </h2>
                     <span class="backup-muted">
                         {{ $latestFailed->finished_at?->timezone(config('backup.timezone'))->format('H:i d/m/Y') }}
@@ -310,7 +310,7 @@
         <div class="backup-panel">
             <div class="backup-panel-header">
                 <h2 class="backup-panel-title">Lịch sử backup</h2>
-                <div class="backup-muted">Thư mục local: {{ $summary['local_directory'] }}</div>
+                <div class="backup-muted">Thư mục nội bộ: {{ $summary['local_directory'] }}</div>
             </div>
 
             <div class="table-responsive">
@@ -349,11 +349,11 @@
                                 </td>
                                 <td>
                                     <strong>{{ $backup->filename ?? '---' }}</strong>
-                                    <div class="backup-muted">{{ $backup->localFileExists() ? 'Có file local' : 'Không thấy file local' }}</div>
+                                    <div class="backup-muted">{{ $backup->localFileExists() ? 'Có tệp nội bộ' : 'Không thấy tệp nội bộ' }}</div>
                                 </td>
                                 <td>{{ $backup->formattedSize() }}</td>
                                 <td>
-                                    {{ $backup->triggered_by === 'manual' ? 'Admin' : 'Command/Cron' }}
+                                    {{ $backup->triggered_by === 'manual' ? 'Quản trị viên' : 'Tác vụ tự động' }}
                                     <div class="backup-muted">{{ $backup->user?->name }}</div>
                                 </td>
                                 <td>

@@ -150,7 +150,7 @@
         <div class="storage-header">
             <div>
                 <h1 class="storage-title">Kiểm tra lưu trữ</h1>
-                <p class="storage-subtitle">Theo dõi cấu hình Cloudflare R2 và kiểm tra upload file bài nộp.</p>
+                <p class="storage-subtitle">Theo dõi cấu hình Cloudflare R2 và kiểm tra việc tải tệp bài nộp lên.</p>
             </div>
 
             <div class="storage-actions">
@@ -165,7 +165,7 @@
                     @csrf
                     <input type="hidden" name="disk" value="public">
                     <button type="submit" class="storage-btn secondary">
-                        <i class="fa-solid fa-folder-open"></i> Test local
+                        <i class="fa-solid fa-folder-open"></i> Kiểm tra lưu trữ nội bộ
                     </button>
                 </form>
             </div>
@@ -183,10 +183,10 @@
 
         <div class="storage-grid">
             <div class="storage-card">
-                <div class="storage-label">Disk bài nộp hiện tại</div>
+                <div class="storage-label">Vùng lưu bài nộp hiện tại</div>
                 <div class="storage-value">{{ $summary['submission_disk'] }}</div>
                 <div class="storage-muted">
-                    File học sinh nộp mới sẽ lưu vào disk này.
+                    File học viên nộp mới sẽ lưu vào disk này.
                 </div>
             </div>
 
@@ -202,25 +202,25 @@
             </div>
 
             <div class="storage-card">
-                <div class="storage-label">Access key</div>
+                <div class="storage-label">Khóa truy cập</div>
                 <div class="storage-value">{{ $summary['r2_key'] }}</div>
-                <div class="storage-muted">Không hiển thị secret key trên giao diện.</div>
+                <div class="storage-muted">Khóa bí mật không được hiển thị trên giao diện.</div>
             </div>
         </div>
 
         <div class="storage-grid">
             <div class="storage-card">
-                <div class="storage-label">Bucket</div>
+                <div class="storage-label">Kho lưu trữ</div>
                 <div class="storage-value">{{ $summary['r2_bucket'] ?: 'Chưa cấu hình' }}</div>
             </div>
 
             <div class="storage-card">
-                <div class="storage-label">Region</div>
-                <div class="storage-value">{{ $summary['r2_region'] ?: 'auto' }}</div>
+                <div class="storage-label">Vùng máy chủ</div>
+                <div class="storage-value">{{ $summary['r2_region'] ?: 'Tự động' }}</div>
             </div>
 
             <div class="storage-card">
-                <div class="storage-label">Endpoint</div>
+                <div class="storage-label">Điểm kết nối</div>
                 <div class="storage-muted">{{ $summary['r2_endpoint'] ?: 'Chưa cấu hình' }}</div>
             </div>
         </div>

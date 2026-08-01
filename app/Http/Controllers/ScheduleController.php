@@ -21,7 +21,7 @@ class ScheduleController extends Controller
         $user = auth()->user();
 
         if ($user->role === 'student') {
-            abort(403, 'Bạn chỉ có thể xem lịch học tại trang Tổng quan (Dashboard).');
+            abort(403, 'Bạn chỉ có thể xem lịch học tại trang tổng quan.');
         }
 
         if ($request->ajax() || $request->wantsJson() || $request->has('start')) {

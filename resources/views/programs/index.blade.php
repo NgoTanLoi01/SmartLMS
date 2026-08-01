@@ -119,15 +119,15 @@
                             </td>
                             <td class="px-4 py-3">
                                 @if ($program->status === 'published')
-                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Published</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Đã xuất bản</span>
                                 @elseif ($program->status === 'hidden')
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">Hidden</span>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">Tạm ẩn</span>
                                 @else
-                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3">Draft</span>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3">Bản nháp</span>
                                 @endif
                             </td>
                             @if (auth()->user()->role === 'admin')
-                                <td class="px-4 py-3 text-muted">{{ $program->teacher?->name ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-muted">{{ $program->teacher?->name ?? 'Chưa có' }}</td>
                             @endif
                             <td class="px-4 py-3">
                                 <div class="program-actions">

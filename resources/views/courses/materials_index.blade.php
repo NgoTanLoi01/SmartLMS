@@ -768,7 +768,7 @@
                             placeholder="Tìm theo tên học liệu hoặc tên file...">
                         <select class="form-select" name="type">
                             <option value="">Tất cả định dạng</option>
-                            @foreach (['pdf' => 'PDF', 'slide' => 'Slide', 'image' => 'Hình ảnh', 'video' => 'Video', 'document' => 'Tài liệu', 'code' => 'Code', 'website' => 'Website', 'other' => 'Khác'] as $value => $label)
+                            @foreach (['pdf' => 'PDF', 'slide' => 'Bài trình chiếu', 'image' => 'Hình ảnh', 'video' => 'Video', 'document' => 'Tài liệu', 'code' => 'Mã nguồn', 'website' => 'Trang web', 'other' => 'Khác'] as $value => $label)
                                 <option value="{{ $value }}" @selected(request('type') === $value)>{{ $label }}
                                 </option>
                             @endforeach

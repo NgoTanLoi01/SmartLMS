@@ -59,7 +59,7 @@ class DashboardController extends Controller
             $data['total_classes'] = DB::table('classes')->where($this->notArchivedColumn('status'))->count();
             $data['total_courses'] = Course::where('course_type', 'delivery')->notArchived()->count();
             $data['recent_users'] = User::orderBy('created_at', 'desc')->take(7)->get();
-            $data['chart_role_labels'] = ['Học sinh', 'Giáo viên', 'Admin'];
+            $data['chart_role_labels'] = ['Học viên', 'Giáo viên', 'Quản trị viên'];
             $data['chart_role_data'] = [$data['total_students'], $data['total_teachers'], (int) ($activeRoleCounts['admin'] ?? 0)];
             $data['pending_assignment_grades'] = DB::table('assignment_submissions')
                 ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')
@@ -140,7 +140,7 @@ class DashboardController extends Controller
                 ->count();
             $data['pending_grades'] = $data['pending_assignment_grades'] + $data['pending_quiz_grades'];
 
-            // Tổng học sinh
+            // Tổng học viên
             $data['total_students'] = DB::table('class_user')
                 ->join('classes', 'class_user.class_id', '=', 'classes.id')
                 ->where('classes.teacher_id', $user->id)
@@ -655,7 +655,7 @@ class DashboardController extends Controller
             $suggestions[] = [
                 'type' => 'warning',
                 'icon' => 'fas fa-user-clock',
-                'title' => 'Theo dõi học sinh cần hỗ trợ',
+                'title' => 'Theo dõi học viên cần hỗ trợ',
                 'body' => "{$student->name} thuộc {$student->class_name}: {$signals}.",
                 'action_label' => 'Xem hồ sơ',
                 'action_url' => route('classes.students.show', ['classId' => $student->class_id, 'studentId' => $student->id]),

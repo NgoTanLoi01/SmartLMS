@@ -50,9 +50,9 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold" for="quiz-status">Trạng thái</label>
                         <select id="quiz-status" class="form-select" name="status" required>
-                            <option value="published" @selected(old('status', $quiz->status) === 'published')>Published - mở cho học viên</option>
-                            <option value="draft" @selected(old('status', $quiz->status) === 'draft')>Draft - bản nháp</option>
-                            <option value="hidden" @selected(old('status', $quiz->status) === 'hidden')>Hidden - tạm ẩn</option>
+                            <option value="published" @selected(old('status', $quiz->status) === 'published')>Đang mở cho học viên</option>
+                            <option value="draft" @selected(old('status', $quiz->status) === 'draft')>Bản nháp</option>
+                            <option value="hidden" @selected(old('status', $quiz->status) === 'hidden')>Tạm ẩn</option>
                         </select>
                     </div>
                     <div class="col-md-6">

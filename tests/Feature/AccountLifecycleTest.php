@@ -123,9 +123,54 @@ class AccountLifecycleTest extends TestCase
         $this->actingAs($admin)
             ->get(route('users.index'))
             ->assertOk()
+            ->assertSee('Quản trị hệ thống')
+            ->assertSee('Tài khoản người dùng')
+            ->assertSee('Nhật ký hệ thống')
+            ->assertDontSee('Audit log')
             ->assertSee('Quản lý vòng đời tài khoản')
             ->assertSee('Đang hoạt động')
             ->assertSee('Không giới hạn thời gian');
+    }
+
+    public function test_student_sidebar_shows_flat_learning_navigation(): void
+    {
+        $student = $this->createUser([
+            'email' => 'student-navigation@example.com',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        $this->actingAs($student);
+
+        $sidebar = view('layouts.partials.sidebar')->render();
+
+        $this->assertStringContainsString('Menu học viên', $sidebar);
+        $this->assertStringContainsString('Khóa học của tôi', $sidebar);
+        $this->assertStringContainsString('Kết quả học tập', $sidebar);
+        $this->assertStringContainsString('Học tập của bạn', $sidebar);
+        $this->assertStringNotContainsString('data-testid="nav-group-learning"', $sidebar);
+        $this->assertStringNotContainsString('Quản trị hệ thống', $sidebar);
+    }
+
+    public function test_attendance_page_has_link_back_to_current_course(): void
+    {
+        $teacher = $this->createUser(['email' => 'attendance-navigation@example.com']);
+        $this->actingAs($teacher);
+        view()->share('errors', new \Illuminate\Support\ViewErrorBag);
+
+        $course = (object) ['id' => 321, 'title' => 'Khóa học kiểm thử'];
+        $html = view('attendance.show', [
+            'course' => $course,
+            'students' => collect(),
+            'columns' => collect(),
+            'attendanceData' => [],
+            'attendanceNotes' => [],
+            'schedules' => collect(),
+            'isStudentView' => false,
+        ])->render();
+
+        $this->assertStringContainsString('Quay lại khóa học', $html);
+        $this->assertStringContainsString(route('courses.show', 321), $html);
+        $this->assertStringContainsString('data-testid="attendance-back-to-course"', $html);
     }
 
     public function test_inactive_and_expired_accounts_cannot_login(): void

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard vận hành')
+@section('title', 'Tổng quan vận hành')
 
 @section('content')
     @php
@@ -157,9 +157,9 @@
 
     <div class="ops-header">
         <div>
-            <h1 class="ops-title">Dashboard vận hành</h1>
+            <h1 class="ops-title">Tổng quan vận hành</h1>
             <p class="ops-subtitle">
-                Theo dõi nhanh giảng dạy và tài chính trong {{ $periodLabel }}, tách riêng khỏi dashboard chính.
+                Theo dõi nhanh hoạt động giảng dạy và tài chính trong {{ $periodLabel }}.
             </p>
         </div>
         <div class="d-flex gap-2 flex-wrap">

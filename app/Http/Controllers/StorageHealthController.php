@@ -44,7 +44,7 @@ class StorageHealthController extends Controller
                 'disk' => $diskName,
                 'message' => $exists
                     ? 'Kết nối thành công. Hệ thống đã upload, kiểm tra và xóa file test.'
-                    : 'Upload xong nhưng không kiểm tra được file test.',
+                    : 'Đã tải lên nhưng không kiểm tra được tệp thử nghiệm.',
                 'path' => $path,
                 'checked_at' => now()->format('H:i d/m/Y'),
             ]);

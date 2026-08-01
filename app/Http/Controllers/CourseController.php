@@ -84,7 +84,7 @@ class CourseController extends Controller
         } elseif ($user->role === 'teacher') {
             $courses = $query->where('teacher_id', $user->id)->latest()->get();
         } else {
-            // Học sinh
+            // Học viên
             $classIds = $user->classes()->where('classes.status', Classroom::STATUS_ACTIVE)->pluck('classes.id');
             $courses = $query
                 ->whereHas('classes', function ($q) use ($classIds) {
@@ -105,7 +105,7 @@ class CourseController extends Controller
             }
         }
 
-        // Logic đếm Học sinh (Students) dựa trên quan hệ classes của thầy
+        // Logic đếm Học viên (Students) dựa trên quan hệ classes của thầy
         foreach ($courses as $course) {
             // Đếm số lượng user duy nhất tham gia các lớp của khóa học này
             $course->students_count = \DB::table('class_user')

@@ -14,7 +14,7 @@ class StudentScheduleController extends Controller
         $user = auth()->user();
 
         if ($user->role !== 'student') {
-            abort(403, 'Trang này chỉ dành cho học sinh.');
+            abort(403, 'Trang này chỉ dành cho học viên.');
         }
 
         $classIds = $user->classes()

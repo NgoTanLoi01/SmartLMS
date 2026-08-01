@@ -118,10 +118,10 @@
                     <div class="cm-field">
                         <label class="cm-label">Trạng thái xuất bản</label>
                         <select name="status" class="cm-ctrl">
-                            <option value="published">Published - mở cho học sinh</option>
-                            <option value="draft">Draft - bản nháp</option>
-                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
-                            <option value="archived">Archived - lưu trữ</option>
+                            <option value="published">Đã xuất bản - học viên có thể xem</option>
+                            <option value="draft">Bản nháp</option>
+                            <option value="hidden">Tạm ẩn khỏi học viên</option>
+                            <option value="archived">Đã lưu trữ</option>
                         </select>
                     </div>
                     <div class="cm-field">
@@ -196,10 +196,10 @@
                     <div class="cm-field">
                         <label class="cm-label">Trạng thái xuất bản</label>
                         <select name="status" id="editLessonStatus" class="cm-ctrl">
-                            <option value="published">Published - mở cho học sinh</option>
-                            <option value="draft">Draft - bản nháp</option>
-                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
-                            <option value="archived">Archived - lưu trữ</option>
+                            <option value="published">Đã xuất bản - học viên có thể xem</option>
+                            <option value="draft">Bản nháp</option>
+                            <option value="hidden">Tạm ẩn khỏi học viên</option>
+                            <option value="archived">Đã lưu trữ</option>
                         </select>
                     </div>
                     <div class="cm-field">
@@ -288,11 +288,11 @@
                     <div class="cm-field">
                         <label class="cm-label">Trạng thái xuất bản</label>
                         <select name="status" class="cm-ctrl">
-                            <option value="published">Published - mở cho học sinh</option>
-                            <option value="draft">Draft - bản nháp</option>
-                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
-                            <option value="archived">Archived - lưu trữ</option>
-                            <option value="archived">Archived - lưu trữ</option>
+                            <option value="published">Đã xuất bản - học viên có thể xem</option>
+                            <option value="draft">Bản nháp</option>
+                            <option value="hidden">Tạm ẩn khỏi học viên</option>
+                            <option value="archived">Đã lưu trữ</option>
+                            <option value="archived">Đã lưu trữ</option>
                         </select>
                     </div>
                     <div class="cm-field">
@@ -397,10 +397,10 @@
                     <div class="cm-field">
                         <label class="cm-label">Trạng thái xuất bản</label>
                         <select name="status" id="editAssignmentStatus" class="cm-ctrl">
-                            <option value="published">Published - mở cho học sinh</option>
-                            <option value="draft">Draft - bản nháp</option>
-                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
-                            <option value="archived">Archived - lưu trữ</option>
+                            <option value="published">Đã xuất bản - học viên có thể xem</option>
+                            <option value="draft">Bản nháp</option>
+                            <option value="hidden">Tạm ẩn khỏi học viên</option>
+                            <option value="archived">Đã lưu trữ</option>
                         </select>
                     </div>
                     <div class="cm-field">
@@ -467,7 +467,7 @@
                     <table class="cm-table">
                         <thead>
                             <tr>
-                                <th>Học sinh</th>
+                                <th>Học viên</th>
                                 <th>Trạng thái</th>
                                 <th>Thời gian nộp</th>
                                 <th>Thao tác</th>
@@ -519,7 +519,7 @@
                 <div class="cm-field">
                     <label class="cm-label">Nguồn AI gợi ý</label>
                     <select id="addQuizLessonSource" class="cm-ctrl">
-                        <option value="" disabled selected>-- Chọn bài hoặc chương để AI gợi ý quiz --</option>
+                        <option value="" disabled selected>-- Chọn bài hoặc chương để AI gợi ý bài kiểm tra --</option>
                         @foreach ($course->modules as $module)
                             <optgroup label="{{ $module->title }}">
                                 <option value="module:{{ $module->id }}">Toàn chương: {{ $module->title }}</option>
@@ -549,9 +549,9 @@
                     <div class="cm-field">
                         <label class="cm-label">Trạng thái xuất bản</label>
                         <select name="status" class="cm-ctrl">
-                            <option value="published">Published - mở cho học sinh</option>
-                            <option value="draft">Draft - bản nháp</option>
-                            <option value="hidden">Hidden - ẩn khỏi học sinh</option>
+                            <option value="published">Đã xuất bản - học viên có thể xem</option>
+                            <option value="draft">Bản nháp</option>
+                            <option value="hidden">Tạm ẩn khỏi học viên</option>
                         </select>
                     </div>
                     <div class="cm-field">
@@ -905,7 +905,7 @@
                 if (type === 'quiz') {
                     const quizSource = selectedValue('addQuizLessonSource');
                     if (!quizSource) {
-                        alert('Bạn chọn bài học nguồn trước để AI gợi ý quiz nhé.');
+                        alert('Bạn chọn bài học nguồn trước để AI gợi ý bài kiểm tra nhé.');
                         return;
                     }
 

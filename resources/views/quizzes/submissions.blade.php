@@ -48,7 +48,7 @@
                 </a>
                 <div class="grading-hero__eyebrow">Hàng đợi chấm bài</div>
                 <h1 class="grading-hero__title">{{ $quiz->title }}</h1>
-                <div class="grading-hero__meta">Theo dõi tiến độ chấm, phản hồi và công bố điểm cho học sinh.</div>
+                <div class="grading-hero__meta">Theo dõi tiến độ chấm, phản hồi và công bố điểm cho học viên.</div>
             </div>
             <a href="{{ route('quizzes.sessions.index', $quiz) }}" class="btn btn-light rounded-pill px-4 fw-bold">
                 <i class="fa-solid fa-calendar-days me-2 text-primary"></i>Quản lý ca thi
@@ -87,10 +87,10 @@
     <form method="GET" action="{{ route('quizzes.submissions', $quiz) }}" class="grading-filter mb-4">
         <div class="row g-3 align-items-end">
             <div class="col-lg-5">
-                <label for="grading-search" class="form-label small fw-bold text-muted">Tìm học sinh</label>
+                <label for="grading-search" class="form-label small fw-bold text-muted">Tìm học viên</label>
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                    <input id="grading-search" class="form-control border-start-0" name="search" value="{{ $search }}" placeholder="Tên, email hoặc mã học sinh">
+                    <input id="grading-search" class="form-control border-start-0" name="search" value="{{ $search }}" placeholder="Tên, email hoặc mã học viên">
                 </div>
             </div>
             <div class="col-md-4 col-lg-3">
@@ -124,7 +124,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>Học sinh</th>
+                        <th>Học viên</th>
                         <th>Ca thi</th>
                         <th>Trạng thái</th>
                         <th>Tiến độ rubric</th>
@@ -176,7 +176,7 @@
                                         <i class="fa-solid {{ $attempt->status === 'pending_grading' ? 'fa-pen-to-square' : 'fa-eye' }} me-1"></i>{{ $attempt->status === 'pending_grading' ? 'Chấm bài' : 'Xem bài' }}
                                     </a>
                                     @if($attempt->status === 'graded')
-                                        <form method="POST" action="{{ route('quiz-attempts.release', $attempt) }}" onsubmit="return confirm('Công bố điểm và phản hồi cho học sinh này?')">
+                                        <form method="POST" action="{{ route('quiz-attempts.release', $attempt) }}" onsubmit="return confirm('Công bố điểm và phản hồi cho học viên này?')">
                                             @csrf
                                             <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" title="Công bố điểm"><i class="fa-solid fa-paper-plane"></i></button>
                                         </form>

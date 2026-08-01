@@ -8,7 +8,7 @@
 
     <title>SmartLMS – Quản lý toàn bộ vòng đời đào tạo trên một hệ thống</title>
     <meta name="description"
-        content="SmartLMS kết nối tài khoản, chương trình, khóa học, lớp học, lịch, điểm danh, bài tập, quiz, thanh toán, báo cáo và trợ lý AI có trích dẫn nguồn.">
+        content="SmartLMS kết nối tài khoản, chương trình, khóa học, lớp học, lịch, điểm danh, bài tập, bài kiểm tra, thanh toán, báo cáo và trợ lý AI có trích dẫn nguồn.">
     <meta name="keywords"
         content="SmartLMS, phần mềm quản lý đào tạo, LMS Việt Nam, quản lý lớp học, điểm danh, ngân hàng câu hỏi, chatbot RAG giáo dục">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
@@ -54,7 +54,7 @@
           "featureList": [
             "Quản lý vòng đời tài khoản và phân quyền",
             "Quản lý chương trình, khóa học, lớp học và lịch học",
-            "Điểm danh, bài tập, quiz và ngân hàng câu hỏi",
+            "Điểm danh, bài tập, bài kiểm tra và ngân hàng câu hỏi",
             "Theo dõi giảng dạy, thanh toán và báo cáo vận hành",
             "Chatbot RAG dùng pgvector, OCR và trích dẫn nguồn"
           ]
@@ -192,7 +192,7 @@
                                         <div class="work-icon work-icon--green"><i
                                                 class="fa-solid fa-chart-simple"></i>
                                         </div>
-                                        <div><strong>Theo dõi tiến độ</strong><small>Bài học · quiz · điểm số</small>
+                                        <div><strong>Theo dõi tiến độ</strong><small>Bài học · bài kiểm tra · điểm số</small>
                                         </div>
                                         <span class="work-status work-status--done">Đang chạy</span>
                                     </div>
@@ -218,7 +218,7 @@
                 <span><i class="fa-solid fa-layer-group"></i> Chương trình & khóa học</span>
                 <span><i class="fa-solid fa-school"></i> Lớp & lịch học</span>
                 <span><i class="fa-solid fa-clipboard-check"></i> Điểm danh & điểm số</span>
-                <span><i class="fa-solid fa-file-pen"></i> Bài tập & quiz</span>
+                <span><i class="fa-solid fa-file-pen"></i> Bài tập và bài kiểm tra</span>
                 <span><i class="fa-solid fa-chart-column"></i> Vận hành & báo cáo</span>
             </div>
         </section>
@@ -238,10 +238,10 @@
                     <h3>Quản trị hệ thống</h3>
                     <p>Kiểm soát người dùng, quyền truy cập và trạng thái hệ thống từ một nơi.</p>
                     <ul>
-                        <li><x-ui.icon name="check" /> Tài khoản Admin, Giáo viên, Học viên</li>
+                        <li><x-ui.icon name="check" /> Tài khoản quản trị viên, giáo viên và học viên</li>
                         <li><x-ui.icon name="check" /> Kích hoạt, vô hiệu hóa và ngày hết hạn</li>
                         <li><x-ui.icon name="check" /> Thông báo cá nhân và nhật ký thao tác</li>
-                        <li><x-ui.icon name="check" /> Backup, R2 và kiểm tra storage</li>
+                        <li><x-ui.icon name="check" /> Sao lưu, R2 và kiểm tra lưu trữ</li>
                     </ul>
                 </article>
 
@@ -266,7 +266,7 @@
                     <ul>
                         <li><x-ui.icon name="check" /> Bài tập file hoặc tự luận, preview và phản hồi</li>
                         <li><x-ui.icon name="check" /> Ngân hàng câu hỏi, import và gắn khóa học</li>
-                        <li><x-ui.icon name="check" /> Tạo quiz, làm bài, xem lại và thống kê</li>
+                        <li><x-ui.icon name="check" /> Tạo bài kiểm tra, làm bài, xem lại và thống kê</li>
                         <li><x-ui.icon name="check" /> Kho học liệu và tài liệu dùng chung</li>
                     </ul>
                 </article>
@@ -279,7 +279,7 @@
                     <ul>
                         <li><x-ui.icon name="check" /> Theo dõi dòng giảng dạy theo giáo viên</li>
                         <li><x-ui.icon name="check" /> Hợp đồng và trạng thái thanh toán</li>
-                        <li><x-ui.icon name="check" /> Dashboard vận hành theo thời gian</li>
+                        <li><x-ui.icon name="check" /> Tổng quan vận hành theo thời gian</li>
                         <li><x-ui.icon name="check" /> Xuất Excel và bản in báo cáo</li>
                     </ul>
                 </article>
@@ -335,7 +335,7 @@
                                 <div class="role-points">
                                     <span><i class="fa-solid fa-check"></i> Quản lý vòng đời tài khoản</span>
                                     <span><i class="fa-solid fa-check"></i> Phân quyền và cô lập dữ liệu</span>
-                                    <span><i class="fa-solid fa-check"></i> Theo dõi backup và storage</span>
+                                    <span><i class="fa-solid fa-check"></i> Theo dõi sao lưu và lưu trữ</span>
                                 </div>
                             </div>
                             <div class="role-preview">
@@ -401,7 +401,7 @@
                                     quả của chính mình.</p>
                                 <div class="role-points">
                                     <span><i class="fa-solid fa-check"></i> Lịch học cá nhân rõ ràng</span>
-                                    <span><i class="fa-solid fa-check"></i> Bài học, bài tập và quiz</span>
+                                    <span><i class="fa-solid fa-check"></i> Bài học, bài tập và bài kiểm tra</span>
                                     <span><i class="fa-solid fa-check"></i> Phản hồi và trợ lý học tập</span>
                                 </div>
                             </div>
@@ -500,7 +500,7 @@
                     <div class="workflow-index">01</div>
                     <div class="workflow-icon"><i class="fa-solid fa-user-plus"></i></div>
                     <h3>Cấp tài khoản</h3>
-                    <p>Admin tạo người dùng, gán vai trò và quản lý trạng thái truy cập.</p>
+                    <p>Quản trị viên tạo người dùng, gán vai trò và quản lý trạng thái truy cập.</p>
                 </article>
                 <article class="workflow-step reveal">
                     <div class="workflow-index">02</div>
@@ -518,7 +518,7 @@
                     <div class="workflow-index">04</div>
                     <div class="workflow-icon"><i class="fa-solid fa-clipboard-check"></i></div>
                     <h3>Dạy & đánh giá</h3>
-                    <p>Điểm danh, giao bài, quiz, chấm điểm và phản hồi.</p>
+                    <p>Điểm danh, giao bài, kiểm tra, chấm điểm và phản hồi.</p>
                 </article>
                 <article class="workflow-step reveal">
                     <div class="workflow-index">05</div>
@@ -554,7 +554,7 @@
                                 AI.</span></div>
                     </article>
                     <article><i class="fa-solid fa-cloud"></i>
-                        <div><strong>Backup & storage</strong><span>Backup database, lưu local/R2 và kiểm tra trạng thái
+                        <div><strong>Sao lưu và lưu trữ</strong><span>Sao lưu cơ sở dữ liệu, lưu nội bộ/R2 và kiểm tra trạng thái
                                 kho.</span></div>
                     </article>
                 </div>

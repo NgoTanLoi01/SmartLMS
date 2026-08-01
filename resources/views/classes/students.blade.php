@@ -30,7 +30,7 @@
                 <span><i class="fa-solid fa-chalkboard-teacher" aria-hidden="true"></i>
                     {{ $classroom->teacher->name }}</span>
                 <span><i class="fa-solid fa-users" aria-hidden="true"></i>
-                    {{ $classroom->students->count() }} học sinh</span>
+                    {{ $classroom->students->count() }} học viên</span>
             </x-slot:meta>
             @if (auth()->user()->role === 'admin' || auth()->id() === $classroom->teacher_id)
                 <x-slot:actions>
@@ -41,7 +41,7 @@
                         <i class="fa-solid fa-file-excel"></i> Nhập từ Excel
                     </button>
                     <button class="lms-btn lms-btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-                        <i class="fa-solid fa-user-plus"></i> Thêm học sinh
+                        <i class="fa-solid fa-user-plus"></i> Thêm học viên
                     </button>
                 </x-slot:actions>
             @endif
@@ -49,12 +49,12 @@
 
         {{-- Stat cards --}}
         <x-ui.stat-grid>
-            <x-ui.stat-card label="Tổng học sinh" :value="$classStats['total'] ?? $classroom->students->count()"
+            <x-ui.stat-card label="Tổng học viên" :value="$classStats['total'] ?? $classroom->students->count()"
                 description="Đang hiển thị {{ $classStats['shown'] ?? $classroom->students->count() }}" />
             <x-ui.stat-card label="Cần theo dõi" :value="$classStats['needs_attention'] ?? 0" tone="danger"
                 description="Cảnh báo học tập hoặc điểm danh" />
             <x-ui.stat-card label="Chưa nộp bài" :value="$classStats['missing_assignments'] ?? 0" tone="warning"
-                description="Học sinh còn thiếu bài tập" />
+                description="Học viên còn thiếu bài tập" />
             <x-ui.stat-card label="Có lượt vắng" :value="$classStats['absent'] ?? 0" tone="info"
                 description="Từ dữ liệu điểm danh" />
         </x-ui.stat-grid>
@@ -95,7 +95,7 @@
                         <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>Tất cả</option>
                         <option value="needs_attention" @selected(($filters['status'] ?? '') === 'needs_attention')>Cần theo dõi</option>
                         <option value="missing_assignments" @selected(($filters['status'] ?? '') === 'missing_assignments')>Chưa nộp bài</option>
-                        <option value="low_score" @selected(($filters['status'] ?? '') === 'low_score')>Điểm quiz thấp</option>
+                        <option value="low_score" @selected(($filters['status'] ?? '') === 'low_score')>Điểm kiểm tra thấp</option>
                         <option value="absent" @selected(($filters['status'] ?? '') === 'absent')>Có lượt vắng</option>
                         <option value="no_activity" @selected(($filters['status'] ?? '') === 'no_activity')>Chưa có hoạt động</option>
                     </select>
@@ -116,10 +116,10 @@
                 <table class="lms-table">
                     <thead>
                         <tr>
-                            <th>Học sinh</th>
+                            <th>Học viên</th>
                             <th>Tình trạng</th>
                             <th>Bài tập</th>
-                            <th>Quiz</th>
+                            <th>Bài kiểm tra</th>
                             <th>Điểm danh</th>
                             <th>Hoạt động gần nhất</th>
                             <th style="text-align:right;">Hành động</th>
@@ -184,7 +184,7 @@
                                         </div>
                                         <div class="lms-mini-sub">{{ $summary['assignment_missing_count'] }} thiếu ·
                                             {{ $summary['assignment_overdue_missing_count'] }} quá hạn</div>
-                                        <div class="lms-mini-sub">TB: {{ $summary['assignment_average'] ?? 'N/A' }}</div>
+                                        <div class="lms-mini-sub">Trung bình: {{ $summary['assignment_average'] ?? 'Chưa có' }}</div>
                                     </div>
                                 </td>
                                 {{-- Quiz --}}
@@ -197,7 +197,7 @@
                                                 style="width:{{ $summary['quiz_total'] > 0 ? round(($summary['quiz_attempted_count'] / $summary['quiz_total']) * 100) : 0 }}%;">
                                             </div>
                                         </div>
-                                        <div class="lms-mini-sub">TB: {{ $summary['quiz_average'] ?? 'N/A' }}</div>
+                                        <div class="lms-mini-sub">Trung bình: {{ $summary['quiz_average'] ?? 'Chưa có' }}</div>
                                         <div class="lms-mini-sub">{{ $summary['quiz_pending_count'] }} chưa làm</div>
                                     </div>
                                 </td>
@@ -249,8 +249,8 @@
                                 <td colspan="7">
                                     <div class="lms-empty">
                                         <span class="lms-empty-icon"><i class="fa-solid fa-user-graduate"></i></span>
-                                        <h6>Không tìm thấy học sinh phù hợp</h6>
-                                        <p>Hãy đổi bộ lọc hoặc thêm học sinh mới để bắt đầu.</p>
+                                        <h6>Không tìm thấy học viên phù hợp</h6>
+                                        <p>Hãy đổi bộ lọc hoặc thêm học viên mới để bắt đầu.</p>
                                     </div>
                                 </td>
                             </tr>
@@ -268,7 +268,7 @@
                 @csrf
                 <div class="modal-header" style="padding-bottom:16px;">
                     <div>
-                        <h5 class="modal-title">Thêm học sinh mới</h5>
+                        <h5 class="modal-title">Thêm học viên mới</h5>
                         <p style="font-size:13px; color:var(--lms-muted); margin:4px 0 0;">Tạo tài khoản và gán vào
                             <strong>{{ $classroom->name }}</strong></p>
                     </div>
@@ -277,7 +277,7 @@
                 <div class="modal-body" style="padding-top:8px;">
                     <div class="lms-info-box">
                         <i class="fa-solid fa-circle-info" style="flex-shrink:0; margin-top:1px;"></i>
-                        <span>Học sinh sẽ được tạo tên đăng nhập từ họ tên. Nếu trùng tên, hệ thống sẽ ghép thêm mã học sinh hoặc số thứ tự.</span>
+                        <span>Học viên sẽ được tạo tên đăng nhập từ họ tên. Nếu trùng tên, hệ thống sẽ ghép thêm mã học viên hoặc số thứ tự.</span>
                     </div>
                     <div class="lms-form-group">
                         <label class="lms-form-label">Họ và tên</label>
@@ -285,7 +285,7 @@
                             required value="{{ old('name') }}">
                     </div>
                     <div class="lms-form-group">
-                        <label class="lms-form-label">Mã học sinh <span style="font-weight:500; color:var(--lms-muted);">(không bắt buộc)</span></label>
+                        <label class="lms-form-label">Mã học viên <span style="font-weight:500; color:var(--lms-muted);">(không bắt buộc)</span></label>
                         <input type="text" name="student_code" class="lms-form-control" placeholder="VD: HS001"
                             value="{{ old('student_code') }}">
                     </div>
@@ -319,7 +319,7 @@
                 <div class="modal-header" style="padding-bottom:16px;">
                     <div>
                         <h5 class="modal-title">Nhập danh sách từ Excel</h5>
-                        <p style="font-size:13px; color:var(--lms-muted); margin:4px 0 0;">Tải lên file danh sách học sinh
+                        <p style="font-size:13px; color:var(--lms-muted); margin:4px 0 0;">Tải lên file danh sách học viên
                         </p>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -330,9 +330,9 @@
                                 style="margin-right:5px;"></i>Hướng dẫn & Quy chuẩn</strong>
                         <ul>
                             <li>Hệ thống đọc từ <strong>Dòng số 2</strong></li>
-                            <li>Cột: <strong>D</strong> (Mã HS) · <strong>E</strong> (Họ) · <strong>F</strong> (Tên)</li>
+                            <li>Cột: <strong>D</strong> (Mã HV) · <strong>E</strong> (Họ) · <strong>F</strong> (Tên)</li>
                             <li>Tên đăng nhập tự sinh từ họ tên, ví dụ <code>nguyenvana</code></li>
-                            <li>Nếu trùng họ tên, hệ thống ghép thêm Mã HS hoặc số thứ tự</li>
+                            <li>Nếu trùng họ tên, hệ thống ghép thêm Mã HV hoặc số thứ tự</li>
                             <li>Mật khẩu mặc định: <code>123456</code></li>
                         </ul>
                         <a href="{{ asset('templates/mau_danh_sach_hoc_sinh.xlsx') }}"

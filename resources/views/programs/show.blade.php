@@ -176,7 +176,7 @@
             <div class="program-detail-meta">
                 <span class="program-chip"><i class="fa-solid fa-hashtag"></i>{{ $program->code }}</span>
                 <span class="program-chip" style="background:#f0fdf4;color:#15803d;">
-                    <i class="fa-solid fa-user-tie"></i>{{ $program->teacher?->name ?? 'N/A' }}
+                    <i class="fa-solid fa-user-tie"></i>{{ $program->teacher?->name ?? 'Chưa có' }}
                 </span>
                 <span class="program-chip" style="background:#f8fafc;color:#475569;">
                     <i class="fa-solid fa-circle"></i>{{ strtoupper($program->status) }}
@@ -210,7 +210,7 @@
             <div class="program-stat-value">{{ $stats['classes'] }}</div>
         </div>
         <div class="program-stat">
-            <div class="program-stat-label">Học sinh</div>
+            <div class="program-stat-label">Học viên</div>
             <div class="program-stat-value">{{ $stats['students'] }}</div>
         </div>
     </div>
@@ -259,7 +259,7 @@
         <div class="program-section-head">
             <div>
                 <h2 class="program-section-title">Khóa đang triển khai</h2>
-                <p class="program-section-sub">Các khóa thật đang được gắn với lớp và học sinh.</p>
+                <p class="program-section-sub">Các khóa thật đang được gắn với lớp và học viên.</p>
             </div>
             <a href="{{ route('courses.create', ['learning_program_id' => $program->id, 'course_type' => 'delivery']) }}"
                 class="btn btn-sm btn-outline-primary rounded-pill">
@@ -275,7 +275,7 @@
                             <span><i class="fa-solid fa-chalkboard"></i>
                                 {{ $course->classes->pluck('name')->join(', ') ?: 'Chưa gắn lớp' }}
                             </span>
-                            <span><i class="fa-solid fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học sinh</span>
+                            <span><i class="fa-solid fa-user-graduate"></i> {{ $course->students_count ?? 0 }} học viên</span>
                             <span><i class="fa-solid fa-book-open"></i> {{ $course->lessons_count ?? 0 }} bài học</span>
                             <span><i class="fa-solid fa-eye"></i> {{ strtoupper($course->status ?? 'published') }}</span>
                         </div>
