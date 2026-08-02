@@ -83,6 +83,13 @@ class QuestionController extends Controller
             $query->where('question_type', $request->question_type);
         }
 
+        $questionStats = (clone $query)
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw("SUM(CASE WHEN difficulty = 'easy' THEN 1 ELSE 0 END) AS easy")
+            ->selectRaw("SUM(CASE WHEN difficulty = 'medium' THEN 1 ELSE 0 END) AS medium")
+            ->selectRaw("SUM(CASE WHEN difficulty = 'hard' THEN 1 ELSE 0 END) AS hard")
+            ->first();
+
         // Lấy danh sách câu hỏi (có phân trang)
         $questions = $query->orderBy('created_at', 'desc')->paginate(15);
 
@@ -98,7 +105,14 @@ class QuestionController extends Controller
 
         $questionTypeLabels = Question::typeLabels();
 
-        return view('quizzes.question_bank', compact('courses', 'questionBanks', 'questions', 'passages', 'questionTypeLabels'));
+        return view('quizzes.question_bank', compact(
+            'courses',
+            'questionBanks',
+            'questions',
+            'passages',
+            'questionTypeLabels',
+            'questionStats'
+        ));
     }
 
     public function storePassage(Request $request)

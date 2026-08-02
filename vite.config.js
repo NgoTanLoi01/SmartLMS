@@ -8,6 +8,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/css/pages/app-layout.css',
+                'resources/css/pages/assignments-index.css',
                 'resources/css/pages/attendance-show.css',
                 'resources/css/pages/chatbot.css',
                 'resources/css/pages/class-progress.css',
@@ -20,6 +21,7 @@ export default defineConfig({
                 'resources/css/pages/quiz-sessions.css',
                 'resources/css/pages/shared-documents.css',
                 'resources/css/pages/submission-review.css',
+                'resources/css/pages/users-index.css',
                 'resources/js/app.js',
                 'resources/js/pages/shared-documents.js',
             ],

@@ -539,11 +539,7 @@
             <div class="lms-profile-identity">
                 <div class="lms-profile-avatar">{{ mb_strtoupper(mb_substr($student->name, 0, 1)) }}</div>
                 <div>
-                    <nav class="lms-breadcrumb">
-                        <a href="{{ route('classes.students.index', $classroom->id) }}">{{ $classroom->name }}</a>
-                        <span class="lms-breadcrumb-sep">›</span>
-                        <span>Hồ sơ học viên</span>
-                    </nav>
+
                     <h1 class="lms-profile-name">{{ $student->name }}</h1>
                     <div class="lms-profile-meta">
                         @if ($student->username)

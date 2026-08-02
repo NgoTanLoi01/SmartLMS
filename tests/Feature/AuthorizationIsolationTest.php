@@ -64,6 +64,7 @@ class AuthorizationIsolationTest extends TestCase
     {
         if ($this->usesIsolatedSqliteDatabase()) {
             foreach ([
+                'smart_notifications',
                 'assignment_submissions', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
                 'quizzes', 'assignments', 'lessons', 'modules', 'class_course', 'class_user', 'classes', 'courses', 'users',
             ] as $table) {
@@ -248,6 +249,25 @@ class AuthorizationIsolationTest extends TestCase
         ]);
     }
 
+    public function test_assignment_index_is_filterable_and_limited_to_accessible_courses(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('assignments.index', [
+                'q' => 'Bài tập của A',
+                'course_id' => $this->course->id,
+                'status' => Assignments::STATUS_PUBLISHED,
+            ]))
+            ->assertOk()
+            ->assertSee('Tổng bài tập')
+            ->assertSee('Bài tập của A')
+            ->assertSee('Xem bài nộp');
+
+        $this->actingAs($this->otherTeacher)
+            ->get(route('assignments.index'))
+            ->assertOk()
+            ->assertDontSee('Bài tập của A');
+    }
+
     private function createSchema(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -257,6 +277,18 @@ class AuthorizationIsolationTest extends TestCase
             $table->string('password');
             $table->string('role');
             $table->rememberToken();
+            $table->timestamps();
+        });
+        Schema::create('smart_notifications', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type');
+            $table->string('title');
+            $table->text('message');
+            $table->string('action_url')->nullable();
+            $table->json('data')->nullable();
+            $table->string('dedupe_key')->nullable();
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
         Schema::create('courses', function (Blueprint $table) {

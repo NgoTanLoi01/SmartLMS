@@ -1,29 +1,115 @@
 @extends('layouts.app')
 
 @section('title', 'Quản lý bài tập')
-<style>
-    .modal.fade .modal-dialog {
-        transition: transform .3s ease-out;
-        transform: translate(0, 190px) !important;
-    }
-</style>
+
 @section('content')
-    <div class="container-fluid py-4 assignments-page">
-        <div class="assignments-header mb-4 px-2">
-            <div>
-                <h3 class="fw-bold mb-0 text-dark">Danh sách bài tập</h3>
-                <p class="text-muted mb-0 small">Quản lý các yêu cầu thực hành và nộp bài</p>
-            </div>
+    @push('styles')
+        @vite('resources/css/pages/assignments-index.css')
+    @endpush
 
-            @if (auth()->user()->role === 'admin' || auth()->user()->role === 'teacher')
-                <button class="btn btn-primary rounded-pill px-4 shadow-sm assignments-create-btn" data-bs-toggle="modal"
-                    data-bs-target="#addAssignmentModal">
-                    <i class="fa-solid fa-plus me-1"></i> Tạo bài tập mới
-                </button>
+    @php
+        $isStudent = auth()->user()->role === 'student';
+        $hasAssignmentFilters = request()->filled('q') || request()->filled('course_id') || request()->filled('status');
+    @endphp
+
+    <div class="lms-page assignments-page">
+        <x-ui.page-header title="Bài tập">
+            <x-slot:meta>
+                <span><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i>
+                    {{ $isStudent ? 'Theo dõi hạn nộp và bài làm của bạn' : 'Quản lý yêu cầu, hạn nộp và tiến độ chấm bài' }}
+                </span>
+            </x-slot:meta>
+
+            <x-slot:actions>
+                @if (auth()->user()->role === 'admin' || auth()->user()->role === 'teacher')
+                    <x-ui.button class="assignments-create-btn" icon="fa-plus" data-bs-toggle="modal"
+                        data-bs-target="#addAssignmentModal">
+                        Tạo bài tập
+                    </x-ui.button>
+                @endif
+            </x-slot:actions>
+        </x-ui.page-header>
+
+        <section class="assignment-stats" aria-label="Tổng quan bài tập">
+            <article class="assignment-stat">
+                <span class="assignment-stat__icon"><i class="fa-solid fa-list-check" aria-hidden="true"></i></span>
+                <div><strong>{{ $assignmentStats['total'] }}</strong><span>Tổng bài tập</span></div>
+            </article>
+            @if ($isStudent)
+                <article class="assignment-stat assignment-stat--success">
+                    <span class="assignment-stat__icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span>
+                    <div><strong>{{ $assignmentStats['submitted'] }}</strong><span>Đã nộp</span></div>
+                </article>
+                <article class="assignment-stat assignment-stat--warning">
+                    <span class="assignment-stat__icon"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span>
+                    <div><strong>{{ $assignmentStats['pending'] }}</strong><span>Chờ hoàn thành</span></div>
+                </article>
+            @else
+                <article class="assignment-stat assignment-stat--success">
+                    <span class="assignment-stat__icon"><i class="fa-solid fa-eye" aria-hidden="true"></i></span>
+                    <div><strong>{{ $assignmentStats['published'] }}</strong><span>Đã xuất bản</span></div>
+                </article>
+                <article class="assignment-stat assignment-stat--warning">
+                    <span class="assignment-stat__icon"><i class="fa-solid fa-calendar-week" aria-hidden="true"></i></span>
+                    <div><strong>{{ $assignmentStats['due_soon'] }}</strong><span>Hạn trong 7 ngày</span></div>
+                </article>
             @endif
-        </div>
+            <article class="assignment-stat assignment-stat--danger">
+                <span class="assignment-stat__icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
+                <div><strong>{{ $assignmentStats['overdue'] }}</strong><span>{{ $isStudent ? 'Đã quá hạn' : 'Qua hạn nộp' }}</span></div>
+            </article>
+        </section>
 
-        <div class="row g-4">
+        <form action="{{ route('assignments.index') }}" method="GET" class="assignment-filter-panel" role="search">
+            <div class="assignment-filter-field assignment-filter-field--search">
+                <label for="assignment-search">Tìm bài tập</label>
+                <div class="assignment-filter-control">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input id="assignment-search" class="form-control" type="search" name="q"
+                        value="{{ request('q') }}" placeholder="Tên hoặc nội dung yêu cầu">
+                </div>
+            </div>
+            <div class="assignment-filter-field">
+                <label for="assignment-course">Khóa học</label>
+                <select id="assignment-course" class="form-select" name="course_id">
+                    <option value="">Tất cả khóa học</option>
+                    @foreach ($courses as $course)
+                        <option value="{{ $course->id }}" @selected((string) request('course_id') === (string) $course->id)>
+                            {{ $course->title }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="assignment-filter-field">
+                <label for="assignment-status">Trạng thái</label>
+                <select id="assignment-status" class="form-select" name="status">
+                    <option value="">Tất cả trạng thái</option>
+                    @if ($isStudent)
+                        <option value="pending" @selected(request('status') === 'pending')>Chờ hoàn thành</option>
+                        <option value="submitted" @selected(request('status') === 'submitted')>Đã nộp</option>
+                        <option value="overdue" @selected(request('status') === 'overdue')>Đã quá hạn</option>
+                    @else
+                        <option value="published" @selected(request('status') === 'published')>Đã xuất bản</option>
+                        <option value="draft" @selected(request('status') === 'draft')>Bản nháp</option>
+                        <option value="hidden" @selected(request('status') === 'hidden')>Đang ẩn</option>
+                        <option value="upcoming" @selected(request('status') === 'upcoming')>Còn hạn nộp</option>
+                        <option value="overdue" @selected(request('status') === 'overdue')>Đã qua hạn</option>
+                    @endif
+                </select>
+            </div>
+            <div class="assignment-filter-actions">
+                <x-ui.button type="submit" icon="fa-filter">Áp dụng</x-ui.button>
+                @if ($hasAssignmentFilters)
+                    <x-ui.button :href="route('assignments.index')" tone="outline" icon="fa-rotate-left">Đặt lại</x-ui.button>
+                @endif
+            </div>
+            <div class="assignment-filter-summary">
+                Hiển thị {{ $assignments->firstItem() ?? 0 }}–{{ $assignments->lastItem() ?? 0 }} trong
+                {{ $assignments->total() }} bài tập phù hợp
+            </div>
+        </form>
+
+        <section class="assignment-grid" aria-label="Danh sách bài tập">
             @forelse($assignments as $assignment)
                 @php
                     $assignmentTypeLabel = match ($assignment->type ?? 'file') {
@@ -31,102 +117,94 @@
                         'mixed' => 'File + tự luận',
                         default => 'Nộp file',
                     };
-                    $submission = auth()->user()->role === 'student' ? $assignment->submissions->first() : null;
+                    $submission = $isStudent ? $assignment->submissions->first() : null;
+                    $isOverdue = $assignment->due_date->isPast();
+                    $status = $isStudent
+                        ? ($submission ? 'submitted' : ($isOverdue ? 'overdue' : 'pending'))
+                        : ($assignment->status ?? 'draft');
+                    $statusLabel = match ($status) {
+                        'submitted' => $submission?->grade !== null ? 'Đã chấm' : 'Đã nộp',
+                        'overdue' => 'Đã quá hạn',
+                        'pending' => 'Chờ hoàn thành',
+                        'published' => 'Đã xuất bản',
+                        'hidden' => 'Đang ẩn',
+                        default => 'Bản nháp',
+                    };
                 @endphp
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card border-0 shadow-sm h-100 rounded-3 hover-shadow transition-all assignment-card">
-                        <div class="card-body p-4 d-flex flex-column">
-                            <div class="assignment-card-top mb-3">
-                                <div class="assignment-badges">
-                                    <div class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-bold small assignment-badge">
-                                        <i class="fa-solid fa-book me-1"></i> {{ $assignment->course->title }}
-                                    </div>
-                                    <div class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small assignment-badge">
-                                        <i class="fa-solid fa-pen me-1"></i> {{ $assignmentTypeLabel }}
-                                    </div>
-                                </div>
+                <article class="assignment-card {{ $isOverdue ? 'is-overdue' : '' }}">
+                    <div class="assignment-card__head">
+                        <span class="assignment-card__type"><i class="fa-solid fa-file-pen" aria-hidden="true"></i>
+                            {{ $assignmentTypeLabel }}</span>
+                        <x-ui.status-badge :status="$status" :label="$statusLabel" />
+                    </div>
 
-                                @if (auth()->user()->role === 'student')
-                                    @if ($submission)
-                                        <div class="badge bg-success rounded-pill px-2 py-1 small">
-                                            <i class="fa-solid fa-check"></i> Đã nộp
-                                        </div>
-                                    @else
-                                        <div class="badge bg-warning text-dark rounded-pill px-2 py-1 small">
-                                            <i class="fa-solid fa-clock"></i> Chưa nộp
-                                        </div>
-                                    @endif
-                                @endif
-                            </div>
+                    <div class="assignment-card__course" title="{{ $assignment->course->title }}">
+                        <i class="fa-solid fa-book-open" aria-hidden="true"></i> {{ $assignment->course->title }}
+                    </div>
+                    <h2 class="assignment-card__title">{{ $assignment->title }}</h2>
+                    <p class="assignment-card__description">
+                        {{ Str::limit(strip_tags($assignment->instructions), 125) }}
+                    </p>
 
-                            <h5 class="fw-bold text-dark mb-2 assignment-title">{{ $assignment->title }}</h5>
-
-                            {{-- Sử dụng strip_tags để loại bỏ thẻ HTML trước khi cắt chuỗi, tránh lỗi hiển thị trên Card --}}
-                            <p class="text-muted small mb-3 flex-grow-1">
-                                {{ Str::limit(strip_tags($assignment->instructions), 100) }}
-                            </p>
-
-                            <div class="bg-light rounded p-3 mb-3">
-                                <div class="d-flex align-items-center mb-2 small">
-                                    <i class="fa-solid fa-calendar-days text-danger me-2"></i>
-                                    <span class="fw-bold">Hạn nộp:</span>
-                                    <span class="ms-1">{{ $assignment->due_date->format('d/m/Y H:i') }}</span>
-                                </div>
-                                @if (($assignment->type ?? 'file') !== 'essay')
-                                    <div class="d-flex align-items-start small">
-                                        <i class="fa-solid fa-file-arrow-up text-muted me-2"></i>
-                                        <span class="text-muted assignment-extensions">Định dạng: {{ $assignment->allowed_extensions }}</span>
-                                    </div>
-                                @else
-                                    <div class="d-flex align-items-center small">
-                                        <i class="fa-solid fa-align-left text-muted me-2"></i>
-                                        <span class="text-muted">Nhập câu trả lời trực tiếp</span>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                @if (auth()->user()->role === 'student')
-                                    {{-- Truyền instructions đã loại bỏ tag vào data-attribute để Modal JS xử lý an toàn --}}
-                                    <button class="btn btn-outline-primary rounded-pill fw-bold" data-bs-toggle="modal"
-                                        data-bs-target="#submitAssignmentModal" data-id="{{ $assignment->id }}"
-                                        data-title="{{ $assignment->title }}"
-                                        data-instructions="{{ strip_tags($assignment->instructions) }}"
-                                        data-extensions="{{ $assignment->allowed_extensions }}"
-                                        data-type="{{ $assignment->type ?? 'file' }}"
-                                        data-has-file="{{ $submission && $submission->file_path ? '1' : '0' }}"
-                                        data-text-answer='@json($submission?->text_answer ?? "")'>
-                                        {{ $submission ? 'Nộp lại bài làm' : 'Bắt đầu làm bài' }}
-                                    </button>
-
-                                    @if ($submission && $submission->grade)
-                                        <div
-                                            class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success border-opacity-25 text-center">
-                                            <span class="small fw-bold text-success">Điểm:
-                                                {{ $submission->grade }}/10</span>
-                                        </div>
-                                    @endif
-                                @else
-                                    <button type="button"
-                                        class="btn btn-light rounded-pill fw-bold border view-assignment-submissions-btn"
-                                        data-assignment-id="{{ $assignment->id }}"
-                                        data-assignment-title="{{ $assignment->title }}"
-                                        data-url="{{ route('assignments.submissions.list', $assignment->id) }}">
-                                        <i class="fa-solid fa-eye me-1"></i> Xem bài nộp
-                                        ({{ $assignment->submissions->count() }})
-                                    </button>
-                                @endif
-                            </div>
+                    <div class="assignment-card__details">
+                        <div class="assignment-detail {{ $isOverdue ? 'is-danger' : '' }}">
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                            <span><small>Hạn nộp</small><strong>{{ $assignment->due_date->format('d/m/Y · H:i') }}</strong></span>
+                        </div>
+                        <div class="assignment-detail">
+                            <i class="fa-solid fa-paperclip" aria-hidden="true"></i>
+                            <span><small>Hình thức</small><strong>
+                                {{ ($assignment->type ?? 'file') === 'essay' ? 'Trả lời trực tiếp' : $assignmentTypeLabel }}
+                            </strong></span>
                         </div>
                     </div>
-                </div>
+
+                    <div class="assignment-card__footer">
+                        @if ($isStudent)
+                            <button class="lms-btn lms-btn-outline assignment-card__primary" data-bs-toggle="modal"
+                                data-bs-target="#submitAssignmentModal" data-id="{{ $assignment->id }}"
+                                data-title="{{ $assignment->title }}"
+                                data-instructions="{{ strip_tags($assignment->instructions) }}"
+                                data-extensions="{{ $assignment->allowed_extensions }}"
+                                data-type="{{ $assignment->type ?? 'file' }}"
+                                data-has-file="{{ $submission && $submission->file_path ? '1' : '0' }}"
+                                data-text-answer='@json($submission?->text_answer ?? "")'>
+                                <i class="fa-solid {{ $submission ? 'fa-rotate' : 'fa-arrow-up-from-bracket' }}"
+                                    aria-hidden="true"></i>
+                                {{ $submission ? 'Cập nhật bài làm' : 'Làm bài' }}
+                            </button>
+
+                            @if ($submission?->grade !== null)
+                                <span class="assignment-grade">{{ $submission->grade }}/{{ $assignment->grading_scale ?? 10 }} điểm</span>
+                            @endif
+                        @else
+                            <button type="button"
+                                class="lms-btn lms-btn-outline assignment-card__primary view-assignment-submissions-btn"
+                                data-assignment-id="{{ $assignment->id }}"
+                                data-assignment-title="{{ $assignment->title }}"
+                                data-url="{{ route('assignments.submissions.list', $assignment->id) }}">
+                                <i class="fa-solid fa-inbox" aria-hidden="true"></i> Xem bài nộp
+                                <span class="assignment-submission-count">{{ $assignment->submissions_count }}</span>
+                            </button>
+                            @if (($assignment->pending_grading_count ?? 0) > 0)
+                                <span class="assignment-pending-grade">{{ $assignment->pending_grading_count }} chờ chấm</span>
+                            @endif
+                        @endif
+                    </div>
+                </article>
             @empty
-                <div class="col-12 text-center py-5">
-                    <i class="fa-solid fa-list-check fa-3x text-muted opacity-50 mb-3"></i>
-                    <h5 class="text-muted fw-bold">Chưa có bài tập nào được giao</h5>
-                </div>
+                <x-ui.empty-state title="Không tìm thấy bài tập"
+                    :description="$hasAssignmentFilters ? 'Hãy thay đổi điều kiện hoặc đặt lại bộ lọc.' : ($isStudent ? 'Hiện chưa có bài tập nào cần hoàn thành.' : 'Hãy tạo bài tập đầu tiên cho khóa học.')"
+                    icon="fa-list-check">
+                    @if ($hasAssignmentFilters)
+                        <x-ui.button :href="route('assignments.index')" tone="outline" size="sm"
+                            icon="fa-rotate-left">Đặt lại bộ lọc</x-ui.button>
+                    @endif
+                </x-ui.empty-state>
             @endforelse
-        </div>
+        </section>
+
+        <x-ui.pagination :paginator="$assignments" item-label="bài tập" class="assignment-pagination" />
     </div>
 
     <div class="modal fade" id="addAssignmentModal" tabindex="-1" aria-hidden="true">
@@ -293,57 +371,6 @@
     @endif
 
     <style>
-        .assignments-header {
-            align-items: center;
-            display: flex;
-            gap: 14px;
-            justify-content: space-between;
-        }
-
-        .assignment-card {
-            min-width: 0;
-        }
-
-        .assignment-card-top {
-            align-items: flex-start;
-            display: flex;
-            gap: 10px;
-            justify-content: space-between;
-            min-width: 0;
-        }
-
-        .assignment-badges {
-            align-items: flex-start;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 0;
-        }
-
-        .assignment-badge {
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: normal;
-            text-align: left;
-            line-height: 1.35;
-        }
-
-        .assignment-title,
-        .assignment-extensions {
-            overflow-wrap: anywhere;
-            word-break: break-word;
-        }
-
-        .hover-shadow:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
-        }
-
-        .transition-all {
-            transition: all 0.3s ease;
-        }
-
         .submission-table {
             min-width: 860px;
         }
@@ -395,37 +422,6 @@
         .submission-select { height: 17px; width: 17px; }
 
         @media (max-width: 767.98px) {
-            .assignments-page {
-                padding-left: 2px;
-                padding-right: 2px;
-            }
-
-            .assignments-header {
-                align-items: stretch;
-                flex-direction: column;
-            }
-
-            .assignments-create-btn,
-            .assignment-card .btn {
-                width: 100%;
-            }
-
-            .assignment-card .card-body {
-                padding: 18px !important;
-            }
-
-            .assignment-card-top {
-                flex-direction: column;
-            }
-
-            .assignment-badges {
-                width: 100%;
-            }
-
-            .assignment-badge {
-                width: 100%;
-            }
-
             #addAssignmentModal .modal-dialog,
             #submitAssignmentModal .modal-dialog,
             #assignmentSubmissionsModal .modal-dialog {

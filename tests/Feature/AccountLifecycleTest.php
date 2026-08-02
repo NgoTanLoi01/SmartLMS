@@ -128,6 +128,10 @@ class AccountLifecycleTest extends TestCase
             ->assertSee('Tài khoản người dùng')
             ->assertSee('Nhật ký hệ thống')
             ->assertDontSee('Audit log')
+            ->assertSee('Tổng tài khoản')
+            ->assertSee('Cần xử lý')
+            ->assertSee('Cấp tài khoản mới')
+            ->assertSee('Cấp lại mật khẩu')
             ->assertSee('Quản lý vòng đời tài khoản')
             ->assertSee('Đang hoạt động')
             ->assertSee('Không giới hạn thời gian');
@@ -150,6 +154,20 @@ class AccountLifecycleTest extends TestCase
         $this->assertStringContainsString('Học tập của bạn', $sidebar);
         $this->assertStringNotContainsString('data-testid="nav-group-learning"', $sidebar);
         $this->assertStringNotContainsString('Quản trị hệ thống', $sidebar);
+    }
+
+    public function test_create_user_validation_uses_the_account_modal_error_bag(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'create-user-validation@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('users.store'), [
+                'role' => User::ROLE_TEACHER,
+            ])
+            ->assertSessionHasErrors(['name', 'password'], null, 'createUser');
     }
 
     public function test_attendance_page_has_link_back_to_current_course(): void

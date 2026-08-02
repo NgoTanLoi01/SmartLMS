@@ -3,128 +3,128 @@
 @section('title', 'Ngân hàng câu hỏi')
 
 @section('content')
-    @vite('resources/css/pages/question-bank.css')
+    @push('styles')
+        @vite('resources/css/pages/question-bank.css')
+    @endpush
 
-    {{-- ── Page Header ── --}}
-    <div class="page-header">
-        <div>
-            <h1 class="page-title"><i class="fa-solid fa-database" style="color:#2563eb; font-size:18px; margin-right:10px;"
-                    aria-hidden="true"></i>Ngân hàng câu hỏi</h1>
-            <p class="page-subtitle">Soạn câu hỏi hỗn hợp, quản lý ngữ liệu và tự động chấm điểm</p>
-        </div>
-        <div class="btn-group-actions">
-            <button type="button" class="btn-act btn-act-ghost" data-bs-toggle="modal" data-bs-target="#passageModal">
-                <i class="fa-solid fa-file-lines" aria-hidden="true"></i> Ngữ liệu
-            </button>
-            <button type="button" class="btn-act btn-act-ghost" data-bs-toggle="modal"
-                data-bs-target="#addQuestionBankModal">
-                <i class="fa-solid fa-layer-group" aria-hidden="true"></i> Tạo bank
-            </button>
-            <button type="button" class="btn-act btn-act-ghost" data-bs-toggle="modal"
-                data-bs-target="#attachQuestionBankModal">
-                <i class="fa-solid fa-link" aria-hidden="true"></i> Gắn bank
-            </button>
-            <button type="button" class="btn-act btn-act-ghost-green" data-bs-toggle="modal"
-                data-bs-target="#importQuestionModal">
-                <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Nhập từ Excel
-            </button>
-            <a href="{{ route('quizzes.ai_generate') }}" class="btn-act btn-act-ghost">
-                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Tạo bằng AI
-            </a>
-            <button type="button" class="btn-act btn-act-primary" data-bs-toggle="modal"
-                data-bs-target="#addQuestionModal">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i> Thêm câu hỏi
-            </button>
-        </div>
-    </div>
-
-    {{--
-        ── Filter bar ──
-        Optimization: was 4 separate <form> tags, each re-declaring the other
-        3 filters as hidden inputs to preserve state (12 hidden inputs total,
-        4 HTTP round-trips worth of markup). Consolidated into a single form
-        so every control shares state natively — no hidden-input duplication,
-        one code path to maintain.
-    --}}
     @php
         $hasActiveFilters =
             request()->hasAny(['course_id', 'question_type', 'question_bank_id']) ||
             (request('status') && request('status') !== 'active');
-        // Single pass over the current page's questions instead of 3 separate
-// ->where()->count() calls against the same collection.
-$difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->count();
     @endphp
-    <form action="{{ route('questions.index') }}" method="GET" class="filter-bar" id="question-filter-form">
-        <div class="filter-group">
-            <label class="filter-label" for="filter-course">Lọc theo khóa học</label>
-            <select name="course_id" id="filter-course" onchange="this.form.submit()">
-                <option value="">Tất cả khóa học</option>
-                @foreach ($courses as $course)
-                    <option value="{{ $course->id }}" @selected(request('course_id') == $course->id)>
-                        {{ $course->title }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
 
-        <div class="filter-group">
-            <label class="filter-label" for="filter-type">Loại câu hỏi</label>
-            <select name="question_type" id="filter-type" onchange="this.form.submit()">
-                <option value="">Tất cả hình thức</option>
-                @foreach ($questionTypeLabels as $value => $label)
-                    <option value="{{ $value }}" @selected(request('question_type') === $value)>{{ $label }}</option>
-                @endforeach
-            </select>
-        </div>
+    <div class="lms-page question-bank-page">
+        <section class="question-overview" aria-label="Tổng quan ngân hàng câu hỏi">
+            <x-ui.page-header title="Ngân hàng câu hỏi">
+                <x-slot:meta>
+                    <span><i class="fa-solid fa-circle-question"></i> Soạn, phân loại và tái sử dụng câu hỏi kiểm tra</span>
+                </x-slot:meta>
 
-        <div class="filter-group">
-            <label class="filter-label" for="filter-bank">Lọc theo ngân hàng</label>
-            <select name="question_bank_id" id="filter-bank" onchange="this.form.submit()">
-                <option value="">Tất cả ngân hàng</option>
-                @foreach ($questionBanks as $bank)
-                    <option value="{{ $bank->id }}" @selected(request('question_bank_id') == $bank->id)>
-                        {{ $bank->name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+                <x-slot:actions>
+                    <x-ui.button :href="route('quizzes.ai_generate')" tone="outline" icon="fa-wand-magic-sparkles">
+                        Tạo bằng AI
+                    </x-ui.button>
+                    <x-ui.button icon="fa-plus" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
+                        Thêm câu hỏi
+                    </x-ui.button>
+                    <div class="dropdown question-tools-dropdown">
+                        <button type="button" class="lms-btn lms-btn-outline" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fa-solid fa-ellipsis" aria-hidden="true"></i> Công cụ
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end question-tools-menu">
+                            <button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                data-bs-target="#passageModal">
+                                <i class="fa-solid fa-file-lines" aria-hidden="true"></i> Quản lý ngữ liệu
+                            </button>
+                            <button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                data-bs-target="#addQuestionBankModal">
+                                <i class="fa-solid fa-layer-group" aria-hidden="true"></i> Tạo ngân hàng
+                            </button>
+                            <button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                data-bs-target="#attachQuestionBankModal">
+                                <i class="fa-solid fa-link" aria-hidden="true"></i> Gắn ngân hàng với khóa học
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button type="button" class="dropdown-item text-success" data-bs-toggle="modal"
+                                data-bs-target="#importQuestionModal">
+                                <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Nhập câu hỏi từ Excel
+                            </button>
+                        </div>
+                    </div>
+                </x-slot:actions>
+            </x-ui.page-header>
 
-        <div class="filter-group filter-group-status">
-            <label class="filter-label" for="filter-status">Trạng thái</label>
-            <select name="status" id="filter-status" onchange="this.form.submit()">
-                <option value="active" @selected(request('status', 'active') === 'active')>Đang sử dụng</option>
-                <option value="archived" @selected(request('status') === 'archived')>Đã lưu trữ</option>
-                <option value="all" @selected(request('status') === 'all')>Tất cả trạng thái</option>
-            </select>
-        </div>
-
-        <div>
-            <div class="filter-label" style="margin-bottom:8px;">Thống kê trang này</div>
-            <div class="stat-chips">
-                <span class="stat-chip chip-easy">
-                    <i class="fa-solid fa-circle" style="font-size:7px;" aria-hidden="true"></i>
-                    Dễ: {{ $difficultyCounts['easy'] ?? 0 }}
-                </span>
-                <span class="stat-chip chip-medium">
-                    <i class="fa-solid fa-circle" style="font-size:7px;" aria-hidden="true"></i>
-                    Trung bình: {{ $difficultyCounts['medium'] ?? 0 }}
-                </span>
-                <span class="stat-chip chip-hard">
-                    <i class="fa-solid fa-circle" style="font-size:7px;" aria-hidden="true"></i>
-                    Khó: {{ $difficultyCounts['hard'] ?? 0 }}
-                </span>
+            <div class="question-stats" aria-label="Thống kê câu hỏi theo bộ lọc">
+                <article class="question-stat question-stat--total">
+                    <span class="question-stat__icon"><i class="fa-solid fa-list-check" aria-hidden="true"></i></span>
+                    <div><strong>{{ (int) $questionStats->total }}</strong><span>Tổng câu hỏi</span></div>
+                </article>
+                <article class="question-stat question-stat--easy">
+                    <span class="question-stat__icon"><i class="fa-solid fa-seedling" aria-hidden="true"></i></span>
+                    <div><strong>{{ (int) $questionStats->easy }}</strong><span>Mức dễ</span></div>
+                </article>
+                <article class="question-stat question-stat--medium">
+                    <span class="question-stat__icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
+                    <div><strong>{{ (int) $questionStats->medium }}</strong><span>Mức trung bình</span></div>
+                </article>
+                <article class="question-stat question-stat--hard">
+                    <span class="question-stat__icon"><i class="fa-solid fa-fire" aria-hidden="true"></i></span>
+                    <div><strong>{{ (int) $questionStats->hard }}</strong><span>Mức khó</span></div>
+                </article>
             </div>
-        </div>
+        </section>
 
-        @if ($hasActiveFilters)
-            <a href="{{ route('questions.index') }}" class="filter-clear-link">
-                <i class="fa-solid fa-xmark" aria-hidden="true"></i> Xóa bộ lọc
-            </a>
-        @endif
-    </form>
+        <form action="{{ route('questions.index') }}" method="GET" class="question-filter-panel"
+            id="question-filter-form">
+            <div class="question-filter-field">
+                <label for="filter-course">Khóa học</label>
+                <select name="course_id" id="filter-course" class="form-select">
+                    <option value="">Tất cả khóa học</option>
+                    @foreach ($courses as $course)
+                        <option value="{{ $course->id }}" @selected(request('course_id') == $course->id)>{{ $course->title }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="question-filter-field">
+                <label for="filter-bank">Ngân hàng</label>
+                <select name="question_bank_id" id="filter-bank" class="form-select">
+                    <option value="">Tất cả ngân hàng</option>
+                    @foreach ($questionBanks as $bank)
+                        <option value="{{ $bank->id }}" @selected(request('question_bank_id') == $bank->id)>{{ $bank->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="question-filter-field">
+                <label for="filter-type">Hình thức</label>
+                <select name="question_type" id="filter-type" class="form-select">
+                    <option value="">Tất cả hình thức</option>
+                    @foreach ($questionTypeLabels as $value => $label)
+                        <option value="{{ $value }}" @selected(request('question_type') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="question-filter-field question-filter-field--status">
+                <label for="filter-status">Trạng thái</label>
+                <select name="status" id="filter-status" class="form-select">
+                    <option value="active" @selected(request('status', 'active') === 'active')>Đang sử dụng</option>
+                    <option value="archived" @selected(request('status') === 'archived')>Đã lưu trữ</option>
+                    <option value="all" @selected(request('status') === 'all')>Tất cả trạng thái</option>
+                </select>
+            </div>
+            <div class="question-filter-actions">
+                <x-ui.button type="submit" icon="fa-filter">Áp dụng</x-ui.button>
+                @if ($hasActiveFilters)
+                    <x-ui.button :href="route('questions.index')" tone="outline" icon="fa-rotate-left">Đặt lại</x-ui.button>
+                @endif
+            </div>
+            <div class="question-filter-summary">
+                Hiển thị {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} trong
+                {{ $questions->total() }} câu hỏi phù hợp
+            </div>
+        </form>
 
-    {{-- ── Table ── --}}
-    <div class="table-card">
+        <section class="table-card question-list-card" aria-label="Danh sách câu hỏi">
         @if ($questions->contains(fn($question) => $question->status !== \App\Models\Question::STATUS_ARCHIVED))
             <div class="bulk-toolbar" id="question-bulk-toolbar">
                 <div class="bulk-selection-info">
@@ -144,15 +144,8 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
             </div>
         @endif
 
-        <p class="table-result-count text-muted small px-3 pt-2 mb-0">
-            Hiển thị {{ $questions->count() }} / {{ $questions->total() }} câu hỏi
-            @if ($questions->total() > $questions->count())
-                (trang {{ $questions->currentPage() }}/{{ $questions->lastPage() }})
-            @endif
-        </p>
-
-        <div style="overflow-x:auto;">
-            <table class="data-table">
+        <div class="question-table-wrap">
+            <table class="question-table">
                 <caption class="visually-hidden">Danh sách câu hỏi trong ngân hàng</caption>
                 <thead>
                     <tr>
@@ -165,14 +158,10 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                                     aria-hidden="true"></i>
                             @endif
                         </th>
-                        <th style="width:52px;" scope="col">ID</th>
-                        <th style="width:36%;" scope="col">Nội dung câu hỏi</th>
-                        <th scope="col">Hình thức</th>
-                        <th scope="col">Ngân hàng</th>
-                        <th scope="col">Dùng cho</th>
-                        <th scope="col">Giáo viên</th>
-                        <th style="width:150px;" scope="col">Độ khó</th>
-                        <th style="width:90px; text-align:right;" scope="col">Thao tác</th>
+                        <th class="question-table__content" scope="col">Nội dung câu hỏi</th>
+                        <th class="question-table__classification" scope="col">Phân loại</th>
+                        <th class="question-table__scope" scope="col">Phạm vi sử dụng</th>
+                        <th class="question-table__actions" scope="col">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -183,7 +172,7 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                             $sampleSize = (int) ($difficultyMetrics['sample_size'] ?? 0);
                         @endphp
                         <tr data-question-row="{{ $question->id }}" @class(['is-archived' => $isArchived])>
-                            <td class="selection-column">
+                            <td class="selection-column" data-label="Chọn">
                                 @if (!$isArchived)
                                     <input type="checkbox" class="question-checkbox question-row-checkbox"
                                         name="question_ids[]" value="{{ $question->id }}" form="bulk-question-form"
@@ -193,66 +182,65 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                                         aria-hidden="true"></i>
                                 @endif
                             </td>
-                            <td><span class="q-id">#{{ $question->id }}</span></td>
-                            <td>
-                                <div class="q-text">{{ Str::limit($question->question_text, 80) }}</div>
-                                @if ($isArchived)
-                                    <span class="question-status-badge"><i class="fa-solid fa-box-archive"
-                                            aria-hidden="true"></i> Đã lưu trữ</span>
-                                @endif
+                            <td data-label="Nội dung câu hỏi">
+                                <div class="question-heading-line">
+                                    <span class="q-id">#{{ $question->id }}</span>
+                                    @if ($isArchived)
+                                        <span class="question-status-badge"><i class="fa-solid fa-box-archive"
+                                                aria-hidden="true"></i> Đã lưu trữ</span>
+                                    @endif
+                                </div>
+                                <div class="q-text">{{ Str::limit($question->question_text, 125) }}</div>
                                 @if ($question->passage)
-                                    <div class="small text-primary mt-1"><i class="fa-solid fa-file-lines"
-                                            aria-hidden="true"></i> {{ Str::limit($question->passage->title, 55) }}</div>
+                                    <div class="question-passage"><i class="fa-solid fa-file-lines"
+                                            aria-hidden="true"></i> {{ Str::limit($question->passage->title, 65) }}</div>
                                 @endif
                                 <div class="q-answer">
                                     <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
-                                    {{ Str::limit($question->answerSummary(), 62) }}
+                                    {{ Str::limit($question->answerSummary(), 95) }}
                                 </div>
                             </td>
-                            <td><span
-                                    class="type-badge type-{{ $question->question_type }}">{{ $question->typeLabel() }}</span>
-                            </td>
-                            <td><span
-                                    class="q-course">{{ $question->questionBank->name ?? ($question->course->title ?? 'Chưa có') }}</span>
-                            </td>
-                            <td>
-                                <span class="q-course">
-                                    {{ $question->questionBank?->courses?->pluck('title')->take(2)->implode(', ') ?: $question->course->title ?? 'Chưa có' }}
-                                    @if (($question->questionBank?->courses?->count() ?? 0) > 2)
-                                        ...
+                            <td data-label="Phân loại">
+                                <div class="question-classification">
+                                    <span class="type-badge type-{{ $question->question_type }}">{{ $question->typeLabel() }}</span>
+                                    @if ($question->difficulty === 'easy')
+                                        <span class="diff-badge diff-easy">Dễ</span>
+                                    @elseif ($question->difficulty === 'medium')
+                                        <span class="diff-badge diff-medium">Trung bình</span>
+                                    @else
+                                        <span class="diff-badge diff-hard">Khó</span>
                                     @endif
-                                </span>
-                            </td>
-                            <td>
-                                <div class="teacher-chip">
-                                    <div class="teacher-avatar-sm"><i class="fa-solid fa-user-tie"
-                                            style="font-size:10px;" aria-hidden="true"></i>
-                                    </div>
-                                    {{ $question->questionBank->teacher->name ?? ($question->course->teacher->name ?? 'Chưa có') }}
                                 </div>
-                            </td>
-                            <td>
-                                @if ($question->difficulty === 'easy')
-                                    <span class="diff-badge diff-easy">Dễ</span>
-                                @elseif ($question->difficulty === 'medium')
-                                    <span class="diff-badge diff-medium">Trung bình</span>
-                                @else
-                                    <span class="diff-badge diff-hard">Khó</span>
-                                @endif
                                 @if ($question->observedDifficultyLabel())
-                                    <div class="small text-muted mt-1"
-                                        title="Độ khó thực tế được tính từ kết quả làm bài">
-                                        Thực tế: <strong>{{ $question->observedDifficultyLabel() }}</strong>
-                                        · {{ round(((float) ($difficultyMetrics['accuracy'] ?? 0)) * 100) }}% đúng
-                                        / {{ $sampleSize }} lượt
+                                    <div class="question-observed" title="Độ khó thực tế được tính từ kết quả làm bài">
+                                        Thực tế: {{ $question->observedDifficultyLabel() }} ·
+                                        {{ round(((float) ($difficultyMetrics['accuracy'] ?? 0)) * 100) }}% đúng /
+                                        {{ $sampleSize }} lượt
                                     </div>
                                 @elseif ($sampleSize > 0)
-                                    <div class="small text-muted mt-1">
-                                        Cần {{ max(0, 5 - $sampleSize) }} lượt nữa để đánh giá
-                                    </div>
+                                    <div class="question-observed">Cần {{ max(0, 5 - $sampleSize) }} lượt nữa để đánh giá</div>
                                 @endif
                             </td>
-                            <td>
+                            <td data-label="Phạm vi sử dụng">
+                                <div class="question-scope">
+                                    <div class="question-scope__bank" title="Ngân hàng câu hỏi">
+                                        <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                                        {{ $question->questionBank->name ?? ($question->course->title ?? 'Chưa có ngân hàng') }}
+                                    </div>
+                                    <div class="question-scope__courses" title="Khóa học sử dụng">
+                                        <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+                                        {{ $question->questionBank?->courses?->pluck('title')->take(2)->implode(', ') ?: $question->course->title ?? 'Chưa gắn khóa học' }}
+                                        @if (($question->questionBank?->courses?->count() ?? 0) > 2)
+                                            và {{ $question->questionBank->courses->count() - 2 }} khóa khác
+                                        @endif
+                                    </div>
+                                    <div class="question-scope__teacher" title="Giáo viên phụ trách">
+                                        <i class="fa-solid fa-user-tie" aria-hidden="true"></i>
+                                        {{ $question->questionBank->teacher->name ?? ($question->course->teacher->name ?? 'Chưa xác định') }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td data-label="Thao tác">
                                 @php
                                     $editPayload = json_encode(
                                         [
@@ -269,7 +257,7 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                                         JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_TAG | JSON_HEX_QUOT,
                                     );
                                 @endphp
-                                <div style="display:flex; gap:6px; justify-content:flex-end;">
+                                <div class="question-row-actions">
                                     @if (!$isArchived)
                                         <button type="button" class="action-btn" data-bs-toggle="modal"
                                             data-bs-target="#editQuestionModal" data-id="{{ $question->id }}"
@@ -280,25 +268,25 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                                             data-difficulty="{{ $question->difficulty }}"
                                             data-payload="{{ $editPayload }}" title="Sửa"
                                             aria-label="Sửa câu hỏi #{{ $question->id }}">
-                                            <i class="fa-solid fa-edit" aria-hidden="true"></i>
+                                            <i class="fa-solid fa-pen" aria-hidden="true"></i><span>Sửa</span>
                                         </button>
                                         <form action="{{ route('questions.destroyBank', $question->id) }}" method="POST"
-                                            style="display:inline;">
+                                            class="question-action-form">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="action-btn danger"
                                                 data-confirm="Lưu trữ câu hỏi này? Đáp án và dữ liệu liên quan vẫn được giữ lại."
                                                 title="Lưu trữ" aria-label="Lưu trữ câu hỏi #{{ $question->id }}">
-                                                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                                                <i class="fa-solid fa-box-archive" aria-hidden="true"></i><span>Lưu trữ</span>
                                             </button>
                                         </form>
                                     @else
                                         <form action="{{ route('questions.restoreBank', $question->id) }}" method="POST"
-                                            style="display:inline;">
+                                            class="question-action-form">
                                             @csrf @method('PATCH')
                                             <button type="submit" class="action-btn restore"
                                                 data-confirm="Khôi phục câu hỏi này vào danh sách đang sử dụng?"
                                                 title="Khôi phục" aria-label="Khôi phục câu hỏi #{{ $question->id }}">
-                                                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                                                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span>Khôi phục</span>
                                             </button>
                                         </form>
                                     @endif
@@ -307,18 +295,16 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
                         </tr>
                     @empty
                         <tr class="empty-row">
-                            <td colspan="9">
-                                <i class="fa-solid fa-box-open" aria-hidden="true"></i>
-                                <p>
-                                    @if (request('status') === 'archived')
-                                        Chưa có câu hỏi nào được lưu trữ.
-                                    @elseif ($hasActiveFilters)
-                                        Không tìm thấy câu hỏi phù hợp với bộ lọc hiện tại.
-                                        <a href="{{ route('questions.index') }}">Xóa bộ lọc</a>.
-                                    @else
-                                        Kho câu hỏi trống. Hãy thêm câu hỏi mới!
+                            <td colspan="5">
+                                <x-ui.empty-state
+                                    :title="request('status') === 'archived' ? 'Chưa có câu hỏi lưu trữ' : 'Không tìm thấy câu hỏi'"
+                                    :description="$hasActiveFilters ? 'Hãy thay đổi điều kiện hoặc đặt lại bộ lọc.' : 'Hãy thêm câu hỏi đầu tiên vào ngân hàng.'"
+                                    icon="fa-box-open">
+                                    @if ($hasActiveFilters)
+                                        <x-ui.button :href="route('questions.index')" tone="outline" size="sm"
+                                            icon="fa-rotate-left">Đặt lại bộ lọc</x-ui.button>
                                     @endif
-                                </p>
+                                </x-ui.empty-state>
                             </td>
                         </tr>
                     @endforelse
@@ -329,6 +315,7 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
         @if ($questions->hasPages())
             <div class="pagination-wrap">{{ $questions->appends(request()->query())->links() }}</div>
         @endif
+        </section>
     </div>
 
     <div class="modal fade" id="passageModal" tabindex="-1">
@@ -554,31 +541,9 @@ $difficultyCounts = $questions->getCollection()->groupBy('difficulty')->map->cou
 @endsection
 
 @push('styles')
-    {{-- Light-touch polish that doesn't depend on the external stylesheet:
-         focus visibility, button loading state, and the new "clear filters" link. --}}
+    {{-- Interaction states shared by the table and modal forms. --}}
     <style>
-        .filter-clear-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: #64748b;
-            text-decoration: none;
-            align-self: end;
-            padding: 8px 0;
-        }
-
-        .filter-clear-link:hover {
-            color: #dc2626;
-            text-decoration: underline;
-        }
-
-        .table-result-count {
-            color: #64748b;
-        }
-
         .action-btn:focus-visible,
-        .btn-act:focus-visible,
         .btn-modal-submit:focus-visible,
         .btn-modal-cancel:focus-visible,
         select:focus-visible,

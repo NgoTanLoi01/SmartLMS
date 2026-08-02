@@ -345,7 +345,7 @@
             });
         })();
 
-        @if ($errors->any())
+        @if ($errors->hasAny(['current_password', 'new_password', 'new_password_confirmation']))
             (new bootstrap.Modal(document.getElementById('changePasswordModal'))).show();
         @endif
     </script>

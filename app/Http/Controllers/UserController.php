@@ -43,7 +43,20 @@ class UserController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('users.index', compact('users'));
+        $userStats = User::query()
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw(
+                'SUM(CASE WHEN is_active = 1 AND (expires_at IS NULL OR expires_at > ?) THEN 1 ELSE 0 END) AS active',
+                [now()]
+            )
+            ->selectRaw('SUM(CASE WHEN role = ? THEN 1 ELSE 0 END) AS students', [User::ROLE_STUDENT])
+            ->selectRaw(
+                'SUM(CASE WHEN is_active = 0 OR (is_active = 1 AND expires_at IS NOT NULL AND expires_at <= ?) THEN 1 ELSE 0 END) AS attention',
+                [now()]
+            )
+            ->first();
+
+        return view('users.index', compact('users', 'userStats'));
     }
 
     public function store(Request $request)
@@ -52,7 +65,7 @@ class UserController extends Controller
             return back()->with('error', 'Chỉ Quản trị viên mới được tạo tài khoản.');
         }
 
-        $request->validate([
+        $request->validateWithBag('createUser', [
             'name' => 'required|string|max:255',
             'student_code' => 'nullable|string|max:50',
             'email' => 'nullable|email|unique:users,email',
@@ -62,14 +75,18 @@ class UserController extends Controller
         ]);
 
         if ($request->role !== 'student' && ! $request->filled('email')) {
-            return back()->withErrors(['email' => 'Email là bắt buộc với tài khoản quản trị viên và giáo viên.'])->withInput();
+            return back()
+                ->withErrors(['email' => 'Email là bắt buộc với tài khoản quản trị viên và giáo viên.'], 'createUser')
+                ->withInput();
         }
 
         $studentCode = $request->role === 'student'
             ? StudentLoginCode::normalizeStudentCode($request->student_code)
             : null;
         if ($studentCode && User::where('student_code', $studentCode)->exists()) {
-            return back()->withErrors(['student_code' => 'Mã học viên này đã tồn tại.'])->withInput();
+            return back()
+                ->withErrors(['student_code' => 'Mã học viên này đã tồn tại.'], 'createUser')
+                ->withInput();
         }
 
         $username = $request->role === 'student'

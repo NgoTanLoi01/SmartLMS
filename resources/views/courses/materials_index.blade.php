@@ -1,28 +1,29 @@
 @extends('layouts.app')
 
+@section('title', 'Kho học liệu')
+
 @section('content')
     <style>
         .materials-index {
-            --ml-ink: #10162b;
-            --ml-muted: #667085;
-            --ml-bg: #f4f6fc;
-            --ml-surface: #ffffff;
-            --ml-border: #e5eaf4;
-            --ml-primary: #3a4ff0;
-            --ml-primary-dark: #2937c7;
-            --ml-primary-soft: #eaedff;
-            --ml-accent: #0f9e8f;
-            --ml-accent-soft: #e2f7f3;
-            --ml-amber: #b7791f;
-            --ml-amber-soft: #fdf1d9;
-            --ml-red: #c0362c;
-            --ml-red-soft: #fbe7e5;
-            --ml-radius-lg: 20px;
-            --ml-radius-md: 14px;
+            --ml-ink: var(--sl-text);
+            --ml-muted: var(--sl-text-muted);
+            --ml-bg: transparent;
+            --ml-surface: var(--sl-surface);
+            --ml-border: var(--sl-border);
+            --ml-primary: var(--sl-primary);
+            --ml-primary-dark: var(--sl-primary-active);
+            --ml-primary-soft: var(--sl-primary-soft);
+            --ml-accent: var(--sl-success);
+            --ml-accent-soft: var(--sl-success-soft);
+            --ml-amber: var(--sl-warning);
+            --ml-amber-soft: var(--sl-warning-soft);
+            --ml-red: var(--sl-danger);
+            --ml-red-soft: var(--sl-danger-soft);
+            --ml-radius-lg: var(--sl-radius-md);
+            --ml-radius-md: var(--sl-radius-sm);
             font-family: var(--sl-font-sans);
             background: var(--ml-bg);
-            min-height: calc(100vh - 70px);
-            padding: 28px 0 56px;
+            min-height: 0;
         }
 
         .materials-index * {
@@ -35,7 +36,7 @@
         }
 
         .materials-index-shell {
-            max-width: 1180px;
+            max-width: 1500px;
         }
 
         .materials-index-hero,
@@ -45,7 +46,7 @@
             background: var(--ml-surface);
             border: 1px solid var(--ml-border);
             border-radius: var(--ml-radius-lg);
-            box-shadow: 0 12px 30px rgba(16, 22, 43, .05);
+            box-shadow: var(--sl-shadow-xs);
         }
 
         /* ---------- Hero ---------- */
@@ -56,36 +57,13 @@
         }
 
         .materials-index-hero-top {
-            padding: 26px 26px 22px;
+            padding: 0;
         }
 
-        .materials-index-kicker {
+        .materials-index-hero .lms-page-header {
             align-items: center;
-            color: var(--ml-primary);
-            display: inline-flex;
-            font-size: 12px;
-            font-weight: 700;
-            gap: 6px;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-        }
-
-        .materials-index-title {
-            color: var(--ml-ink);
-            font-family: var(--sl-font-sans);
-            font-size: clamp(26px, 3.6vw, 38px);
-            font-weight: 700;
-            letter-spacing: -.01em;
-            line-height: 1.15;
-            margin: 10px 0 8px;
-        }
-
-        .materials-index-subtitle {
-            color: var(--ml-muted);
-            font-size: 15px;
-            line-height: 1.6;
             margin: 0;
-            max-width: 640px;
+            padding: 18px 20px;
         }
 
         .materials-stat-shelf {
@@ -95,8 +73,12 @@
         }
 
         .materials-stat {
+            align-items: center;
             border-left: 1px solid var(--ml-border);
-            padding: 16px 26px;
+            display: flex;
+            gap: 12px;
+            min-height: 72px;
+            padding: 12px 20px;
         }
 
         .materials-stat:first-child {
@@ -106,7 +88,7 @@
         .materials-stat-num {
             color: var(--ml-ink);
             font-family: var(--sl-font-sans);
-            font-size: 26px;
+            font-size: 21px;
             font-weight: 700;
             line-height: 1;
         }
@@ -118,6 +100,28 @@
             margin-top: 5px;
         }
 
+        .materials-stat-icon {
+            align-items: center;
+            background: var(--ml-primary-soft);
+            border-radius: 11px;
+            color: var(--ml-primary);
+            display: flex;
+            flex: 0 0 40px;
+            font-size: 15px;
+            height: 40px;
+            justify-content: center;
+        }
+
+        .materials-stat--success .materials-stat-icon {
+            background: var(--ml-accent-soft);
+            color: var(--ml-accent);
+        }
+
+        .materials-stat--warn .materials-stat-icon {
+            background: var(--ml-amber-soft);
+            color: var(--ml-amber);
+        }
+
         .materials-stat--warn .materials-stat-num {
             color: var(--ml-amber);
         }
@@ -127,6 +131,10 @@
         .materials-sync-panel {
             margin-bottom: 18px;
             padding: 22px 24px;
+        }
+
+        .materials-course-panel {
+            margin-bottom: 0;
         }
 
         .materials-section-head {
@@ -320,10 +328,25 @@
 
         /* ---------- Filter ---------- */
         .materials-filter {
+            align-items: end;
             display: grid;
             gap: 10px;
             grid-template-columns: minmax(0, 1fr) 190px auto auto;
             margin-bottom: 18px;
+        }
+
+        .materials-filter-field {
+            min-width: 0;
+        }
+
+        .materials-filter-field label {
+            color: var(--ml-muted);
+            display: block;
+            font-size: 10.5px;
+            font-weight: 750;
+            letter-spacing: .04em;
+            margin: 0 0 6px 2px;
+            text-transform: uppercase;
         }
 
         .materials-filter .form-control,
@@ -495,7 +518,7 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
-            min-height: 190px;
+            min-height: 170px;
             padding: 20px;
             text-decoration: none;
             transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
@@ -505,7 +528,7 @@
             border-color: #bcc9fb;
             box-shadow: 0 16px 34px rgba(58, 79, 240, .15);
             color: inherit;
-            transform: translateY(-3px);
+            transform: translateY(-2px);
         }
 
         .materials-course-icon {
@@ -608,6 +631,10 @@
             max-width: 380px;
         }
 
+        .materials-pagination {
+            margin: 18px -24px -22px;
+        }
+
         @media (max-width: 991.98px) {
 
             .materials-course-grid,
@@ -621,6 +648,15 @@
         }
 
         @media (max-width: 575.98px) {
+
+            .materials-index-shell {
+                padding-inline: 14px;
+            }
+
+            .materials-index-hero .lms-page-header {
+                align-items: stretch;
+                padding: 16px;
+            }
 
             .materials-course-grid,
             .materials-asset-grid,
@@ -652,15 +688,16 @@
     </style>
 
     <div class="materials-index">
-        <div class="container materials-index-shell">
+        <div class="lms-page materials-index-shell">
             <div class="materials-index-hero">
                 <div class="materials-index-hero-top">
-                    <div class="materials-index-kicker"><i class="fa-solid fa-folder-open"></i> Kho học liệu</div>
-                    <h1 class="materials-index-title">Chọn khóa học để quản lý học liệu</h1>
-                    <p class="materials-index-subtitle">
-                        Mỗi khóa học có một kho riêng để quản lý file PDF, slide, link video, website tham khảo và file code
-                        mẫu.
-                    </p>
+                    <x-ui.page-header title="Kho học liệu">
+                        <x-slot:meta>
+                            <span><i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+                                Quản lý và tái sử dụng tài liệu học tập giữa các khóa học
+                            </span>
+                        </x-slot:meta>
+                    </x-ui.page-header>
                 </div>
                 @if ($materials)
                     @php
@@ -668,16 +705,28 @@
                     @endphp
                     <div class="materials-stat-shelf">
                         <div class="materials-stat">
-                            <div class="materials-stat-num">{{ $materials->total() }}</div>
-                            <div class="materials-stat-label">Học liệu trong kho</div>
+                            <span class="materials-stat-icon"><i class="fa-solid fa-file-lines"
+                                    aria-hidden="true"></i></span>
+                            <div>
+                                <div class="materials-stat-num">{{ $materials->total() }}</div>
+                                <div class="materials-stat-label">Học liệu trong kho</div>
+                            </div>
                         </div>
-                        <div class="materials-stat">
-                            <div class="materials-stat-num">{{ $courses->count() }}</div>
-                            <div class="materials-stat-label">Khóa học khả dụng</div>
+                        <div class="materials-stat materials-stat--success">
+                            <span class="materials-stat-icon"><i class="fa-solid fa-book-open"
+                                    aria-hidden="true"></i></span>
+                            <div>
+                                <div class="materials-stat-num">{{ $courses->count() }}</div>
+                                <div class="materials-stat-label">Khóa học khả dụng</div>
+                            </div>
                         </div>
                         <div class="materials-stat @if ($pendingSyncCount) materials-stat--warn @endif">
-                            <div class="materials-stat-num">{{ $pendingSyncCount }}</div>
-                            <div class="materials-stat-label">Tác vụ đồng bộ đang chạy</div>
+                            <span class="materials-stat-icon"><i class="fa-solid fa-rotate"
+                                    aria-hidden="true"></i></span>
+                            <div>
+                                <div class="materials-stat-num">{{ $pendingSyncCount }}</div>
+                                <div class="materials-stat-label">Tác vụ đồng bộ đang chạy</div>
+                            </div>
                         </div>
                     </div>
                 @endif
@@ -764,17 +813,23 @@
                     </div>
 
                     <form class="materials-filter" method="GET" action="{{ route('materials.index') }}">
-                        <input class="form-control" type="search" name="q" value="{{ request('q') }}"
-                            placeholder="Tìm theo tên học liệu hoặc tên file...">
-                        <select class="form-select" name="type">
-                            <option value="">Tất cả định dạng</option>
-                            @foreach (['pdf' => 'PDF', 'slide' => 'Bài trình chiếu', 'image' => 'Hình ảnh', 'video' => 'Video', 'document' => 'Tài liệu', 'code' => 'Mã nguồn', 'website' => 'Trang web', 'other' => 'Khác'] as $value => $label)
-                                <option value="{{ $value }}" @selected(request('type') === $value)>{{ $label }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="materials-filter-field">
+                            <label for="materials-search">Tìm học liệu</label>
+                            <input id="materials-search" class="form-control" type="search" name="q"
+                                value="{{ request('q') }}" placeholder="Tên học liệu hoặc tên file">
+                        </div>
+                        <div class="materials-filter-field">
+                            <label for="materials-type">Định dạng</label>
+                            <select id="materials-type" class="form-select" name="type">
+                                <option value="">Tất cả định dạng</option>
+                                @foreach (['pdf' => 'PDF', 'slide' => 'Bài trình chiếu', 'image' => 'Hình ảnh', 'video' => 'Video', 'document' => 'Tài liệu', 'code' => 'Mã nguồn', 'website' => 'Trang web', 'other' => 'Khác'] as $value => $label)
+                                    <option value="{{ $value }}" @selected(request('type') === $value)>{{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <button class="materials-action materials-action--primary" type="submit"><i
-                                class="fa-solid fa-filter"></i> Lọc</button>
+                            class="fa-solid fa-filter"></i> Lọc</button>
                         @if (request('q') || request('type'))
                             <a class="materials-filter-clear" href="{{ route('materials.index') }}"><i
                                     class="fa-solid fa-xmark"></i> Xóa lọc</a>
@@ -825,46 +880,48 @@
                                 </article>
                             @endforeach
                         </div>
-                        <div class="mt-4">{{ $materials->links() }}</div>
+                        <x-ui.pagination :paginator="$materials" item-label="học liệu" class="materials-pagination" />
                     @endif
                 </section>
             @endif
 
-            <div class="materials-section-head mt-4">
-                <div>
-                    <h2 class="materials-section-title">Kho theo khóa học</h2>
-                    <p class="materials-section-note">Mở khóa học để gắn học liệu, đặt điều kiện hiển thị và quản lý lớp áp
-                        dụng.</p>
+            <section class="materials-library-panel materials-course-panel">
+                <div class="materials-section-head">
+                    <div>
+                        <h2 class="materials-section-title">Kho theo khóa học</h2>
+                        <p class="materials-section-note">Mở khóa học để gắn học liệu, đặt điều kiện hiển thị và quản lý lớp
+                            áp dụng.</p>
+                    </div>
                 </div>
-            </div>
 
-            @if ($courses->isEmpty())
-                <div class="materials-empty">
-                    <span class="materials-empty-icon"><i class="fa-solid fa-folder-open"></i></span>
-                    <div class="materials-empty-title">Chưa có khóa học nào khả dụng</div>
-                </div>
-            @else
-                <div class="materials-course-grid">
-                    @foreach ($courses as $course)
-                        <a class="materials-course-card" href="{{ route('courses.materials.index', $course->id) }}">
-                            <span class="materials-course-icon"><i class="fa-solid fa-book-open"></i></span>
-                            <div>
-                                <h2 class="materials-course-title">{{ $course->title }}</h2>
-                                <div class="materials-course-meta">
-                                    {{ $course->teacher?->name ?? 'Chưa có giáo viên' }}
-                                    @if ($course->classes->isNotEmpty())
-                                        · {{ $course->classes->pluck('name')->take(2)->join(', ') }}
-                                    @endif
+                @if ($courses->isEmpty())
+                    <div class="materials-empty">
+                        <span class="materials-empty-icon"><i class="fa-solid fa-folder-open"></i></span>
+                        <div class="materials-empty-title">Chưa có khóa học nào khả dụng</div>
+                    </div>
+                @else
+                    <div class="materials-course-grid">
+                        @foreach ($courses as $course)
+                            <a class="materials-course-card" href="{{ route('courses.materials.index', $course->id) }}">
+                                <span class="materials-course-icon"><i class="fa-solid fa-book-open"></i></span>
+                                <div>
+                                    <h2 class="materials-course-title">{{ $course->title }}</h2>
+                                    <div class="materials-course-meta">
+                                        {{ $course->teacher?->name ?? 'Chưa có giáo viên' }}
+                                        @if ($course->classes->isNotEmpty())
+                                            · {{ $course->classes->pluck('name')->take(2)->join(', ') }}
+                                        @endif
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="materials-course-footer">
-                                <span class="materials-count">{{ $course->materials_count }} học liệu</span>
-                                <span class="materials-open">Mở kho <i class="fa-solid fa-arrow-right"></i></span>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            @endif
+                                <div class="materials-course-footer">
+                                    <span class="materials-count">{{ $course->materials_count }} học liệu</span>
+                                    <span class="materials-open">Mở kho <i class="fa-solid fa-arrow-right"></i></span>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            </section>
         </div>
     </div>
 @endsection

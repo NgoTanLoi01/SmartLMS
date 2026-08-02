@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\CourseCloningService;
 use App\Services\SubmissionFileService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -343,5 +344,27 @@ BLADE);
         $this->assertStringContainsString('Quản trị viên', $html);
         $this->assertStringContainsString('Đang sử dụng', $html);
         $this->assertStringContainsString('Chưa có khóa học', $html);
+    }
+
+    public function test_shared_pagination_is_compact_and_fully_localized(): void
+    {
+        $paginator = new LengthAwarePaginator(
+            range(1, 20),
+            194,
+            20,
+            1,
+            ['path' => '/users']
+        );
+
+        $html = Blade::render(
+            '<x-ui.pagination :paginator="$paginator" item-label="tài khoản" />',
+            compact('paginator')
+        );
+
+        $this->assertStringContainsString('Hiển thị', $html);
+        $this->assertStringContainsString('194', $html);
+        $this->assertStringContainsString('tài khoản', $html);
+        $this->assertStringContainsString('aria-label="Trang sau"', $html);
+        $this->assertStringNotContainsString('Showing', $html);
     }
 }

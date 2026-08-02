@@ -27,19 +27,23 @@ class AssignmentController extends Controller
     ) {}
 
     // Hiển thị danh sách
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
         if ($user->role === 'admin') {
-            $assignments = Assignments::with('course')
+            $assignmentQuery = Assignments::query()
+                ->with('course')
+                ->withCount(['submissions', 'submissions as pending_grading_count' => fn ($query) => $query->whereNull('grade')])
                 ->notArchived()
-                ->whereHas('course', fn ($query) => $query->notArchived())
-                ->latest()
-                ->get();
+                ->whereHas('course', fn ($query) => $query->notArchived());
         } elseif ($user->role === 'teacher') {
             $courseIds = Course::where('teacher_id', $user->id)->notArchived()->pluck('id');
-            $assignments = Assignments::with('course')->notArchived()->whereIn('course_id', $courseIds)->latest()->get();
+            $assignmentQuery = Assignments::query()
+                ->with('course')
+                ->withCount(['submissions', 'submissions as pending_grading_count' => fn ($query) => $query->whereNull('grade')])
+                ->notArchived()
+                ->whereIn('course_id', $courseIds);
         } else {
             // Học viên: Chỉ lấy bài tập trạng thái 'published' và thuộc lớp đang học
             $classIds = $user->classes()->where('classes.status', 'active')->pluck('classes.id');
@@ -49,25 +53,86 @@ class AssignmentController extends Controller
                 })
                 ->pluck('id');
 
-            $assignments = Assignments::with([
-                'course',
-                'submissions' => function ($q) use ($user) {
-                    $q->where('user_id', $user->id);
-                },
-            ])
+            $assignmentQuery = Assignments::query()
+                ->with([
+                    'course',
+                    'submissions' => function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    },
+                ])
                 ->whereIn('course_id', $courseIds)
-                ->visibleToStudents()
-                ->latest()
-                ->get();
+                ->visibleToStudents();
         }
+
+        $statsQuery = clone $assignmentQuery;
+        $assignmentStats = [
+            'total' => (clone $statsQuery)->count(),
+            'upcoming' => (clone $statsQuery)->where('due_date', '>=', now())->count(),
+            'due_soon' => (clone $statsQuery)->whereBetween('due_date', [now(), now()->addDays(7)])->count(),
+            'overdue' => (clone $statsQuery)->where('due_date', '<', now())->count(),
+        ];
+
+        if ($user->isStudent()) {
+            $assignmentStats['submitted'] = (clone $statsQuery)
+                ->whereHas('submissions', fn ($query) => $query->where('user_id', $user->id))
+                ->count();
+            $assignmentStats['pending'] = (clone $statsQuery)
+                ->where('due_date', '>=', now())
+                ->whereDoesntHave('submissions', fn ($query) => $query->where('user_id', $user->id))
+                ->count();
+            $assignmentStats['overdue'] = (clone $statsQuery)
+                ->where('due_date', '<', now())
+                ->whereDoesntHave('submissions', fn ($query) => $query->where('user_id', $user->id))
+                ->count();
+        } else {
+            $assignmentStats['published'] = (clone $statsQuery)
+                ->where('status', Assignments::STATUS_PUBLISHED)
+                ->count();
+        }
+
+        $assignmentQuery
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $search = trim((string) $request->input('q'));
+                $query->where(function ($match) use ($search) {
+                    $match->where('title', 'like', "%{$search}%")
+                        ->orWhere('instructions', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('course_id'), fn ($query) => $query->where('course_id', $request->integer('course_id')));
+
+        $status = (string) $request->input('status');
+        if ($user->isStudent()) {
+            if ($status === 'submitted') {
+                $assignmentQuery->whereHas('submissions', fn ($query) => $query->where('user_id', $user->id));
+            } elseif ($status === 'pending') {
+                $assignmentQuery->where('due_date', '>=', now())
+                    ->whereDoesntHave('submissions', fn ($query) => $query->where('user_id', $user->id));
+            } elseif ($status === 'overdue') {
+                $assignmentQuery->where('due_date', '<', now())
+                    ->whereDoesntHave('submissions', fn ($query) => $query->where('user_id', $user->id));
+            }
+        } elseif (in_array($status, [Assignments::STATUS_DRAFT, Assignments::STATUS_PUBLISHED, Assignments::STATUS_HIDDEN], true)) {
+            $assignmentQuery->where('status', $status);
+        } elseif ($status === 'upcoming') {
+            $assignmentQuery->where('due_date', '>=', now());
+        } elseif ($status === 'overdue') {
+            $assignmentQuery->where('due_date', '<', now());
+        }
+
+        $assignments = $assignmentQuery
+            ->latest()
+            ->paginate(18)
+            ->withQueryString();
 
         if ($user->role === 'teacher') {
             $courses = Course::with('modules.lessons')->where('teacher_id', $user->id)->notArchived()->get();
+        } elseif ($user->role === 'student') {
+            $courses = Course::with('modules.lessons')->whereIn('id', $courseIds)->notArchived()->get();
         } else {
             $courses = Course::with('modules.lessons')->notArchived()->get();
         }
 
-        return view('assignments.index', compact('assignments', 'courses'));
+        return view('assignments.index', compact('assignments', 'courses', 'assignmentStats'));
     }
 
     public function store(Request $request)
