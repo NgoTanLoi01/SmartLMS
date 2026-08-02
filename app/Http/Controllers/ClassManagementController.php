@@ -272,25 +272,52 @@ class ClassManagementController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $teachers = User::where('role', 'teacher')->get();
+        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
         $filters = [
+            'search' => trim(request('search', '')),
             'status' => request('status'),
+            'teacher_id' => request('teacher_id'),
         ];
 
         if ($user->role === 'admin') {
-            // Admin: Thấy tất cả lớp và tất cả khóa học
-            $classQuery = Classroom::withCount('students')->with(['teacher', 'courses']);
-            $courses = Course::where('course_type', 'delivery')->notArchived()->get();
+            $classQuery = Classroom::query();
+            $statsQuery = Classroom::query();
+            $courses = Course::where('course_type', 'delivery')->notArchived()->orderBy('title')->get();
         } else {
-            // Giáo viên: Chỉ thấy lớp mình dạy và khóa học mình tạo
-            $classQuery = Classroom::where('teacher_id', $user->id)->withCount('students')->with('courses');
-
-            // GIẢ SỬ: Bảng courses của thầy có cột 'teacher_id'
-            // để xác định ai là người tạo khóa học đó
+            $classQuery = Classroom::where('teacher_id', $user->id);
+            $statsQuery = Classroom::where('teacher_id', $user->id);
             $courses = Course::where('teacher_id', $user->id)
                 ->where('course_type', 'delivery')
                 ->notArchived()
+                ->orderBy('title')
                 ->get();
+        }
+
+        $summaryClasses = $statsQuery
+            ->notArchived()
+            ->withCount(['students', 'courses'])
+            ->get(['id', 'status']);
+        $classStats = [
+            'total' => $summaryClasses->count(),
+            'active' => $summaryClasses
+                ->filter(fn (Classroom $classroom) => in_array($classroom->status, [null, Classroom::STATUS_ACTIVE], true))
+                ->count(),
+            'students' => (int) $summaryClasses->sum('students_count'),
+            'courses' => (int) $summaryClasses->sum('courses_count'),
+        ];
+
+        $classQuery->withCount(['students', 'courses'])->with(['teacher', 'courses:id,title']);
+
+        if ($filters['search'] !== '') {
+            $search = $filters['search'];
+            $classQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        if ($user->role === 'admin' && $filters['teacher_id']) {
+            $classQuery->where('teacher_id', $filters['teacher_id']);
         }
 
         if ($filters['status'] && in_array($filters['status'], ['active', 'hidden', 'archived'], true)) {
@@ -299,9 +326,9 @@ class ClassManagementController extends Controller
             $classQuery->notArchived();
         }
 
-        $classes = $classQuery->latest()->get();
+        $classes = $classQuery->latest()->paginate(12)->withQueryString();
 
-        return view('classes.index', compact('classes', 'teachers', 'courses', 'filters'));
+        return view('classes.index', compact('classes', 'teachers', 'courses', 'filters', 'classStats'));
     }
 
     public function store(Request $request)

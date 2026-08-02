@@ -2,591 +2,329 @@
 
 @section('title', 'Quản lý lớp học')
 
+@push('styles')
+    @vite('resources/css/pages/catalog-index.css')
+@endpush
+
 @section('content')
-    <style>
-        .page-title {
-            font-size: 22px;
-            font-weight: 600;
-            color: #0f172a;
-            margin: 0 0 4px;
-        }
+    @php
+        $isAdmin = auth()->user()->role === 'admin';
+        $hasFilters = collect($filters)->filter(fn ($value) => filled($value))->isNotEmpty();
+    @endphp
 
-        .page-subtitle {
-            font-size: 13.5px;
-            color: #64748b;
-            margin: 0 0 24px;
-        }
+    <div class="lms-page catalog-page classes-catalog-page">
+        <x-ui.page-header title="Quản lý lớp học">
+            <x-slot:meta>
+                <span><i class="fa-solid fa-school" aria-hidden="true"></i>Quản lý lớp, học viên và khóa học được phân bổ</span>
+            </x-slot:meta>
+            <x-slot:actions>
+                <x-ui.button icon="fa-plus" data-bs-toggle="modal" data-bs-target="#addClassModal">Tạo lớp học</x-ui.button>
+            </x-slot:actions>
+        </x-ui.page-header>
 
-        .btn-create {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            background: #2563eb;
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 9px 18px;
-            font-size: 14px;
-            font-weight: 500;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 0.15s;
-            white-space: nowrap;
-        }
+        <section class="catalog-summary" aria-label="Tổng quan lớp học">
+            <article class="catalog-summary-item">
+                <span class="catalog-summary-icon tone-blue"><i class="fa-solid fa-school" aria-hidden="true"></i></span>
+                <span><strong>{{ $classStats['total'] }}</strong><small>Tổng lớp học</small></span>
+            </article>
+            <article class="catalog-summary-item">
+                <span class="catalog-summary-icon tone-green"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span>
+                <span><strong>{{ $classStats['active'] }}</strong><small>Đang hoạt động</small></span>
+            </article>
+            <article class="catalog-summary-item">
+                <span class="catalog-summary-icon tone-violet"><i class="fa-solid fa-user-graduate" aria-hidden="true"></i></span>
+                <span><strong>{{ $classStats['students'] }}</strong><small>Lượt học viên</small></span>
+            </article>
+            <article class="catalog-summary-item">
+                <span class="catalog-summary-icon tone-amber"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>
+                <span><strong>{{ $classStats['courses'] }}</strong><small>Lượt phân bổ khóa</small></span>
+            </article>
+        </section>
 
-        .btn-create:hover {
-            background: #1d4ed8;
-            color: #fff;
-        }
+        <form action="{{ route('classes.index') }}" method="GET" class="catalog-filter-panel class-filter-panel"
+            aria-label="Bộ lọc lớp học">
+            <div class="catalog-search-field">
+                <label for="class-search">Tìm kiếm</label>
+                <div class="catalog-input-with-icon">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input id="class-search" type="search" name="search" class="form-control"
+                        placeholder="Tên hoặc mã lớp" value="{{ $filters['search'] ?? '' }}">
+                </div>
+            </div>
 
-        .btn-create i {
-            font-size: 12px;
-        }
+            <div class="catalog-filter-field">
+                <label for="class-status">Trạng thái</label>
+                <select id="class-status" name="status" class="form-select">
+                    <option value="">Đang hoạt động và đã ẩn</option>
+                    <option value="active" @selected(($filters['status'] ?? '') === 'active')>Đang hoạt động</option>
+                    <option value="hidden" @selected(($filters['status'] ?? '') === 'hidden')>Đã ẩn</option>
+                    <option value="archived" @selected(($filters['status'] ?? '') === 'archived')>Đã lưu trữ</option>
+                </select>
+            </div>
 
-        /* ── Grid ── */
-        .classes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
-            gap: 20px;
-        }
+            @if ($isAdmin)
+                <div class="catalog-filter-field">
+                    <label for="class-teacher">Giáo viên</label>
+                    <select id="class-teacher" name="teacher_id" class="form-select">
+                        <option value="">Tất cả giáo viên</option>
+                        @foreach ($teachers as $teacher)
+                            <option value="{{ $teacher->id }}" @selected(($filters['teacher_id'] ?? '') == $teacher->id)>
+                                {{ $teacher->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
 
-        /* ── Card ── */
-        .class-card {
-            background: #fff;
-            border: 1px solid #e8edf3;
-            border-radius: 14px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
+            <div class="catalog-filter-actions">
+                <x-ui.button type="submit" icon="fa-filter">Áp dụng</x-ui.button>
+                @if ($hasFilters)
+                    <x-ui.button :href="route('classes.index')" tone="outline" icon="fa-rotate-left">Đặt lại</x-ui.button>
+                @endif
+            </div>
+        </form>
 
-        .class-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.08);
-            border-color: #bfdbfe;
-        }
-
-        .card-top {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .class-code {
-            display: inline-block;
-            background: #eff6ff;
-            color: #2563eb;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 7px;
-            letter-spacing: .02em;
-        }
-
-        .card-meta {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .student-count {
-            font-size: 12.5px;
-            color: #64748b;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .student-count i {
-            font-size: 11px;
-        }
-
-        .class-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 999px;
-            white-space: nowrap;
-        }
-
-        .class-status-active {
-            background: #ecfdf5;
-            color: #047857;
-        }
-
-        .class-status-hidden {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .class-status-archived {
-            background: #fef2f2;
-            color: #b91c1c;
-        }
-
-        /* 3-dot menu */
-        .menu-btn {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            background: #f8fafc;
-            border: 1px solid #e8edf3;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            color: #64748b;
-            cursor: pointer;
-            transition: background 0.15s;
-            padding: 0;
-        }
-
-        .menu-btn:hover {
-            background: #f1f5f9;
-            color: #334155;
-        }
-
-        .card-dropdown {
-            border: 1px solid #e8edf3 !important;
-            border-radius: 12px !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09) !important;
-            padding: 6px !important;
-            min-width: 170px;
-        }
-
-        .card-dropdown .dropdown-item {
-            border-radius: 8px;
-            font-size: 13.5px;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #0f172a;
-        }
-
-        .card-dropdown .dropdown-item:hover {
-            background: #eff6ff;
-            color: #2563eb;
-        }
-
-        .card-dropdown .dropdown-item.text-danger {
-            color: #dc2626 !important;
-        }
-
-        .card-dropdown .dropdown-item.text-danger:hover {
-            background: #fef2f2;
-        }
-
-        .card-dropdown .dropdown-divider {
-            border-color: #f1f5f9;
-            margin: 4px 0;
-        }
-
-        /* Card body */
-        .class-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: #0f172a;
-            margin: 0 0 4px;
-            line-height: 1.35;
-        }
-
-        .class-teacher {
-            font-size: 13px;
-            color: #64748b;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin: 0;
-        }
-
-        .class-teacher i {
-            font-size: 12px;
-        }
-
-        /* Manage button */
-        .btn-manage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            background: #f8fafc;
-            color: #2563eb;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 9px 14px;
-            font-size: 13.5px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: background 0.15s, border-color 0.15s;
-            margin-top: auto;
-        }
-
-        .btn-manage:hover {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #2563eb;
-        }
-
-        .btn-manage i {
-            font-size: 12px;
-        }
-
-        /* Empty */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #94a3b8;
-        }
-
-        .empty-state i {
-            font-size: 2.8rem;
-            display: block;
-            margin-bottom: 14px;
-            opacity: .35;
-        }
-
-        .empty-state p {
-            font-size: 14px;
-            margin: 0;
-        }
-
-        /* ── Modals ── */
-        .modal-content {
-            border: 1px solid #e8edf3;
-            border-radius: 14px;
-            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-header {
-            padding: 20px 24px 0;
-            border: none;
-        }
-
-        .modal-title {
-            font-size: 17px;
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .modal-body {
-            padding: 18px 24px;
-        }
-
-        .modal-footer {
-            padding: 0 24px 20px;
-            border: none;
-            gap: 8px;
-        }
-
-        .form-label-sm {
-            font-size: 11.5px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            color: #94a3b8;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .form-ctrl {
-            width: 100%;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 9px 13px;
-            font-size: 14px;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            color: #0f172a;
-            background: #fff;
-            transition: border-color 0.15s, box-shadow 0.15s;
-            appearance: auto;
-        }
-
-        .form-ctrl:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
-            outline: none;
-        }
-
-        .form-group {
-            margin-bottom: 14px;
-        }
-
-        /* Course checkbox list */
-        .course-list {
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            background: #f8fafc;
-            padding: 10px 12px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .course-list::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .course-list::-webkit-scrollbar-thumb {
-            background: #e2e8f0;
-            border-radius: 4px;
-        }
-
-        .course-check-item {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            padding: 5px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .course-check-item:last-child {
-            border-bottom: none;
-        }
-
-        .course-check-item input {
-            cursor: pointer;
-            accent-color: #2563eb;
-            flex-shrink: 0;
-        }
-
-        .course-check-item label {
-            font-size: 13.5px;
-            color: #334155;
-            cursor: pointer;
-            margin: 0;
-        }
-
-        .role-badge {
-            display: inline-block;
-            background: #e0f2fe;
-            color: #0369a1;
-            font-size: 11px;
-            font-weight: 500;
-            padding: 2px 8px;
-            border-radius: 6px;
-            margin-left: 6px;
-            vertical-align: middle;
-        }
-
-        .btn-modal-cancel {
-            background: #f1f5f9;
-            color: #334155;
-            border: none;
-            border-radius: 10px;
-            padding: 9px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .btn-modal-cancel:hover {
-            background: #e2e8f0;
-        }
-
-        .btn-modal-submit {
-            background: #2563eb;
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 9px 22px;
-            font-size: 14px;
-            font-weight: 500;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .btn-modal-submit:hover {
-            background: #1d4ed8;
-        }
-
-        @media (max-width: 767.98px) {
-            .btn-create {
-                justify-content: center;
-                width: 100%;
-            }
-
-            .classes-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .class-card {
-                padding: 16px;
-            }
-
-            .card-top {
-                align-items: center;
-            }
-
-            .modal-footer {
-                align-items: stretch;
-                flex-direction: column;
-            }
-
-            .btn-modal-cancel,
-            .btn-modal-submit {
-                width: 100%;
-            }
-        }
-    </style>
-
-    {{-- Header --}}
-    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
-        <div>
-            <h1 class="page-title">Danh sách lớp học</h1>
-            <p class="page-subtitle">Quản lý các lớp học và học viên</p>
+        <div class="catalog-results-heading">
+            <div>
+                <h2>Danh sách lớp học</h2>
+                <p>{{ $hasFilters ? 'Kết quả theo bộ lọc hiện tại' : 'Các lớp bạn có quyền quản lý' }}</p>
+            </div>
+            <span class="catalog-count">{{ $classes->total() }} lớp</span>
         </div>
-        @if (in_array(auth()->user()->role, ['admin', 'teacher']))
-            <button class="btn-create" data-bs-toggle="modal" data-bs-target="#addClassModal">
-                <i class="fa-solid fa-plus"></i> Tạo lớp mới
-            </button>
+
+        @if ($classes->isEmpty())
+            <div class="catalog-empty-panel">
+                <x-ui.empty-state
+                    :title="$hasFilters ? 'Không tìm thấy lớp phù hợp' : 'Chưa có lớp học nào'"
+                    :description="$hasFilters ? 'Hãy thay đổi từ khóa hoặc bộ lọc để xem thêm kết quả.' : 'Tạo lớp học đầu tiên để bắt đầu phân bổ khóa học và thêm học viên.'"
+                    icon="fa-school">
+                    @if ($hasFilters)
+                        <x-ui.button :href="route('classes.index')" tone="outline" size="sm" icon="fa-rotate-left">Xóa bộ lọc</x-ui.button>
+                    @else
+                        <x-ui.button size="sm" icon="fa-plus" data-bs-toggle="modal" data-bs-target="#addClassModal">Tạo lớp học</x-ui.button>
+                    @endif
+                </x-ui.empty-state>
+            </div>
+        @else
+            <div class="catalog-grid class-catalog-grid">
+                @foreach ($classes as $class)
+                    @php
+                        $classStatus = $class->status ?? 'active';
+                        $classStatusLabel = [
+                            'active' => 'Đang hoạt động',
+                            'hidden' => 'Đã ẩn',
+                            'archived' => 'Đã lưu trữ',
+                        ][$classStatus] ?? 'Đang hoạt động';
+                        $teacherName = $class->teacher?->name ?? 'Chưa phân công';
+                        $teacherInitial = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($teacherName, 0, 1));
+                    @endphp
+
+                    <article class="catalog-card class-catalog-card">
+                        <div class="class-card-accent" aria-hidden="true"></div>
+                        <div class="catalog-card-body">
+                            <div class="class-card-topline">
+                                <div class="catalog-card-tags">
+                                    <span class="class-code"><i class="fa-solid fa-hashtag" aria-hidden="true"></i>{{ $class->code }}</span>
+                                    <span class="catalog-status status-{{ $classStatus }}">
+                                        <i class="fa-solid fa-circle" aria-hidden="true"></i>{{ $classStatusLabel }}
+                                    </span>
+                                </div>
+
+                                <div class="dropdown">
+                                    <button class="catalog-icon-button" type="button" data-bs-toggle="dropdown"
+                                        aria-expanded="false" aria-label="Mở thao tác cho lớp {{ $class->name }}">
+                                        <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end catalog-dropdown">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('classes.progress', $class) }}">
+                                                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>Theo dõi lớp
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('classes.students.index', $class) }}">
+                                                <i class="fa-solid fa-user-graduate" aria-hidden="true"></i>Quản lý học viên
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item edit-class-btn" type="button"
+                                                data-id="{{ $class->id }}" data-name="{{ $class->name }}"
+                                                data-code="{{ $class->code }}" data-teacher="{{ $class->teacher_id }}"
+                                                data-status="{{ $classStatus }}" data-courses="{{ $class->courses->pluck('id')->values() }}"
+                                                data-bs-toggle="modal" data-bs-target="#editClassModal">
+                                                <i class="fa-solid fa-pen" aria-hidden="true"></i>Sửa lớp học
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form action="{{ route('classes.destroy', $class) }}" method="POST"
+                                                onsubmit="return confirm('Lưu trữ lớp học này? Học viên, khóa học và dữ liệu học tập vẫn được giữ lại.')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fa-solid fa-box-archive" aria-hidden="true"></i>Lưu trữ lớp học
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="class-card-heading">
+                                <span class="class-card-icon" aria-hidden="true"><i class="fa-solid fa-school"></i></span>
+                                <div>
+                                    <h3 class="catalog-card-title">
+                                        <a href="{{ route('classes.students.index', $class) }}">{{ $class->name }}</a>
+                                    </h3>
+                                    <p>Quản lý danh sách và hoạt động của học viên</p>
+                                </div>
+                            </div>
+
+                            <div class="catalog-owner">
+                                <span class="catalog-avatar" aria-hidden="true">{{ $teacherInitial }}</span>
+                                <span><small>Giáo viên phụ trách</small><strong>{{ $teacherName }}</strong></span>
+                            </div>
+
+                            <dl class="catalog-metrics class-metrics" aria-label="Thông tin lớp học">
+                                <div>
+                                    <dt><i class="fa-solid fa-user-graduate" aria-hidden="true"></i>Học viên</dt>
+                                    <dd>{{ $class->students_count }}</dd>
+                                </div>
+                                <div>
+                                    <dt><i class="fa-solid fa-book-open" aria-hidden="true"></i>Khóa học</dt>
+                                    <dd>{{ $class->courses_count }}</dd>
+                                </div>
+                            </dl>
+
+                            <div class="class-course-list" aria-label="Khóa học được phân bổ">
+                                @forelse ($class->courses->take(2) as $course)
+                                    <span><i class="fa-solid fa-book" aria-hidden="true"></i>{{ $course->title }}</span>
+                                @empty
+                                    <span class="is-empty"><i class="fa-solid fa-link-slash" aria-hidden="true"></i>Chưa phân bổ khóa học</span>
+                                @endforelse
+                                @if ($class->courses_count > 2)
+                                    <strong>+{{ $class->courses_count - 2 }} khóa</strong>
+                                @endif
+                            </div>
+
+                            <div class="class-card-actions">
+                                <a href="{{ route('classes.students.index', $class) }}" class="catalog-card-action is-primary">
+                                    <i class="fa-solid fa-user-graduate" aria-hidden="true"></i>Học viên
+                                </a>
+                                <a href="{{ route('classes.progress', $class) }}" class="catalog-card-action">
+                                    <i class="fa-solid fa-chart-line" aria-hidden="true"></i>Theo dõi lớp
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+
+            <div class="catalog-pagination-panel">
+                <x-ui.pagination :paginator="$classes" item-label="lớp học" />
+            </div>
         @endif
     </div>
 
-    <form action="{{ route('classes.index') }}" method="GET"
-        class="d-flex align-items-end gap-2 flex-wrap bg-white border rounded-3 p-3 mb-4">
-        <div>
-            <label class="form-label-sm">Trạng thái</label>
-            <select name="status" class="form-ctrl" style="min-width:180px;">
-                <option value="">Đang hoạt động + đã ẩn</option>
-                <option value="active" @selected(($filters['status'] ?? '') === 'active')>Đang hoạt động</option>
-                <option value="hidden" @selected(($filters['status'] ?? '') === 'hidden')>Đã ẩn</option>
-                <option value="archived" @selected(($filters['status'] ?? '') === 'archived')>Đã lưu trữ</option>
-            </select>
-        </div>
-        <button type="submit" class="btn-create" style="padding:9px 16px;">
-            <i class="fa-solid fa-filter"></i> Lọc
-        </button>
-        <a href="{{ route('classes.index') }}" class="btn btn-light border rounded-3" style="padding:9px 14px;">
-            <i class="fa-solid fa-rotate-left"></i>
-        </a>
-    </form>
-
-    {{-- Grid --}}
-    @if ($classes->isEmpty())
-        <div class="empty-state">
-            <i class="fa-solid fa-school"></i>
-            <p>Chưa có lớp học nào. Hãy tạo lớp đầu tiên!</p>
-        </div>
-    @else
-        <div class="classes-grid">
-            @foreach ($classes as $class)
-                <div class="class-card">
-                    {{-- Top row --}}
-                    <div class="card-top">
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <span class="class-code">{{ $class->code }}</span>
-                            @php
-                                $classStatus = $class->status ?? 'active';
-                                $classStatusLabel = [
-                                    'active' => 'Đang hoạt động',
-                                    'hidden' => 'Đã ẩn',
-                                    'archived' => 'Đã lưu trữ',
-                                ][$classStatus] ?? 'Đang hoạt động';
-                            @endphp
-                            <span class="class-status-badge class-status-{{ $classStatus }}">
-                                <i class="fa-solid fa-circle" style="font-size:6px;"></i>{{ $classStatusLabel }}
-                            </span>
-                        </div>
-                        <div class="card-meta">
-                            <span class="student-count">
-                                <i class="fa-solid fa-users"></i> {{ $class->students_count }} HS
-                            </span>
-                            <div class="dropdown">
-                                <button class="menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fa-solid fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end card-dropdown">
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('classes.progress', $class->id) }}">
-                                            <i class="fa-solid fa-chart-line" style="color:#2563eb;"></i> Theo dõi tiến độ
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('classes.students.index', $class->id) }}">
-                                            <i class="fa-solid fa-user-graduate" style="color:#16a34a;"></i> Quản lý học viên
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item edit-class-btn" href="#" data-id="{{ $class->id }}"
-                                            data-name="{{ $class->name }}" data-code="{{ $class->code }}"
-                                            data-teacher="{{ $class->teacher_id }}"
-                                            data-status="{{ $class->status ?? 'active' }}"
-                                            data-courses="{{ $class->courses->pluck('id') }}" data-bs-toggle="modal"
-                                            data-bs-target="#editClassModal">
-                                            <i class="fa-solid fa-edit" style="color:#f59e0b;"></i> Sửa lớp học
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li>
-                                        <form action="{{ route('classes.destroy', $class->id) }}" method="POST">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="dropdown-item text-danger"
-                                                style="background:none; border:none; width:100%; text-align:left;"
-                                                onclick="return confirm('Lưu trữ lớp học này? Học viên, khóa học và tiến độ vẫn được giữ lại.')">
-                                                <i class="fa-solid fa-archive"></i> Lưu trữ lớp học
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Info --}}
+    <div class="modal fade catalog-modal" id="addClassModal" tabindex="-1" aria-labelledby="addClassModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <form action="{{ route('classes.store') }}" method="POST" class="modal-content">
+                @csrf
+                <div class="modal-header">
                     <div>
-                        <h2 class="class-name">{{ $class->name }}</h2>
-                        <p class="class-teacher">
-                            <i class="fa-solid fa-chalkboard-teacher"></i>
-                            {{ $class->teacher->name ?? 'Chưa phân công' }}
-                        </p>
+                        <span class="catalog-modal-icon" aria-hidden="true"><i class="fa-solid fa-school-circle-check"></i></span>
+                        <h2 class="modal-title" id="addClassModalLabel">Tạo lớp học mới</h2>
+                        <p>Nhập thông tin cơ bản và phân bổ khóa học cho lớp.</p>
                     </div>
-
-                    {{-- Manage button --}}
-                    <a href="{{ route('classes.students.index', $class->id) }}" class="btn-manage">
-                        <i class="fa-solid fa-user-graduate"></i> Quản lý học viên
-                    </a>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
-            @endforeach
-        </div>
-    @endif
+                <div class="modal-body">
+                    <div class="catalog-modal-grid">
+                        <div class="catalog-form-group">
+                            <label for="add-class-name">Tên lớp học <span aria-hidden="true">*</span></label>
+                            <input id="add-class-name" type="text" name="name" class="form-control"
+                                placeholder="Ví dụ: Lớp CNTT K24" value="{{ old('name') }}" required>
+                        </div>
+                        <div class="catalog-form-group">
+                            <label for="add-class-code">Mã lớp <span aria-hidden="true">*</span></label>
+                            <input id="add-class-code" type="text" name="code" class="form-control"
+                                placeholder="Ví dụ: CNTT-K24" value="{{ old('code') }}" required>
+                        </div>
 
-    {{-- ══ MODAL TẠO LỚP ══ --}}
-    @if (in_array(auth()->user()->role, ['admin', 'teacher']))
-        <div class="modal fade" id="addClassModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <form action="{{ route('classes.store') }}" method="POST" class="modal-content">
-                    @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title">Tạo lớp học mới</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        @if ($isAdmin)
+                            <div class="catalog-form-group catalog-form-full">
+                                <label for="add-class-teacher">Giáo viên phụ trách <span aria-hidden="true">*</span></label>
+                                <select id="add-class-teacher" name="teacher_id" class="form-select" required>
+                                    <option value="">Chọn giáo viên</option>
+                                    @foreach ($teachers as $teacher)
+                                        <option value="{{ $teacher->id }}" @selected(old('teacher_id') == $teacher->id)>{{ $teacher->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        <div class="catalog-form-group catalog-form-full">
+                            <label for="add-class-status">Trạng thái</label>
+                            <select id="add-class-status" name="status" class="form-select">
+                                <option value="active">Đang hoạt động</option>
+                                <option value="hidden">Đã ẩn</option>
+                                <option value="archived">Đã lưu trữ</option>
+                            </select>
+                        </div>
+
+                        <fieldset class="catalog-course-picker catalog-form-full">
+                            <legend>Phân bổ khóa học</legend>
+                            <p>Có thể chọn nhiều khóa học và thay đổi sau.</p>
+                            <div class="catalog-course-options">
+                                @forelse ($courses as $course)
+                                    <label class="catalog-course-option" for="add-course-{{ $course->id }}">
+                                        <input id="add-course-{{ $course->id }}" type="checkbox" name="course_ids[]"
+                                            value="{{ $course->id }}" @checked(in_array($course->id, old('course_ids', [])))>
+                                        <span><i class="fa-solid fa-book-open" aria-hidden="true"></i>{{ $course->title }}</span>
+                                    </label>
+                                @empty
+                                    <div class="catalog-options-empty">Chưa có khóa học khả dụng.</div>
+                                @endforelse
+                            </div>
+                        </fieldset>
                     </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label class="form-label-sm">Tên lớp học</label>
-                            <input type="text" name="name" class="form-ctrl" placeholder="VD: Lớp 12A1" required>
+                </div>
+                <div class="modal-footer">
+                    <x-ui.button tone="outline" data-bs-dismiss="modal">Hủy</x-ui.button>
+                    <x-ui.button type="submit" icon="fa-plus">Tạo lớp học</x-ui.button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade catalog-modal" id="editClassModal" tabindex="-1" aria-labelledby="editClassModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <form id="editClassForm" method="POST" class="modal-content" data-action-template="{{ url('/classes') }}/__CLASS_ID__">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <div>
+                        <span class="catalog-modal-icon" aria-hidden="true"><i class="fa-solid fa-pen-to-square"></i></span>
+                        <h2 class="modal-title" id="editClassModalLabel">Cập nhật lớp học</h2>
+                        <p>Điều chỉnh thông tin, trạng thái và khóa học được phân bổ.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="catalog-modal-grid">
+                        <div class="catalog-form-group">
+                            <label for="edit_name">Tên lớp học <span aria-hidden="true">*</span></label>
+                            <input type="text" name="name" id="edit_name" class="form-control" required>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label-sm">Mã lớp</label>
-                            <input type="text" name="code" class="form-ctrl" placeholder="VD: 12A1-2025" required>
+                        <div class="catalog-form-group">
+                            <label for="edit_code">Mã lớp <span aria-hidden="true">*</span></label>
+                            <input type="text" name="code" id="edit_code" class="form-control" required>
                         </div>
 
-                        @if (auth()->user()->role === 'admin')
-                            <div class="form-group">
-                                <label class="form-label-sm">Phân công giáo viên</label>
-                                <select name="teacher_id" class="form-ctrl" required>
-                                    <option value="">-- Chọn giáo viên --</option>
+                        @if ($isAdmin)
+                            <div class="catalog-form-group catalog-form-full">
+                                <label for="edit_teacher">Giáo viên phụ trách <span aria-hidden="true">*</span></label>
+                                <select name="teacher_id" id="edit_teacher" class="form-select" required>
                                     @foreach ($teachers as $teacher)
                                         <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
                                     @endforeach
@@ -594,137 +332,61 @@
                             </div>
                         @endif
 
-                        <div class="form-group">
-                            <label class="form-label-sm">Trạng thái</label>
-                            <select name="status" class="form-ctrl">
+                        <div class="catalog-form-group catalog-form-full">
+                            <label for="edit_status">Trạng thái</label>
+                            <select name="status" id="edit_status" class="form-select">
                                 <option value="active">Đang hoạt động</option>
                                 <option value="hidden">Đã ẩn</option>
                                 <option value="archived">Đã lưu trữ</option>
                             </select>
                         </div>
 
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label-sm">
-                                Phân bổ khóa học
-                                @if (auth()->user()->role === 'teacher')
-                                    <span class="role-badge">Khóa học của bạn</span>
-                                @endif
-                            </label>
-                            <div class="course-list">
-                                @forelse($courses as $course)
-                                    <div class="course-check-item">
-                                        <input class="course-checkbox" type="checkbox" name="course_ids[]"
-                                            value="{{ $course->id }}" id="add_course_{{ $course->id }}">
-                                        <label for="add_course_{{ $course->id }}">{{ $course->title }}</label>
-                                    </div>
+                        <fieldset class="catalog-course-picker catalog-form-full">
+                            <legend>Phân bổ khóa học</legend>
+                            <p>Bỏ chọn khóa học nếu không còn sử dụng cho lớp này.</p>
+                            <div class="catalog-course-options">
+                                @forelse ($courses as $course)
+                                    <label class="catalog-course-option" for="edit-course-{{ $course->id }}">
+                                        <input id="edit-course-{{ $course->id }}" class="edit-course-checkbox" type="checkbox"
+                                            name="course_ids[]" value="{{ $course->id }}">
+                                        <span><i class="fa-solid fa-book-open" aria-hidden="true"></i>{{ $course->title }}</span>
+                                    </label>
                                 @empty
-                                    <p style="font-size:13px; color:#94a3b8; margin:0; font-style:italic;">
-                                        {{ auth()->user()->role === 'admin' ? 'Chưa có khóa học nào.' : 'Bạn chưa có khóa học nào.' }}
-                                    </p>
+                                    <div class="catalog-options-empty">Chưa có khóa học khả dụng.</div>
                                 @endforelse
                             </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn-modal-submit">Tạo lớp ngay</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    {{-- ══ MODAL SỬA LỚP ══ --}}
-    <div class="modal fade" id="editClassModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form id="editClassForm" method="POST" class="modal-content">
-                @csrf @method('PUT')
-                <div class="modal-header">
-                    <h5 class="modal-title">Sửa thông tin lớp học</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label-sm">Tên lớp học</label>
-                        <input type="text" name="name" id="edit_name" class="form-ctrl" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label-sm">Mã lớp</label>
-                        <input type="text" name="code" id="edit_code" class="form-ctrl" required>
-                    </div>
-
-                    @if (auth()->user()->role === 'admin')
-                        <div class="form-group">
-                            <label class="form-label-sm">Phân công giáo viên</label>
-                            <select name="teacher_id" id="edit_teacher" class="form-ctrl" required>
-                                @foreach ($teachers as $teacher)
-                                    <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-
-                    <div class="form-group">
-                        <label class="form-label-sm">Trạng thái</label>
-                        <select name="status" id="edit_status" class="form-ctrl">
-                            <option value="active">Đang hoạt động</option>
-                            <option value="hidden">Đã ẩn</option>
-                            <option value="archived">Đã lưu trữ</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label-sm">
-                            Phân bổ khóa học
-                            @if (auth()->user()->role === 'teacher')
-                                <span class="role-badge">Khóa học của bạn</span>
-                            @endif
-                        </label>
-                        <div class="course-list">
-                            @forelse($courses as $course)
-                                <div class="course-check-item">
-                                    <input class="course-checkbox" type="checkbox" name="course_ids[]"
-                                        value="{{ $course->id }}" id="edit_course_{{ $course->id }}">
-                                    <label for="edit_course_{{ $course->id }}">{{ $course->title }}</label>
-                                </div>
-                            @empty
-                                <p style="font-size:13px; color:#94a3b8; margin:0; font-style:italic;">Không có khóa học
-                                    khả dụng.</p>
-                            @endforelse
-                        </div>
+                        </fieldset>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn-modal-submit">Lưu thay đổi</button>
+                    <x-ui.button tone="outline" data-bs-dismiss="modal">Hủy</x-ui.button>
+                    <x-ui.button type="submit" icon="fa-floppy-disk">Lưu thay đổi</x-ui.button>
                 </div>
             </form>
         </div>
     </div>
-
 @endsection
 
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.edit-class-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const classId = this.getAttribute('data-id');
-                    document.getElementById('editClassForm').action = `/classes/${classId}`;
-                    document.getElementById('edit_name').value = this.getAttribute('data-name');
-                    document.getElementById('edit_code').value = this.getAttribute('data-code');
-                    document.getElementById('edit_status').value = this.getAttribute('data-status') || 'active';
+            var editForm = document.getElementById('editClassForm');
+            if (!editForm) return;
 
-                    const teacherSel = document.getElementById('edit_teacher');
-                    if (teacherSel) teacherSel.value = this.getAttribute('data-teacher');
+            document.querySelectorAll('.edit-class-btn').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    var classId = this.dataset.id;
+                    editForm.action = editForm.dataset.actionTemplate.replace('__CLASS_ID__', classId);
+                    document.getElementById('edit_name').value = this.dataset.name || '';
+                    document.getElementById('edit_code').value = this.dataset.code || '';
+                    document.getElementById('edit_status').value = this.dataset.status || 'active';
 
-                    const courseIds = JSON.parse(this.getAttribute('data-courses') || '[]');
-                    document.querySelectorAll('#editClassForm .course-checkbox').forEach(cb => cb
-                        .checked = false);
-                    courseIds.forEach(id => {
-                        const cb = document.querySelector(
-                            `#editClassForm .course-checkbox[value="${id}"]`);
-                        if (cb) cb.checked = true;
+                    var teacherSelect = document.getElementById('edit_teacher');
+                    if (teacherSelect) teacherSelect.value = this.dataset.teacher || '';
+
+                    var courseIds = JSON.parse(this.dataset.courses || '[]').map(String);
+                    editForm.querySelectorAll('.edit-course-checkbox').forEach(function(checkbox) {
+                        checkbox.checked = courseIds.includes(checkbox.value);
                     });
                 });
             });

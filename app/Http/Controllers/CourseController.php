@@ -42,12 +42,27 @@ class CourseController extends Controller
         ];
 
         // Khởi tạo query cơ bản kèm đếm số lượng bài học (lessons)
-        $query = Course::with(['teacher', 'classes', 'learningProgram'])
+        $query = Course::with(['teacher', 'classes.students:id', 'learningProgram'])
             ->withCount('modules') // Đếm số module
             // Đếm tổng bài học của tất cả các module trong khóa học
             ->withCount([
-                'modules as lessons_count' => function ($query) {
-                    $query->leftJoin('lessons', 'modules.id', '=', 'lessons.module_id')->select(\DB::raw('count(lessons.id)'));
+                'modules as lessons_count' => function ($query) use ($user) {
+                    $query->leftJoin('lessons', 'modules.id', '=', 'lessons.module_id');
+
+                    if ($user->role === 'student') {
+                        $query->where('lessons.status', Lesson::STATUS_PUBLISHED)
+                            ->where(function ($visibilityQuery) {
+                                $visibilityQuery->whereNull('lessons.available_from')
+                                    ->orWhere('lessons.available_from', '<=', now());
+                            });
+                    } else {
+                        $query->where(function ($statusQuery) {
+                            $statusQuery->whereNull('lessons.status')
+                                ->orWhere('lessons.status', '!=', Lesson::STATUS_ARCHIVED);
+                        });
+                    }
+
+                    $query->select(DB::raw('count(lessons.id)'));
                 },
             ]);
 
@@ -91,26 +106,14 @@ class CourseController extends Controller
                     $q->whereIn('classes.id', $classIds);
                 })
                 ->visibleToStudents()
-                ->with(['modules.lessons'])
                 ->latest()
                 ->get();
-
-            // Giữ nguyên logic tính progress của thầy
-            foreach ($courses as $course) {
-                $visibleLessons = $course->modules->flatMap->lessons->filter(fn ($lesson) => $lesson->isVisibleToStudents());
-                $totalLessons = $visibleLessons->count();
-                $courseLessonIds = $visibleLessons->pluck('id')->toArray();
-                $completedLessons = $user->lessons()->whereIn('lesson_id', $courseLessonIds)->whereNotNull('lesson_user.completed_at')->count();
-                $course->progress = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
-            }
         }
 
-        // Logic đếm Học viên (Students) dựa trên quan hệ classes của thầy
         foreach ($courses as $course) {
-            // Đếm số lượng user duy nhất tham gia các lớp của khóa học này
-            $course->students_count = \DB::table('class_user')
-                ->whereIn('class_id', $course->classes->pluck('id'))
-                ->distinct('user_id')
+            $course->students_count = $course->classes
+                ->flatMap->students
+                ->unique('id')
                 ->count();
         }
 
@@ -118,8 +121,14 @@ class CourseController extends Controller
         $templateCourses = $courses->where('course_type', 'template')->values();
         $filterPrograms = $this->availablePrograms();
         $filterClasses = $this->availableClasses();
+        $courseStats = [
+            'total' => $courses->count(),
+            'delivery' => $deliveryCourses->count(),
+            'templates' => $templateCourses->count(),
+            'lessons' => (int) $courses->sum('lessons_count'),
+        ];
 
-        return view('courses.index', compact('courses', 'deliveryCourses', 'templateCourses', 'filters', 'filterPrograms', 'filterClasses'));
+        return view('courses.index', compact('courses', 'deliveryCourses', 'templateCourses', 'filters', 'filterPrograms', 'filterClasses', 'courseStats'));
     }
 
     public function show($id)

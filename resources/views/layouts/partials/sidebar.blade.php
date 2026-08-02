@@ -31,7 +31,7 @@
         ['label' => 'Chương trình học', 'route' => 'programs.index', 'patterns' => ['programs.*'], 'icon' => 'fa-sitemap'],
         ['label' => 'Lớp học', 'route' => 'classes.index', 'patterns' => ['classes.*'], 'icon' => 'fa-school', 'testid' => 'nav-classes'],
         ['label' => 'Lịch học', 'route' => 'schedules.index', 'patterns' => ['schedules.*'], 'icon' => 'fa-calendar-days'],
-        ['label' => 'Phân công giảng dạy', 'route' => 'teaching.index', 'patterns' => ['teaching.*'], 'icon' => 'fa-person-chalkboard'],
+        ['label' => 'Giảng dạy', 'route' => 'teaching.index', 'patterns' => ['teaching.*'], 'icon' => 'fa-person-chalkboard'],
     ];
 
     $contentItems = [

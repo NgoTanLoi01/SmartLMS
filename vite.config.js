@@ -13,6 +13,7 @@ export default defineConfig({
                 'resources/css/pages/chatbot.css',
                 'resources/css/pages/class-progress.css',
                 'resources/css/pages/class-students.css',
+                'resources/css/pages/catalog-index.css',
                 'resources/css/pages/course-modals.css',
                 'resources/css/pages/course-show.css',
                 'resources/css/pages/dashboard.css',

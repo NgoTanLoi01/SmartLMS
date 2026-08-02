@@ -86,14 +86,9 @@
                         <div class="course-review-panel__copy">
                             <span class="course-review-panel__eyebrow">Kho nội dung xem lại</span>
                             <strong>{{ $course->modules->count() }} chương · {{ $courseLessonCount }} bài học</strong>
-                            <span>Chọn bài trong danh sách hoặc mở ngay bài đầu tiên.</span>
                         </div>
                         @if ($nextLesson)
-                            <button type="button" class="course-review-primary course-jump-btn"
-                                data-target-type="lesson" data-target-id="{{ $nextLesson->id }}">
-                                <i class="fa-solid fa-book-open"></i>
-                                Mở bài đầu tiên
-                            </button>
+
                         @endif
                         <div class="course-review-links">
                             <a href="{{ route('attendance.show', $course->id) }}">
