@@ -1,11 +1,9 @@
     <script>
-        let totalLessonsCount = {{ $totalLessons ?? 0 }};
-        let currentCompletedCount = {{ $completedCount ?? 0 }};
-        const isStudentCourseUser = @json(auth()->user()->role === 'student');
         const canManageCourseContent = @json(auth()->id() === $course->teacher_id || auth()->user()->role === 'admin');
         const currentCourseId = {{ $course->id }};
         const currentCourseTitle = @json($course->title);
         const courseMaterialCards = @json($courseMaterialCards ?? []);
+        const courseScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
         function getYoutubeId(url) {
             const regExp = /^.*(http:\/\/www\.youtube\.com\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -14,21 +12,17 @@
         }
 
         let currentLessonIndex = -1;
-        const lessons = Array.from(document.querySelectorAll('.lesson-item'));
+        const lessons = Array.from(document.querySelectorAll('.sidebar-scroll .lesson-item'));
         let currentLessonId = null;
+        let isRestoringCourseLocation = false;
+        let activeLessonLoadToken = 0;
+        const lessonContentCache = new Map();
 
         function updateNavButtons() {
             document.getElementById('btn-prev').disabled = (currentLessonIndex <= 0);
             document.getElementById('btn-next').disabled = (currentLessonIndex === -1 || currentLessonIndex >= lessons
                 .length - 1);
 
-            const btnComplete = document.getElementById('btn-complete');
-            if (currentLessonIndex !== -1) {
-                btnComplete.classList.toggle('d-none', !isStudentCourseUser);
-                btnComplete.classList.replace('btn-secondary', 'btn-success');
-                btnComplete.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Hoàn thành bài học';
-                btnComplete.disabled = false;
-            }
         }
 
         // GIAO DIỆN COMPONENTS
@@ -62,14 +56,94 @@
             return lessonSelector(id);
         }
 
-        function getCurrentLessonElement() {
-            return currentLessonIndex >= 0 ? lessons[currentLessonIndex] : null;
+        function syncCourseLocation(type, id) {
+            if (isRestoringCourseLocation || !type || !id) return;
+
+            const url = new URL(window.location.href);
+            ['lesson_id', 'assignment_id', 'quiz_id'].forEach(param => url.searchParams.delete(param));
+            url.searchParams.set(`${type}_id`, id);
+
+            if (url.href !== window.location.href) {
+                window.history.pushState({ courseContentType: type, courseContentId: id }, '', url);
+            }
         }
 
-        function getNextLessonElement() {
-            return currentLessonIndex >= 0 && currentLessonIndex < lessons.length - 1
-                ? lessons[currentLessonIndex + 1]
-                : null;
+        function openCourseContentFromLocation(openDefaultLesson = false) {
+            const params = new URLSearchParams(window.location.search);
+            const targets = [
+                ['lesson', params.get('lesson_id')],
+                ['assignment', params.get('assignment_id')],
+                ['quiz', params.get('quiz_id')],
+            ];
+            let target = null;
+
+            for (const [type, id] of targets) {
+                if (!id) continue;
+                const candidate = document.querySelector(contentSelector(type, id));
+                if (candidate) {
+                    target = candidate;
+                    break;
+                }
+            }
+
+            if (!target && openDefaultLesson) target = lessons[0] || null;
+            if (!target) return;
+
+            isRestoringCourseLocation = true;
+            target.click();
+            isRestoringCourseLocation = false;
+        }
+
+        function revealOutlineItem(item) {
+            const collapse = item?.closest('.accordion-collapse');
+            if (!collapse || collapse.classList.contains('show')) return;
+
+            collapse.classList.add('show');
+            const toggle = document.querySelector(`[data-bs-target="#${collapse.id}"]`);
+            toggle?.classList.remove('collapsed');
+            toggle?.setAttribute('aria-expanded', 'true');
+        }
+
+        async function loadLessonContent(item, forceRefresh = false) {
+            const id = item.getAttribute('data-id');
+            const url = item.getAttribute('data-content-url');
+            if (!forceRefresh && lessonContentCache.has(id)) return lessonContentCache.get(id);
+            if (!url) throw new Error('Bài học chưa có đường dẫn nội dung.');
+
+            const response = await fetch(url, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            if (!response.ok) throw new Error('Không thể tải nội dung bài học.');
+
+            const payload = await response.json();
+            lessonContentCache.set(id, payload);
+            return payload;
+        }
+
+        function showLessonLoadingState(body) {
+            body.setAttribute('aria-busy', 'true');
+            body.innerHTML = `
+                <div class="lesson-loading-state" role="status" aria-live="polite">
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <span>Đang mở nội dung bài học...</span>
+                </div>`;
+        }
+
+        function showLessonErrorState(body, retry) {
+            body.innerHTML = `
+                <div class="lesson-error-state" role="alert">
+                    <span class="lesson-error-state__icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                    <div><strong>Chưa tải được bài học</strong><span>Kiểm tra kết nối rồi thử lại.</span></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary">Tải lại</button>
+                </div>`;
+            body.querySelector('button')?.addEventListener('click', retry, { once: true });
+        }
+
+        function getCurrentLessonElement() {
+            return currentLessonIndex >= 0 ? lessons[currentLessonIndex] : null;
         }
 
         function renderLessonMaterials(lessonId = null) {
@@ -351,12 +425,13 @@
         // 1. CLICK VÀO BÀI HỌC
         // ==========================================
         lessons.forEach((item, index) => {
-            item.addEventListener('click', function(e) {
+            item.addEventListener('click', async function(e) {
                 e.preventDefault();
                 document.querySelectorAll(
                         '.lesson-item-wrapper, .assignment-item-wrapper, .quiz-item-wrapper')
                     .forEach(li => li.classList.remove('active'));
                 this.closest('.lesson-item-wrapper').classList.add('active');
+                revealOutlineItem(this);
 
                 hideAllAreas();
 
@@ -367,12 +442,17 @@
                 currentLessonIndex = index;
                 updateNavButtons();
                 setAiLessonContext(this);
+                syncCourseLocation('lesson', currentLessonId);
 
                 document.getElementById('lesson-title').innerText = this.getAttribute('data-title');
                 const moduleTitleEl = document.getElementById('lesson-module-title');
                 if (moduleTitleEl) {
                     const moduleTitle = this.getAttribute('data-module-title') || '';
-                    moduleTitleEl.innerText = moduleTitle ? `Module: ${moduleTitle}` : '';
+                    const moduleNumber = this.getAttribute('data-module-number') || '';
+                    const lessonNumber = this.getAttribute('data-lesson-number') || '';
+                    moduleTitleEl.innerText = moduleTitle
+                        ? `Chương ${moduleNumber}: ${moduleTitle} · Bài ${moduleNumber}.${lessonNumber}`
+                        : '';
                 }
                 const durationBox = document.getElementById('lesson-duration-box');
                 const durationText = document.getElementById('lesson-duration-text');
@@ -381,9 +461,9 @@
                     durationText.innerText = durationLabel;
                     durationBox.classList.toggle('d-none', durationLabel.trim() === '');
                 }
-                document.getElementById('lesson-body').innerHTML = this.getAttribute('data-content') ||
-                    '<p class="text-muted fst-italic">Không có nội dung văn bản.</p>';
-                beautifyLessonBody();
+                const lessonBody = document.getElementById('lesson-body');
+                const loadToken = ++activeLessonLoadToken;
+                showLessonLoadingState(lessonBody);
                 const placeholder = document.getElementById('welcome-placeholder');
                 if (placeholder) placeholder.style.display = 'none';
 
@@ -391,15 +471,16 @@
                 const ytId = videoUrl ? getYoutubeId(videoUrl) : null;
 
                 if (ytId) {
-                    iframe.src = `http://www.youtube.com/embed/${ytId}?autoplay=1`;
+                    iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
                     videoContainer.classList.remove('d-none');
                 } else if (videoUrl && videoUrl.trim() !== '') {
                     externalBtn.href = videoUrl;
                     externalContainer.classList.remove('d-none');
                 }
                 lessonArea.scrollIntoView({
-                    behavior: 'smooth'
+                    behavior: courseScrollBehavior
                 });
+                lessonArea.focus({ preventScroll: true });
 
                 const attachmentUrl = this.getAttribute('data-attachment');
                 const attachmentName = this.getAttribute('data-attachment-name');
@@ -421,6 +502,21 @@
 
                 renderLessonMaterials(currentLessonId);
 
+                try {
+                    const payload = await loadLessonContent(this);
+                    if (loadToken !== activeLessonLoadToken || currentLessonId !== this.getAttribute('data-id')) return;
+                    lessonBody.innerHTML = payload.content;
+                    beautifyLessonBody();
+                } catch (error) {
+                    if (loadToken !== activeLessonLoadToken) return;
+                    showLessonErrorState(lessonBody, () => {
+                        lessonContentCache.delete(this.getAttribute('data-id'));
+                        this.click();
+                    });
+                } finally {
+                    if (loadToken === activeLessonLoadToken) lessonBody.setAttribute('aria-busy', 'false');
+                }
+
             });
         });
 
@@ -429,7 +525,7 @@
         // ==========================================
         // 2. CLICK VÀO BÀI TẬP
         // ==========================================
-        const assignments = Array.from(document.querySelectorAll('.assignment-item'));
+        const assignments = Array.from(document.querySelectorAll('.sidebar-scroll .assignment-item'));
         assignments.forEach(item => {
             item.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -437,6 +533,7 @@
                         '.lesson-item-wrapper, .assignment-item-wrapper, .quiz-item-wrapper')
                     .forEach(li => li.classList.remove('active'));
                 this.closest('.assignment-item-wrapper').classList.add('active');
+                revealOutlineItem(this);
 
                 hideAllAreas();
 
@@ -445,6 +542,7 @@
 
 
                 const id = this.getAttribute('data-id');
+                syncCourseLocation('assignment', id);
 
                 document.getElementById('assignment-title').innerText = this.getAttribute('data-title');
 
@@ -578,8 +676,9 @@
 
                 if (submitForm) submitForm.action = `/assignments/${id}/submit`;
                 assignmentArea.scrollIntoView({
-                    behavior: 'smooth'
+                    behavior: courseScrollBehavior
                 });
+                assignmentArea.focus({ preventScroll: true });
             });
         });
 
@@ -611,48 +710,6 @@
 
         document.getElementById('btn-next').addEventListener('click', () => {
             if (currentLessonIndex < lessons.length - 1) lessons[currentLessonIndex + 1].click();
-        });
-
-        // ==========================================
-        // 4. HOÀN THÀNH BÀI HỌC
-        // ==========================================
-        document.getElementById('btn-complete').addEventListener('click', function() {
-            if (!currentLessonId) return;
-            axios.post(`/lessons/${currentLessonId}/complete`)
-                .then(response => {
-                    this.classList.replace('btn-success', 'btn-secondary');
-                    this.innerHTML = '<i class="fa-solid fa-check me-1"></i> Đã hoàn thành';
-                    this.disabled = true;
-
-                    const icon = document.getElementById('icon-lesson-' + currentLessonId);
-                    if (icon && !icon.classList.contains('fa-circle-check')) {
-                        icon.className = 'fa-solid fa-circle-check text-success me-2 flex-shrink-0 lesson-icon';
-                        const lessonLink = document.querySelector(`.sidebar-scroll .lesson-item[data-id="${currentLessonId}"]`);
-                        const statusRow = lessonLink ? lessonLink.querySelector('.sidebar-status-row') : null;
-                        if (statusRow) {
-                            const firstPill = statusRow.querySelector('.sidebar-status-pill');
-                            if (firstPill) {
-                                firstPill.className = 'sidebar-status-pill done';
-                                firstPill.innerHTML = '<i class="fa-solid fa-check"></i>Đã xong';
-                            }
-                        }
-                        currentCompletedCount++;
-                        let newProgress = Math.round((currentCompletedCount / totalLessonsCount) * 100);
-                        const progressText = document.getElementById('progress-text');
-                        const progressBar = document.getElementById('progress-bar');
-                        const sidebarProgressText = document.getElementById('sidebar-progress-text');
-                        const sidebarProgressBar = document.getElementById('sidebar-progress-bar');
-                        if (progressText) progressText.innerText =
-                            `${currentCompletedCount}/${totalLessonsCount} bài (${newProgress}%)`;
-                        if (progressBar) progressBar.style.width = newProgress + '%';
-                        if (sidebarProgressText) sidebarProgressText.innerText =
-                            `Đã học ${currentCompletedCount}/${totalLessonsCount} bài · Tiến độ ${newProgress}%`;
-                        if (sidebarProgressBar) sidebarProgressBar.style.width = newProgress + '%';
-                    }
-                    if (getNextLessonElement()) {
-                        setTimeout(() => document.getElementById('btn-next').click(), 1400);
-                    }
-                });
         });
 
         // ==========================================
@@ -724,24 +781,32 @@
         // 6. GÁN VALUE CHO CÁC MODAL SỬA (GIÁO VIÊN)
         // ==========================================
         document.querySelectorAll('.edit-lesson-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', async function(e) {
                 e.stopPropagation();
                 window.currentEditLessonId = this.getAttribute('data-id');
                 document.getElementById('editLessonForm').action =
                     `/lessons/${this.getAttribute('data-id')}`;
                 document.getElementById('editLessonTitle').value = this.getAttribute('data-title');
 
-                // Nạp dữ liệu vào TinyMCE thay vì textarea thường
-                if (tinymce.get('editLessonContent')) {
-                    tinymce.get('editLessonContent').setContent(this.getAttribute('data-content') || '');
-                } else {
-                    document.getElementById('editLessonContent').value = this.getAttribute('data-content');
-                }
+                const editor = tinymce.get('editLessonContent');
+                if (editor) editor.setContent('<p>Đang tải nội dung...</p>');
+                else document.getElementById('editLessonContent').value = 'Đang tải nội dung...';
 
                 document.getElementById('editLessonVideo').value = this.getAttribute('data-video');
                 document.getElementById('editLessonModule').value = this.getAttribute('data-module');
                 document.getElementById('editLessonStatus').value = this.getAttribute('data-status') || 'published';
                 document.getElementById('editLessonAvailableFrom').value = this.getAttribute('data-available-from') || '';
+
+                try {
+                    const payload = await loadLessonContent(this);
+                    if (window.currentEditLessonId !== this.getAttribute('data-id')) return;
+                    if (tinymce.get('editLessonContent')) tinymce.get('editLessonContent').setContent(payload.content);
+                    else document.getElementById('editLessonContent').value = payload.content;
+                } catch (error) {
+                    const message = '<p>Không tải được nội dung. Vui lòng đóng cửa sổ và thử lại.</p>';
+                    if (tinymce.get('editLessonContent')) tinymce.get('editLessonContent').setContent(message);
+                    else document.getElementById('editLessonContent').value = 'Không tải được nội dung. Vui lòng thử lại.';
+                }
             });
         });
 
@@ -761,7 +826,7 @@
         // ==========================================
         // 7. CLICK VÀO BÀI KIỂM TRA (QUIZZES)
         // ==========================================
-        const quizzes = Array.from(document.querySelectorAll('.quiz-item'));
+        const quizzes = Array.from(document.querySelectorAll('.sidebar-scroll .quiz-item'));
 
         quizzes.forEach(item => {
             item.addEventListener('click', function(e) {
@@ -771,6 +836,7 @@
                         '.lesson-item-wrapper, .assignment-item-wrapper, .quiz-item-wrapper')
                     .forEach(li => li.classList.remove('active'));
                 this.closest('.quiz-item-wrapper').classList.add('active');
+                revealOutlineItem(this);
 
                 hideAllAreas();
 
@@ -779,6 +845,7 @@
                 quizArea.classList.add('d-flex', 'flex-column');
 
                 const id = this.getAttribute('data-id');
+                syncCourseLocation('quiz', id);
                 document.getElementById('quiz-display-title').innerText = this.getAttribute('data-title');
                 document.getElementById('quiz-display-duration').innerText = this.getAttribute(
                     'data-duration');
@@ -891,8 +958,9 @@
                 if (manageBtn) manageBtn.href = `/quizzes/${id}`;
 
                 quizArea.scrollIntoView({
-                    behavior: 'smooth'
+                    behavior: courseScrollBehavior
                 });
+                quizArea.focus({ preventScroll: true });
             });
         });
 
@@ -941,11 +1009,17 @@
                 const wrapper = document.getElementById('course-page-wrapper');
                 if (!wrapper) return;
 
-                document.querySelectorAll('[data-course-mode]').forEach(item => item.classList.remove('active'));
+                document.querySelectorAll('[data-course-mode]').forEach(item => {
+                    item.classList.remove('active');
+                    item.setAttribute('aria-pressed', 'false');
+                });
                 this.classList.add('active');
+                this.setAttribute('aria-pressed', 'true');
                 wrapper.classList.toggle('preview-student-mode', mode === 'preview');
             });
         });
 
+        window.addEventListener('popstate', () => openCourseContentFromLocation(true));
+        openCourseContentFromLocation(true);
         initCourseReordering();
     </script>

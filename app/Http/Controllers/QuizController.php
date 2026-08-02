@@ -58,7 +58,7 @@ class QuizController extends Controller
                 'quiz',
                 'Có bài kiểm tra mới',
                 "Bài kiểm tra \"{$quiz->title}\" vừa được đăng.",
-                route('courses.show', $quiz->course_id),
+                route('courses.show', ['course' => $quiz->course_id, 'quiz_id' => $quiz->id]),
                 ['quiz_id' => $quiz->id],
                 "quiz:{$quiz->id}:published"
             );
@@ -118,7 +118,7 @@ class QuizController extends Controller
                 'quiz',
                 'Có bài kiểm tra mới',
                 "Bài kiểm tra \"{$quiz->title}\" vừa được đăng.",
-                route('courses.show', $quiz->course_id),
+                route('courses.show', ['course' => $quiz->course_id, 'quiz_id' => $quiz->id]),
                 ['quiz_id' => $quiz->id],
                 "quiz:{$quiz->id}:published"
             );

@@ -51,7 +51,7 @@ class LessonController extends Controller
                 'lesson',
                 'Có bài học mới',
                 "Bài học \"{$lesson->title}\" vừa được đăng.",
-                route('courses.show', $module->course_id),
+                route('courses.show', ['course' => $module->course_id, 'lesson_id' => $lesson->id]),
                 ['lesson_id' => $lesson->id],
                 "lesson:{$lesson->id}:published"
             );
@@ -94,7 +94,7 @@ class LessonController extends Controller
             app(NotificationCenter::class)->notifyCourseStudents(
                 $targetModule->course, 'lesson', 'Có bài học mới',
                 "Bài học \"{$lesson->title}\" vừa được đăng.",
-                route('courses.show', $targetModule->course_id), ['lesson_id' => $lesson->id],
+                route('courses.show', ['course' => $targetModule->course_id, 'lesson_id' => $lesson->id]), ['lesson_id' => $lesson->id],
                 "lesson:{$lesson->id}:published"
             );
         }
@@ -136,6 +136,17 @@ class LessonController extends Controller
             $lesson->attachment,
             $lesson->attachment_original_name ?: basename($lesson->attachment)
         );
+    }
+
+    public function content(Lesson $lesson)
+    {
+        $lesson->loadMissing('module.course.classes');
+        Gate::authorize('view', $lesson);
+
+        return response()->json([
+            'id' => $lesson->id,
+            'content' => $lesson->content ?: '<p class="text-muted fst-italic">Bài học chưa có nội dung văn bản.</p>',
+        ]);
     }
 
     public function toggleComplete($id)

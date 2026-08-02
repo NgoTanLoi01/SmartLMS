@@ -19,7 +19,7 @@
             <div class="modal-header">
                 <div class="cm-header-icon icon-blue"><i class="fa-solid fa-folder-plus"></i></div>
                 <h5 class="modal-title">Thêm chương mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
             <div class="modal-body">
@@ -50,7 +50,7 @@
             <div class="modal-header">
                 <div class="cm-header-icon icon-amber"><i class="fa-solid fa-folder"></i></div>
                 <h5 class="modal-title">Sửa chương</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
             <div class="modal-body">
@@ -80,7 +80,7 @@
             <div class="modal-header">
                 <div class="cm-header-icon icon-blue"><i class="fa-solid fa-book-open"></i></div>
                 <h5 class="modal-title">Thêm bài học mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
             <div class="modal-body">
@@ -158,7 +158,7 @@
             <div class="modal-header">
                 <div class="cm-header-icon icon-amber"><i class="fa-solid fa-edit"></i></div>
                 <h5 class="modal-title">Sửa bài học</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
             <div class="modal-body">
@@ -241,7 +241,7 @@
             <div class="modal-header">
                 <div class="cm-header-icon icon-amber"><i class="fa-solid fa-list-check"></i></div>
                 <h5 class="modal-title">Thêm bài tập thực hành</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
             <div class="modal-body">
@@ -356,7 +356,7 @@
             <div class="modal-header">
                 <div class="cm-header-icon icon-amber"><i class="fa-solid fa-edit"></i></div>
                 <h5 class="modal-title">Sửa bài tập</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
             <div class="modal-body">
@@ -493,7 +493,7 @@
             <div class="modal-header">
                 <div class="cm-header-icon icon-violet"><i class="fa-solid fa-random"></i></div>
                 <h5 class="modal-title">Tạo đề thi hỗn hợp</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
 
             <div class="modal-body">
@@ -701,7 +701,7 @@
             <div class="modal-header">
                 <div class="cm-header-icon icon-amber"><i class="fa-solid fa-shield-halved"></i></div>
                 <h5 class="modal-title">Kiểm tra chất lượng khóa học</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div id="course-quality-content" class="text-muted small">

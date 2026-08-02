@@ -162,6 +162,27 @@ class AuthorizationIsolationTest extends TestCase
         }
     }
 
+    public function test_lesson_content_is_lazy_loaded_only_for_authorized_users(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('lessons.content', $this->lesson))
+            ->assertOk()
+            ->assertJsonPath('id', $this->lesson->id)
+            ->assertJsonPath('content', '<p>Nội dung xem lại.</p>');
+
+        $this->actingAs($student)
+            ->getJson(route('lessons.content', $this->lesson))
+            ->assertOk()
+            ->assertJsonPath('content', '<p>Nội dung xem lại.</p>');
+
+        $this->actingAs($this->otherTeacher)
+            ->getJson(route('lessons.content', $this->lesson))
+            ->assertForbidden();
+    }
+
     public function test_submission_is_visible_only_to_owner_course_teacher_and_admin(): void
     {
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
@@ -441,6 +462,7 @@ class AuthorizationIsolationTest extends TestCase
         $this->lesson = Lesson::create([
             'module_id' => $this->module->id,
             'title' => 'Bài của A',
+            'content' => '<p>Nội dung xem lại.</p>',
             'status' => Lesson::STATUS_PUBLISHED,
             'published_at' => now(),
         ]);

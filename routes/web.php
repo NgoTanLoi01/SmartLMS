@@ -183,6 +183,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::put('/lessons/{id}', [LessonController::class, 'update'])->name('lessons.update');
         Route::delete('/lessons/{id}', [LessonController::class, 'destroy'])->name('lessons.destroy');
     });
+    Route::get('/lessons/{lesson}/content', [LessonController::class, 'content'])->name('lessons.content');
     Route::get('/lessons/{id}/attachment', [LessonController::class, 'downloadAttachment'])->name('lessons.attachment');
     Route::post('/lessons/{id}/complete', [LessonController::class, 'toggleComplete'])
         ->middleware('role:student')

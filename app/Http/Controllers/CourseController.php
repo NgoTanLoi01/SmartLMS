@@ -128,7 +128,13 @@ class CourseController extends Controller
         $course = Course::with([
             'teacher',
             'classes',
-            'modules.lessons.assignments',
+            'modules.lessons' => fn ($query) => $query
+                ->select([
+                    'id', 'module_id', 'title', 'video_url', 'attachment', 'attachment_disk',
+                    'attachment_original_name', 'attachment_mime_type', 'attachment_size', 'order',
+                    'status', 'published_at', 'available_from',
+                ])
+                ->with('assignments'),
             'quizzes.sessions:id,quiz_id',
             'archivedQuizzes:id,course_id,title,status',
         ])->findOrFail($id);
@@ -167,10 +173,6 @@ class CourseController extends Controller
             $course->setRelation('quizzes', $course->quizzes->filter(fn ($quiz) => $quiz->isVisibleToStudents())->values());
         }
 
-        $completedLessonIds = [];
-        $progress = 0;
-        $totalLessons = 0;
-        $completedCount = 0;
         $userSubmissions = collect();
         $courseDashboard = $this->buildCourseDashboard($course);
         $courseMaterialAssignments = LearningMaterialAssignment::with(['material', 'classroom', 'lesson', 'unlockLesson'])
@@ -216,20 +218,9 @@ class CourseController extends Controller
             ->values();
 
         if (auth()->check() && auth()->user()->role === 'student') {
-            $user = auth()->user();
-
-            // 1. Tính toán tiến độ học tập (Lessons)
-            $courseLessonIds = $course->modules->flatMap->lessons->pluck('id')->toArray();
-            $totalLessons = count($courseLessonIds);
-
-            $completedLessonIds = $user->lessons()->whereIn('lesson_id', $courseLessonIds)->whereNotNull('lesson_user.completed_at')->pluck('lessons.id')->toArray();
-
-            $completedCount = count($completedLessonIds);
-            $progress = $totalLessons > 0 ? round(($completedCount / $totalLessons) * 100) : 0;
-
-            // 2. Lấy dữ liệu bài nộp (Assignments)
+            // Khóa học dùng để xem lại bài nên chỉ cần trạng thái bài nộp.
             $assignmentIds = Assignments::where('course_id', $id)->notArchived()->pluck('id')->toArray();
-            $userSubmissions = AssignmentSubmission::where('user_id', $user->id)->whereIn('assignment_id', $assignmentIds)->get()->keyBy('assignment_id'); // Key hóa theo ID bài tập để View check cực nhanh
+            $userSubmissions = AssignmentSubmission::where('user_id', auth()->id())->whereIn('assignment_id', $assignmentIds)->get()->keyBy('assignment_id'); // Key hóa theo ID bài tập để View check cực nhanh
         }
         $userQuizAttempts = [];
         $userQuizCanRetry = [];
@@ -266,7 +257,7 @@ class CourseController extends Controller
             }
         }
 
-        return view('courses.show', compact('course', 'completedLessonIds', 'progress', 'totalLessons', 'completedCount', 'userSubmissions', 'userQuizAttempts', 'userQuizCanRetry', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards', 'quizQuestionAvailability', 'quizQuestionTypeLabels', 'quizDifficultyLabels'));
+        return view('courses.show', compact('course', 'userSubmissions', 'userQuizAttempts', 'userQuizCanRetry', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards', 'quizQuestionAvailability', 'quizQuestionTypeLabels', 'quizDifficultyLabels'));
     }
 
     public function create()
@@ -606,28 +597,12 @@ class CourseController extends Controller
         $assignmentIds = Assignments::where('course_id', $course->id)->notArchived()->pluck('id');
         $quizIds = $course->quizzes->pluck('id');
 
-        $lessonTotal = $lessonIds->count() * $studentIds->count();
-        $lessonCompleted = DB::table('lesson_user')
-            ->whereIn('user_id', $studentIds)
-            ->whereIn('lesson_id', $lessonIds)
-            ->whereNotNull('completed_at')
-            ->count();
-
         $assignmentStats = AssignmentSubmission::whereIn('assignment_id', $assignmentIds)
             ->selectRaw('SUM(CASE WHEN user_id IN ('.($studentIds->isEmpty() ? 'NULL' : $studentIds->map(fn () => '?')->implode(',')).') THEN 1 ELSE 0 END) as submitted_count', $studentIds->all())
             ->selectRaw('SUM(CASE WHEN grade IS NULL THEN 1 ELSE 0 END) as pending_count')
             ->first();
         $assignmentSubmitted = (int) ($assignmentStats->submitted_count ?? 0);
         $assignmentTotal = $assignmentIds->count() * $studentIds->count();
-
-        $quizAttempted = QuizAttempt::whereIn('user_id', $studentIds)
-            ->whereIn('quiz_id', $quizIds)
-            ->whereIn('status', ['submitted', 'graded', 'released'])
-            ->select('user_id', 'quiz_id')
-            ->distinct()
-            ->get()
-            ->count();
-        $quizTotal = $quizIds->count() * $studentIds->count();
 
         $pendingGrades = (int) ($assignmentStats->pending_count ?? 0);
 
@@ -637,9 +612,7 @@ class CourseController extends Controller
             'lessons_count' => $lessonIds->count(),
             'assignments_count' => $assignmentIds->count(),
             'quizzes_count' => $quizIds->count(),
-            'lesson_completion_rate' => $lessonTotal > 0 ? round(($lessonCompleted / $lessonTotal) * 100) : 0,
             'assignment_submission_rate' => $assignmentTotal > 0 ? round(($assignmentSubmitted / $assignmentTotal) * 100) : 0,
-            'quiz_completion_rate' => $quizTotal > 0 ? round(($quizAttempted / $quizTotal) * 100) : 0,
             'pending_grades' => $pendingGrades,
             'average_score' => QuizAttempt::whereIn('user_id', $studentIds)->whereIn('quiz_id', $quizIds)->whereIn('status', ['submitted', 'graded', 'released'])->avg('score'),
         ];

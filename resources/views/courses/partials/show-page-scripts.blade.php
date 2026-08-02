@@ -1,53 +1,113 @@
     <script>
         (function() {
-            var desktopAccordion = document.querySelector('.sidebar-scroll .accordion');
+            var outlineCard = document.querySelector('.course-outline-card');
             var mobileContent = document.getElementById('mobile-sidebar-content');
-            if (desktopAccordion && mobileContent) {
-                var clone = desktopAccordion.cloneNode(true);
-                clone.id = 'courseAccordionMobile';
-                clone.querySelectorAll('[data-bs-parent]').forEach(function(el) {
-                    el.setAttribute('data-bs-parent', '#courseAccordionMobile');
-                });
-                mobileContent.appendChild(clone);
+            var outlineHomeMarker = outlineCard ? document.createComment('course-outline-home') : null;
+            var mobileBreakpoint = window.matchMedia('(max-width: 767.98px)');
+
+            if (outlineCard && outlineHomeMarker) outlineCard.before(outlineHomeMarker);
+
+            function syncOutlinePlacement() {
+                if (!outlineCard || !outlineHomeMarker || !mobileContent) return;
+
+                if (mobileBreakpoint.matches) {
+                    if (outlineCard.parentElement !== mobileContent) mobileContent.appendChild(outlineCard);
+                } else if (outlineHomeMarker.parentNode && outlineCard.parentNode !== outlineHomeMarker.parentNode) {
+                    outlineHomeMarker.parentNode.insertBefore(outlineCard, outlineHomeMarker.nextSibling);
+                }
+
+                if (!mobileBreakpoint.matches && drawer?.classList.contains('open')) closeDrawer();
             }
+
+            syncOutlinePlacement();
+            if (mobileBreakpoint.addEventListener) mobileBreakpoint.addEventListener('change', syncOutlinePlacement);
+            else mobileBreakpoint.addListener(syncOutlinePlacement);
+
+            document.querySelectorAll('.course-outline-search').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    var query = this.value.trim().toLocaleLowerCase('vi');
+                    var outline = document.querySelector(this.getAttribute('data-outline-target'));
+                    if (!outline) return;
+                    var visibleCount = 0;
+
+                    outline.querySelectorAll(':scope > .accordion-item').forEach(function(item) {
+                        var matches = !query || item.textContent.toLocaleLowerCase('vi').includes(query);
+                        item.classList.toggle('d-none', !matches);
+                        if (matches) visibleCount++;
+
+                        if (query && matches) {
+                            var collapse = item.querySelector(':scope > .module-header-wrapper + .accordion-collapse');
+                            var toggle = item.querySelector(':scope > .module-header-wrapper .accordion-button');
+                            collapse?.classList.add('show');
+                            toggle?.classList.remove('collapsed');
+                            toggle?.setAttribute('aria-expanded', 'true');
+                        }
+                    });
+                    outline.querySelector('[data-outline-empty]')?.classList.toggle('d-none', visibleCount > 0);
+                });
+            });
 
             var drawer = document.getElementById('mobile-sidebar-drawer');
             var overlay = document.getElementById('mobile-sidebar-overlay');
             var btnOpen = document.getElementById('btn-open-sidebar');
             var btnClose = document.getElementById('btn-close-sidebar');
+            var lastFocusedElement = null;
 
             function openDrawer() {
+                lastFocusedElement = document.activeElement;
                 drawer.classList.add('open');
                 overlay.classList.add('active');
+                drawer.setAttribute('aria-hidden', 'false');
+                overlay.setAttribute('aria-hidden', 'false');
+                btnOpen?.setAttribute('aria-expanded', 'true');
                 document.body.style.overflow = 'hidden';
+                btnClose?.focus();
             }
 
-            function closeDrawer() {
+            function closeDrawer(restoreFocus = true) {
                 drawer.classList.remove('open');
                 overlay.classList.remove('active');
+                drawer.setAttribute('aria-hidden', 'true');
+                overlay.setAttribute('aria-hidden', 'true');
+                btnOpen?.setAttribute('aria-expanded', 'false');
                 document.body.style.overflow = '';
+                if (restoreFocus) lastFocusedElement?.focus?.();
             }
 
             if (btnOpen) btnOpen.addEventListener('click', openDrawer);
             if (btnClose) btnClose.addEventListener('click', closeDrawer);
             if (overlay) overlay.addEventListener('click', closeDrawer);
 
+            document.addEventListener('keydown', function(e) {
+                if (!drawer?.classList.contains('open')) return;
+
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeDrawer();
+                    return;
+                }
+
+                if (e.key !== 'Tab') return;
+                var focusable = Array.from(drawer.querySelectorAll(
+                    'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                )).filter(function(el) { return el.offsetParent !== null; });
+                if (!focusable.length) return;
+                var first = focusable[0];
+                var last = focusable[focusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            });
+
             if (mobileContent) {
                 mobileContent.addEventListener('click', function(e) {
                     var target = e.target.closest('.lesson-item, .assignment-item, .quiz-item');
                     if (!target) return;
-                    e.preventDefault();
-                    var type = target.classList.contains('assignment-item') ? 'assignment' :
-                        (target.classList.contains('quiz-item') ? 'quiz' : 'lesson');
-                    var id = target.getAttribute('data-id');
-                    var selector = type === 'assignment' ?
-                        `.sidebar-scroll .assignment-item[data-id="${id}"]` :
-                        (type === 'quiz' ?
-                            `.sidebar-scroll .quiz-item[data-id="${id}"]` :
-                            `.sidebar-scroll .lesson-item[data-id="${id}"]`);
-                    var desktopTarget = document.querySelector(selector);
-                    if (desktopTarget) desktopTarget.click();
-                    closeDrawer();
+                    closeDrawer(false);
                 });
             }
         })();

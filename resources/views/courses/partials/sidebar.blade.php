@@ -8,9 +8,6 @@
     @forelse ($course->modules as $moduleIndex => $module)
         @php
             $lessonCount = $module->lessons->count();
-            $completedInModule = $module->lessons
-                ->filter(fn($l) => in_array($l->id, $completedLessonIds ?? []))
-                ->count();
             $totalSeconds = $module->lessons->sum(fn($l) => $l->duration_seconds ?? 0);
             $durationStr =
                 $totalSeconds > 0
@@ -21,7 +18,6 @@
                         $totalSeconds % 60,
                     )
                     : null;
-            $moduleAllDone = $isStudent && $lessonCount > 0 && $completedInModule === $lessonCount;
         @endphp
 
         <div class="accordion-item module-sortable-item" data-module-id="{{ $module->id }}">
@@ -33,53 +29,27 @@
                 @endif
 
                 <button class="accordion-button {{ $moduleIndex == 0 ? '' : 'collapsed' }} flex-grow-1 shadow-none"
-                    type="button" data-bs-toggle="collapse" data-bs-target="#module-{{ $module->id }}">
+                    type="button" data-bs-toggle="collapse" data-bs-target="#module-{{ $module->id }}"
+                    aria-expanded="{{ $moduleIndex === 0 ? 'true' : 'false' }}"
+                    aria-controls="module-{{ $module->id }}">
                     <div class="module-title-block" style="padding-left:{{ $isManager ? '8px' : '16px' }};">
                         <div class="d-flex align-items-center gap-2">
-                            {{-- Module progress ring (student only) --}}
-                            @if ($isStudent && $lessonCount > 0)
-                                @php $pct = round($completedInModule / $lessonCount * 100); @endphp
-                                <div style="position:relative;width:22px;height:22px;flex-shrink:0;">
-                                    <svg width="22" height="22" viewBox="0 0 22 22"
-                                        style="transform:rotate(-90deg);">
-                                        <circle cx="11" cy="11" r="9" fill="none" stroke="#e5e7eb"
-                                            stroke-width="2.5" />
-                                        <circle cx="11" cy="11" r="9" fill="none"
-                                            stroke="{{ $moduleAllDone ? '#22c55e' : '#3b82f6' }}" stroke-width="2.5"
-                                            stroke-dasharray="{{ round(2 * 3.14159 * 9, 1) }}"
-                                            stroke-dashoffset="{{ round((1 - $pct / 100) * 2 * 3.14159 * 9, 1) }}"
-                                            stroke-linecap="round" />
-                                    </svg>
-                                    @if ($moduleAllDone)
-                                        <i class="fa-solid fa-check"
-                                            style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size: 11px;color:#16a34a;"></i>
-                                    @endif
-                                </div>
-                            @else
-                                <div
-                                    style="width:20px;height:20px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    <span
-                                        style="font-size: 11px;font-weight:800;color:#2563eb;">{{ $moduleIndex + 1 }}</span>
-                                </div>
-                            @endif
-
+                            <span class="module-number-badge">Chương {{ str_pad((string) ($moduleIndex + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="module-title-text">{{ $module->title }}</span>
                         </div>
-                        <span class="module-meta"
-                            style="padding-left:{{ $isStudent && $lessonCount > 0 ? '28px' : '26px' }};">
-                            {{ $completedInModule }}/{{ $lessonCount }}
-                            bài{{ $durationStr ? ' · ' . $durationStr : '' }}
+                        <span class="module-meta module-meta--numbered">
+                            {{ $lessonCount }} bài học{{ $durationStr ? ' · ' . $durationStr : '' }}
                         </span>
                     </div>
                 </button>
 
                 @if ($isManager)
                     <div class="action-buttons d-flex align-items-center pe-2">
-                        <a href="javascript:void(0)" class="btn-action btn-edit edit-module-btn"
+                        <button type="button" class="btn-action btn-edit edit-module-btn border-0"
                             data-id="{{ $module->id }}" data-title="{{ $module->title }}" data-bs-toggle="modal"
-                            data-bs-target="#editModuleModal" title="Sửa chương">
+                            data-bs-target="#editModuleModal" title="Sửa chương" aria-label="Sửa chương {{ $module->title }}">
                             <i class="fa-solid fa-edit"></i>
-                        </a>
+                        </button>
                         <form action="{{ route('modules.destroy', $module->id) }}" method="POST"
                             class="d-inline mb-0">
                             @csrf @method('DELETE')
@@ -101,7 +71,6 @@
 
                         @forelse ($module->lessons as $lessonIndex => $lesson)
                             @php
-                                $isCompleted = in_array($lesson->id, $completedLessonIds ?? []);
                                 $isVideo = !empty($lesson->video_url);
                                 $lessonAssignments = $lesson->assignments ?? collect();
                                 $pendingAssignmentCount = $isStudent
@@ -122,54 +91,33 @@
                             @endphp
 
                             {{-- ── LESSON ROW ── --}}
-                            <div class="list-group-item border-0 px-0 py-0 lesson-item-wrapper {{ $isCompleted ? 'completed-lesson' : '' }} d-flex align-items-center justify-content-between shadow-none"
+                            <div class="list-group-item border-0 px-0 py-0 lesson-item-wrapper d-flex align-items-center justify-content-between shadow-none"
                                 data-lesson-id="{{ $lesson->id }}" style="min-width:0;">
 
                                 @if ($isManager)
                                     <i class="fa-solid fa-grip-vertical drag-handle ms-2" title="Kéo để sắp xếp bài học"></i>
                                 @endif
 
-                                <a href="javascript:void(0)"
-                                    class="lesson-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 py-2 pe-2"
+                                <button type="button"
+                                    class="lesson-item course-outline-trigger text-decoration-none flex-grow-1 d-flex align-items-center gap-2 py-2 pe-2 border-0 bg-transparent text-start"
                                     style="min-width:0;padding-left:{{ $isManager ? '8px' : '16px' }};"
-                                    data-id="{{ $lesson->id }}" data-content="{{ $lesson->content }}"
+                                    data-id="{{ $lesson->id }}" data-content-url="{{ route('lessons.content', $lesson) }}"
                                     data-title="{{ $lesson->title }}" data-video="{{ $lesson->video_url }}"
                                     data-module="{{ $module->id }}" data-module-title="{{ $module->title }}"
+                                    data-module-number="{{ $moduleIndex + 1 }}" data-lesson-number="{{ $lessonIndex + 1 }}"
                                     data-duration-label="{{ $durLabel }}"
                                     data-attachment="{{ $lesson->attachment ? route('lessons.attachment', $lesson->id) : '' }}"
                                     data-attachment-name="{{ $lesson->attachment_original_name ?: ($lesson->attachment ? basename($lesson->attachment) : '') }}">
 
-                                    {{-- Status icon --}}
-                                    <div
-                                        style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                                        background:{{ $isCompleted ? '#dcfce7' : ($isVideo ? '#eff6ff' : '#f3f4f6') }};">
-                                        @if ($isCompleted)
-                                            <i class="fa-solid fa-check" style="font-size:11px;color:#16a34a;"
-                                                id="icon-lesson-{{ $lesson->id }}"></i>
-                                        @elseif ($isVideo)
-                                            <i class="fa-solid fa-play" style="font-size: 11px;color:#2563eb;"
-                                                id="icon-lesson-{{ $lesson->id }}"></i>
-                                        @else
-                                            <i class="fa-solid fa-file-lines" style="font-size:11px;color:#6b7280;"
-                                                id="icon-lesson-{{ $lesson->id }}"></i>
-                                        @endif
-                                    </div>
+                                    <span class="lesson-order-badge" aria-hidden="true">{{ $moduleIndex + 1 }}.{{ $lessonIndex + 1 }}</span>
 
                                     <div style="min-width:0;flex:1;">
-                                        <div class="lesson-name-text {{ $isCompleted ? 'text-decoration-line-through' : '' }}"
-                                            style="{{ $isCompleted ? 'color:#6b7280;' : '' }}">
-                                            {{ $moduleIndex + 1 }}.{{ $lessonIndex + 1 }} {{ $lesson->title }}
-                                        </div>
+                                        <div class="lesson-name-text">{{ $lesson->title }}</div>
 
                                         @if ($isStudent)
                                             <div class="sidebar-status-row">
-                                                @if ($isCompleted)
-                                                    <span class="sidebar-status-pill done"><i
-                                                            class="fa-solid fa-check"></i>Đã xong</span>
-                                                @else
-                                                    <span class="sidebar-status-pill pending"><i
-                                                            class="fa-regular fa-circle"></i>Chưa học</span>
-                                                @endif
+                                                <span class="sidebar-status-pill lesson-type"><i
+                                                        class="fa-solid {{ $isVideo ? 'fa-circle-play' : 'fa-file-lines' }}"></i>{{ $isVideo ? 'Video' : 'Bài đọc' }}</span>
                                                 @if ($pendingAssignmentCount > 0)
                                                     <span class="sidebar-status-pill assignment">
                                                         <i
@@ -191,7 +139,7 @@
                                                 <span
                                                     class="badge bg-{{ $lesson->status === 'published' ? 'success' : ($lesson->status === 'hidden' ? 'secondary' : 'warning text-dark') }}"
                                                     style="font-size: 11px;">
-                                                    {{ strtoupper($lesson->status ?? 'published') }}
+                                                    {{ match ($lesson->status ?? 'published') { 'draft' => 'Bản nháp', 'hidden' => 'Đang ẩn', 'archived' => 'Đã lưu trữ', default => 'Đã xuất bản' } }}
                                                 </span>
                                                 @if ($lesson->available_from && $lesson->available_from->gt($currentTime))
                                                     <span style="font-size: 11px;color:#6b7280;">Mở:
@@ -204,20 +152,20 @@
                                             </div>
                                         @endif
                                     </div>
-                                </a>
+                                </button>
 
                                 @if ($isManager)
                                     <div class="action-buttons d-flex pe-2">
-                                        <a href="javascript:void(0)" class="btn-action btn-edit edit-lesson-btn"
+                                        <button type="button" class="btn-action btn-edit edit-lesson-btn border-0"
                                             data-id="{{ $lesson->id }}" data-title="{{ $lesson->title }}"
-                                            data-content="{{ $lesson->content }}"
+                                            data-content-url="{{ route('lessons.content', $lesson) }}"
                                             data-video="{{ $lesson->video_url }}" data-module="{{ $module->id }}"
                                             data-status="{{ $lesson->status ?? 'published' }}"
                                             data-available-from="{{ $lesson->available_from?->format('Y-m-d\TH:i') }}"
                                             data-bs-toggle="modal" data-bs-target="#editLessonModal"
-                                            title="Sửa bài học">
+                                            title="Sửa bài học" aria-label="Sửa bài học {{ $lesson->title }}">
                                             <i class="fa-solid fa-edit"></i>
-                                        </a>
+                                        </button>
                                         <form action="{{ route('lessons.destroy', $lesson->id) }}" method="POST"
                                             class="d-inline mb-0">
                                             @csrf @method('DELETE')
@@ -250,8 +198,8 @@
                                 <div class="list-group-item border-0 px-0 py-0 assignment-item-wrapper {{ $submission ? 'submitted' : '' }} d-flex align-items-center justify-content-between shadow-none"
                                     style="min-width:0;">
 
-                                    <a href="javascript:void(0)"
-                                        class="assignment-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 py-2 pe-2 ps-5"
+                                    <button type="button"
+                                        class="assignment-item course-outline-trigger text-decoration-none flex-grow-1 d-flex align-items-center gap-2 py-2 pe-2 ps-5 border-0 bg-transparent text-start"
                                         style="min-width:0;" data-id="{{ $assignment->id }}"
                                         data-title="{{ $assignment->title }}"
                                         data-instructions="{{ $assignment->instructions }}"
@@ -314,17 +262,17 @@
                                                         <span
                                                             class="badge bg-{{ $assignment->status === 'published' ? 'success' : ($assignment->status === 'hidden' ? 'secondary' : 'warning text-dark') }}"
                                                             style="font-size: 11px;">
-                                                            {{ strtoupper($assignment->status ?? 'published') }}
+                                                            {{ match ($assignment->status ?? 'published') { 'draft' => 'Bản nháp', 'hidden' => 'Đang ẩn', 'archived' => 'Đã lưu trữ', default => 'Đã xuất bản' } }}
                                                         </span>
                                                     @endif
                                                 </div>
                                             @endif
                                         </div>
-                                    </a>
+                                    </button>
 
                                     @if ($isManager)
                                         <div class="action-buttons d-flex pe-2 gap-1">
-                                            <a href="javascript:void(0)" class="btn-action btn-edit"
+                                            <button type="button" class="btn-action btn-edit border-0"
                                                 onclick="openEditAssignmentModal(this)"
                                                 data-id="{{ $assignment->id }}"
                                                 data-title='@json($assignment->title)'
@@ -337,9 +285,9 @@
                                                 data-type="{{ $assignment->type ?? 'file' }}"
                                                 data-status="{{ $assignment->status ?? 'published' }}"
                                                 data-available-from="{{ $assignment->available_from?->format('Y-m-d\TH:i') }}"
-                                                title="Sửa bài tập">
+                                                title="Sửa bài tập" aria-label="Sửa bài tập {{ $assignment->title }}">
                                                 <i class="fa-solid fa-edit"></i>
-                                            </a>
+                                            </button>
                                             <form action="{{ route('assignments.destroy', $assignment->id) }}"
                                                 method="POST" class="d-inline mb-0">
                                                 @csrf @method('DELETE')
@@ -349,13 +297,14 @@
                                                     <i class="fa-solid fa-archive"></i>
                                                 </button>
                                             </form>
-                                            <a href="javascript:void(0)"
+                                            <button type="button"
                                                 class="btn-action text-primary view-submissions-btn"
                                                 style="background:#eff6ff;border:1px solid #bfdbfe;"
                                                 data-id="{{ $assignment->id }}" data-bs-toggle="modal"
-                                                data-bs-target="#viewSubmissionsModal" title="Chấm điểm">
+                                                data-bs-target="#viewSubmissionsModal" title="Chấm điểm"
+                                                aria-label="Chấm bài {{ $assignment->title }}">
                                                 <i class="fa-solid fa-users-gear"></i>
-                                            </a>
+                                            </button>
                                         </div>
                                     @endif
                                 </div>
@@ -386,11 +335,6 @@
 
     {{-- ── QUIZZES SECTION ── --}}
     @if ($course->quizzes->count() > 0)
-        @php
-            $doneQuizCount = $isStudent
-                ? $course->quizzes->filter(fn($q) => isset($userQuizAttempts[$q->id]) && $userQuizAttempts[$q->id]->completed_at)->count()
-                : 0;
-        @endphp
         <div class="accordion-item" style="background:#faf8ff;">
             <div class="module-header-wrapper d-flex align-items-center" style="background:#faf8ff;">
                 <button class="accordion-button collapsed flex-grow-1 shadow-none"
@@ -405,10 +349,7 @@
                             <span class="module-title-text" style="color:#6f42c1;">Bài kiểm tra</span>
                         </div>
                         <span class="module-meta" style="padding-left:28px;color:#7c3aed;">
-                            @if ($isStudent)
-                                {{ $doneQuizCount }}/{{ $course->quizzes->count() }}
-                                đề@else{{ $course->quizzes->count() }} đề
-                            @endif
+                            {{ $course->quizzes->count() }} bài kiểm tra
                         </span>
                     </div>
                 </button>
@@ -448,8 +389,8 @@
                             <div class="list-group-item border-0 px-0 py-0 quiz-item-wrapper {{ $attemptCompleted ? 'completed' : '' }} d-flex align-items-center justify-content-between shadow-none"
                                 style="min-width:0;">
 
-                                <a href="javascript:void(0)"
-                                    class="quiz-item text-decoration-none flex-grow-1 d-flex align-items-center gap-2 py-2 pe-2 ps-4"
+                                <button type="button"
+                                    class="quiz-item course-outline-trigger text-decoration-none flex-grow-1 d-flex align-items-center gap-2 py-2 pe-2 ps-4 border-0 bg-transparent text-start"
                                     style="min-width:0;" data-id="{{ $quiz->id }}"
                                     data-title="{{ $quiz->title }}" data-duration="{{ $quiz->time_limit }}"
                                     data-status="{{ $attemptState }}"
@@ -505,7 +446,7 @@
                                                 <span
                                                     class="badge bg-{{ $quiz->status === 'published' ? 'success' : ($quiz->status === 'hidden' ? 'secondary' : 'warning text-dark') }}"
                                                     style="font-size: 11px;">
-                                                    {{ strtoupper($quiz->status ?? 'published') }}
+                                                    {{ match ($quiz->status ?? 'published') { 'draft' => 'Bản nháp', 'hidden' => 'Đang ẩn', 'archived' => 'Đã lưu trữ', default => 'Đã xuất bản' } }}
                                                 </span>
                                                 @if ($quiz->available_from && $quiz->available_from->gt($currentTime))
                                                     <span style="font-size: 11px;color:#6b7280;">Mở:
@@ -517,7 +458,7 @@
                                             </div>
                                         @endif
                                     </div>
-                                </a>
+                                </button>
 
                                 @if ($isManager)
                                     <div class="action-buttons d-flex pe-2 gap-1">
@@ -556,5 +497,11 @@
             </div>
         </div>
     @endif
+
+    <div class="course-outline-no-results d-none" data-outline-empty role="status" aria-live="polite">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <strong>Không tìm thấy nội dung</strong>
+        <span>Thử nhập tên chương hoặc bài học khác.</span>
+    </div>
 
 </div>

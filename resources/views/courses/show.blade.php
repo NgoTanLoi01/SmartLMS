@@ -8,13 +8,15 @@
     @endpush
 
     {{-- Mobile overlay + drawer --}}
-    <div id="mobile-sidebar-overlay"></div>
-    <div id="mobile-sidebar-drawer">
+    <div id="mobile-sidebar-overlay" aria-hidden="true"></div>
+    <div id="mobile-sidebar-drawer" role="dialog" aria-modal="true" aria-hidden="true"
+        aria-labelledby="mobile-sidebar-title" tabindex="-1">
         <div class="mobile-drawer-header">
-            <h6 class="mb-0 fw-bold small text-uppercase text-muted" style="font-size:11px;letter-spacing:.05em;">
+            <h2 id="mobile-sidebar-title" class="mobile-drawer-title">
                 <i class="fa-solid fa-list-ul me-2 text-primary"></i>Nội dung khóa học
-            </h6>
-            <button id="btn-close-sidebar" class="btn btn-sm btn-light border" type="button">
+            </h2>
+            <button id="btn-close-sidebar" class="btn btn-sm btn-light border" type="button"
+                aria-label="Đóng danh sách nội dung">
                 <i class="fa-solid fa-times"></i>
             </button>
         </div>
@@ -29,28 +31,31 @@
                 fn($module) => $module->lessons->sum(fn($lesson) => $lesson->assignments->count()),
             );
             $courseQuizCount = $course->quizzes
-                ->filter(fn($quiz) => !str_contains(mb_strtolower($quiz->title), 'thi'))
+                ->filter(fn($quiz) => $quiz->sessions->isEmpty())
                 ->count();
             $courseExamCount = $course->quizzes
-                ->filter(fn($quiz) => str_contains(mb_strtolower($quiz->title), 'thi'))
+                ->filter(fn($quiz) => $quiz->sessions->isNotEmpty())
                 ->count();
             $isCourseManager = auth()->id() === $course->teacher_id || auth()->user()->role === 'admin';
             $allLessons = $course->modules->flatMap(fn($module) => $module->lessons);
             $allAssignments = $allLessons->flatMap(fn($lesson) => $lesson->assignments);
-            $nextLesson =
-                auth()->user()->role === 'student'
-                    ? $allLessons->first(fn($lesson) => !in_array($lesson->id, $completedLessonIds ?? []))
-                    : $allLessons->first();
+            $nextLesson = $allLessons->first();
             $nextAssignment =
                 auth()->user()->role === 'student'
                     ? $allAssignments->first(fn($assignment) => !isset($userSubmissions[$assignment->id]))
                     : $allAssignments->first();
-            $finalExam = $course->quizzes->first(fn($quiz) => str_contains(mb_strtolower($quiz->title), 'thi'));
-            $regularQuizzes = $course->quizzes->filter(fn($quiz) => !str_contains(mb_strtolower($quiz->title), 'thi'));
+            $finalExam = $course->quizzes->first(fn($quiz) => $quiz->sessions->isNotEmpty());
+            $regularQuizzes = $course->quizzes->filter(fn($quiz) => $quiz->sessions->isEmpty());
             $nextQuiz =
                 auth()->user()->role === 'student'
                     ? $regularQuizzes->first(fn($quiz) => !isset($userQuizAttempts[$quiz->id]))
                     : $regularQuizzes->first();
+            $courseStatusLabel = match ($course->status ?? 'published') {
+                'draft' => 'Bản nháp',
+                'hidden' => 'Đang ẩn',
+                'archived' => 'Đã lưu trữ',
+                default => 'Đã xuất bản',
+            };
         @endphp
 
         {{-- ── HEADER ── --}}
@@ -60,54 +65,44 @@
                     <span class="course-ref-badge">
                         {{ auth()->user()->role === 'student' ? 'Đang học' : 'Khóa học' }}
                     </span>
-                    <span class="course-ref-badge light">{{ strtoupper($course->status ?? 'published') }}</span>
+                    <span class="course-ref-badge light">{{ $courseStatusLabel }}</span>
                 </div>
                 <h1 class="header-course-title">{{ $course->title }}</h1>
                 <p class="header-teacher">
                     <i class="fa-solid fa-chalkboard-teacher"></i> {{ $course->teacher->name }}
                 </p>
-                @if (auth()->user()->role === 'student')
-                    <div class="progress-wrap">
-                        <div class="progress-label">
-                            <span>Tiến độ</span>
-                            <span id="progress-text">{{ $completedCount }}/{{ $totalLessons }} bài &nbsp;·&nbsp;
-                                {{ $progress }}%</span>
-                        </div>
-                        <div class="progress-track">
-                            <div id="progress-bar" class="progress-fill" style="width: {{ $progress }}%;"></div>
-                        </div>
-                    </div>
-                @endif
             </div>
 
             <div class="course-ref-side">
-                <div class="course-ref-stats">
-                    <div class="course-ref-stat">
-                        <strong>{{ $courseLessonCount }}</strong>
-                        <span>Bài học</span>
+                @if ($isCourseManager)
+                    <div class="course-ref-stats">
+                        <div class="course-ref-stat"><strong>{{ $course->modules->count() }}</strong><span>Chương</span></div>
+                        <div class="course-ref-stat"><strong>{{ $courseLessonCount }}</strong><span>Bài học</span></div>
+                        <div class="course-ref-stat"><strong>{{ $courseAssignmentCount }}</strong><span>Bài tập</span></div>
+                        <div class="course-ref-stat"><strong>{{ $course->quizzes->count() }}</strong><span>Kiểm tra</span></div>
                     </div>
-                    <div class="course-ref-stat">
-                        <strong>{{ $courseAssignmentCount }}</strong>
-                        <span>Bài tập</span>
-                    </div>
-                    <div class="course-ref-stat">
-                        <strong>{{ $courseQuizCount }}</strong>
-                        <span>Kiểm tra</span>
-                    </div>
-                    <div class="course-ref-stat">
-                        <strong>{{ $courseExamCount }}</strong>
-                        <span>Bài thi</span>
-                    </div>
-                </div>
-
-                @if (!$isCourseManager)
-                    <div class="toolbar">
-                        <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
-                            <i class="fa-solid fa-user-check"></i> Điểm danh & điểm số
-                        </a>
-                        <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
-                            <i class="fa-solid fa-folder-open"></i> Kho học liệu
-                        </a>
+                @else
+                    <div class="course-review-panel">
+                        <div class="course-review-panel__copy">
+                            <span class="course-review-panel__eyebrow">Kho nội dung xem lại</span>
+                            <strong>{{ $course->modules->count() }} chương · {{ $courseLessonCount }} bài học</strong>
+                            <span>Chọn bài trong danh sách hoặc mở ngay bài đầu tiên.</span>
+                        </div>
+                        @if ($nextLesson)
+                            <button type="button" class="course-review-primary course-jump-btn"
+                                data-target-type="lesson" data-target-id="{{ $nextLesson->id }}">
+                                <i class="fa-solid fa-book-open"></i>
+                                Mở bài đầu tiên
+                            </button>
+                        @endif
+                        <div class="course-review-links">
+                            <a href="{{ route('attendance.show', $course->id) }}">
+                                <i class="fa-solid fa-chart-column"></i> Điểm số
+                            </a>
+                            <a href="{{ route('courses.materials.index', $course->id) }}">
+                                <i class="fa-solid fa-folder-open"></i> Kho học liệu
+                            </a>
+                        </div>
                     </div>
                 @endif
             </div>
@@ -120,11 +115,11 @@
                         <h6 class="teacher-mode-title"><i class="fa-solid fa-layer-group me-2"></i>Chế độ giáo viên</h6>
                         <div class="teacher-mode-subtitle">Quản lý nội dung, theo dõi tiến độ và thao tác nhanh.</div>
                     </div>
-                    <div class="teacher-mode-toggle" role="group">
-                        <button type="button" class="teacher-mode-btn active" data-course-mode="manage">
+                    <div class="teacher-mode-toggle" role="group" aria-label="Chế độ hiển thị khóa học">
+                        <button type="button" class="teacher-mode-btn active" data-course-mode="manage" aria-pressed="true">
                             <i class="fa-solid fa-pen-to-square me-1"></i>Quản lý
                         </button>
-                        <button type="button" class="teacher-mode-btn" data-course-mode="preview">
+                        <button type="button" class="teacher-mode-btn" data-course-mode="preview" aria-pressed="false">
                             <i class="fa-solid fa-eye me-1"></i>Xem như học viên
                         </button>
                     </div>
@@ -134,37 +129,48 @@
                     <span>Đang xem ở chế độ học viên. Nút sửa/xóa đang ẩn.</span>
                 </div>
                 <div class="teacher-quick-actions">
-                    <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#aiCoursePlanModal">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI thiết kế khóa học
-                    </button>
-                    <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addModuleModal">
-                        <i class="fa-solid fa-folder-plus"></i> Thêm chương
-                    </button>
-                    <button class="tool-btn blue" data-bs-toggle="modal" data-bs-target="#addLessonModal">
-                        <i class="fa-solid fa-plus"></i> Thêm bài học
-                    </button>
-                    <button class="tool-btn amber" data-bs-toggle="modal" data-bs-target="#addCourseAssignmentModal">
+                    <div class="dropdown">
+                        <button type="button" class="tool-btn blue dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fa-solid fa-plus"></i> Thêm nội dung
+                        </button>
+                        <ul class="dropdown-menu course-tool-menu">
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                    data-bs-target="#addModuleModal"><i class="fa-solid fa-folder-plus"></i>Thêm chương</button></li>
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                    data-bs-target="#addLessonModal"><i class="fa-solid fa-file-circle-plus"></i>Thêm bài học</button></li>
+                        </ul>
+                    </div>
+                    <button type="button" class="tool-btn amber" data-bs-toggle="modal"
+                        data-bs-target="#addCourseAssignmentModal">
                         <i class="fa-solid fa-file-signature"></i> Giao bài tập
                     </button>
-                    <button class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#addQuizModal">
-                        <i class="fa-solid fa-stopwatch"></i> Tạo quiz
+                    <button type="button" class="tool-btn purple" data-bs-toggle="modal" data-bs-target="#addQuizModal">
+                        <i class="fa-solid fa-stopwatch"></i> Tạo bài kiểm tra
                     </button>
-                    <a href="{{ route('quizzes.ai_generate') }}" class="tool-btn purple">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo câu hỏi AI
-                    </a>
                     <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
                         <i class="fa-solid fa-user-check"></i> Điểm danh
                     </a>
                     <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
                         <i class="fa-solid fa-folder-open"></i> Kho học liệu
                     </a>
-                    <button type="button" class="tool-btn amber" id="course-quality-check-btn"
-                        data-url="{{ route('courses.quality-check', $course->id) }}">
-                        <i class="fa-solid fa-shield-halved"></i> Kiểm tra chất lượng
-                    </button>
-                    <button type="button" class="tool-btn purple" id="start-presentation-btn">
-                        <i class="fa-solid fa-display"></i> Trình chiếu
-                    </button>
+                    <div class="dropdown teacher-more-tools">
+                        <button type="button" class="tool-btn neutral dropdown-toggle" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fa-solid fa-ellipsis"></i> Công cụ khác
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end course-tool-menu">
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                    data-bs-target="#aiCoursePlanModal"><i class="fa-solid fa-wand-magic-sparkles"></i>AI thiết kế khóa học</button></li>
+                            <li><a href="{{ route('quizzes.ai_generate') }}" class="dropdown-item"><i
+                                        class="fa-solid fa-robot"></i>Tạo câu hỏi bằng AI</a></li>
+                            <li><button type="button" class="dropdown-item" id="course-quality-check-btn"
+                                    data-url="{{ route('courses.quality-check', $course->id) }}"><i
+                                        class="fa-solid fa-shield-halved"></i>Kiểm tra chất lượng</button></li>
+                            <li><button type="button" class="dropdown-item" id="start-presentation-btn"><i
+                                        class="fa-solid fa-display"></i>Trình chiếu bài học</button></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         @endif
@@ -178,10 +184,9 @@
                         {{ $courseDashboard['lessons_count'] }} bài</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fa-solid fa-graduation-cap me-1"></i> Hoàn thành bài học
-                    </div>
-                    <div class="course-dashboard-value">{{ $courseDashboard['lesson_completion_rate'] }}%</div>
-                    <div class="course-dashboard-sub">Tỷ lệ toàn khóa</div>
+                    <div class="course-dashboard-label"><i class="fa-solid fa-layer-group me-1"></i> Nội dung</div>
+                    <div class="course-dashboard-value">{{ $courseDashboard['lessons_count'] }}</div>
+                    <div class="course-dashboard-sub">Trong {{ $courseDashboard['modules_count'] }} chương</div>
                 </div>
                 <div class="course-dashboard-card">
                     <div class="course-dashboard-label"><i class="fa-solid fa-file-signature me-1 text-warning"></i> Nộp bài
@@ -191,11 +196,11 @@
                     <div class="course-dashboard-sub">{{ $courseDashboard['pending_grades'] }} bài chờ chấm</div>
                 </div>
                 <div class="course-dashboard-card">
-                    <div class="course-dashboard-label"><i class="fa-solid fa-stopwatch me-1 text-purple"></i> Bài kiểm tra</div>
-                    <div class="course-dashboard-value">{{ $courseDashboard['quiz_completion_rate'] }}%</div>
-                    <div class="course-dashboard-sub">Điểm TB:
-                        {{ $courseDashboard['average_score'] !== null ? round($courseDashboard['average_score'], 1) : 'Chưa có' }}
+                    <div class="course-dashboard-label"><i class="fa-solid fa-stopwatch me-1 text-purple"></i> Điểm kiểm tra</div>
+                    <div class="course-dashboard-value">
+                        {{ $courseDashboard['average_score'] !== null ? round($courseDashboard['average_score'], 1) : '—' }}
                     </div>
+                    <div class="course-dashboard-sub">Điểm trung bình hiện tại</div>
                 </div>
             </div>
         @endif
@@ -212,20 +217,14 @@
                                 <h6 class="sidebar-head-title">
                                     <i class="fa-solid fa-list-ul text-primary"></i>  Nội dung khóa học
                                 </h6>
-                                @if (auth()->user()->role === 'student')
-                                    <span class="sidebar-head-count">{{ $progress }}%</span>
-                                @endif
+                                <span class="sidebar-head-count">{{ $course->modules->count() }} chương</span>
                             </div>
-                            @if (auth()->user()->role === 'student')
-                                <div class="course-sidebar-progress">
-                                    <span id="sidebar-progress-text">Đã học {{ $completedCount }}/{{ $totalLessons }} bài
-                                        · Tiến độ {{ $progress }}%</span>
-                                </div>
-                                <div class="course-sidebar-progress-track" aria-hidden="true">
-                                    <span id="sidebar-progress-bar" class="course-sidebar-progress-fill"
-                                        style="width: {{ $progress }}%;"></span>
-                                </div>
-                            @endif
+                            <div class="course-sidebar-summary">{{ $courseLessonCount }} bài học · {{ $courseAssignmentCount }} bài tập</div>
+                            <div class="course-outline-search-wrap">
+                                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                                <input type="search" class="course-outline-search" data-outline-target="#courseAccordion"
+                                    placeholder="Tìm chương hoặc bài học" aria-label="Tìm trong nội dung khóa học">
+                            </div>
                         </div>
                         @if ($isCourseManager)
                             <div id="reorder-toast" class="reorder-toast mx-3 mt-3">
@@ -239,23 +238,26 @@
 
                     <div class="course-side-card">
                         <h6 class="course-side-card__title">
-                            <i class="fa-regular fa-check-square"></i> Việc cần làm
+                            <i class="fa-solid fa-book-open-reader"></i>
+                            {{ auth()->user()->role === 'student' ? 'Xem lại nhanh' : 'Lối tắt nội dung' }}
                         </h6>
                         <div class="course-todo-list">
                             @if ($nextLesson)
-                                <a href="javascript:void(0)" class="course-todo-item"
-                                    onclick="document.querySelector('.sidebar-scroll .lesson-item[data-id=&quot;{{ $nextLesson->id }}&quot;]')?.click()">
+                                <button type="button" class="course-todo-item course-jump-btn"
+                                    data-target-type="lesson" data-target-id="{{ $nextLesson->id }}">
                                     <span class="course-todo-icon lesson"><i class="fa-solid fa-play"></i></span>
                                     <span>
-                                        <span class="course-todo-title">Học tiếp bài hiện tại</span>
+                                        <span class="course-todo-title">
+                                            {{ auth()->user()->role === 'student' ? 'Mở bài đầu tiên' : 'Xem bài học đầu tiên' }}
+                                        </span>
                                         <span class="course-todo-meta">{{ $nextLesson->title }}</span>
                                     </span>
-                                </a>
+                                </button>
                             @endif
 
                             @if ($nextAssignment)
-                                <a href="javascript:void(0)" class="course-todo-item"
-                                    onclick="document.querySelector('.sidebar-scroll .assignment-item[data-id=&quot;{{ $nextAssignment->id }}&quot;]')?.click()">
+                                <button type="button" class="course-todo-item course-jump-btn"
+                                    data-target-type="assignment" data-target-id="{{ $nextAssignment->id }}">
                                     <span class="course-todo-icon assignment"><i class="fa-solid fa-file-signature"></i></span>
                                     <span>
                                         <span
@@ -267,12 +269,12 @@
                                             @endif
                                         </span>
                                     </span>
-                                </a>
+                                </button>
                             @endif
 
                             @if ($nextQuiz)
-                                <a href="javascript:void(0)" class="course-todo-item"
-                                    onclick="document.querySelector('.sidebar-scroll .quiz-item[data-id=&quot;{{ $nextQuiz->id }}&quot;]')?.click()">
+                                <button type="button" class="course-todo-item course-jump-btn"
+                                    data-target-type="quiz" data-target-id="{{ $nextQuiz->id }}">
                                     <span class="course-todo-icon quiz"><i class="fa-solid fa-list-check"></i></span>
                                     <span>
                                         <span
@@ -280,26 +282,26 @@
                                         <span class="course-todo-meta">{{ $nextQuiz->title }} ·
                                             {{ $nextQuiz->time_limit }} phút</span>
                                     </span>
-                                </a>
+                                </button>
                             @endif
 
                             @if ($finalExam)
-                                <a href="javascript:void(0)" class="course-todo-item"
-                                    onclick="document.querySelector('.sidebar-scroll .quiz-item[data-id=&quot;{{ $finalExam->id }}&quot;]')?.click()">
+                                <button type="button" class="course-todo-item course-jump-btn"
+                                    data-target-type="quiz" data-target-id="{{ $finalExam->id }}">
                                     <span class="course-todo-icon exam"><i class="fa-solid fa-award"></i></span>
                                     <span>
                                         <span class="course-todo-title">Thi kết thúc học phần</span>
                                         <span class="course-todo-meta">{{ $finalExam->title }}</span>
                                     </span>
-                                </a>
+                                </button>
                             @endif
 
                             @if (!$nextLesson && !$nextAssignment && !$nextQuiz && !$finalExam)
                                 <div class="course-todo-item">
-                                    <span class="course-todo-icon lesson"><i class="fa-solid fa-check"></i></span>
+                                    <span class="course-todo-icon lesson"><i class="fa-solid fa-folder-open"></i></span>
                                     <span>
-                                        <span class="course-todo-title">Không còn việc cần làm</span>
-                                        <span class="course-todo-meta">Nội dung hiện tại đã hoàn tất.</span>
+                                        <span class="course-todo-title">Chưa có nội dung để xem</span>
+                                        <span class="course-todo-meta">Giáo viên chưa đăng bài học cho khóa này.</span>
                                     </span>
                                 </div>
                             @endif
@@ -333,7 +335,7 @@
                             </div>
                             <div class="course-info-row">
                                 <span class="course-info-label">Trạng thái</span>
-                                <span class="course-info-value">{{ strtoupper($course->status ?? 'published') }}</span>
+                                <span class="course-info-value">{{ $courseStatusLabel }}</span>
                             </div>
                         </div>
                     </div>
@@ -346,7 +348,9 @@
 
                     {{-- Video --}}
                     <div id="video-container" class="ratio ratio-16x9 bg-dark d-none">
-                        <iframe id="lesson-video" src="" allowfullscreen></iframe>
+                        <iframe id="lesson-video" src="" title="Video bài học đang xem" loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
                     </div>
 
                     {{-- External link banner --}}
@@ -357,20 +361,20 @@
                         </div>
                         <h5 class="fw-bold text-dark mb-1">Tài liệu / Video tham khảo ngoài</h5>
                         <p class="text-muted small mb-4">Bài học này chứa một liên kết ngoài hệ thống.</p>
-                        <a href="#" id="external-link-btn" target="_blank"
+                        <a href="#" id="external-link-btn" target="_blank" rel="noopener noreferrer"
                             class="btn btn-primary rounded-pill px-4 fw-bold">
                             <i class="fa-solid fa-arrow-up-right-from-square me-2"></i>Truy cập ngay
                         </a>
                     </div>
 
                     {{-- ══ LESSON AREA ══ --}}
-                    <div id="lesson-content-area">
+                    <div id="lesson-content-area" tabindex="-1">
                         <div class="lesson-current-head">
                             <div>
                                 <span class="lesson-current-badge">Bài học hiện tại</span>
                                 <h2 id="lesson-title" class="lesson-header-title">{{ $course->title }}</h2>
                                 <div id="lesson-module-title" class="lesson-current-meta">
-                                    {{ $course->modules->first()?->title ? 'Module: ' . $course->modules->first()?->title : 'Chọn bài học trong nội dung khóa học' }}
+                                    {{ $course->modules->first()?->title ? 'Chương 1: ' . $course->modules->first()?->title : 'Chọn bài học trong nội dung khóa học' }}
                                 </div>
                             </div>
                             <div id="lesson-duration-box" class="lesson-duration-box d-none">
@@ -429,8 +433,7 @@
                                 @if (auth()->user()->role === 'student')
                                     <h6 class="fw-bold mb-1" style="font-size:14px;"><i
                                             class="fa-solid fa-compass me-2 text-primary"></i>Bắt đầu từ đâu?</h6>
-                                    <p class="text-muted small mb-0">Chọn một mục trong danh sách bên trái để bắt đầu. Bài
-                                        đã xong sẽ có dấu tích xanh.</p>
+                                    <p class="text-muted small mb-0">Chọn một chương trong danh sách nội dung để mở lại bài cần xem.</p>
                                     <div class="welcome-guide-grid">
                                         <div class="welcome-guide-item">
                                             <div class="welcome-guide-icon" style="background:var(--blue-50);">
@@ -438,8 +441,7 @@
                                             </div>
                                             <div>
                                                 <div class="fw-bold" style="font-size:13px;">Bài học</div>
-                                                <div class="text-muted" style="font-size:12px;line-height:1.5;">Đọc nội
-                                                    dung, xem video rồi đánh dấu hoàn thành.</div>
+                                                <div class="text-muted" style="font-size:12px;line-height:1.5;">Đọc lại nội dung, xem video và tải tài liệu của từng bài.</div>
                                             </div>
                                         </div>
                                         <div class="welcome-guide-item">
@@ -466,7 +468,7 @@
                                 @else
                                     <h6 class="fw-bold mb-2" style="font-size:14px;"><i
                                             class="fa-solid fa-pen-to-square me-2 text-primary"></i>Quản lý nội dung</h6>
-                                    <div class="text-muted small">Chọn bài học, bài tập hoặc quiz ở danh sách bên trái để
+                                    <div class="text-muted small">Chọn bài học, bài tập hoặc bài kiểm tra trong danh sách nội dung để
                                         xem nhanh. Dùng các nút thêm nội dung ở phần trên.</div>
                                 @endif
                             </div>
@@ -504,7 +506,7 @@
                     </div>
 
                     {{-- ══ ASSIGNMENT AREA ══ --}}
-                    <div id="assignment-content-area" class="d-none flex-column">
+                    <div id="assignment-content-area" class="d-none flex-column" tabindex="-1">
                         <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
                             <h2 id="assignment-title" class="assignment-title">
                                 <i class="fa-solid fa-list-check me-2" style="color:var(--amber-500);"></i>Tiêu đề bài tập
@@ -625,14 +627,14 @@
                                 <i class="fa-solid fa-users-gear fa-3x text-primary mb-3 d-block"></i>
                                 <p class="text-muted mb-0">Bấm vào biểu tượng
                                     <i class="fa-solid fa-users-gear text-primary mx-1"></i>
-                                    ở danh sách bên trái để chấm điểm bài tập này.
+                                    trong danh sách nội dung để chấm điểm bài tập này.
                                 </p>
                             </div>
                         @endif
                     </div>
 
                     {{-- ══ QUIZ AREA ══ --}}
-                    <div id="quiz-content-area" class="d-none flex-column align-items-center">
+                    <div id="quiz-content-area" class="d-none flex-column align-items-center" tabindex="-1">
                         <div class="w-100" style="max-width:520px;">
                             <div class="text-center mb-4">
                                 <div id="quiz-main-icon-wrap" class="quiz-main-icon-wrap mb-3">
@@ -709,13 +711,11 @@
 
                     {{-- ══ FOOTER NAV ══ --}}
                     <div class="footer-nav d-none" id="nav-footer">
-                        <button class="btn-footer-nav" id="btn-prev" disabled>
+                        <button type="button" class="btn-footer-nav" id="btn-prev" disabled>
                             <i class="fa-solid fa-arrow-left"></i>Bài trước
                         </button>
-                        <button class="btn btn-complete-lesson d-none" id="btn-complete">
-                            <i class="fa-solid fa-circle-check"></i> Hoàn thành
-                        </button>
-                        <button class="btn-footer-nav" id="btn-next" disabled>
+                        <span class="footer-nav__hint"><i class="fa-regular fa-eye"></i> Nội dung dùng để xem lại sau buổi học</span>
+                        <button type="button" class="btn-footer-nav" id="btn-next" disabled>
                             Bài tiếp <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
@@ -727,7 +727,8 @@
     </div>{{-- /page-wrapper --}}
 
     {{-- Mobile FAB --}}
-    <button id="btn-open-sidebar" aria-label="Mở danh sách bài học" title="Danh sách bài học">
+    <button type="button" id="btn-open-sidebar" aria-label="Mở danh sách nội dung" aria-controls="mobile-sidebar-drawer"
+        aria-expanded="false" title="Danh sách nội dung">
         <i class="fa-solid fa-list"></i>
     </button>
 
@@ -770,7 +771,7 @@
                             <h5 class="modal-title fw-bold"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>AI thiết kế khóa học</h5>
                             <div class="small text-muted mt-1">AI tạo bản nháp, giáo viên duyệt trước khi đưa vào khóa học.</div>
                         </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
                         <div id="ai-plan-form-step">
@@ -795,7 +796,7 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
                         <button type="button" class="btn btn-outline-primary d-none" id="ai-plan-back-btn"><i class="fa-solid fa-arrow-left me-1"></i>Điều chỉnh yêu cầu</button>
-                        <button type="button" class="btn btn-primary" id="ai-plan-generate-btn"><i class="fa-solid fa-sparkles me-1"></i>Tạo bản nháp</button>
+                        <button type="button" class="btn btn-primary" id="ai-plan-generate-btn"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Tạo bản nháp</button>
                         <button type="button" class="btn btn-success d-none" id="ai-plan-apply-btn"><i class="fa-solid fa-check me-1"></i>Áp dụng vào khóa học</button>
                     </div>
                 </div>

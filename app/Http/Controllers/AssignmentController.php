@@ -174,7 +174,7 @@ class AssignmentController extends Controller
                 'assignment',
                 'Có bài tập mới',
                 "Bài tập \"{$assignment->title}\" vừa được đăng.",
-                route('courses.show', $assignment->course_id),
+                route('courses.show', ['course' => $assignment->course_id, 'assignment_id' => $assignment->id]),
                 ['assignment_id' => $assignment->id],
                 "assignment:{$assignment->id}:published"
             );
@@ -572,14 +572,14 @@ class AssignmentController extends Controller
             app(NotificationCenter::class)->notifyCourseStudents(
                 $assignment->course_id, 'assignment', 'Có bài tập mới',
                 "Bài tập \"{$assignment->title}\" vừa được đăng.",
-                route('courses.show', $assignment->course_id), ['assignment_id' => $assignment->id],
+                route('courses.show', ['course' => $assignment->course_id, 'assignment_id' => $assignment->id]), ['assignment_id' => $assignment->id],
                 "assignment:{$assignment->id}:published"
             );
         } elseif ($wasPublished && $assignment->status === Assignments::STATUS_PUBLISHED && (! $oldDueDate || ! $oldDueDate->equalTo($assignment->due_date))) {
             app(NotificationCenter::class)->notifyCourseStudents(
                 $assignment->course_id, 'assignment', 'Hạn nộp bài đã thay đổi',
                 "Bài \"{$assignment->title}\" có hạn nộp mới: {$assignment->due_date->format('H:i d/m/Y')}.",
-                route('courses.show', $assignment->course_id), ['assignment_id' => $assignment->id],
+                route('courses.show', ['course' => $assignment->course_id, 'assignment_id' => $assignment->id]), ['assignment_id' => $assignment->id],
                 "assignment:{$assignment->id}:due:{$assignment->due_date->timestamp}"
             );
         }
