@@ -48,6 +48,19 @@ class SharedDocumentStorageTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('smart_notifications', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type')->nullable();
+            $table->string('title');
+            $table->text('message');
+            $table->string('action_url')->nullable();
+            $table->json('data')->nullable();
+            $table->string('dedupe_key')->nullable();
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
+
         config(['filesystems.shared_document_disk' => 'r2']);
         Storage::fake('r2');
     }
@@ -55,6 +68,7 @@ class SharedDocumentStorageTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
+            Schema::dropIfExists('smart_notifications');
             Schema::dropIfExists('shared_documents');
             Schema::dropIfExists('users');
         }
@@ -82,6 +96,31 @@ class SharedDocumentStorageTest extends TestCase
         $this->assertSame('pdf', $document->extension);
         $this->assertStringStartsWith("shared-documents/{$teacher->id}/", $document->file_path);
         Storage::disk('r2')->assertExists($document->file_path);
+    }
+
+    public function test_document_index_has_consistent_filters_sorting_and_one_shared_edit_modal(): void
+    {
+        $owner = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $otherTeacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $privateDocument = $this->createDocument($owner, SharedDocument::VISIBILITY_PRIVATE, 'Zeta.pdf');
+        $sharedDocument = $this->createDocument($otherTeacher, SharedDocument::VISIBILITY_TEACHERS, 'Alpha.pdf');
+        $this->createDocument($otherTeacher, SharedDocument::VISIBILITY_PRIVATE, 'Khong-duoc-xem.pdf');
+
+        $privateDocument->update(['title' => 'Zeta']);
+        $sharedDocument->update(['title' => 'Alpha']);
+
+        $response = $this->actingAs($owner)
+            ->get(route('shared-documents.index', ['sort' => 'name']))
+            ->assertOk()
+            ->assertSee('Tài liệu dùng chung')
+            ->assertSee('Sắp xếp')
+            ->assertSee('Dung lượng có thể truy cập')
+            ->assertSeeInOrder(['Alpha', 'Zeta'])
+            ->assertDontSee('Khong-duoc-xem');
+
+        $this->assertSame(1, substr_count($response->getContent(), 'id="editDocumentModal"'));
+        $this->assertStringContainsString('data-document-view="grid"', $response->getContent());
+        $this->assertStringContainsString('data-document-view="list"', $response->getContent());
     }
 
     public function test_shared_document_is_downloadable_by_other_teacher_but_private_document_is_not(): void

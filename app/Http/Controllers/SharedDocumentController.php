@@ -21,6 +21,9 @@ class SharedDocumentController extends Controller
 
         $user = $request->user();
         $baseQuery = SharedDocument::query()->accessibleTo($user);
+        $sort = in_array($request->input('sort'), ['newest', 'oldest', 'name', 'size'], true)
+            ? $request->input('sort')
+            : 'newest';
         $documents = (clone $baseQuery)
             ->with('owner')
             ->when($request->filled('q'), function ($query) use ($request) {
@@ -37,7 +40,10 @@ class SharedDocumentController extends Controller
             ->when($request->input('scope') === 'shared', fn ($query) => $query
                 ->where('visibility', SharedDocument::VISIBILITY_TEACHERS)
                 ->where('owner_id', '!=', $user->id))
-            ->latest()
+            ->when($sort === 'newest', fn ($query) => $query->latest())
+            ->when($sort === 'oldest', fn ($query) => $query->oldest())
+            ->when($sort === 'name', fn ($query) => $query->orderBy('title'))
+            ->when($sort === 'size', fn ($query) => $query->orderByDesc('file_size'))
             ->paginate(18)
             ->withQueryString();
 
@@ -58,12 +64,14 @@ class SharedDocumentController extends Controller
             'documents' => $documents,
             'folders' => $folders,
             'extensions' => $extensions,
+            'sort' => $sort,
             'totalDocuments' => (clone $baseQuery)->count(),
             'myDocuments' => (clone $baseQuery)->where('owner_id', $user->id)->count(),
             'sharedDocuments' => (clone $baseQuery)
                 ->where('visibility', SharedDocument::VISIBILITY_TEACHERS)
                 ->where('owner_id', '!=', $user->id)
                 ->count(),
+            'totalStorage' => $this->formatBytes((int) (clone $baseQuery)->sum('file_size')),
         ]);
     }
 
@@ -218,5 +226,27 @@ class SharedDocumentController extends Controller
         $folder = trim((string) $folder);
 
         return $folder === '' ? null : preg_replace('/\s+/', ' ', $folder);
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        $size = (float) max(0, $bytes);
+
+        foreach (['B', 'KB', 'MB', 'GB'] as $unit) {
+            if ($size < 1024 || $unit === 'GB') {
+                $precision = $unit === 'B' ? 0 : 1;
+                $formatted = number_format($size, $precision, ',', '.');
+
+                if ($precision > 0) {
+                    $formatted = rtrim(rtrim($formatted, '0'), ',');
+                }
+
+                return $formatted.' '.$unit;
+            }
+
+            $size /= 1024;
+        }
+
+        return $bytes.' B';
     }
 }

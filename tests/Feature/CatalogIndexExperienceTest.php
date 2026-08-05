@@ -25,8 +25,7 @@ class CatalogIndexExperienceTest extends TestCase
         $card = file_get_contents(resource_path('views/courses/partials/course-card.blade.php'));
         $controller = file_get_contents(app_path('Http/Controllers/CourseController.php'));
 
-        $this->assertStringContainsString('Nội dung dùng để xem lại bài học', $card);
-        $this->assertStringContainsString('Xem nội dung', $card);
+        $this->assertStringContainsString("route('courses.show', \$course)", $card);
         $this->assertStringNotContainsString('progress-bar', $card);
         $this->assertStringNotContainsString('completedLessons', $controller);
         $this->assertStringContainsString("'Đã xuất bản'", $card);

@@ -34,45 +34,49 @@ onReady(() => {
 
         viewButtons.forEach((button) => {
             const active = button.dataset.documentView === selectedView;
-            button.classList.toggle('active', active);
+            button.classList.toggle('is-active', active);
             button.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
     };
 
-    applyView('grid');
+    let preferredView = 'grid';
+    try {
+        preferredView = window.localStorage.getItem('smartlms-shared-documents-view') || 'grid';
+    } catch {
+        preferredView = 'grid';
+    }
+    applyView(preferredView);
 
     viewButtons.forEach((button) => {
         button.addEventListener('click', () => {
             const view = button.dataset.documentView;
             applyView(view);
+            try {
+                window.localStorage.setItem('smartlms-shared-documents-view', view);
+            } catch {
+                // Giao diện vẫn hoạt động nếu trình duyệt không cho phép lưu tùy chọn.
+            }
         });
     });
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const numberFormatter = new Intl.NumberFormat('vi-VN');
+    const editModal = document.getElementById('editDocumentModal');
+    const editForm = document.getElementById('editDocumentForm');
+    const editTitle = document.getElementById('editDocumentTitle');
+    const editDescription = document.getElementById('editDocumentDescription');
+    const editFolder = document.getElementById('editDocumentFolder');
+    const editVisibility = document.getElementById('editDocumentVisibility');
+    const editFileName = document.getElementById('editDocumentFileName');
 
-    document.querySelectorAll('[data-document-count]').forEach((counter) => {
-        const target = Number.parseInt(counter.dataset.documentCount || '0', 10);
-        if (!Number.isFinite(target) || target <= 0 || reducedMotion) {
-            counter.textContent = numberFormatter.format(Math.max(0, target || 0));
-            return;
-        }
+    editModal?.addEventListener('show.bs.modal', (event) => {
+        const trigger = event.relatedTarget;
+        if (!(trigger instanceof HTMLElement) || !trigger.matches('.document-edit-button')) return;
 
-        const duration = 750;
-        const start = performance.now();
-        counter.textContent = '0';
-
-        const tick = (now) => {
-            const progress = Math.min((now - start) / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            counter.textContent = numberFormatter.format(Math.round(target * eased));
-
-            if (progress < 1) {
-                window.requestAnimationFrame(tick);
-            }
-        };
-
-        window.requestAnimationFrame(tick);
+        if (editForm) editForm.action = trigger.dataset.updateUrl || '';
+        if (editTitle) editTitle.value = trigger.dataset.documentTitle || '';
+        if (editDescription) editDescription.value = trigger.dataset.documentDescription || '';
+        if (editFolder) editFolder.value = trigger.dataset.documentFolder || '';
+        if (editVisibility) editVisibility.value = trigger.dataset.documentVisibility || 'teachers';
+        if (editFileName) editFileName.textContent = trigger.dataset.documentName || 'Tài liệu';
     });
 
     const previewModal = document.getElementById('previewDocumentModal');
@@ -137,20 +141,27 @@ onReady(() => {
     });
     previewModal?.addEventListener('hidden.bs.modal', clearPreview);
 
+    const uploadModal = document.getElementById('uploadDocumentModal');
+    const uploadForm = document.getElementById('uploadDocumentForm');
+    const uploadSubmit = document.getElementById('uploadDocumentSubmit');
     const dropzone = document.getElementById('documentDropzone');
     const input = document.getElementById('documentFilesInput');
     const picker = document.getElementById('documentFilePicker');
     const previews = document.getElementById('documentFilePreviews');
     const status = document.getElementById('documentDropzoneStatus');
 
-    if (!dropzone || !input || !picker || !previews || !status) {
-        return;
-    }
+    if (!dropzone || !input || !picker || !previews || !status) return;
 
     const maxFiles = 10;
+    const maxFileSize = 20 * 1024 * 1024;
+    const allowedExtensions = new Set([
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'html', 'htm', 'txt', 'csv', 'zip',
+        'jpg', 'jpeg', 'png', 'webp',
+    ]);
     let selectedFiles = [];
 
     const fileKey = (file) => `${file.name}:${file.size}:${file.lastModified}`;
+    const fileExtension = (filename) => filename.split('.').pop()?.toLowerCase() || '';
     const formatSize = (bytes) => {
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -158,15 +169,20 @@ onReady(() => {
     };
 
     const fileIcon = (filename) => {
-        const extension = filename.split('.').pop()?.toLowerCase();
+        const extension = fileExtension(filename);
         if (extension === 'pdf') return 'fa-file-pdf';
         if (['doc', 'docx'].includes(extension)) return 'fa-file-word';
         if (['xls', 'xlsx', 'csv'].includes(extension)) return 'fa-file-excel';
         if (['ppt', 'pptx'].includes(extension)) return 'fa-file-powerpoint';
         if (['jpg', 'jpeg', 'png', 'webp'].includes(extension)) return 'fa-file-image';
-        if (['zip'].includes(extension)) return 'fa-file-zipper';
+        if (extension === 'zip') return 'fa-file-zipper';
         if (['html', 'htm'].includes(extension)) return 'fa-file-code';
         return 'fa-file-lines';
+    };
+
+    const setStatus = (message, isError = false) => {
+        status.textContent = message;
+        status.classList.toggle('is-error', isError);
     };
 
     const syncInput = () => {
@@ -183,7 +199,8 @@ onReady(() => {
             chip.className = 'document-file-chip';
 
             const icon = document.createElement('i');
-            icon.className = `fas ${fileIcon(file.name)}`;
+            icon.className = `fa-solid ${fileIcon(file.name)}`;
+            icon.setAttribute('aria-hidden', 'true');
 
             const details = document.createElement('span');
             const name = document.createElement('strong');
@@ -195,9 +212,8 @@ onReady(() => {
 
             const remove = document.createElement('button');
             remove.type = 'button';
-            remove.setAttribute('aria-label', `Xóa ${file.name}`);
-            remove.title = 'Bỏ file này';
-            remove.innerHTML = '<i class="fas fa-xmark"></i>';
+            remove.setAttribute('aria-label', `Bỏ ${file.name}`);
+            remove.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
             remove.addEventListener('click', (event) => {
                 event.stopPropagation();
                 selectedFiles.splice(index, 1);
@@ -211,15 +227,27 @@ onReady(() => {
 
         const count = selectedFiles.length;
         dropzone.classList.toggle('has-files', count > 0);
-        status.textContent = count > 0 ? `Đã chọn ${count}/${maxFiles} file` : `Tối đa ${maxFiles} file`;
+        setStatus(count > 0 ? `Đã chọn ${count}/${maxFiles} tài liệu` : 'Chưa chọn tài liệu');
     };
 
     const addFiles = (files) => {
         const knownFiles = new Set(selectedFiles.map(fileKey));
+        const rejected = [];
 
         for (const file of files) {
-            if (selectedFiles.length >= maxFiles) break;
+            if (selectedFiles.length >= maxFiles) {
+                rejected.push('Chỉ được chọn tối đa 10 tài liệu.');
+                break;
+            }
             if (knownFiles.has(fileKey(file))) continue;
+            if (!allowedExtensions.has(fileExtension(file.name))) {
+                rejected.push(`${file.name}: định dạng chưa được hỗ trợ.`);
+                continue;
+            }
+            if (file.size > maxFileSize) {
+                rejected.push(`${file.name}: vượt quá 20 MB.`);
+                continue;
+            }
 
             selectedFiles.push(file);
             knownFiles.add(fileKey(file));
@@ -227,6 +255,7 @@ onReady(() => {
 
         syncInput();
         renderPreviews();
+        if (rejected.length) setStatus(rejected[0], true);
     };
 
     picker.addEventListener('click', (event) => {
@@ -263,9 +292,29 @@ onReady(() => {
 
     dropzone.addEventListener('drop', (event) => addFiles(event.dataTransfer?.files || []));
 
-    document.getElementById('uploadDocumentModal')?.addEventListener('hidden.bs.modal', () => {
+    uploadForm?.addEventListener('submit', (event) => {
+        if (!selectedFiles.length) {
+            event.preventDefault();
+            setStatus('Vui lòng chọn ít nhất một tài liệu.', true);
+            dropzone.focus();
+            return;
+        }
+
+        if (uploadSubmit) {
+            uploadSubmit.setAttribute('disabled', 'disabled');
+            uploadSubmit.setAttribute('aria-busy', 'true');
+            uploadSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>Đang tải lên';
+        }
+    });
+
+    uploadModal?.addEventListener('hidden.bs.modal', () => {
         selectedFiles = [];
         syncInput();
         renderPreviews();
+        if (uploadSubmit) {
+            uploadSubmit.removeAttribute('disabled');
+            uploadSubmit.removeAttribute('aria-busy');
+            uploadSubmit.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>Tải lên';
+        }
     });
 });
