@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateCoursePlan;
+use App\Models\AiOperation;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Services\DeepSeekService;
 use App\Services\HtmlSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Gate;
 
 class CoursePlannerController extends Controller
 {
-    public function generate(Request $request, Course $course, DeepSeekService $deepSeek)
+    public function generate(Request $request, Course $course)
     {
         $this->authorizeManageCourse($course);
 
@@ -26,7 +27,7 @@ class CoursePlannerController extends Controller
             'notes' => 'nullable|string|max:2000',
         ]);
 
-        $result = $deepSeek->generateCoursePlan([
+        $payload = [
             'course' => [
                 'title' => $course->title,
                 'description' => $course->description,
@@ -37,9 +38,32 @@ class CoursePlannerController extends Controller
                     ])->values()->all(),
             ],
             'requirements' => $data,
+        ];
+
+        $operation = AiOperation::create([
+            'user_id' => $request->user()->id,
+            'feature' => 'course_plan',
+            'provider' => 'deepseek',
+            'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
+            'status' => AiOperation::STATUS_QUEUED,
+            'subject_type' => Course::class,
+            'subject_id' => $course->id,
+            'metadata' => [
+                'session_count' => $data['session_count'],
+                'minutes_per_session' => $data['minutes_per_session'],
+            ],
         ]);
 
-        return response()->json($result, $result['success'] ? 200 : 422);
+        GenerateCoursePlan::dispatch($operation->id, $payload)->afterCommit();
+
+        return response()->json([
+            'success' => true,
+            'queued' => true,
+            'operation_id' => $operation->uuid,
+            'status_url' => route('ai-operations.show', $operation->uuid),
+            'poll_interval_ms' => max(1000, (int) config('ai.course_plan.poll_interval_milliseconds', 2000)),
+            'poll_timeout_seconds' => max(60, (int) config('ai.course_plan.poll_timeout_seconds', 420)),
+        ], 202);
     }
 
     public function apply(Request $request, Course $course, HtmlSanitizer $htmlSanitizer)

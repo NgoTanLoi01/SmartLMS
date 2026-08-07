@@ -38,6 +38,13 @@ class AiOperationController extends Controller
             'message' => $operation->status === AiOperation::STATUS_FAILED
                 ? ($operation->error_message ?: 'Tác vụ xử lý thất bại.')
                 : null,
+            'progress' => [
+                'stage' => data_get($operation->metadata, 'stage'),
+                'completed_lessons' => (int) data_get($operation->metadata, 'completed_lessons', 0),
+                'total_lessons' => (int) data_get($operation->metadata, 'total_lessons', 0),
+                'current_lesson' => data_get($operation->metadata, 'current_lesson'),
+                'percent' => (int) data_get($operation->metadata, 'progress_percent', 0),
+            ],
             'usage' => [
                 'prompt_tokens' => $operation->prompt_tokens,
                 'completion_tokens' => $operation->completion_tokens,

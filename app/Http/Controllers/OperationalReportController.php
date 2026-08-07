@@ -187,13 +187,13 @@ class OperationalReportController extends Controller
 
     private function logoDataUri(): ?string
     {
-        $path = public_path('smartlms-logo-sharpened.png');
+        $path = public_path('smartlms-logo-sharpened.webp');
 
         if (! file_exists($path)) {
             return null;
         }
 
-        return 'data:image/png;base64,'.base64_encode(file_get_contents($path));
+        return 'data:image/webp;base64,'.base64_encode(file_get_contents($path));
     }
 
     private function groupRow(string $label, $teachingRecords, $contracts, string $field): array

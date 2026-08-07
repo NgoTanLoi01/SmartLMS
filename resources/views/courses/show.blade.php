@@ -756,6 +756,8 @@
             .ai-plan-lesson-content { border:1px solid #dbe2ea; border-radius:10px; color:#334155; line-height:1.55; min-height:120px; padding:12px; }
             .ai-plan-lesson-content:focus { border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,.12); outline:0; }
             .ai-plan-remove { background:#fff1f2; border:0; border-radius:9px; color:#be123c; height:34px; width:34px; }
+            .ai-plan-loading-shell { margin:0 auto; max-width:460px; }
+            .ai-plan-loading-note { background:#eff6ff; border:1px solid #dbeafe; border-radius:12px; color:#475569; margin-top:18px; padding:10px 12px; }
             @media(max-width:767px){ .ai-plan-form-grid{grid-template-columns:1fr}.ai-plan-span-2{grid-column:auto} }
         </style>
         <div class="modal fade" id="aiCoursePlanModal" tabindex="-1" aria-hidden="true">
@@ -780,7 +782,17 @@
                                 <div class="ai-plan-span-2"><label class="form-label fw-semibold">Yêu cầu hoặc lưu ý thêm</label><textarea class="form-control" name="notes" rows="2" placeholder="Chủ đề bắt buộc, cách tổ chức lớp, loại bài tập mong muốn..."></textarea></div>
                             </form>
                         </div>
-                        <div id="ai-plan-loading" class="text-center py-5 d-none"><div class="spinner-border text-primary"></div><h6 class="mt-3 mb-1">AI đang thiết kế chương trình...</h6><div class="small text-muted">Quá trình có thể mất một vài phút.</div></div>
+                        <div id="ai-plan-loading" class="text-center py-5 d-none" role="status" aria-live="polite">
+                            <div class="ai-plan-loading-shell">
+                                <div class="spinner-border text-primary"></div>
+                                <h6 class="mt-3 mb-1" id="ai-plan-loading-title">Đang gửi yêu cầu...</h6>
+                                <div class="small text-muted" id="ai-plan-loading-detail">Vui lòng giữ trang này mở trong lúc hệ thống bắt đầu xử lý.</div>
+                                <div class="progress mt-3" style="height:6px" aria-hidden="true">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%"></div>
+                                </div>
+                                <div class="ai-plan-loading-note small"><i class="fa-solid fa-circle-info me-1"></i>Tác vụ chạy nền và viết chi tiết từng nhóm bài nên có thể mất vài phút.</div>
+                            </div>
+                        </div>
                         <div id="ai-plan-review-step" class="d-none">
                             <div class="alert alert-info" id="ai-plan-summary"></div>
                             <div class="small text-muted mb-3"><i class="fa-solid fa-pen me-1"></i>Có thể sửa trực tiếp tên chương, tên bài và nội dung trước khi áp dụng.</div>

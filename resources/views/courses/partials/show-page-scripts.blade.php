@@ -179,6 +179,8 @@
             const formStep = document.getElementById('ai-plan-form-step');
             const reviewStep = document.getElementById('ai-plan-review-step');
             const loading = document.getElementById('ai-plan-loading');
+            const loadingTitle = document.getElementById('ai-plan-loading-title');
+            const loadingDetail = document.getElementById('ai-plan-loading-detail');
             const result = document.getElementById('ai-plan-result');
             const summary = document.getElementById('ai-plan-summary');
             const errorBox = document.getElementById('ai-plan-error');
@@ -187,11 +189,87 @@
 
             const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[char]));
             const showError = message => { errorBox.textContent = message; errorBox.classList.remove('d-none'); };
+            const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
             const setLoading = active => {
                 loading.classList.toggle('d-none', !active);
                 generateBtn.disabled = active;
                 formStep.classList.toggle('d-none', active);
+                if (active) {
+                    loadingTitle.textContent = 'Đang gửi yêu cầu...';
+                    loadingDetail.textContent = 'Vui lòng giữ trang này mở trong lúc hệ thống bắt đầu xử lý.';
+                }
             };
+
+            const requestErrorMessage = (error, fallback) => {
+                const data = error.response?.data || {};
+                const validationMessage = Object.values(data.errors || {}).flat()[0];
+                if (validationMessage) return validationMessage;
+                if (data.message) return data.message;
+
+                const status = error.response?.status;
+                if (status === 419) return 'Phiên đăng nhập đã hết hạn. Hãy tải lại trang rồi thử lại.';
+                if (status === 429) return 'Bạn thao tác quá nhanh. Hãy chờ khoảng một phút rồi thử lại.';
+                if ([502, 503, 504].includes(status)) return 'Máy chủ AI đang bận hoặc phản hồi chậm. Vui lòng thử lại sau ít phút.';
+                if (error.code === 'ECONNABORTED') return 'Kết nối đến máy chủ mất quá nhiều thời gian. Tác vụ AI có thể vẫn đang chạy.';
+                if (!error.response) return 'Mất kết nối tới máy chủ. Hãy kiểm tra mạng và thử lại.';
+
+                return fallback;
+            };
+
+            async function waitForCoursePlan(data) {
+                if (!data.queued) return data;
+
+                const interval = Math.max(1000, Number(data.poll_interval_ms) || 2000);
+                const timeoutSeconds = Math.max(60, Number(data.poll_timeout_seconds) || 420);
+                const maxAttempts = Math.ceil(timeoutSeconds * 1000 / interval);
+                const startedAt = Date.now();
+                let temporaryFailures = 0;
+
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+                    loadingTitle.textContent = attempt === 0 ? 'Đã xếp hàng, đang chờ AI...' : 'AI đang xây dựng nội dung từng bài...';
+                    loadingDetail.textContent = `Đã xử lý ${elapsedSeconds} giây. Hệ thống đang tạo khung toàn khóa rồi viết nội dung thực hành theo từng nhóm bài.`;
+
+                    try {
+                        const statusResponse = await axios.get(data.status_url, {
+                            headers: { 'Accept': 'application/json' },
+                            timeout: 15000
+                        });
+                        const operation = statusResponse.data || {};
+                        temporaryFailures = 0;
+
+                        const progress = operation.progress || {};
+                        const completedLessons = Number(progress.completed_lessons) || 0;
+                        const totalLessons = Number(progress.total_lessons) || 0;
+                        if (operation.status === 'processing' && totalLessons > 0) {
+                            loadingTitle.textContent = `Đang viết nội dung bài ${Math.min(completedLessons + 1, totalLessons)}/${totalLessons}...`;
+                            loadingDetail.textContent = completedLessons > 0
+                                ? `Đã hoàn thành và lưu ${completedLessons}/${totalLessons} bài. Nếu AI phải thử lại, hệ thống tiếp tục từ phần đã lưu.`
+                                : 'Khung khóa học đã hoàn thành. AI đang viết nội dung chi tiết cho bài đầu tiên.';
+                        }
+
+                        if (operation.status === 'completed') return operation.result || {};
+                        if (operation.status === 'failed') {
+                            throw new Error(operation.message || 'AI không thể hoàn thành kế hoạch sau khi đã thử lại.');
+                        }
+                        if (operation.status === 'queued') loadingTitle.textContent = 'Đã xếp hàng, đang chờ AI...';
+                    } catch (error) {
+                        if (!error.response && error.message && !error.code) throw error;
+                        if ([401, 403, 404, 419].includes(error.response?.status)) {
+                            throw new Error(requestErrorMessage(error, 'Không thể kiểm tra trạng thái tác vụ AI.'));
+                        }
+                        temporaryFailures++;
+                        if (temporaryFailures >= 4) {
+                            throw new Error(requestErrorMessage(error, 'Mất kết nối khi theo dõi tác vụ AI. Vui lòng thử lại.'));
+                        }
+                        loadingDetail.textContent = 'Kết nối tạm thời gián đoạn, hệ thống đang thử nối lại...';
+                    }
+
+                    await sleep(interval);
+                }
+
+                throw new Error('AI xử lý quá lâu. Tác vụ có thể vẫn đang chạy; hãy thử lại sau hoặc giảm số buổi.');
+            }
 
             function renderPlan(plan) {
                 summary.textContent = plan.summary || 'Bản nháp chương trình đã được tạo.';
@@ -239,10 +317,16 @@
                     payload.session_count = Number(payload.session_count);
                     payload.minutes_per_session = Number(payload.minutes_per_session);
                     const response = await axios.post(generateUrl, payload);
-                    renderPlan(response.data.plan);
+                    const operationResult = await waitForCoursePlan(response.data);
+                    if (!operationResult.plan?.modules?.length) {
+                        throw new Error('AI chưa trả về kế hoạch có chương và bài học hợp lệ.');
+                    }
+                    renderPlan(operationResult.plan);
                 } catch (error) {
                     setLoading(false);
-                    showError(error.response?.data?.message || 'Không thể tạo kế hoạch lúc này.');
+                    showError(error.response || error.code
+                        ? requestErrorMessage(error, 'Không thể tạo kế hoạch lúc này.')
+                        : (error.message || 'Không thể tạo kế hoạch lúc này.'));
                 }
             });
 

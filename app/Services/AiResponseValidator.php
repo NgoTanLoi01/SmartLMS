@@ -331,22 +331,30 @@ class AiResponseValidator
         return $draft;
     }
 
-    public function coursePlan(array $plan, int $sessionCount): array
+    public function coursePlanOutline(array $plan, int $sessionCount): array
     {
-        if (trim((string) ($plan['summary'] ?? '')) === '' || ! isset($plan['modules']) || ! is_array($plan['modules']) || $plan['modules'] === []) {
-            throw new \UnexpectedValueException('Kế hoạch AI thiếu tóm tắt hoặc danh sách chương.');
-        }
+        $this->validateCoursePlanEnvelope($plan);
 
         $lessonCount = 0;
+        $titles = [];
+        $focuses = [];
         foreach ($plan['modules'] as $module) {
             if (! is_array($module) || trim((string) ($module['title'] ?? '')) === '' || empty($module['lessons']) || ! is_array($module['lessons'])) {
                 throw new \UnexpectedValueException('Chương trong kế hoạch AI không đúng cấu trúc.');
             }
 
             foreach ($module['lessons'] as $lesson) {
-                if (! is_array($lesson) || trim((string) ($lesson['title'] ?? '')) === '') {
-                    throw new \UnexpectedValueException('Bài học trong kế hoạch AI thiếu tiêu đề.');
+                if (! is_array($lesson)) {
+                    throw new \UnexpectedValueException('Khung bài học AI không đúng cấu trúc.');
                 }
+                $title = trim((string) ($lesson['title'] ?? ''));
+                $focus = trim((string) ($lesson['focus'] ?? ''));
+                $product = trim((string) ($lesson['capstone_product'] ?? ''));
+                if ($title === '' || $focus === '' || $product === '') {
+                    throw new \UnexpectedValueException('Khung bài học AI thiếu tiêu đề, trọng tâm hoặc sản phẩm cuối khóa.');
+                }
+                $titles[] = $this->normalizedCoursePlanText($title);
+                $focuses[] = $this->normalizedCoursePlanText($focus);
                 $lessonCount++;
             }
         }
@@ -354,7 +362,174 @@ class AiResponseValidator
         if ($lessonCount !== $sessionCount) {
             throw new \UnexpectedValueException("Kế hoạch AI phải có đúng {$sessionCount} buổi học.");
         }
+        if (count(array_unique($titles)) !== count($titles) || count(array_unique($focuses)) !== count($focuses)) {
+            throw new \UnexpectedValueException('Các bài học AI bị trùng tiêu đề hoặc trọng tâm kiến thức.');
+        }
 
         return $plan;
+    }
+
+    public function coursePlanLessonBatch(array $batch, array $expectedTitles): array
+    {
+        $lessons = $batch['lessons'] ?? null;
+        if (! is_array($lessons) || ! array_is_list($lessons) || count($lessons) !== count($expectedTitles)) {
+            throw new \UnexpectedValueException('AI trả về sai số lượng bài học chi tiết trong lô.');
+        }
+
+        foreach ($lessons as $index => $lesson) {
+            $this->validateDetailedCourseLesson($lesson, (string) ($expectedTitles[$index] ?? ''));
+        }
+
+        return $lessons;
+    }
+
+    public function coursePlan(array $plan, int $sessionCount): array
+    {
+        $this->validateCoursePlanEnvelope($plan);
+
+        $lessonCount = 0;
+        $titles = [];
+        $contentSignatures = [];
+        foreach ($plan['modules'] as $module) {
+            if (! is_array($module) || trim((string) ($module['title'] ?? '')) === '' || empty($module['lessons']) || ! is_array($module['lessons'])) {
+                throw new \UnexpectedValueException('Chương trong kế hoạch AI không đúng cấu trúc.');
+            }
+
+            foreach ($module['lessons'] as $lesson) {
+                $this->validateDetailedCourseLesson($lesson);
+                $titles[] = $this->normalizedCoursePlanText((string) $lesson['title']);
+                $contentSignatures[] = $this->normalizedCoursePlanText(json_encode($lesson['core_content'], JSON_UNESCAPED_UNICODE) ?: '');
+                $lessonCount++;
+            }
+        }
+
+        if ($lessonCount !== $sessionCount) {
+            throw new \UnexpectedValueException("Kế hoạch AI phải có đúng {$sessionCount} buổi học.");
+        }
+        if (count(array_unique($titles)) !== count($titles) || count(array_unique($contentSignatures)) !== count($contentSignatures)) {
+            throw new \UnexpectedValueException('Các bài học AI bị trùng tiêu đề hoặc nội dung cốt lõi.');
+        }
+
+        return $plan;
+    }
+
+    private function validateCoursePlanEnvelope(array $plan): void
+    {
+        if (trim((string) ($plan['summary'] ?? '')) === '' || ! isset($plan['modules']) || ! is_array($plan['modules']) || $plan['modules'] === []) {
+            throw new \UnexpectedValueException('Kế hoạch AI thiếu tóm tắt hoặc danh sách chương.');
+        }
+    }
+
+    private function validateDetailedCourseLesson($lesson, string $expectedTitle = ''): void
+    {
+        if (! is_array($lesson)) {
+            throw new \UnexpectedValueException('Bài học chi tiết AI không đúng cấu trúc.');
+        }
+
+        $title = trim((string) ($lesson['title'] ?? ''));
+        if ($title === '' || ($expectedTitle !== '' && $this->normalizedCoursePlanText($title) !== $this->normalizedCoursePlanText($expectedTitle))) {
+            throw new \UnexpectedValueException('AI trả về sai tên bài học trong lô chi tiết.');
+        }
+
+        $outcomes = $this->coursePlanStringList($lesson['learning_outcomes'] ?? null, 2, 3, 'Kết quả cần đạt');
+        foreach ($outcomes as $outcome) {
+            if ($this->coursePlanWordCount($outcome) < 4) {
+                throw new \UnexpectedValueException('Mỗi kết quả cần đạt phải mô tả một năng lực có thể đánh giá.');
+            }
+        }
+
+        $scenario = trim((string) ($lesson['real_world_scenario'] ?? ''));
+        $scenarioWords = $this->coursePlanWordCount($scenario);
+        if ($scenarioWords < 80 || $scenarioWords > 150) {
+            throw new \UnexpectedValueException('Tình huống thực tế phải dài từ 80 đến 150 từ.');
+        }
+
+        $core = $lesson['core_content'] ?? null;
+        if (! is_array($core) || empty($core['explanations']) || ! is_array($core['explanations'])) {
+            throw new \UnexpectedValueException('Nội dung cốt lõi phải có các phần giải thích đầy đủ.');
+        }
+        $coreWords = 0;
+        $exampleCount = 0;
+        foreach ($core['explanations'] as $explanation) {
+            if (! is_array($explanation)) {
+                throw new \UnexpectedValueException('Mục nội dung cốt lõi không đúng cấu trúc.');
+            }
+            $heading = trim((string) ($explanation['heading'] ?? ''));
+            $body = trim((string) ($explanation['body'] ?? ''));
+            $example = trim((string) ($explanation['example'] ?? ''));
+            if ($heading === '' || $this->coursePlanWordCount($body) < 35) {
+                throw new \UnexpectedValueException('Mỗi mục nội dung cốt lõi cần tiêu đề và phần giải thích ít nhất 35 từ.');
+            }
+            $coreWords += $this->coursePlanWordCount($body.' '.$example);
+            $exampleCount += $example !== '' ? 1 : 0;
+        }
+        if ($coreWords < 160 || $exampleCount < 1) {
+            throw new \UnexpectedValueException('Nội dung cốt lõi cần ít nhất 160 từ và có ví dụ thực tế.');
+        }
+
+        $this->coursePlanStringList($core['process_steps'] ?? null, 3, 7, 'Quy trình thực hiện');
+        $comparison = $core['comparison'] ?? null;
+        if ($comparison !== null && $comparison !== []) {
+            if (! is_array($comparison)) {
+                throw new \UnexpectedValueException('Bảng so sánh trong nội dung cốt lõi không hợp lệ.');
+            }
+            $headers = $this->coursePlanStringList($comparison['headers'] ?? null, 2, 5, 'Tiêu đề bảng so sánh');
+            $rows = $comparison['rows'] ?? null;
+            if (! is_array($rows) || count($rows) < 2 || count($rows) > 8) {
+                throw new \UnexpectedValueException('Bảng so sánh cần từ 2 đến 8 dòng dữ liệu.');
+            }
+            foreach ($rows as $row) {
+                if (! is_array($row) || count($row) !== count($headers) || collect($row)->contains(fn ($cell) => trim((string) $cell) === '')) {
+                    throw new \UnexpectedValueException('Các dòng của bảng so sánh phải đủ dữ liệu theo tiêu đề.');
+                }
+            }
+        }
+
+        $practice = $lesson['practice_task'] ?? null;
+        if (! is_array($practice) || $this->coursePlanWordCount((string) ($practice['brief'] ?? '')) < 20) {
+            throw new \UnexpectedValueException('Nhiệm vụ thực hành cần mô tả cụ thể ít nhất 20 từ.');
+        }
+        $this->coursePlanStringList($practice['steps'] ?? null, 3, 8, 'Các bước thực hành');
+
+        $deliverable = $lesson['deliverable'] ?? null;
+        if (! is_array($deliverable) || trim((string) ($deliverable['name'] ?? '')) === '') {
+            throw new \UnexpectedValueException('Mỗi bài học phải có sản phẩm cần hoàn thành.');
+        }
+        $this->coursePlanStringList($deliverable['requirements'] ?? null, 2, 6, 'Yêu cầu sản phẩm');
+
+        $this->coursePlanStringList($lesson['self_check_questions'] ?? null, 3, 5, 'Câu hỏi tự kiểm tra');
+
+        $capstone = $lesson['capstone_update'] ?? null;
+        if (! is_array($capstone)) {
+            throw new \UnexpectedValueException('Bài học thiếu hướng dẫn cập nhật bài tập lớn.');
+        }
+        $this->coursePlanStringList($capstone['word_report'] ?? null, 1, 4, 'Nội dung báo cáo Word');
+        $this->coursePlanStringList($capstone['powerpoint'] ?? null, 1, 4, 'Nội dung PowerPoint');
+    }
+
+    private function coursePlanStringList($value, int $min, int $max, string $label): array
+    {
+        if (! is_array($value) || ! array_is_list($value) || count($value) < $min || count($value) > $max) {
+            throw new \UnexpectedValueException("{$label} phải có từ {$min} đến {$max} mục.");
+        }
+
+        $items = array_map(fn ($item) => trim((string) $item), $value);
+        if (in_array('', $items, true) || count(array_unique(array_map([$this, 'normalizedCoursePlanText'], $items))) !== count($items)) {
+            throw new \UnexpectedValueException("{$label} không được để trống hoặc lặp lại.");
+        }
+
+        return $items;
+    }
+
+    private function coursePlanWordCount(string $text): int
+    {
+        preg_match_all('/[\p{L}\p{N}]+(?:[-’\'][\p{L}\p{N}]+)*/u', strip_tags($text), $matches);
+
+        return count($matches[0] ?? []);
+    }
+
+    private function normalizedCoursePlanText(string $text): string
+    {
+        return mb_strtolower(trim(preg_replace('/\s+/u', ' ', $text) ?? $text));
     }
 }

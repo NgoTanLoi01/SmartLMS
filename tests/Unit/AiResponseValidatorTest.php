@@ -139,4 +139,78 @@ class AiResponseValidatorTest extends TestCase
             ]],
         ], 2);
     }
+
+    public function test_it_accepts_a_complete_practical_course_lesson(): void
+    {
+        $lesson = $this->practicalCourseLesson();
+
+        $batch = $this->validator->coursePlanLessonBatch(['lessons' => [$lesson]], [$lesson['title']]);
+        $plan = $this->validator->coursePlan([
+            'summary' => 'Mỗi buổi tạo một sản phẩm để hoàn thiện bài tập lớn.',
+            'modules' => [['title' => 'Chương thực hành', 'lessons' => $batch]],
+        ], 1);
+
+        $this->assertCount(2, $plan['modules'][0]['lessons'][0]['learning_outcomes']);
+        $this->assertCount(3, $plan['modules'][0]['lessons'][0]['self_check_questions']);
+        $this->assertSame('Phiếu khảo sát nhu cầu mạng', $plan['modules'][0]['lessons'][0]['deliverable']['name']);
+    }
+
+    public function test_it_rejects_a_course_lesson_with_a_short_real_world_scenario(): void
+    {
+        $lesson = $this->practicalCourseLesson();
+        $lesson['real_world_scenario'] = 'Tình huống quá ngắn.';
+
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('80 đến 150 từ');
+
+        $this->validator->coursePlanLessonBatch(['lessons' => [$lesson]], [$lesson['title']]);
+    }
+
+    public function test_it_rejects_a_course_lesson_without_a_word_and_powerpoint_update(): void
+    {
+        $lesson = $this->practicalCourseLesson();
+        $lesson['capstone_update']['powerpoint'] = [];
+
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Nội dung PowerPoint');
+
+        $this->validator->coursePlanLessonBatch(['lessons' => [$lesson]], [$lesson['title']]);
+    }
+
+    private function practicalCourseLesson(): array
+    {
+        return [
+            'title' => 'Khảo sát nhu cầu mạng',
+            'learning_outcomes' => [
+                'Xác định đúng nhu cầu sử dụng mạng của khách hàng',
+                'Lập và kiểm tra bảng khảo sát theo tiêu chí được giao',
+            ],
+            'real_world_scenario' => implode(' ', array_fill(0, 90, 'tình-huống-nghề-nghiệp')),
+            'core_content' => [
+                'explanations' => [
+                    ['heading' => 'Thu thập nhu cầu', 'body' => implode(' ', array_fill(0, 80, 'giải-thích-thu-thập')), 'example' => 'Ví dụ khảo sát phòng máy của trường nghề.'],
+                    ['heading' => 'Phân tích kết quả', 'body' => implode(' ', array_fill(0, 80, 'giải-thích-phân-tích')), 'example' => 'Ví dụ nhóm người dùng cần truy cập đồng thời.'],
+                ],
+                'comparison' => null,
+                'process_steps' => ['Chuẩn bị câu hỏi', 'Phỏng vấn người dùng', 'Tổng hợp và kiểm tra dữ liệu'],
+            ],
+            'practice_task' => [
+                'brief' => implode(' ', array_fill(0, 24, 'thực-hành-khảo-sát')),
+                'steps' => ['Chọn đối tượng khảo sát', 'Thực hiện phỏng vấn', 'Hoàn thiện bảng kết quả'],
+            ],
+            'deliverable' => [
+                'name' => 'Phiếu khảo sát nhu cầu mạng',
+                'requirements' => ['Có ít nhất năm câu hỏi', 'Có kết luận và chữ ký nhóm'],
+            ],
+            'self_check_questions' => [
+                'Cần hỏi những thông tin nào khi khảo sát?',
+                'Làm sao kiểm tra dữ liệu khảo sát?',
+                'Kết quả nào ảnh hưởng đến thiết kế mạng?',
+            ],
+            'capstone_update' => [
+                'word_report' => ['Đưa bảng khảo sát và kết luận vào chương phân tích yêu cầu.'],
+                'powerpoint' => ['Tạo một slide tóm tắt ba nhu cầu quan trọng nhất.'],
+            ],
+        ];
+    }
 }

@@ -20,6 +20,8 @@
             margin: 0;
             font-size: 11px;
             background: #f3f6fb;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .page {
@@ -80,11 +82,13 @@
 
         .brand-logo {
             width: 86px;
+            padding-right: 12px;
         }
 
         .brand-logo img {
-            max-width: 74px;
-            max-height: 58px;
+            display: block;
+            width: 74px;
+            height: auto;
         }
 
         .eyebrow {
@@ -192,7 +196,6 @@
         }
 
         .section {
-            page-break-inside: avoid;
             margin-top: 14px;
         }
 
@@ -203,6 +206,8 @@
             display: inline-block;
             border-bottom: 2px solid #2563eb;
             padding-bottom: 3px;
+            break-after: avoid;
+            page-break-after: avoid;
         }
 
         table {
@@ -246,6 +251,16 @@
             background: #f8fafc;
         }
 
+        thead {
+            display: table-header-group;
+        }
+
+        tr,
+        .stat {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
         .nowrap {
             white-space: nowrap;
         }
@@ -277,6 +292,14 @@
             .print-btn {
                 display: none;
             }
+
+            .report-header,
+            .filter-bar,
+            .note,
+            .stats {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -293,11 +316,11 @@
         <header class="report-header">
             <div class="brand">
                 <div class="brand-row">
-                    <div class="brand-logo">
-                        @if ($logoDataUri)
+                    @if ($logoDataUri)
+                        <div class="brand-logo">
                             <img src="{{ $logoDataUri }}" alt="SmartLMS">
-                        @endif
-                    </div>
+                        </div>
+                    @endif
                     <div class="brand-text">
                         <div class="eyebrow">Vận hành SmartLMS</div>
                         <h1>Báo cáo giảng dạy & thanh toán</h1>

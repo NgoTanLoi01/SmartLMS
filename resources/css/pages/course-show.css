@@ -356,6 +356,54 @@ body,
     padding: 20px 18px;
 }
 
+:is(#lesson-content-area, .ai-plan-lesson-content) h3 {
+    border-left: 4px solid var(--blue-500, #3b82f6);
+    color: var(--gray-900, #111827);
+    font-size: 1.18rem;
+    margin: 30px 0 12px;
+    padding-left: 10px;
+}
+
+:is(#lesson-content-area, .ai-plan-lesson-content) h4 {
+    color: var(--gray-800, #1f2937);
+    font-size: 1.02rem;
+    margin: 20px 0 8px;
+}
+
+:is(#lesson-content-area, .ai-plan-lesson-content) p,
+:is(#lesson-content-area, .ai-plan-lesson-content) li {
+    line-height: 1.72;
+}
+
+:is(#lesson-content-area, .ai-plan-lesson-content) blockquote {
+    background: #eff6ff;
+    border-left: 4px solid #60a5fa;
+    border-radius: 0 10px 10px 0;
+    color: #334155;
+    margin: 12px 0 18px;
+    padding: 12px 14px;
+}
+
+:is(#lesson-content-area, .ai-plan-lesson-content) table {
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    width: 100%;
+}
+
+:is(#lesson-content-area, .ai-plan-lesson-content) th {
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-weight: 700;
+}
+
+:is(#lesson-content-area, .ai-plan-lesson-content) th,
+:is(#lesson-content-area, .ai-plan-lesson-content) td {
+    border: 1px solid #cbd5e1;
+    padding: 9px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
 .lesson-divider {
     border: none;
     border-top: 2px solid var(--gray-100);

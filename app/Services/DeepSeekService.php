@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AiOperation;
 use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -466,35 +467,30 @@ PROMPT;
         }
     }
 
-    public function generateCoursePlan(array $payload): array
+    public function generateCoursePlan(array $payload, array $checkpoint = [], ?callable $onProgress = null): array
     {
         try {
-            $apiKey = config('services.deepseek.key');
-            $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
-
-            if (! $apiKey) {
+            if (! config('services.deepseek.key')) {
                 return ['success' => false, 'message' => 'Chưa cấu hình DEEPSEEK_API_KEY.'];
             }
 
-            $systemPrompt = <<<'PROMPT'
-Bạn là chuyên gia thiết kế chương trình giảng dạy cho giáo viên trong SmartLMS.
-Hãy tạo một kế hoạch khóa học thực tế bằng tiếng Việt, phù hợp đúng đối tượng, trình độ, số buổi và thời lượng được cung cấp.
-Nếu khóa học đã có nội dung, tránh lặp lại nguyên văn các chương/bài hiện có.
+            $sessionCount = (int) data_get($payload, 'requirements.session_count', 0);
+
+            $outlinePrompt = <<<'PROMPT'
+Bạn là chuyên gia thiết kế chương trình thực hành cho học sinh Trung cấp nghề trong SmartLMS.
+Hãy xây dựng KHUNG TIẾN TRÌNH của toàn khóa học. Mỗi bài là một bước mới, tạo ra một sản phẩm cụ thể để ghép dần thành bài tập lớn cuối khóa.
 
 Chỉ trả về JSON hợp lệ, không markdown, không bọc ```json. Schema:
 {
-  "summary": "Mô tả ngắn định hướng kế hoạch",
+  "summary": "Mô tả ngắn bài tập lớn và tiến trình tạo sản phẩm xuyên suốt khóa học",
   "modules": [
     {
       "title": "Tên chương",
       "lessons": [
         {
           "title": "Tên bài học/buổi học",
-          "objectives": ["Mục tiêu đo lường được"],
-          "key_topics": ["Kiến thức trọng tâm"],
-          "activities": ["Hoạt động trên lớp kèm thời lượng gợi ý"],
-          "assessment": "Cách kiểm tra nhanh cuối buổi",
-          "assignment": "Bài tập phù hợp hoặc Không có"
+          "focus": "Kiến thức hoặc kỹ năng mới, không trùng bài khác",
+          "capstone_product": "Sản phẩm cụ thể của bài sẽ đưa vào bài tập lớn"
         }
       ]
     }
@@ -504,73 +500,460 @@ Chỉ trả về JSON hợp lệ, không markdown, không bọc ```json. Schema:
 Quy tắc:
 - Tổng số lesson phải đúng bằng session_count; mỗi lesson tương ứng một buổi học.
 - Phân bổ lesson vào các chương hợp lý, không tạo chương rỗng.
-- Nội dung phải đủ cụ thể để giáo viên có thể dùng làm bản nháp giảng dạy.
-- Hoạt động phải phù hợp minutes_per_session và có thực hành khi phù hợp.
-- Bài tập bám sát mục tiêu buổi học, không quá sức đối tượng.
-- Không bịa yêu cầu đầu ra ngoài dữ liệu người dùng cung cấp.
+- Sắp xếp bài học theo tiến trình: hiểu vấn đề → thiết kế → thực hiện → kiểm tra → hoàn thiện → báo cáo.
+- Không lặp lại tiêu đề, trọng tâm kiến thức hoặc sản phẩm giữa các bài.
+- Mỗi bài bắt buộc tạo ra một sản phẩm có thể kiểm tra và đưa vào báo cáo Word hoặc PowerPoint cuối khóa.
+- Ngôn ngữ đơn giản, sát nghề; không dùng cách diễn đạt hàn lâm.
+- Nếu khóa học đã có nội dung, không lặp lại nguyên văn các chương hoặc bài hiện có.
 PROMPT;
 
-            $startedAt = hrtime(true);
-            $response = Http::withToken($apiKey)
-                ->timeout(120)
-                ->post("{$baseUrl}/chat/completions", [
-                    'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => $this->cleanUtf8(json_encode($this->piiSanitizer->redactRecursive($payload), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE) ?: '{}')],
-                    ],
-                    'temperature' => 0.35,
+            $checkpointOutline = $checkpoint['outline'] ?? null;
+            if (is_array($checkpointOutline)) {
+                $outline = $this->responseValidator->coursePlanOutline($checkpointOutline, $sessionCount);
+            } else {
+                $outlineResponse = $this->requestCoursePlanJson(
+                    [['role' => 'system', 'content' => $outlinePrompt], ['role' => 'user', 'content' => $this->coursePlanJson($payload)]],
+                    'course_plan_outline',
+                    max(3000, min(8192, (int) config('ai.course_plan.outline_max_tokens', 7000))),
+                    0.25,
+                );
+                if (! ($outlineResponse['success'] ?? false)) {
+                    return $outlineResponse;
+                }
+
+                $outline = $this->responseValidator->coursePlanOutline($outlineResponse['data'], $sessionCount);
+            }
+            $courseOutline = $outline;
+            $usage = $this->normalizeCoursePlanUsage($checkpoint['usage'] ?? []);
+            if (isset($outlineResponse)) {
+                $this->addCoursePlanUsage($usage, $outlineResponse['usage'] ?? []);
+            }
+            $completedDetails = is_array($checkpoint['details'] ?? null) ? $checkpoint['details'] : [];
+
+            $this->reportCoursePlanProgress($onProgress, $courseOutline, $completedDetails, $usage, [
+                'stage' => 'details',
+                'completed_lessons' => count($completedDetails),
+                'total_lessons' => $sessionCount,
+            ]);
+
+            $lessonReferences = [];
+            foreach ($outline['modules'] as $moduleIndex => $module) {
+                foreach ($module['lessons'] as $lessonIndex => $lesson) {
+                    $lessonReferences[] = [
+                        'module_index' => $moduleIndex,
+                        'lesson_index' => $lessonIndex,
+                        'module_title' => $module['title'],
+                        'title' => $lesson['title'],
+                        'focus' => $lesson['focus'],
+                        'capstone_product' => $lesson['capstone_product'],
+                    ];
+                }
+            }
+
+            $missingReferences = [];
+            foreach ($lessonReferences as $reference) {
+                $key = $this->coursePlanLessonKey($reference);
+                $savedLesson = $completedDetails[$key] ?? null;
+                if (is_array($savedLesson)) {
+                    try {
+                        $this->responseValidator->coursePlanLessonBatch(['lessons' => [$savedLesson]], [$reference['title']]);
+                        $outline['modules'][$reference['module_index']]['lessons'][$reference['lesson_index']] = $savedLesson;
+
+                        continue;
+                    } catch (\UnexpectedValueException) {
+                        unset($completedDetails[$key]);
+                    }
+                }
+
+                $missingReferences[] = $reference;
+            }
+
+            $batchSize = max(1, min(3, (int) config('ai.course_plan.detail_batch_size', 2)));
+            foreach (array_chunk($missingReferences, $batchSize) as $batchNumber => $batch) {
+                $details = null;
+                $validationAttempts = max(1, min(3, (int) config('ai.course_plan.detail_validation_attempts', 2)));
+                for ($validationAttempt = 1; $validationAttempt <= $validationAttempts; $validationAttempt++) {
+                    $detailResponse = $this->requestCoursePlanJson(
+                        [
+                            ['role' => 'system', 'content' => $this->coursePlanDetailPrompt()],
+                            ['role' => 'user', 'content' => $this->coursePlanJson([
+                                'course' => $payload['course'] ?? [],
+                                'requirements' => $payload['requirements'] ?? [],
+                                'whole_course_outline' => $courseOutline,
+                                'lessons_to_write' => $batch,
+                            ])],
+                        ],
+                        'course_plan_detail_'.($batchNumber + 1),
+                        max(3000, min(8192, (int) config('ai.course_plan.max_tokens', 7000))),
+                        0.3,
+                    );
+                    if (! ($detailResponse['success'] ?? false)) {
+                        return $detailResponse;
+                    }
+
+                    $this->addCoursePlanUsage($usage, $detailResponse['usage'] ?? []);
+                    try {
+                        $details = $this->responseValidator->coursePlanLessonBatch(
+                            $detailResponse['data'],
+                            array_column($batch, 'title'),
+                        );
+
+                        break;
+                    } catch (\UnexpectedValueException $e) {
+                        Log::warning('DeepSeek course plan detail validation failed', [
+                            'feature' => 'course_plan_detail_'.($batchNumber + 1),
+                            'validation_attempt' => $validationAttempt,
+                            'lesson_titles' => array_column($batch, 'title'),
+                            'message' => $e->getMessage(),
+                        ]);
+                        if ($validationAttempt === $validationAttempts) {
+                            throw $e;
+                        }
+                    }
+                }
+
+                foreach ($details ?? [] as $detailIndex => $lesson) {
+                    $reference = $batch[$detailIndex];
+                    $outline['modules'][$reference['module_index']]['lessons'][$reference['lesson_index']] = $lesson;
+                    $completedDetails[$this->coursePlanLessonKey($reference)] = $lesson;
+                }
+
+                $this->reportCoursePlanProgress($onProgress, $courseOutline, $completedDetails, $usage, [
+                    'stage' => 'details',
+                    'completed_lessons' => count($completedDetails),
+                    'total_lessons' => $sessionCount,
+                    'current_lesson' => (string) ($batch[array_key_last($batch)]['title'] ?? ''),
                 ]);
-            $this->trackSynchronousResponse('course_plan', $response, $startedAt);
-
-            if ($response->failed()) {
-                Log::warning('DeepSeek course plan failed', ['status' => $response->status(), 'body' => $response->body()]);
-
-                return ['success' => false, 'message' => 'AI chưa tạo được kế hoạch. Vui lòng thử lại.'];
             }
 
-            $plan = $this->decodeJsonResponse($response->json('choices.0.message.content'));
-            if (! $plan || empty($plan['modules']) || ! is_array($plan['modules'])) {
-                return ['success' => false, 'message' => 'AI trả về kế hoạch chưa đúng định dạng. Vui lòng tạo lại.'];
-            }
-            $plan = $this->responseValidator->coursePlan($plan, (int) data_get($payload, 'requirements.session_count', 0));
+            $plan = $this->responseValidator->coursePlan($outline, $sessionCount);
+            $modules = collect($plan['modules'])->map(fn ($module) => [
+                'title' => trim((string) $module['title']),
+                'lessons' => collect($module['lessons'])->map(fn ($lesson) => $this->renderCoursePlanLesson($lesson))->all(),
+            ])->all();
 
-            $modules = collect($plan['modules'])->filter(fn ($module) => is_array($module))
-                ->map(function ($module) {
-                    $lessons = collect($module['lessons'] ?? [])->filter(fn ($lesson) => is_array($lesson))
-                        ->map(function ($lesson) {
-                            $section = function (string $heading, $value): string {
-                                $items = is_array($value) ? $value : array_filter([(string) $value]);
-                                if (! $items) {
-                                    return '';
-                                }
-                                $list = collect($items)->map(fn ($item) => '<li>'.e((string) $item).'</li>')->implode('');
+            return [
+                'success' => true,
+                'plan' => ['summary' => (string) ($plan['summary'] ?? ''), 'modules' => $modules],
+                '_usage' => $usage,
+            ];
+        } catch (\UnexpectedValueException $e) {
+            Log::warning('DeepSeek course plan validation failed', ['message' => $e->getMessage()]);
 
-                                return '<h3>'.e($heading).'</h3><ul>'.$list.'</ul>';
-                            };
-
-                            $content = $section('Mục tiêu buổi học', $lesson['objectives'] ?? [])
-                                .$section('Kiến thức trọng tâm', $lesson['key_topics'] ?? [])
-                                .$section('Hoạt động trên lớp', $lesson['activities'] ?? [])
-                                .$section('Kiểm tra cuối buổi', $lesson['assessment'] ?? '')
-                                .$section('Bài tập gợi ý', $lesson['assignment'] ?? '');
-
-                            return ['title' => trim((string) ($lesson['title'] ?? 'Bài học')), 'content' => $content];
-                        })->filter(fn ($lesson) => $lesson['title'] !== '')->values()->all();
-
-                    return ['title' => trim((string) ($module['title'] ?? 'Chương học')), 'lessons' => $lessons];
-                })->filter(fn ($module) => $module['title'] !== '' && count($module['lessons']) > 0)->values()->all();
-
-            if (! $modules) {
-                return ['success' => false, 'message' => 'Kế hoạch AI chưa có chương hoặc bài học hợp lệ.'];
-            }
-
-            return ['success' => true, 'plan' => ['summary' => (string) ($plan['summary'] ?? ''), 'modules' => $modules]];
+            return [
+                'success' => false,
+                'error_code' => 'AI_INVALID_RESPONSE',
+                'message' => 'AI chưa tạo đủ nội dung thực hành theo cấu trúc yêu cầu sau các lần thử. Vui lòng tạo lại kế hoạch.',
+                'retryable' => true,
+            ];
         } catch (\Throwable $e) {
-            Log::error('DeepSeek course plan error: '.$e->getMessage());
+            Log::error('DeepSeek course plan error', [
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
 
-            return ['success' => false, 'message' => 'Không thể kết nối đến AI thiết kế khóa học.'];
+            return [
+                'success' => false,
+                'error_code' => 'AI_PROCESSING_ERROR',
+                'message' => 'AI chưa xử lý được kế hoạch. Hệ thống sẽ tự thử lại.',
+                'retryable' => true,
+            ];
         }
+    }
+
+    private function requestCoursePlanJson(array $messages, string $feature, int $maxTokens, float $temperature): array
+    {
+        $apiKey = config('services.deepseek.key');
+        $baseUrl = rtrim((string) config('services.deepseek.base_url', 'https://api.deepseek.com'), '/');
+        $connectTimeout = max(3, min(30, (int) config('ai.course_plan.connect_timeout_seconds', 10)));
+        $timeout = max(30, min(300, (int) config('ai.course_plan.timeout_seconds', 180)));
+        $attempts = max(1, min(3, (int) config('ai.course_plan.request_attempts', 2)));
+        $retryDelay = max(0, min(10000, (int) config('ai.course_plan.retry_delay_milliseconds', 1000)));
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            try {
+                $startedAt = hrtime(true);
+                $response = Http::withToken($apiKey)
+                    ->acceptJson()
+                    ->asJson()
+                    ->connectTimeout($connectTimeout)
+                    ->timeout($timeout)
+                    ->post($baseUrl.'/chat/completions', [
+                        'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
+                        'messages' => $messages,
+                        'temperature' => $temperature,
+                        'max_tokens' => $maxTokens,
+                        'response_format' => ['type' => 'json_object'],
+                        'thinking' => [
+                            'type' => config('ai.course_plan.thinking_enabled', false) ? 'enabled' : 'disabled',
+                        ],
+                    ]);
+                $this->trackSynchronousResponse($feature, $response, $startedAt);
+
+                if ($response->failed()) {
+                    $failure = $this->coursePlanHttpFailure($response->status());
+                    Log::warning('DeepSeek course plan request failed', [
+                        'feature' => $feature,
+                        'attempt' => $attempt,
+                        'status' => $response->status(),
+                        'provider_message' => mb_substr((string) $response->json('error.message'), 0, 500),
+                        'error_code' => $failure['error_code'],
+                    ]);
+                    if (($failure['retryable'] ?? false) && $attempt < $attempts) {
+                        $this->waitBeforeCoursePlanRetry($retryDelay);
+
+                        continue;
+                    }
+
+                    if ($failure['retryable'] ?? false) {
+                        $failure['retryable'] = false;
+                        $failure['message'] = $this->coursePlanRetriesExhaustedMessage($failure['error_code']);
+                    }
+
+                    return array_merge(['success' => false], $failure);
+                }
+
+                $content = $response->json('choices.0.message.content');
+                $decoded = $this->decodeJsonResponse(is_string($content) ? $content : null);
+                if (! is_array($decoded)) {
+                    $finishReason = (string) $response->json('choices.0.finish_reason', 'unknown');
+                    $contentLength = is_string($content) ? mb_strlen($content) : 0;
+                    $errorCode = $finishReason === 'length' ? 'AI_RESPONSE_TRUNCATED' : 'AI_INVALID_JSON';
+
+                    Log::warning('DeepSeek course plan returned invalid JSON', [
+                        'feature' => $feature,
+                        'attempt' => $attempt,
+                        'finish_reason' => $finishReason,
+                        'content_length' => $contentLength,
+                        'content_starts_with_object' => is_string($content) && str_starts_with(ltrim($content), '{'),
+                        'content_ends_with_object' => is_string($content) && str_ends_with(rtrim($content), '}'),
+                        'completion_tokens' => (int) $response->json('usage.completion_tokens', 0),
+                        'max_tokens' => $maxTokens,
+                        'error_code' => $errorCode,
+                    ]);
+
+                    if ($attempt < $attempts) {
+                        $this->waitBeforeCoursePlanRetry($retryDelay);
+
+                        continue;
+                    }
+
+                    return [
+                        'success' => false,
+                        'error_code' => $errorCode,
+                        'message' => $finishReason === 'length'
+                            ? 'DeepSeek chưa hoàn tất dữ liệu của bài đang xử lý sau các lần thử. Vui lòng tạo lại kế hoạch.'
+                            : 'DeepSeek trả về dữ liệu không đúng định dạng sau các lần thử. Vui lòng tạo lại kế hoạch.',
+                        'retryable' => true,
+                    ];
+                }
+
+                return ['success' => true, 'data' => $decoded, 'usage' => $response->json('usage') ?? []];
+            } catch (ConnectionException $e) {
+                Log::warning('DeepSeek course plan request timed out', [
+                    'feature' => $feature,
+                    'attempt' => $attempt,
+                    'timeout_seconds' => $timeout,
+                    'exception' => $e->getMessage(),
+                ]);
+                if ($attempt < $attempts) {
+                    $this->waitBeforeCoursePlanRetry($retryDelay);
+
+                    continue;
+                }
+
+                return [
+                    'success' => false,
+                    'error_code' => 'AI_TIMEOUT',
+                    'message' => 'DeepSeek phản hồi quá thời gian sau khi hệ thống đã thử lại. Hãy giảm số buổi hoặc rút gọn yêu cầu.',
+                    'retryable' => false,
+                ];
+            }
+        }
+
+        return ['success' => false, 'error_code' => 'AI_UNKNOWN_ERROR', 'message' => 'AI chưa xử lý được kế hoạch.', 'retryable' => false];
+    }
+
+    private function coursePlanDetailPrompt(): string
+    {
+        return <<<'PROMPT'
+Bạn là giáo viên thực hành Trung cấp nghề. Hãy viết ĐẦY ĐỦ nội dung tự học cho đúng các bài trong lessons_to_write, bám sát khung toàn khóa và không lặp kiến thức của bài khác.
+
+Chỉ trả về JSON hợp lệ, không markdown, không HTML, không bọc ```json. Schema:
+{
+  "lessons": [
+    {
+      "title": "Giữ nguyên chính xác tên trong lessons_to_write",
+      "learning_outcomes": ["2-3 kết quả dùng động từ đo được như xác định, cấu hình, thực hiện, kiểm tra, so sánh, xử lý"],
+      "real_world_scenario": "Tình huống nghề nghiệp thực tế từ 80 đến 150 từ",
+      "core_content": {
+        "explanations": [
+          {"heading": "Ý kiến thức", "body": "Giải thích dễ hiểu 60-120 từ, nêu vì sao và cách áp dụng", "example": "Ví dụ cụ thể gắn với tình huống"}
+        ],
+        "comparison": {"headers": ["Tiêu chí", "Phương án A", "Phương án B"], "rows": [["Tiêu chí 1", "...", "..."]]},
+        "process_steps": ["3-7 bước thực hiện theo đúng thứ tự"]
+      },
+      "practice_task": {
+        "brief": "Mô tả cụ thể ít nhất 20 từ: học sinh làm gì, với dữ liệu hoặc thiết bị nào và tiêu chí hoàn thành",
+        "steps": ["3-8 bước thao tác cụ thể"]
+      },
+      "deliverable": {
+        "name": "Tên chính xác tài liệu, ảnh chụp, bảng biểu, sơ đồ hoặc tệp phải nộp",
+        "requirements": ["2-6 tiêu chí để kiểm tra sản phẩm"]
+      },
+      "self_check_questions": ["3-5 câu hỏi giúp học sinh tự kiểm tra hiểu biết và cách làm"],
+      "capstone_update": {
+        "word_report": ["Nội dung cụ thể cần thêm vào báo cáo Word"],
+        "powerpoint": ["Nội dung cụ thể cần thêm vào PowerPoint"]
+      }
+    }
+  ]
+}
+
+Quy tắc bắt buộc:
+- Trả đúng số bài, đúng thứ tự và giữ nguyên tên trong lessons_to_write.
+- Ngôn ngữ đơn giản, câu ngắn, phù hợp học sinh Trung cấp nghề; giải thích thuật ngữ khi xuất hiện lần đầu.
+- Mỗi bài có 2-4 mục core_content.explanations; tổng phần giải thích và ví dụ từ 180 đến 350 từ, đủ để học sinh tự học chứ không chỉ là dàn ý.
+- real_world_scenario phải đủ 80-150 từ và nêu rõ vai trò, vấn đề, điều kiện, hậu quả nếu làm sai.
+- comparison có thể là null nếu không có hai phương án cần so sánh; nếu có thì dùng 2-5 cột và 2-8 dòng.
+- Nhiệm vụ thực hành phải hoàn thành được trong minutes_per_session và tạo đúng capstone_product đã định.
+- Sản phẩm của mỗi bài phải khác nhau, dùng được trực tiếp cho bài tập lớn cuối khóa.
+- Nêu rõ phần nào đưa vào Word và phần nào đưa vào PowerPoint; không viết chung chung như “cập nhật báo cáo”.
+- Không lặp lại phần giải thích, ví dụ, câu hỏi hoặc sản phẩm của bài khác trong whole_course_outline.
+- Không viết nội dung quá hàn lâm và không thêm kiến thức ngoài mục tiêu khóa học.
+PROMPT;
+    }
+
+    private function coursePlanJson(array $value): string
+    {
+        return $this->cleanUtf8(json_encode(
+            $this->piiSanitizer->redactRecursive($value),
+            JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE,
+        ) ?: '{}');
+    }
+
+    private function addCoursePlanUsage(array &$total, array $usage): void
+    {
+        foreach (['prompt_tokens', 'completion_tokens', 'total_tokens'] as $field) {
+            $total[$field] = (int) ($total[$field] ?? 0) + (int) ($usage[$field] ?? 0);
+        }
+    }
+
+    private function normalizeCoursePlanUsage(array $usage): array
+    {
+        return [
+            'prompt_tokens' => max(0, (int) ($usage['prompt_tokens'] ?? 0)),
+            'completion_tokens' => max(0, (int) ($usage['completion_tokens'] ?? 0)),
+            'total_tokens' => max(0, (int) ($usage['total_tokens'] ?? 0)),
+        ];
+    }
+
+    private function coursePlanLessonKey(array $reference): string
+    {
+        return (int) ($reference['module_index'] ?? 0).':'.(int) ($reference['lesson_index'] ?? 0);
+    }
+
+    private function reportCoursePlanProgress(
+        ?callable $onProgress,
+        array $outline,
+        array $details,
+        array $usage,
+        array $progress,
+    ): void {
+        if ($onProgress === null) {
+            return;
+        }
+
+        $onProgress([
+            'outline' => $outline,
+            'details' => $details,
+            'usage' => $this->normalizeCoursePlanUsage($usage),
+        ], $progress);
+    }
+
+    private function waitBeforeCoursePlanRetry(int $milliseconds): void
+    {
+        if ($milliseconds > 0) {
+            usleep($milliseconds * 1000);
+        }
+    }
+
+    private function coursePlanRetriesExhaustedMessage(string $errorCode): string
+    {
+        return match ($errorCode) {
+            'AI_RATE_LIMIT' => 'DeepSeek vẫn đang giới hạn tần suất sau khi hệ thống đã thử lại. Hãy chờ vài phút rồi tạo lại.',
+            'AI_PROVIDER_UNAVAILABLE' => 'DeepSeek vẫn đang bận hoặc gián đoạn sau khi hệ thống đã thử lại. Hãy tạo lại sau ít phút.',
+            default => 'DeepSeek chưa xử lý được yêu cầu sau khi hệ thống đã thử lại. Vui lòng tạo lại kế hoạch.',
+        };
+    }
+
+    private function renderCoursePlanLesson(array $lesson): array
+    {
+        $list = fn (array $items, string $tag = 'ul') => '<'.$tag.'>'.collect($items)
+            ->map(fn ($item) => '<li>'.e((string) $item).'</li>')->implode('').'</'.$tag.'>';
+        $content = '<h3>Kết quả cần đạt</h3>'.$list($lesson['learning_outcomes'], 'ul');
+        $content .= '<h3>Tình huống thực tế</h3><p>'.e((string) $lesson['real_world_scenario']).'</p>';
+        $content .= '<h3>Nội dung cốt lõi</h3>';
+        foreach ($lesson['core_content']['explanations'] as $explanation) {
+            $content .= '<h4>'.e((string) $explanation['heading']).'</h4><p>'.e((string) $explanation['body']).'</p>';
+            if (trim((string) ($explanation['example'] ?? '')) !== '') {
+                $content .= '<blockquote><strong>Ví dụ:</strong> '.e((string) $explanation['example']).'</blockquote>';
+            }
+        }
+        $comparison = $lesson['core_content']['comparison'] ?? null;
+        if (is_array($comparison) && ! empty($comparison['headers']) && ! empty($comparison['rows'])) {
+            $content .= '<h4>Bảng so sánh</h4><table border="1" cellpadding="8" cellspacing="0" width="100%"><thead><tr>';
+            $content .= collect($comparison['headers'])->map(fn ($header) => '<th>'.e((string) $header).'</th>')->implode('');
+            $content .= '</tr></thead><tbody>';
+            foreach ($comparison['rows'] as $row) {
+                $content .= '<tr>'.collect($row)->map(fn ($cell) => '<td>'.e((string) $cell).'</td>')->implode('').'</tr>';
+            }
+            $content .= '</tbody></table>';
+        }
+        $content .= '<h4>Quy trình thực hiện</h4>'.$list($lesson['core_content']['process_steps'], 'ol');
+        $content .= '<h3>Nhiệm vụ thực hành</h3><p>'.e((string) $lesson['practice_task']['brief']).'</p>'.$list($lesson['practice_task']['steps'], 'ol');
+        $content .= '<h3>Sản phẩm cần hoàn thành</h3><p><strong>'.e((string) $lesson['deliverable']['name']).'</strong></p>'.$list($lesson['deliverable']['requirements']);
+        $content .= '<h3>Tự kiểm tra</h3>'.$list($lesson['self_check_questions'], 'ol');
+        $content .= '<h3>Cập nhật bài tập lớn</h3><h4>Báo cáo Word</h4>'.$list($lesson['capstone_update']['word_report']);
+        $content .= '<h4>PowerPoint</h4>'.$list($lesson['capstone_update']['powerpoint']);
+
+        return ['title' => trim((string) $lesson['title']), 'content' => $content];
+    }
+
+    private function coursePlanHttpFailure(int $status): array
+    {
+        return match (true) {
+            $status === 429 => [
+                'error_code' => 'AI_RATE_LIMIT',
+                'message' => 'DeepSeek đang giới hạn tần suất. Hệ thống sẽ chờ và tự thử lại.',
+                'retryable' => true,
+            ],
+            $status === 402 => [
+                'error_code' => 'AI_BALANCE_REQUIRED',
+                'message' => 'Tài khoản DeepSeek không đủ số dư hoặc chưa bật thanh toán.',
+                'retryable' => false,
+            ],
+            in_array($status, [401, 403], true) => [
+                'error_code' => 'AI_AUTH_ERROR',
+                'message' => 'DeepSeek từ chối API key. Quản trị viên cần kiểm tra lại khóa truy cập.',
+                'retryable' => false,
+            ],
+            in_array($status, [400, 404], true) => [
+                'error_code' => 'AI_CONFIGURATION_ERROR',
+                'message' => 'Cấu hình model hoặc địa chỉ DeepSeek chưa hợp lệ. Quản trị viên cần kiểm tra lại.',
+                'retryable' => false,
+            ],
+            $status >= 500 => [
+                'error_code' => 'AI_PROVIDER_UNAVAILABLE',
+                'message' => 'DeepSeek đang bận hoặc tạm gián đoạn. Hệ thống sẽ tự thử lại.',
+                'retryable' => true,
+            ],
+            default => [
+                'error_code' => 'AI_HTTP_ERROR',
+                'message' => "DeepSeek chưa xử lý được yêu cầu (HTTP {$status}). Vui lòng thử lại.",
+                'retryable' => false,
+            ],
+        };
     }
 
     private function askDeepSeek(array $historyMessages, string $context, array $options = []): string
