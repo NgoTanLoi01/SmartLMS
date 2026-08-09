@@ -10,6 +10,7 @@ use App\Models\QuizAttempt;
 use App\Models\QuizSession;
 use App\Models\User;
 use App\Queries\Dashboard\PendingGradingQuery;
+use App\Queries\Dashboard\StudentTodayQuery;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +19,10 @@ class DashboardController extends Controller
 {
     private const DASHBOARD_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
-    public function __construct(private PendingGradingQuery $pendingGradingQuery) {}
+    public function __construct(
+        private PendingGradingQuery $pendingGradingQuery,
+        private StudentTodayQuery $studentTodayQuery,
+    ) {}
 
     public function index()
     {
@@ -394,6 +398,7 @@ class DashboardController extends Controller
                         ? 'Tiếp tục'
                         : ($hasCompletedAttempt ? 'Làm lại' : 'Làm ngay');
                     $quiz->dashboard_session_name = $session?->name;
+                    $quiz->dashboard_deadline = $session?->ends_at;
                     $quiz->dashboard_attempts_used = $attempts->count();
 
                     return $quiz;
@@ -504,6 +509,7 @@ class DashboardController extends Controller
             $data['continue_course'] = $data['course_progress']
                 ->first(fn ($course) => $course->lesson_total > 0 && $course->progress < 100)
                 ?? $data['course_progress']->first();
+            $data['student_today_items'] = $this->studentTodayQuery->build($data, $now);
         }
 
         return view('dashboard', compact('data'));

@@ -59,6 +59,11 @@ class Course extends Model
         return $this->course_type === 'template';
     }
 
+    public function gradingPeriods()
+    {
+        return $this->hasMany(GradingPeriod::class);
+    }
+
     public function sourceTemplate()
     {
         return $this->belongsTo(self::class, 'source_template_id');

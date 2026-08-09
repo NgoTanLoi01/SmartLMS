@@ -102,7 +102,7 @@ class QuizGradingController extends Controller
     public function release(QuizAttempt $attempt, QuizExamService $examService)
     {
         Gate::authorize('view', $attempt);
-        $examService->releaseResult($attempt);
+        $examService->releaseResult($attempt, request()->user());
 
         return back()->with('success', 'Đã công bố điểm và phản hồi cho học viên.');
     }

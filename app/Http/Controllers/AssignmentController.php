@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Application\Assessment\CreateAssignment;
+use App\Application\Gradebook\ProjectAssessmentGrade;
 use App\Http\Requests\Assignment\CreateAssignmentRequest;
 use App\Jobs\AnalyzeAssignmentSubmission;
 use App\Models\AiOperation;
@@ -17,6 +18,7 @@ use App\Services\SubmissionArchiveService;
 use App\Services\SubmissionFileService;
 use App\Support\AssignmentUploadTypes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -27,6 +29,7 @@ class AssignmentController extends Controller
         private SubmissionFileService $submissionFiles,
         private SubmissionArchiveService $submissionArchives,
         private CreateAssignment $createAssignment,
+        private ProjectAssessmentGrade $projectAssessmentGrade,
     ) {}
 
     // Hiển thị danh sách
@@ -161,10 +164,13 @@ class AssignmentController extends Controller
             'action' => 'nullable|in:save,save_next',
         ]);
 
-        $submission->update([
-            'grade' => $request->grade,
-            'feedback' => $request->feedback,
-        ]);
+        DB::transaction(function () use ($submission, $request): void {
+            $submission->update([
+                'grade' => $request->grade,
+                'feedback' => $request->feedback,
+            ]);
+            $this->projectAssessmentGrade->assignment($submission->fresh(['assignment', 'user']), $request->user());
+        });
 
         app(NotificationCenter::class)->notifyUser(
             $submission->user_id,

@@ -112,6 +112,8 @@ class DashboardMetricsTest extends TestCase
         $this->assertSame('Làm lại', $data['pending_quizzes']->first()->dashboard_action_label);
         $this->assertSame(8.0, (float) $data['average_score']);
         $this->assertSame([8.0], $data['chart_quiz_data']);
+        $this->assertSame(['assignment', 'exam'], $data['student_today_items']->take(2)->pluck('type')->all());
+        $this->assertSame([1, 3], $data['student_today_items']->take(2)->pluck('priority')->all());
         $this->assertSame($classId, DB::table('class_user')->where('user_id', $student->id)->value('class_id'));
     }
 
@@ -206,6 +208,19 @@ class DashboardMetricsTest extends TestCase
             route('assignments.submissions.review', $pendingSubmissionId),
             $data['teacher_priority_suggestions'][0]['action_url']
         );
+
+        $this->actingAs($teacher)
+            ->get(route('grading.inbox'))
+            ->assertOk()
+            ->assertSee('Bài chờ chấm')
+            ->assertSee('Quiz tự luận')
+            ->assertSee(route('assignments.submissions.review', $pendingSubmissionId), false);
+
+        $this->actingAs($teacher)
+            ->get(route('grading.inbox', ['type' => 'quiz']))
+            ->assertOk()
+            ->assertSee('Quiz tự luận')
+            ->assertDontSee('Bài chờ chấm');
     }
 
     public function test_admin_dashboard_separates_active_accounts_and_operational_backlog(): void

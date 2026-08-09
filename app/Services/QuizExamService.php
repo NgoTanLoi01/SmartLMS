@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Application\Gradebook\ProjectAssessmentGrade;
 use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
@@ -19,6 +20,7 @@ class QuizExamService
         private QuizQuestionSelectionService $questionSelector,
         private QuestionDifficultyAnalyticsService $difficultyAnalytics,
         private HtmlCssCodeFormatter $codeFormatter,
+        private ProjectAssessmentGrade $projectAssessmentGrade,
     ) {}
 
     public function startOrResume(Quiz $quiz, User $student, ?QuizSession $session): QuizAttempt
@@ -265,6 +267,10 @@ class QuizExamService
                 'result_released_at' => ! $needsManualGrading && $releaseNow ? now() : null,
             ]);
 
+            if (! $needsManualGrading && $releaseNow) {
+                $this->projectAssessmentGrade->quiz($lockedAttempt->fresh(['quiz', 'user']), $lockedAttempt->user);
+            }
+
             return $lockedAttempt->fresh(['quiz', 'session']);
         }, 3);
 
@@ -295,9 +301,9 @@ class QuizExamService
         return $this->persistManualGrade($attempt, $answer, $rubricScores, $feedback, $grader, false);
     }
 
-    public function releaseResult(QuizAttempt $attempt): QuizAttempt
+    public function releaseResult(QuizAttempt $attempt, ?User $actor = null): QuizAttempt
     {
-        return DB::transaction(function () use ($attempt) {
+        return DB::transaction(function () use ($attempt, $actor) {
             $lockedAttempt = QuizAttempt::query()->lockForUpdate()->findOrFail($attempt->id);
 
             if ($lockedAttempt->status === QuizAttempt::STATUS_RELEASED) {
@@ -314,6 +320,11 @@ class QuizExamService
                 'status' => QuizAttempt::STATUS_RELEASED,
                 'result_released_at' => now(),
             ]);
+
+            $this->projectAssessmentGrade->quiz(
+                $lockedAttempt->fresh(['quiz', 'user']),
+                $actor ?? $lockedAttempt->user,
+            );
 
             return $lockedAttempt->fresh(['session']);
         }, 3);
@@ -388,7 +399,12 @@ class QuizExamService
                 return $lockedAttempt->fresh(['session']);
             }
 
-            return $this->finalizeGradingIfComplete($lockedAttempt);
+            $finalized = $this->finalizeGradingIfComplete($lockedAttempt);
+            if ($finalized->status === QuizAttempt::STATUS_RELEASED) {
+                $this->projectAssessmentGrade->quiz($finalized->loadMissing(['quiz', 'user']), $grader);
+            }
+
+            return $finalized;
         }, 3);
     }
 

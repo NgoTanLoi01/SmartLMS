@@ -380,6 +380,20 @@ class AuthorizationIsolationTest extends TestCase
         ]);
 
         $this->actingAs($student)
+            ->post(route('assignments.submit', $this->assignment), [
+                'text_answer' => 'Nội dung nộp lại sau khi đã được chấm.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('assignment_submissions', [
+            'id' => $submission->id,
+            'text_answer' => 'Nội dung nộp lại sau khi đã được chấm.',
+            'grade' => 8.5,
+            'feedback' => 'Đạt yêu cầu.',
+        ]);
+
+        $this->actingAs($student)
             ->post(route('assignments.grade', $submission), ['grade' => 10])
             ->assertForbidden();
     }

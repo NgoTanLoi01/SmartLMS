@@ -146,6 +146,9 @@
                     <a href="{{ route('attendance.show', $course->id) }}" class="tool-btn teal">
                         <i class="fa-solid fa-user-check"></i> Điểm danh
                     </a>
+                    <a href="{{ route('gradebook.index', $course) }}" class="tool-btn teal">
+                        <i class="fa-solid fa-graduation-cap"></i> Sổ điểm
+                    </a>
                     <a href="{{ route('courses.materials.index', $course->id) }}" class="tool-btn blue">
                         <i class="fa-solid fa-folder-open"></i> Kho học liệu
                     </a>

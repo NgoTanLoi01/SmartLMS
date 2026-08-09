@@ -117,67 +117,31 @@
                         <div class="panel__header">
                             <h6 class="panel__title">
                                 <span class="icon-dot idot--amber"><i class="fa-solid fa-clock"></i></span>
-                                Việc cần làm ngay
+                                Việc tiếp theo của bạn
                             </h6>
                         </div>
                         <div style="max-height:300px;overflow-y:auto">
-                            @php
-                                $assignments = $data['pending_assignments'] ?? [];
-                                $quizzes = $data['pending_quizzes'] ?? [];
-                            @endphp
-
-                            @foreach ($assignments as $assignment)
-                                @php
-                                    $dueDate = $assignment->due_date ? \Carbon\Carbon::parse($assignment->due_date) : null;
-                                    $isOverdue = $dueDate?->isPast() ?? false;
-                                @endphp
-                                <div class="todo-item {{ $isOverdue ? 'todo-item--overdue' : '' }}">
+                            @forelse ($data['student_today_items'] ?? [] as $item)
+                                <div class="todo-item {{ $item->priority === 1 ? 'todo-item--overdue' : ($item->type === 'exam' ? 'todo-item--quiz' : '') }}">
                                     <div>
-                                        <span class="bdg {{ $isOverdue ? 'bdg--danger' : 'bdg--warning' }} mb-1">{{ $isOverdue ? 'Quá hạn' : 'Bài tập' }}</span>
-                                        <div class="todo-item__label">{{ $assignment->title }}</div>
-                                        <div class="todo-item__sub"><i
-                                                class="fa-solid fa-book me-1"></i>{{ $assignment->course_title ?? 'Chưa có khóa học' }}</div>
+                                        <span class="bdg {{ $item->priority === 1 ? 'bdg--danger' : ($item->type === 'exam' ? 'bdg--primary' : 'bdg--warning') }} mb-1">{{ $item->status }}</span>
+                                        <div class="todo-item__label">{{ $item->title }}</div>
+                                        <div class="todo-item__sub"><i class="fa-solid fa-book me-1"></i>{{ $item->context }}</div>
                                     </div>
                                     <div style="text-align:right;flex-shrink:0">
-                                        <div class="todo-item__deadline {{ $isOverdue ? 'text-danger' : '' }}">
-                                            <i class="fa-solid fa-hourglass-half me-1"></i>
-                                            {{ $dueDate ? $dueDate->format('H:i - d/m/Y') : 'Không có hạn' }}
-                                        </div>
-                                        <a href="{{ route('courses.show', $assignment->course_id ?? 0) }}"
-                                            class="btn-xs {{ $isOverdue ? 'btn-xs--danger' : 'btn-xs--warning' }}">Nộp bài</a>
-                                    </div>
-                                </div>
-                            @endforeach
-
-                            @foreach ($quizzes as $quiz)
-                                <div class="todo-item todo-item--quiz">
-                                    <div>
-                                        <span class="bdg bdg--primary mb-1">Kiểm tra</span>
-                                        <div class="todo-item__label" style="color:var(--brand)">{{ $quiz->title }}
-                                        </div>
-                                        <div class="todo-item__sub"><i
-                                                class="fa-solid fa-book me-1"></i>{{ $quiz->course?->title ?? 'Chưa có khóa học' }}</div>
-                                        @if ($quiz->dashboard_session_name)
-                                            <div class="todo-item__sub"><i class="fa-solid fa-users-rectangle me-1"></i>{{ $quiz->dashboard_session_name }}</div>
+                                        @if ($item->deadline)
+                                            <div class="todo-item__deadline {{ $item->priority === 1 ? 'text-danger' : '' }}"><i class="fa-solid fa-clock me-1"></i>{{ $item->deadline->format('H:i - d/m/Y') }}</div>
                                         @endif
-                                    </div>
-                                    <div style="text-align:right;flex-shrink:0">
-                                        <div class="todo-item__time-limit">
-                                            <i class="fa-solid fa-stopwatch me-1"></i>{{ $quiz->time_limit }} phút
-                                        </div>
-                                        <a href="{{ route('quizzes.attempt', $quiz) }}"
-                                            class="btn-xs btn-xs--primary">{{ $quiz->dashboard_action_label }}</a>
+                                        <a href="{{ $item->url }}" class="btn-xs {{ $item->priority === 1 ? 'btn-xs--danger' : 'btn-xs--primary' }}">{{ $item->cta }}</a>
                                     </div>
                                 </div>
-                            @endforeach
-
-                            @if (count($assignments) === 0 && count($quizzes) === 0)
+                            @empty
                                 <div class="empty-state">
                                     <div class="empty-icon" style="color:var(--success)"><i
                                             class="fa-solid fa-glass-cheers"></i></div>
                                     <p>Tuyệt vời! Hiện không có nhiệm vụ nào cần xử lý ngay.</p>
                                 </div>
-                            @endif
+                            @endforelse
                         </div>
                     </div>
                 </div>

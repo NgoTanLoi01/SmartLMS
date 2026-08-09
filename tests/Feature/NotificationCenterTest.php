@@ -67,6 +67,10 @@ class NotificationCenterTest extends TestCase
         $center->notifyUser($user, 'lesson', 'Bài học mới', 'Nội dung', '/courses/1', [], 'lesson:1:published');
 
         $this->assertDatabaseCount('smart_notifications', 1);
+        $this->assertDatabaseHas('smart_notifications', [
+            'title' => 'Bài học mới',
+            'message' => 'Nội dung',
+        ]);
     }
 
     public function test_user_cannot_open_another_users_notification(): void

@@ -229,7 +229,7 @@
                                 <span class="icon-dot idot--red"><i class="fa-solid fa-inbox"></i></span>
                                 Bài cần chấm ưu tiên
                             </h6>
-                            <span class="bdg bdg--danger">{{ $pendingGrades }} mục</span>
+                            <a href="{{ route('grading.inbox') }}" class="btn-xs btn-xs--danger">Mở Inbox · {{ $pendingGrades }}</a>
                         </div>
                         <div class="teacher-list-scroll">
                             @forelse ($gradingQueue as $item)

@@ -16,6 +16,7 @@ use App\Http\Controllers\CoursePlannerController;
 use App\Http\Controllers\CourseQualityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\GradebookController;
 use App\Http\Controllers\LearningProgramController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\ModuleController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\StorageHealthController;
 use App\Http\Controllers\StudentGradesController;
 use App\Http\Controllers\StudentScheduleController;
 use App\Http\Controllers\SystemBackupController;
+use App\Http\Controllers\TeacherWorkQueueController;
 use App\Http\Controllers\TeachingContractController;
 use App\Http\Controllers\TeachingRecordController;
 use App\Http\Controllers\UserController;
@@ -67,6 +69,15 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     // 2.1. DASHBOARD & PROFILE
     // ==========================================
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/grading/inbox', [TeacherWorkQueueController::class, 'index'])
+        ->middleware('role:admin,teacher')
+        ->name('grading.inbox');
+    Route::middleware('role:admin,teacher')->group(function () {
+        Route::get('/courses/{course}/gradebook', [GradebookController::class, 'index'])->name('gradebook.index');
+        Route::put('/gradebook/periods/{period}/items/{item}/students/{student}', [GradebookController::class, 'record'])->name('gradebook.grades.record');
+        Route::post('/gradebook/periods/{period}/students/{student}/finalize', [GradebookController::class, 'finalize'])->name('gradebook.finalize');
+        Route::post('/gradebook/periods/{period}/students/{student}/reopen', [GradebookController::class, 'reopen'])->name('gradebook.reopen');
+    });
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/ai-operations/{uuid}', [AiOperationController::class, 'show'])->name('ai-operations.show');
     Route::get('/notifications/{notification}/open', [NotificationController::class, 'open'])->name('notifications.open');

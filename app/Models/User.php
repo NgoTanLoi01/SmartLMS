@@ -79,6 +79,16 @@ class User extends Authenticatable
         return $this->hasMany(AssignmentSubmission::class, 'user_id');
     }
 
+    public function grades()
+    {
+        return $this->hasMany(Grade::class);
+    }
+
+    public function gradeFinalizations()
+    {
+        return $this->hasMany(GradeFinalization::class);
+    }
+
     public function completedLessons()
     {
         return $this->belongsToMany(Lesson::class, 'lesson_user')->withPivot('completed_at');

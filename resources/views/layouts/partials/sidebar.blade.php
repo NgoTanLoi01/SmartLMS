@@ -25,6 +25,7 @@
         ['label' => 'Quản lý khóa học', 'route' => 'courses.index', 'patterns' => ['courses.*'], 'except' => ['courses.materials.*'], 'icon' => 'fa-graduation-cap', 'testid' => 'nav-courses'],
         ['label' => 'Kho học liệu', 'route' => 'materials.index', 'patterns' => ['materials.*', 'courses.materials.*'], 'icon' => 'fa-folder-open'],
         ['label' => 'Bài tập', 'route' => 'assignments.index', 'patterns' => ['assignments.*'], 'icon' => 'fa-clipboard-check', 'testid' => 'nav-assignments'],
+        ['label' => 'Hộp thư chờ chấm', 'route' => 'grading.inbox', 'patterns' => ['grading.inbox'], 'icon' => 'fa-inbox', 'testid' => 'nav-grading-inbox'],
     ];
 
     $trainingItems = [

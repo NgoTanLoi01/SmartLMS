@@ -134,6 +134,39 @@ class AttendanceSaveOptimizationTest extends TestCase
         Queue::assertPushedOn('notifications', NotifyFrequentAttendanceAbsences::class);
     }
 
+    public function test_legacy_grade_cells_preserve_decimal_comma_and_absence_text(): void
+    {
+        [$teacher, $courseId, $studentIds] = $this->seedCourse(2, 0);
+        $gradeColumnId = DB::table('attendance_columns')->insertGetId([
+            'course_id' => $courseId,
+            'name' => 'HS1',
+            'type' => 'grade',
+            'order' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($teacher)->post(route('attendance.save', $courseId), [
+            'data' => [
+                $gradeColumnId => [
+                    $studentIds[0] => '6,5',
+                    $studentIds[1] => 'vắng',
+                ],
+            ],
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertDatabaseHas('attendance_data', [
+            'attendance_column_id' => $gradeColumnId,
+            'user_id' => $studentIds[0],
+            'value' => '6,5',
+        ]);
+        $this->assertDatabaseHas('attendance_data', [
+            'attendance_column_id' => $gradeColumnId,
+            'user_id' => $studentIds[1],
+            'value' => 'vắng',
+        ]);
+    }
+
     public function test_invalid_nested_payload_is_rejected_before_the_use_case_runs(): void
     {
         Queue::fake();
