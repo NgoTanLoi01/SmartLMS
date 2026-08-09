@@ -67,11 +67,11 @@ return new class extends Migration
 
     private function studentCodeFromEmail(?string $email): ?string
     {
-        if (! $email || ! Str::endsWith($email, '@student.smartlms.local')) {
+        if (! $email || ! Str::endsWith($email, '@student.smartlms')) {
             return null;
         }
 
-        $code = Str::before($email, '@student.smartlms.local');
+        $code = Str::before($email, '@student.smartlms');
         $code = preg_replace('/[^a-zA-Z0-9]/', '', $code);
 
         return $code ?: null;

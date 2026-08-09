@@ -55,7 +55,7 @@ class StudentLoginCode
     {
         $localPart = Str::lower(Str::replace('-', '.', $username));
 
-        return $localPart.'@student.smartlms.local';
+        return $localPart.'@student.smartlms';
     }
 
     private static function normalizePrefix(string $prefix): string

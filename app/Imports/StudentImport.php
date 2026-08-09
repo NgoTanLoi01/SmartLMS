@@ -159,7 +159,7 @@ class StudentImport implements ToCollection, WithStartRow
         $classCode = StudentLoginCode::normalizeStudentCode($classroom->code) ?: 'class'.$classroom->id;
         $studentKey = $studentCode ?: 'row'.$rowNumber.Str::slug($fullName, '');
 
-        return $classCode.'.'.$studentKey.'@student.smartlms.local';
+        return $classCode.'.'.$studentKey.'@student.smartlms';
     }
 
     private function isHeaderRow(string $ho, string $ten, string $studentCode): bool
