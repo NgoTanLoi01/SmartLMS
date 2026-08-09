@@ -252,6 +252,55 @@ class AuthorizationIsolationTest extends TestCase
         $this->assertStringNotContainsString('javascript:', $assignment->instructions);
     }
 
+    public function test_published_assignment_creation_keeps_defaults_and_notifies_enrolled_students(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+
+        $this->actingAs($this->owner)
+            ->post(route('assignments.store'), [
+                'course_id' => $this->course->id,
+                'lesson_id' => $this->lesson->id,
+                'type' => 'file',
+                'title' => 'Bài tập đã xuất bản',
+                'instructions' => '<p>Nộp tài liệu thực hành.</p>',
+                'due_date' => now()->addWeek()->toDateTimeString(),
+                'allowed_extensions' => '.PDF, txt, pdf',
+                'status' => Assignments::STATUS_PUBLISHED,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Đã tạo bài tập thành công!');
+
+        $assignment = Assignments::where('title', 'Bài tập đã xuất bản')->firstOrFail();
+        $this->assertSame(10, $assignment->grading_scale);
+        $this->assertFalse($assignment->ai_grading_enabled);
+        $this->assertSame('pdf,txt', $assignment->allowed_extensions);
+        $this->assertNotNull($assignment->published_at);
+        $this->assertDatabaseHas('smart_notifications', [
+            'user_id' => $student->id,
+            'type' => 'assignment',
+            'dedupe_key' => "assignment:{$assignment->id}:published",
+        ]);
+    }
+
+    public function test_assignment_creation_rejects_invalid_payload_before_writing(): void
+    {
+        $this->actingAs($this->owner)
+            ->from(route('assignments.index'))
+            ->post(route('assignments.store'), [
+                'course_id' => $this->course->id,
+                'lesson_id' => $this->lesson->id,
+                'type' => 'unsupported',
+                'instructions' => 'Nội dung',
+                'due_date' => 'không-phải-ngày',
+                'status' => Assignments::STATUS_DRAFT,
+            ])
+            ->assertRedirect(route('assignments.index'))
+            ->assertSessionHasErrors(['type', 'title', 'due_date']);
+
+        $this->assertDatabaseCount('assignments', 1);
+    }
+
     public function test_submission_is_visible_only_to_owner_course_teacher_and_admin(): void
     {
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);

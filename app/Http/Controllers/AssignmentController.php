@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Application\Assessment\CreateAssignment;
+use App\Http\Requests\Assignment\CreateAssignmentRequest;
 use App\Jobs\AnalyzeAssignmentSubmission;
 use App\Models\AiOperation;
 use App\Models\Assignments;
@@ -24,6 +26,7 @@ class AssignmentController extends Controller
     public function __construct(
         private SubmissionFileService $submissionFiles,
         private SubmissionArchiveService $submissionArchives,
+        private CreateAssignment $createAssignment,
     ) {}
 
     // Hiển thị danh sách
@@ -135,50 +138,11 @@ class AssignmentController extends Controller
         return view('assignments.index', compact('assignments', 'courses', 'assignmentStats'));
     }
 
-    public function store(Request $request)
+    public function store(CreateAssignmentRequest $request)
     {
-        $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'lesson_id' => 'required|exists:lessons,id',
-            'type' => 'required|in:file,essay,mixed',
-            'title' => 'required|string|max:255',
-            'instructions' => 'required|string',
-            'grading_rubric' => 'nullable|string',
-            'grading_scale' => 'nullable|integer|min:1|max:100',
-            'ai_grading_enabled' => 'nullable|boolean',
-            'due_date' => 'required|date',
-            'allowed_extensions' => 'nullable|string',
-            'max_file_size' => 'nullable|integer',
-            'status' => 'required|in:draft,published,hidden,archived',
-            'available_from' => 'nullable|date',
-        ]);
-
         $course = Course::findOrFail($request->integer('course_id'));
         Gate::authorize('create', [Assignments::class, $course]);
-        $lesson = Lesson::with('module')->findOrFail($request->integer('lesson_id'));
-        abort_unless((int) $lesson->module?->course_id === (int) $course->id, 422, 'Bài học không thuộc khóa học đã chọn.');
-
-        $data = $request->only([
-            'course_id', 'lesson_id', 'type', 'title', 'instructions', 'grading_rubric',
-            'grading_scale', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'available_from',
-        ]);
-        $data['allowed_extensions'] = $this->normalizeAllowedExtensions($data['allowed_extensions'] ?? null);
-        $data['grading_scale'] = $data['grading_scale'] ?? 10;
-        $data['ai_grading_enabled'] = $request->boolean('ai_grading_enabled');
-        $data['published_at'] = $data['status'] === 'published' ? now() : null;
-
-        $assignment = Assignments::create($data);
-        if ($assignment->status === Assignments::STATUS_PUBLISHED) {
-            app(NotificationCenter::class)->notifyCourseStudents(
-                $assignment->course_id,
-                'assignment',
-                'Có bài tập mới',
-                "Bài tập \"{$assignment->title}\" vừa được đăng.",
-                route('courses.show', ['course' => $assignment->course_id, 'assignment_id' => $assignment->id]),
-                ['assignment_id' => $assignment->id],
-                "assignment:{$assignment->id}:published"
-            );
-        }
+        $this->createAssignment->handle($course, $request->assignmentData());
 
         return back()->with('success', 'Đã tạo bài tập thành công!');
     }
