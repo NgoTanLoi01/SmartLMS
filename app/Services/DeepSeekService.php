@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\AiOperation;
 use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class DeepSeekService
@@ -16,6 +15,7 @@ class DeepSeekService
         private VectorCourseContextSearchService $vectorContextSearch,
         private AiResponseValidator $responseValidator,
         private AiPiiSanitizer $piiSanitizer,
+        private AIProviderClient $providerClient,
     ) {}
 
     public function sendMessage(array $messages, ?User $user = null, array $options = []): string
@@ -52,16 +52,13 @@ class DeepSeekService
 
     public function generateQuizQuestions(string $prompt, int $expectedQuantity): array
     {
-        $response = Http::withToken(config('services.deepseek.key'))
-            ->timeout(120)
-            ->post(rtrim(config('services.deepseek.base_url', 'https://api.deepseek.com'), '/').'/v1/chat/completions', [
-                'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are a professional teacher assistant. Support language: Vietnamese. Always return valid JSON only.'],
-                    ['role' => 'user', 'content' => $this->piiSanitizer->redactText($prompt)],
-                ],
-                'response_format' => ['type' => 'json_object'],
-            ]);
+        $response = $this->providerClient->versionedChat([
+            'messages' => [
+                ['role' => 'system', 'content' => 'You are a professional teacher assistant. Support language: Vietnamese. Always return valid JSON only.'],
+                ['role' => 'user', 'content' => $this->piiSanitizer->redactText($prompt)],
+            ],
+            'response_format' => ['type' => 'json_object'],
+        ], 120);
         if ($response->failed()) {
             throw new \RuntimeException('DeepSeek tạo câu hỏi lỗi HTTP '.$response->status());
         }
@@ -79,8 +76,6 @@ class DeepSeekService
     {
         try {
             $apiKey = config('services.deepseek.key');
-            $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
-
             if (! $apiKey) {
                 return [
                     'success' => false,
@@ -115,16 +110,13 @@ Quy tắc:
 PROMPT;
 
             $startedAt = hrtime(true);
-            $response = Http::withToken($apiKey)
-                ->timeout(90)
-                ->post("{$baseUrl}/chat/completions", [
-                    'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => json_encode($this->piiSanitizer->redactRecursive($payload), JSON_UNESCAPED_UNICODE)],
-                    ],
-                    'temperature' => 0.2,
-                ]);
+            $response = $this->providerClient->chat([
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => json_encode($this->piiSanitizer->redactRecursive($payload), JSON_UNESCAPED_UNICODE)],
+                ],
+                'temperature' => 0.2,
+            ], 90);
             $this->trackSynchronousResponse('learning_analysis', $response, $startedAt);
 
             if ($response->failed()) {
@@ -170,8 +162,6 @@ PROMPT;
     {
         try {
             $apiKey = config('services.deepseek.key');
-            $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
-
             if (! $apiKey) {
                 return [
                     'success' => false,
@@ -216,16 +206,13 @@ Quy tắc:
 PROMPT;
 
             $startedAt = hrtime(true);
-            $response = Http::withToken($apiKey)
-                ->timeout(90)
-                ->post("{$baseUrl}/chat/completions", [
-                    'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
-                    'messages' => [
-                        ['role' => 'system', 'content' => $this->cleanUtf8($systemPrompt)],
-                        ['role' => 'user', 'content' => $this->cleanUtf8(json_encode($this->piiSanitizer->redactRecursive($payload), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE) ?: '{}')],
-                    ],
-                    'temperature' => 0.15,
-                ]);
+            $response = $this->providerClient->chat([
+                'messages' => [
+                    ['role' => 'system', 'content' => $this->cleanUtf8($systemPrompt)],
+                    ['role' => 'user', 'content' => $this->cleanUtf8(json_encode($this->piiSanitizer->redactRecursive($payload), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE) ?: '{}')],
+                ],
+                'temperature' => 0.15,
+            ], 90);
             $this->trackSynchronousResponse('assignment_grading', $response, $startedAt);
 
             if ($response->failed()) {
@@ -315,8 +302,6 @@ PROMPT;
     {
         try {
             $apiKey = config('services.deepseek.key');
-            $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
-
             if (! $apiKey) {
                 return [
                     'success' => false,
@@ -417,16 +402,13 @@ PROMPT;
             ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
 
             $startedAt = hrtime(true);
-            $response = Http::withToken($apiKey)
-                ->timeout(90)
-                ->post("{$baseUrl}/chat/completions", [
-                    'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
-                    'messages' => [
-                        ['role' => 'system', 'content' => $this->cleanUtf8($systemPrompt)],
-                        ['role' => 'user', 'content' => $this->cleanUtf8($this->piiSanitizer->redactText($userPayload ?: '{}'))],
-                    ],
-                    'temperature' => 0.25,
-                ]);
+            $response = $this->providerClient->chat([
+                'messages' => [
+                    ['role' => 'system', 'content' => $this->cleanUtf8($systemPrompt)],
+                    ['role' => 'user', 'content' => $this->cleanUtf8($this->piiSanitizer->redactText($userPayload ?: '{}'))],
+                ],
+                'temperature' => 0.25,
+            ], 90);
             $this->trackSynchronousResponse('teaching_content', $response, $startedAt);
 
             if ($response->failed()) {
@@ -663,8 +645,6 @@ PROMPT;
 
     private function requestCoursePlanJson(array $messages, string $feature, int $maxTokens, float $temperature): array
     {
-        $apiKey = config('services.deepseek.key');
-        $baseUrl = rtrim((string) config('services.deepseek.base_url', 'https://api.deepseek.com'), '/');
         $connectTimeout = max(3, min(30, (int) config('ai.course_plan.connect_timeout_seconds', 10)));
         $timeout = max(30, min(300, (int) config('ai.course_plan.timeout_seconds', 180)));
         $attempts = max(1, min(3, (int) config('ai.course_plan.request_attempts', 2)));
@@ -673,21 +653,15 @@ PROMPT;
         for ($attempt = 1; $attempt <= $attempts; $attempt++) {
             try {
                 $startedAt = hrtime(true);
-                $response = Http::withToken($apiKey)
-                    ->acceptJson()
-                    ->asJson()
-                    ->connectTimeout($connectTimeout)
-                    ->timeout($timeout)
-                    ->post($baseUrl.'/chat/completions', [
-                        'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
-                        'messages' => $messages,
-                        'temperature' => $temperature,
-                        'max_tokens' => $maxTokens,
-                        'response_format' => ['type' => 'json_object'],
-                        'thinking' => [
-                            'type' => config('ai.course_plan.thinking_enabled', false) ? 'enabled' : 'disabled',
-                        ],
-                    ]);
+                $response = $this->providerClient->resilientChat([
+                    'messages' => $messages,
+                    'temperature' => $temperature,
+                    'max_tokens' => $maxTokens,
+                    'response_format' => ['type' => 'json_object'],
+                    'thinking' => [
+                        'type' => config('ai.course_plan.thinking_enabled', false) ? 'enabled' : 'disabled',
+                    ],
+                ], $connectTimeout, $timeout);
                 $this->trackSynchronousResponse($feature, $response, $startedAt);
 
                 if ($response->failed()) {
@@ -958,9 +932,6 @@ PROMPT;
 
     private function askDeepSeek(array $historyMessages, string $context, array $options = []): string
     {
-        $apiKey = config('services.deepseek.key');
-        $baseUrl = config('services.deepseek.base_url', 'https://api.deepseek.com');
-
         $assistMode = (string) ($options['assist_mode'] ?? '');
         $sources = is_array($options['sources'] ?? null) ? $options['sources'] : [];
 
@@ -999,13 +970,10 @@ PROMPT;
         }
 
         $startedAt = hrtime(true);
-        $response = Http::withToken($apiKey)
-            ->timeout(60)
-            ->post("{$baseUrl}/chat/completions", [
-                'model' => config('services.deepseek.model', 'deepseek-v4-flash'),
-                'messages' => $finalMessages,
-                'temperature' => 0.3,
-            ]);
+        $response = $this->providerClient->chat([
+            'messages' => $finalMessages,
+            'temperature' => 0.3,
+        ], 60);
         $this->trackSynchronousResponse('chatbot', $response, $startedAt);
 
         if (! $response->successful()) {

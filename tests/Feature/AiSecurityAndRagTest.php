@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Services\AiPiiSanitizer;
+use App\Services\AIProviderClient;
 use App\Services\AiResponseValidator;
 use App\Services\DeepSeekService;
 use App\Services\LocalCourseContextSearchService;
@@ -65,6 +66,7 @@ class AiSecurityAndRagTest extends TestCase
             $vector,
             new AiResponseValidator,
             new AiPiiSanitizer,
+            new AIProviderClient,
         );
         $user = new User(['name' => 'Học viên', 'email' => 'student@example.com', 'role' => User::ROLE_STUDENT]);
         $user->id = 10;
@@ -126,6 +128,7 @@ ANSWER]]],
             $vector,
             new AiResponseValidator,
             new AiPiiSanitizer,
+            new AIProviderClient,
         );
         $user = new User(['name' => 'Học viên', 'email' => 'student@example.com', 'role' => User::ROLE_STUDENT]);
         $user->id = 10;
