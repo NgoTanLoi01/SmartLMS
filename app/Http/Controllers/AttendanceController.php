@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Application\Attendance\SaveAttendance;
+use App\Domain\Gradebook\GradebookException;
 use App\Exports\AttendanceExport;
 use App\Http\Requests\Attendance\SaveAttendanceRequest;
 use App\Models\AttendanceColumn;
 use App\Models\AttendanceData;
 use App\Models\Course;
+use App\Queries\Gradebook\AttendanceGradebookStateQuery;
 use App\Support\AttendanceStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -44,7 +46,7 @@ class AttendanceController extends Controller
         );
     }
 
-    public function show($courseId)
+    public function show($courseId, AttendanceGradebookStateQuery $gradebookState)
     {
         $course = Course::with('classes.students')->findOrFail($courseId);
         Gate::authorize('view', $course);
@@ -83,7 +85,11 @@ class AttendanceController extends Controller
             ->select('schedules.*', 'classes.name as class_name')
             ->get();
 
-        return view('attendance.show', compact('course', 'students', 'columns', 'attendanceData', 'attendanceNotes', 'schedules', 'isStudentView'));
+        $gradebook = $gradebookState->get($course, $columns, $students);
+        $gradebookMappedColumns = $gradebook['mapped_columns'];
+        $gradebookLockedCells = $gradebook['locked_cells'];
+
+        return view('attendance.show', compact('course', 'students', 'columns', 'attendanceData', 'attendanceNotes', 'schedules', 'isStudentView', 'gradebookMappedColumns', 'gradebookLockedCells'));
     }
 
     public function addColumn(Request $request, $courseId)
@@ -152,7 +158,13 @@ class AttendanceController extends Controller
         $course = Course::findOrFail($courseId);
         Gate::authorize('manageAttendance', $course);
 
-        if (! $saveAttendance->handle($course, $request->validated())) {
+        try {
+            $changed = $saveAttendance->handle($course, $request->validated(), $request->user());
+        } catch (GradebookException $exception) {
+            return back()->withErrors(['gradebook' => $exception->getMessage()]);
+        }
+
+        if (! $changed) {
             return back()->with('success', 'Không có thay đổi cần lưu.');
         }
 

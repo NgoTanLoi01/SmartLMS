@@ -2,7 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Application\Gradebook\FinalizeGrades;
 use App\Jobs\NotifyFrequentAttendanceAbsences;
+use App\Models\Grade;
+use App\Models\GradeCategory;
+use App\Models\GradeItem;
+use App\Models\GradingPeriod;
 use App\Models\User;
 use App\Services\NotificationCenter;
 use Illuminate\Database\Events\QueryExecuted;
@@ -24,6 +29,8 @@ class AttendanceSaveOptimizationTest extends TestCase
         $this->requireIsolatedSqliteDatabase();
 
         $this->createSchema();
+        $this->gradebookMigration()->up();
+        $this->legacyMappingMigration()->up();
         DB::listen(function (QueryExecuted $query): void {
             $sql = strtolower($query->sql);
             if (str_contains($sql, 'attendance_data') && preg_match('/^(insert|update|delete|replace)/', ltrim($sql))) {
@@ -35,6 +42,8 @@ class AttendanceSaveOptimizationTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
+            $this->legacyMappingMigration()->down();
+            $this->gradebookMigration()->down();
             foreach ([
                 'smart_notifications', 'attendance_data', 'attendance_columns',
                 'class_course', 'class_user', 'classes', 'courses', 'users',
@@ -226,6 +235,72 @@ class AttendanceSaveOptimizationTest extends TestCase
         ]);
     }
 
+    public function test_mapped_hs_grade_is_projected_from_attendance_idempotently(): void
+    {
+        [$teacher, $courseId, $studentIds] = $this->seedCourse(1, 0);
+        $columnId = DB::table('attendance_columns')->insertGetId([
+            'course_id' => $courseId,
+            'name' => 'HS1',
+            'type' => 'grade',
+            'order' => 51,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        [, $item] = $this->mapLegacyGrade($courseId, $columnId, 'missing');
+
+        $this->actingAs($teacher)->post(route('attendance.save', $courseId), [
+            'data' => [$columnId => [$studentIds[0] => '6,5']],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $grade = Grade::where('grade_item_id', $item->id)->where('user_id', $studentIds[0])->firstOrFail();
+        $this->assertSame(Grade::STATUS_GRADED, $grade->status);
+        $this->assertSame('6.5000', $grade->raw_points);
+        $this->assertStringContainsString('attendance_data:', $grade->source_version);
+        $version = $grade->version;
+
+        $this->actingAs($teacher)->post(route('attendance.save', $courseId), [
+            'data' => [$columnId => [$studentIds[0] => '6,5']],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame($version, $grade->fresh()->version);
+
+        $this->actingAs($teacher)->post(route('attendance.save', $courseId), [
+            'data' => [$columnId => [$studentIds[0] => 'vắng']],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(Grade::STATUS_MISSING, $grade->fresh()->status);
+        $this->assertNull($grade->fresh()->raw_points);
+    }
+
+    public function test_mapped_grade_rejects_invalid_locked_and_finalized_writes_before_legacy_changes(): void
+    {
+        [$teacher, $courseId, $studentIds] = $this->seedCourse(1, 0);
+        $columnId = DB::table('attendance_columns')->insertGetId([
+            'course_id' => $courseId,
+            'name' => 'Thi',
+            'type' => 'grade',
+            'order' => 51,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        [$period, $item] = $this->mapLegacyGrade($courseId, $columnId, 'missing');
+
+        $this->actingAs($teacher)->post(route('attendance.save', $courseId), [
+            'data' => [$columnId => [$studentIds[0] => 'không hợp lệ']],
+        ])->assertRedirect()->assertSessionHasErrors('gradebook');
+        $this->assertDatabaseMissing('attendance_data', ['attendance_column_id' => $columnId, 'user_id' => $studentIds[0]]);
+
+        $this->actingAs($teacher)->post(route('attendance.save', $courseId), [
+            'data' => [$columnId => [$studentIds[0] => '8']],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $grade = Grade::where('grade_item_id', $item->id)->where('user_id', $studentIds[0])->firstOrFail();
+        app(FinalizeGrades::class)->finalize($period, User::findOrFail($studentIds[0]), $teacher, 'attendance-finalize');
+
+        $this->actingAs($teacher)->post(route('attendance.save', $courseId), [
+            'data' => [$columnId => [$studentIds[0] => '9']],
+        ])->assertRedirect()->assertSessionHasErrors('gradebook');
+        $this->assertSame('8', DB::table('attendance_data')->where('attendance_column_id', $columnId)->where('user_id', $studentIds[0])->value('value'));
+        $this->assertSame('8.0000', $grade->fresh()->raw_points);
+    }
+
     /** @return array{User,int,list<int>,list<int>} */
     private function seedCourse(int $studentCount, int $columnCount, string $suffix = 'main'): array
     {
@@ -376,5 +451,52 @@ class AttendanceSaveOptimizationTest extends TestCase
             $table->timestamps();
             $table->unique(['user_id', 'dedupe_key']);
         });
+    }
+
+    /** @return array{GradingPeriod,GradeItem} */
+    private function mapLegacyGrade(int $courseId, int $columnId, string $absencePolicy): array
+    {
+        $period = GradingPeriod::create([
+            'course_id' => $courseId,
+            'code' => 'hk-'.uniqid(),
+            'name' => 'Kỳ đồng bộ',
+            'status' => GradingPeriod::STATUS_OPEN,
+            'missing_policy' => GradingPeriod::MISSING_BLOCK,
+            'rounding_precision' => 1,
+            'rounding_mode' => 'half_up',
+        ]);
+        $category = GradeCategory::create([
+            'course_id' => $courseId,
+            'grading_period_id' => $period->id,
+            'code' => 'total',
+            'name' => 'Tổng kết',
+            'weight_percent' => 100,
+        ]);
+        $item = GradeItem::create([
+            'course_id' => $courseId,
+            'grading_period_id' => $period->id,
+            'grade_category_id' => $category->id,
+            'code' => 'legacy-'.$columnId,
+            'name' => 'Cột điểm legacy',
+            'item_type' => GradeItem::TYPE_HS1,
+            'source_type' => GradeItem::SOURCE_LEGACY_ATTENDANCE,
+            'source_id' => $columnId,
+            'max_points' => 10,
+            'item_weight' => 1,
+            'absence_policy' => $absencePolicy,
+            'is_published' => true,
+        ]);
+
+        return [$period, $item];
+    }
+
+    private function gradebookMigration(): object
+    {
+        return require database_path('migrations/2026_08_09_140000_create_gradebook_foundation.php');
+    }
+
+    private function legacyMappingMigration(): object
+    {
+        return require database_path('migrations/2026_08_09_150000_add_legacy_mapping_policy_to_grade_items.php');
     }
 }

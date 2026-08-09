@@ -2,19 +2,24 @@
 
 namespace App\Application\Attendance;
 
+use App\Application\Gradebook\GuardLegacyAttendanceGradeWrites;
 use App\Jobs\NotifyFrequentAttendanceAbsences;
+use App\Jobs\ProjectLegacyAttendanceGrades;
 use App\Models\AttendanceColumn;
 use App\Models\AttendanceData;
 use App\Models\Course;
+use App\Models\User;
 use App\Support\AttendanceStatus;
 use Illuminate\Support\Facades\DB;
 
 class SaveAttendance
 {
+    public function __construct(private GuardLegacyAttendanceGradeWrites $gradebookGuard) {}
+
     /**
      * @param  array{data?: array<int|string, array<int|string, mixed>>, notes?: array<int|string, array<int|string, mixed>>}  $input
      */
-    public function handle(Course $course, array $input): bool
+    public function handle(Course $course, array $input, User $actor): bool
     {
         $submittedData = collect($input['data'] ?? []);
 
@@ -79,12 +84,18 @@ class SaveAttendance
             }
         }
 
+        $gradebookCells = $rows === [] ? [] : $this->gradebookGuard->handle($course, $rows);
+
         if ($rows !== []) {
             DB::transaction(fn () => AttendanceData::query()->upsert(
                 $rows,
                 ['attendance_column_id', 'user_id'],
                 ['value', 'note'],
             ));
+        }
+
+        if ($gradebookCells !== []) {
+            ProjectLegacyAttendanceGrades::dispatch((int) $course->id, $gradebookCells, (int) $actor->id)->afterCommit();
         }
 
         $attendanceUserIds = array_values(array_unique($attendanceUserIds));

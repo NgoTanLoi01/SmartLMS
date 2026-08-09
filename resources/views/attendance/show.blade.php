@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+    @php
+        $gradebookMappedColumns = $gradebookMappedColumns ?? [];
+        $gradebookLockedCells = $gradebookLockedCells ?? [];
+    @endphp
+
     @push('styles')
         @vite('resources/css/pages/attendance-show.css')
     @endpush
@@ -66,6 +71,10 @@
             </div>
         </div>
 
+        @if(!$isStudentView && $gradebookMappedColumns !== [])
+            <div class="alert alert-info py-2" role="status"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Các cột có nhãn “Đồng bộ Sổ điểm” sẽ tự cập nhật Gradebook sau khi lưu. Ô đã chốt hoặc thành phần đã khóa không thể sửa tại đây.</div>
+        @endif
+
         {{-- ── TABLE ── --}}
         <form action="{{ route('attendance.save', $course->id) }}" method="POST" id="att-form">
             @csrf
@@ -92,6 +101,7 @@
                                                 {{ substr($col->schedule->start_time, 0, 5) }}
                                             </small>
                                         @endif
+                                        @if(isset($gradebookMappedColumns[$col->id]))<small class="badge text-bg-light border mt-1">Đồng bộ Sổ điểm</small>@endif
                                         @unless ($isStudentView)
                                         <i class="fa-solid fa-times btn-delete-col"
                                             data-delete-url="{{ route('attendance.deleteColumn', $col->id) }}"
@@ -152,10 +162,13 @@
                                                 </button>
                                             </div>
                                         @else
+                                            @php($gradebookLock = $gradebookLockedCells[$col->id][$student->id] ?? null)
                                             <input type="text" name="data[{{ $col->id }}][{{ $student->id }}]"
                                                 data-initial-value="{{ $attendanceData[$student->id][$col->id] ?? '' }}"
                                                 value="{{ $attendanceData[$student->id][$col->id] ?? '' }}"
-                                                placeholder="{{ $ph }}" @if ($isStudentView) readonly aria-label="{{ $col->name }}" @endif>
+                                                placeholder="{{ $ph }}" @if ($isStudentView || $gradebookLock) readonly aria-label="{{ $col->name }}" @endif
+                                                @if($gradebookLock) title="{{ $gradebookLock }}" @endif>
+                                            @if($gradebookLock)<small class="d-block text-muted px-2 pb-1">{{ $gradebookLock }}</small>@endif
                                         @endif
                                     </td>
                                 @endforeach
