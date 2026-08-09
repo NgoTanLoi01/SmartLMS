@@ -98,6 +98,60 @@ class AttendanceSaveOptimizationTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_empty_payload_keeps_the_existing_no_change_response(): void
+    {
+        Queue::fake();
+        [$teacher, $courseId] = $this->seedCourse(1, 1);
+
+        $this->actingAs($teacher)
+            ->from(route('attendance.show', $courseId))
+            ->post(route('attendance.save', $courseId), [])
+            ->assertRedirect(route('attendance.show', $courseId))
+            ->assertSessionHas('success', 'Không có thay đổi cần lưu.');
+
+        Queue::assertNothingPushed();
+    }
+
+    public function test_attendance_status_and_existing_note_are_preserved_as_before_refactor(): void
+    {
+        Queue::fake();
+        [$teacher, $courseId, $studentIds, $columnIds] = $this->seedCourse(1, 1);
+        DB::table('attendance_data')
+            ->where('attendance_column_id', $columnIds[0])
+            ->where('user_id', $studentIds[0])
+            ->update(['note' => 'Giữ nguyên ghi chú']);
+
+        $this->actingAs($teacher)->post(route('attendance.save', $courseId), [
+            'data' => [$columnIds[0] => [$studentIds[0] => 'Vắng']],
+        ])->assertSessionHas('success', 'Đã lưu bảng điểm danh thành công!');
+
+        $this->assertDatabaseHas('attendance_data', [
+            'attendance_column_id' => $columnIds[0],
+            'user_id' => $studentIds[0],
+            'value' => 'absent',
+            'note' => 'Giữ nguyên ghi chú',
+        ]);
+        Queue::assertPushedOn('notifications', NotifyFrequentAttendanceAbsences::class);
+    }
+
+    public function test_invalid_nested_payload_is_rejected_before_the_use_case_runs(): void
+    {
+        Queue::fake();
+        [$teacher, $courseId, $studentIds, $columnIds] = $this->seedCourse(1, 1);
+        $this->attendanceWrites = [];
+
+        $this->actingAs($teacher)
+            ->from(route('attendance.show', $courseId))
+            ->post(route('attendance.save', $courseId), [
+                'data' => [$columnIds[0] => [$studentIds[0] => str_repeat('x', 256)]],
+            ])
+            ->assertRedirect(route('attendance.show', $courseId))
+            ->assertSessionHasErrors("data.{$columnIds[0]}.{$studentIds[0]}");
+
+        $this->assertSame([], $this->attendanceWrites);
+        Queue::assertNothingPushed();
+    }
+
     public function test_save_rejects_cells_outside_the_course_scope(): void
     {
         Queue::fake();
