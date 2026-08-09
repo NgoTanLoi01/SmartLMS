@@ -96,51 +96,55 @@
             .lesson-self-check { background: #f8fafc; border-color: #c7d2fe; }
         `;
 
-        // Khởi tạo trình soạn thảo bài học
-        tinymce.init({
-            selector: '#addLessonContent, #editLessonContent',
-            height: 420,
-            min_height: 320,
-            menubar: false,
-            branding: false,
-            promotion: false,
-            resize: true,
-            plugins: 'lists link image preview searchreplace visualblocks code fullscreen table wordcount autoresize',
-            toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | lessonblocks | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | preview fullscreen code',
-            toolbar_mode: 'sliding',
-            block_formats: 'Đoạn văn=p; Tiêu đề lớn=h2; Tiêu đề vừa=h3; Tiêu đề nhỏ=h4; Trích dẫn=blockquote; Mã lệnh=pre',
-            style_formats: [
-                { title: 'Đoạn nhấn mạnh', block: 'p', classes: 'lesson-lead-text' },
-                { title: 'Ghi nhớ', block: 'div', classes: 'lesson-callout lesson-callout--note', wrapper: true },
-                { title: 'Ví dụ minh họa', block: 'div', classes: 'lesson-callout lesson-callout--example', wrapper: true },
-                { title: 'Lưu ý', block: 'div', classes: 'lesson-callout lesson-callout--warning', wrapper: true },
-                { title: 'Bài thực hành', block: 'div', classes: 'lesson-callout lesson-callout--practice', wrapper: true }
-            ],
-            content_style: lessonEditorContentStyle,
-            paste_data_images: true,
-            automatic_uploads: false,
-            convert_urls: false,
-            extended_valid_elements: 'div[class],section[class],span[class],ul[class],ol[class],li[class],pre[class],code[class],blockquote[class]',
-            setup: function(editor) {
-                editor.ui.registry.addMenuButton('lessonblocks', {
-                    text: 'Khối nội dung',
-                    tooltip: 'Chèn nhanh mẫu nội dung bài học',
-                    fetch: function(callback) {
-                        callback(lessonContentBlocks.map((block) => ({
-                            type: 'menuitem',
-                            text: block.text,
-                            onAction: function() {
-                                editor.insertContent(block.content);
-                                editor.save();
-                            }
-                        })));
-                    }
-                });
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.SmartLmsTinyMce) return;
 
-                // Đồng bộ dữ liệu từ TinyMCE về textarea gốc để Form có thể gửi đi
-                editor.on('change keyup undo redo SetContent', function() {
-                    editor.save();
-                });
-            }
+            // Khởi tạo trình soạn thảo bài học sau khi bundle self-host đã sẵn sàng.
+            window.SmartLmsTinyMce.init({
+                selector: '#addLessonContent, #editLessonContent',
+                height: 420,
+                min_height: 320,
+                menubar: false,
+                branding: false,
+                promotion: false,
+                resize: true,
+                plugins: 'lists link image preview searchreplace visualblocks code fullscreen table wordcount autoresize',
+                toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | lessonblocks | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table image | removeformat | preview fullscreen code',
+                toolbar_mode: 'sliding',
+                block_formats: 'Đoạn văn=p; Tiêu đề lớn=h2; Tiêu đề vừa=h3; Tiêu đề nhỏ=h4; Trích dẫn=blockquote; Mã lệnh=pre',
+                style_formats: [
+                    { title: 'Đoạn nhấn mạnh', block: 'p', classes: 'lesson-lead-text' },
+                    { title: 'Ghi nhớ', block: 'div', classes: 'lesson-callout lesson-callout--note', wrapper: true },
+                    { title: 'Ví dụ minh họa', block: 'div', classes: 'lesson-callout lesson-callout--example', wrapper: true },
+                    { title: 'Lưu ý', block: 'div', classes: 'lesson-callout lesson-callout--warning', wrapper: true },
+                    { title: 'Bài thực hành', block: 'div', classes: 'lesson-callout lesson-callout--practice', wrapper: true }
+                ],
+                content_style: lessonEditorContentStyle,
+                paste_data_images: true,
+                automatic_uploads: false,
+                convert_urls: false,
+                extended_valid_elements: 'div[class],section[class],span[class],ul[class],ol[class],li[class],pre[class],code[class],blockquote[class]',
+                setup: function(editor) {
+                    editor.ui.registry.addMenuButton('lessonblocks', {
+                        text: 'Khối nội dung',
+                        tooltip: 'Chèn nhanh mẫu nội dung bài học',
+                        fetch: function(callback) {
+                            callback(lessonContentBlocks.map((block) => ({
+                                type: 'menuitem',
+                                text: block.text,
+                                onAction: function() {
+                                    editor.insertContent(block.content);
+                                    editor.save();
+                                }
+                            })));
+                        }
+                    });
+
+                    // Đồng bộ dữ liệu từ TinyMCE về textarea gốc để Form có thể gửi đi
+                    editor.on('change keyup undo redo SetContent', function() {
+                        editor.save();
+                    });
+                }
+            });
         });
     </script>

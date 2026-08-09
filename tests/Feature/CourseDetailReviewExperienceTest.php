@@ -66,4 +66,19 @@ class CourseDetailReviewExperienceTest extends TestCase
             $styles
         );
     }
+
+    public function test_course_rich_text_editors_are_self_hosted_through_vite(): void
+    {
+        $scripts = file_get_contents(resource_path('views/courses/partials/scripts.blade.php'));
+        $modals = file_get_contents(resource_path('views/courses/partials/modals.blade.php'));
+        $editor = file_get_contents(resource_path('js/pages/course-editors.js'));
+
+        $this->assertStringContainsString("@vite('resources/js/pages/course-editors.js')", $scripts);
+        $this->assertStringNotContainsString('tinymce/6.8.2/tinymce.min.js', $scripts);
+        $this->assertStringNotContainsString('cdn.tiny.cloud', $modals);
+        $this->assertStringNotContainsString('images_upload_url', $modals);
+        $this->assertStringContainsString("license_key: 'gpl'", $editor);
+        $this->assertStringContainsString("from 'tinymce/tinymce'", $editor);
+        $this->assertStringContainsString("selector: '#addAssignmentInstructions, #editAssignmentInstructions'", $modals);
+    }
 }

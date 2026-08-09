@@ -716,12 +716,12 @@
      SCRIPTS
      ============================================================ --}}
 @push('scripts')
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            if (!window.SmartLmsTinyMce) return;
 
             // ── TinyMCE init ──
-            tinymce.init({
+            window.SmartLmsTinyMce.init({
                 selector: '#addAssignmentInstructions, #editAssignmentInstructions',
                 height: 280,
                 menubar: false,
@@ -732,8 +732,7 @@
                 toolbar: 'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image | code | help',
                 content_style: "body { font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; }",
                 paste_data_images: true,
-                automatic_uploads: true,
-                images_upload_url: '/tinymce/upload-image',
+                automatic_uploads: false,
                 valid_elements: 'p,b,strong,i,em,ul,ol,li,br,h1,h2,h3,h4,h5,h6,a[href|target],img[src|alt|width|height]',
                 setup(editor) {
                     editor.on('change keyup', () => editor.save());
@@ -748,7 +747,7 @@
             });
 
             // ── Trigger save on edit form submit ──
-            document.getElementById('editAssignmentForm')?.addEventListener('submit', () => tinymce.triggerSave());
+            document.getElementById('editAssignmentForm')?.addEventListener('submit', () => window.tinymce?.triggerSave());
         });
 
         // ── Open edit assignment modal ──
@@ -778,7 +777,7 @@
             document.getElementById('editAssignmentAiEnabled').value = aiEnabled;
 
             setTimeout(() => {
-                tinymce.get('editAssignmentInstructions')?.setContent(instructions);
+                window.tinymce?.get('editAssignmentInstructions')?.setContent(instructions);
             }, 300);
 
             new bootstrap.Modal(document.getElementById('editAssignmentModal')).show();
@@ -789,11 +788,11 @@
             const courseId = @json($course->id);
 
             function editorContent(id) {
-                return tinymce.get(id)?.getContent() || document.getElementById(id)?.value || '';
+                return window.tinymce?.get(id)?.getContent() || document.getElementById(id)?.value || '';
             }
 
             function setEditorContent(id, value) {
-                const editor = tinymce.get(id);
+                const editor = window.tinymce?.get(id);
                 if (editor) {
                     editor.setContent(value || '');
                     editor.save();

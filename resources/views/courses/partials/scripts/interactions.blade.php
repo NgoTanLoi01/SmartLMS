@@ -788,7 +788,7 @@
                     `/lessons/${this.getAttribute('data-id')}`;
                 document.getElementById('editLessonTitle').value = this.getAttribute('data-title');
 
-                const editor = tinymce.get('editLessonContent');
+                const editor = window.tinymce?.get('editLessonContent');
                 if (editor) editor.setContent('<p>Đang tải nội dung...</p>');
                 else document.getElementById('editLessonContent').value = 'Đang tải nội dung...';
 
@@ -800,11 +800,11 @@
                 try {
                     const payload = await loadLessonContent(this);
                     if (window.currentEditLessonId !== this.getAttribute('data-id')) return;
-                    if (tinymce.get('editLessonContent')) tinymce.get('editLessonContent').setContent(payload.content);
+                    if (window.tinymce?.get('editLessonContent')) window.tinymce.get('editLessonContent').setContent(payload.content);
                     else document.getElementById('editLessonContent').value = payload.content;
                 } catch (error) {
                     const message = '<p>Không tải được nội dung. Vui lòng đóng cửa sổ và thử lại.</p>';
-                    if (tinymce.get('editLessonContent')) tinymce.get('editLessonContent').setContent(message);
+                    if (window.tinymce?.get('editLessonContent')) window.tinymce.get('editLessonContent').setContent(message);
                     else document.getElementById('editLessonContent').value = 'Không tải được nội dung. Vui lòng thử lại.';
                 }
             });

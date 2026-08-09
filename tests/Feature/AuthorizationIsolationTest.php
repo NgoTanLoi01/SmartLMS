@@ -183,6 +183,73 @@ class AuthorizationIsolationTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_owner_can_create_and_edit_rich_text_lesson_content(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('lessons.store'), [
+                'module_id' => $this->module->id,
+                'title' => 'Bài soạn bằng editor',
+                'content' => '<h2>Bài mới</h2><p><strong>Nội dung</strong></p><script>alert(1)</script>',
+                'status' => Lesson::STATUS_DRAFT,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $lesson = Lesson::where('title', 'Bài soạn bằng editor')->firstOrFail();
+        $this->assertSame('<h2>Bài mới</h2><p><strong>Nội dung</strong></p>', $lesson->content);
+
+        $this->actingAs($this->owner)
+            ->put(route('lessons.update', $lesson), [
+                'module_id' => $this->module->id,
+                'title' => 'Bài soạn bằng editor',
+                'content' => '<h3>Nội dung đã sửa</h3><ul><li>Mục một</li></ul><img src="javascript:alert(2)">',
+                'status' => Lesson::STATUS_DRAFT,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $lesson->refresh();
+        $this->assertStringContainsString('<h3>Nội dung đã sửa</h3>', $lesson->content);
+        $this->assertStringContainsString('<ul><li>Mục một</li></ul>', $lesson->content);
+        $this->assertStringNotContainsString('javascript:', $lesson->content);
+    }
+
+    public function test_owner_can_create_and_edit_rich_text_assignment_instructions(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('assignments.store'), [
+                'course_id' => $this->course->id,
+                'lesson_id' => $this->lesson->id,
+                'type' => 'essay',
+                'title' => 'Bài tập soạn bằng editor',
+                'instructions' => '<h3>Yêu cầu</h3><ol><li>Hoàn thành phần một</li></ol><script>alert(1)</script>',
+                'due_date' => now()->addWeek()->toDateTimeString(),
+                'status' => Assignments::STATUS_DRAFT,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $assignment = Assignments::where('title', 'Bài tập soạn bằng editor')->firstOrFail();
+        $this->assertStringContainsString('<h3>Yêu cầu</h3>', $assignment->instructions);
+        $this->assertStringNotContainsString('<script', $assignment->instructions);
+
+        $this->actingAs($this->owner)
+            ->put(route('assignments.update', $assignment), [
+                'lesson_id' => $this->lesson->id,
+                'type' => 'essay',
+                'title' => 'Bài tập soạn bằng editor',
+                'instructions' => '<p><strong>Yêu cầu đã sửa</strong></p><a href="javascript:alert(2)">x</a>',
+                'due_date' => now()->addWeek()->toDateTimeString(),
+                'status' => Assignments::STATUS_DRAFT,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $assignment->refresh();
+        $this->assertStringContainsString('<strong>Yêu cầu đã sửa</strong>', $assignment->instructions);
+        $this->assertStringNotContainsString('javascript:', $assignment->instructions);
+    }
+
     public function test_submission_is_visible_only_to_owner_course_teacher_and_admin(): void
     {
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
@@ -369,7 +436,12 @@ class AuthorizationIsolationTest extends TestCase
             $table->string('type')->default('essay');
             $table->string('title');
             $table->text('instructions');
+            $table->text('grading_rubric')->nullable();
+            $table->unsignedInteger('grading_scale')->default(10);
+            $table->boolean('ai_grading_enabled')->default(false);
             $table->dateTime('due_date');
+            $table->string('allowed_extensions')->nullable();
+            $table->unsignedInteger('max_file_size')->nullable();
             $table->string('status')->default(Assignments::STATUS_PUBLISHED);
             $table->timestamp('published_at')->nullable();
             $table->timestamp('available_from')->nullable();
