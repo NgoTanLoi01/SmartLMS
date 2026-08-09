@@ -20,6 +20,7 @@ class PrivateLearningFileMigrationTest extends TestCase
             $table->id();
             $table->string('file_path')->nullable();
             $table->string('file_disk')->nullable();
+            $table->char('checksum_sha256', 64)->nullable();
         });
         Schema::create('lessons', function (Blueprint $table): void {
             $table->id();
@@ -74,7 +75,7 @@ class PrivateLearningFileMigrationTest extends TestCase
             'disk' => 'public',
         ]);
 
-        $this->artisan('smartlms:migrate-private-learning-files')->assertSuccessful();
+        $this->artisan('smartlms:migrate-private-learning-files --delete-source')->assertSuccessful();
 
         $this->assertDatabaseHas('assignment_submissions', ['file_disk' => 'local']);
         $this->assertDatabaseHas('lessons', ['attachment_disk' => 'local']);
@@ -83,6 +84,26 @@ class PrivateLearningFileMigrationTest extends TestCase
         Storage::disk('local')->assertExists('lessons/shared.pdf');
         Storage::disk('public')->assertMissing('assignments/student.pdf');
         Storage::disk('public')->assertMissing('lessons/shared.pdf');
+    }
+
+    public function test_submission_group_moves_local_file_to_r2_with_checksum_and_keeps_rollback_copy(): void
+    {
+        Storage::fake('r2');
+        config(['filesystems.submission_disk' => 'r2']);
+        Storage::disk('local')->put('assignments/local.pdf', 'submission-local');
+        DB::table('assignment_submissions')->insert([
+            'file_path' => 'assignments/local.pdf',
+            'file_disk' => 'local',
+        ]);
+
+        $this->artisan('smartlms:migrate-private-learning-files --group=submissions')->assertSuccessful();
+
+        $this->assertDatabaseHas('assignment_submissions', [
+            'file_disk' => 'r2',
+            'checksum_sha256' => hash('sha256', 'submission-local'),
+        ]);
+        Storage::disk('r2')->assertExists('assignments/local.pdf');
+        Storage::disk('local')->assertExists('assignments/local.pdf');
     }
 
     public function test_dry_run_does_not_change_files_or_database(): void

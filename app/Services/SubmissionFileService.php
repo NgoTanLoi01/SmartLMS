@@ -3,11 +3,54 @@
 namespace App\Services;
 
 use App\Models\AssignmentSubmission;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SubmissionFileService
 {
+    /** @return array{path:string,disk:string,original_filename:string,mime_type:?string,file_size:int,checksum_sha256:string} */
+    public function store(UploadedFile $file, int $assignmentId, int $userId): array
+    {
+        $diskName = (string) config('filesystems.submission_disk', 'local');
+        $originalFilename = $file->getClientOriginalName();
+        $extension = strtolower($file->getClientOriginalExtension());
+        $safeName = Str::slug(pathinfo($originalFilename, PATHINFO_FILENAME)) ?: 'submission';
+        $storedName = $safeName.'-'.now()->format('YmdHis').'-'.Str::random(8).($extension ? '.'.$extension : '');
+        $directory = "assignments/{$assignmentId}/students/{$userId}";
+        $expectedSize = (int) $file->getSize();
+        $checksum = hash_file('sha256', $file->getRealPath());
+        if ($checksum === false) {
+            throw new RuntimeException('Không thể tạo checksum cho file bài nộp.');
+        }
+
+        $path = retry(3, function () use ($file, $diskName, $directory, $storedName, $expectedSize): string {
+            $storedPath = $file->storeAs($directory, $storedName, $diskName);
+            if (! is_string($storedPath) || $storedPath === '') {
+                throw new RuntimeException('Storage không trả về đường dẫn file bài nộp.');
+            }
+
+            $disk = Storage::disk($diskName);
+            if (! $disk->exists($storedPath) || $disk->size($storedPath) !== $expectedSize) {
+                $disk->delete($storedPath);
+                throw new RuntimeException('File bài nộp không vượt qua bước kiểm tra sau upload.');
+            }
+
+            return $storedPath;
+        }, 100);
+
+        return [
+            'path' => $path,
+            'disk' => $diskName,
+            'original_filename' => $originalFilename,
+            'mime_type' => $file->getClientMimeType(),
+            'file_size' => $expectedSize,
+            'checksum_sha256' => $checksum,
+        ];
+    }
+
     public function url(?AssignmentSubmission $submission): ?string
     {
         return $submission?->file_path
@@ -53,6 +96,18 @@ class SubmissionFileService
         $disk = Storage::disk($this->diskName($submission));
         if ($disk->exists($submission->file_path)) {
             $disk->delete($submission->file_path);
+        }
+    }
+
+    public function deletePath(?string $path, ?string $diskName): void
+    {
+        if (! $path) {
+            return;
+        }
+
+        $disk = Storage::disk($diskName ?: 'public');
+        if ($disk->exists($path)) {
+            $disk->delete($path);
         }
     }
 

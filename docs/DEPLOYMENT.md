@@ -45,6 +45,8 @@ Kho tài liệu chung sử dụng cùng bucket R2 với bài học/bài tập v�
 
 ```dotenv
 SHARED_DOCUMENT_FILESYSTEM_DISK=r2
+SUBMISSION_FILESYSTEM_DISK=r2
+LESSON_ATTACHMENT_FILESYSTEM_DISK=r2
 R2_ACCESS_KEY_ID=<access-key>
 R2_SECRET_ACCESS_KEY=<secret-key>
 R2_BUCKET=<bucket-name>
@@ -54,6 +56,40 @@ R2_USE_PATH_STYLE_ENDPOINT=false
 ```
 
 Bucket nên để private vì tài liệu được tải xuống thông qua controller có Policy kiểm tra quyền, không qua URL công khai.
+
+Redis và queue nên được chuyển theo từng bước, không đổi cache/queue cùng một lần:
+
+```dotenv
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_CACHE_DB=1
+REDIS_PREFIX=smartlms:production:
+CACHE_PREFIX=smartlms:production:cache:
+CACHE_STORE=redis
+QUEUE_CONNECTION=redis
+REDIS_QUEUE_RETRY_AFTER=700
+REDIS_QUEUE_BLOCK_FOR=5
+```
+
+Kiểm tra sau deploy:
+
+```bash
+docker compose exec redis redis-cli ping
+docker compose exec app php artisan smartlms:queue-health --json
+docker compose ps queue-worker queue-notifications queue-ai queue-documents
+```
+
+Nếu Redis cache lỗi, rollback `CACHE_STORE=file` hoặc `database`. Nếu Redis queue lỗi, dừng producer/worker trước, đổi `QUEUE_CONNECTION=database`, rồi restart worker; không chạy đồng thời hai queue backend vì có nguy cơ xử lý trùng.
+
+Trước khi chuyển submission đang có từ local/public sang R2:
+
+```bash
+docker compose exec app php artisan smartlms:migrate-private-learning-files --group=submissions --dry-run
+docker compose exec app php artisan smartlms:migrate-private-learning-files --group=submissions
+```
+
+Lệnh mặc định giữ file nguồn để rollback. Chỉ dùng `--delete-source` sau khi đã backup DB, kiểm tra checksum và theo dõi production ổn định.
 
 Backup database chạy hằng ngày lúc 02:00 theo múi giờ Việt Nam và giữ 10 bản local gần nhất:
 

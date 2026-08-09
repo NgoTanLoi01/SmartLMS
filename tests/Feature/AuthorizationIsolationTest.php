@@ -15,9 +15,11 @@ use App\Models\Quiz;
 use App\Models\Schedule;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AuthorizationIsolationTest extends TestCase
@@ -333,6 +335,53 @@ class AuthorizationIsolationTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_file_submission_is_stored_on_configured_private_disk_with_checksum(): void
+    {
+        Storage::fake('r2');
+        config(['filesystems.submission_disk' => 'r2']);
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+        $this->assignment->update([
+            'type' => 'file',
+            'allowed_extensions' => 'txt',
+            'max_file_size' => 1024,
+        ]);
+
+        $this->actingAs($student)
+            ->post(route('assignments.submit', $this->assignment), [
+                'file' => UploadedFile::fake()->createWithContent('answer.txt', 'private answer'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $submission = AssignmentSubmission::where('assignment_id', $this->assignment->id)
+            ->where('user_id', $student->id)
+            ->sole();
+        $this->assertSame('r2', $submission->file_disk);
+        $this->assertSame(hash('sha256', 'private answer'), $submission->checksum_sha256);
+        Storage::disk('r2')->assertExists($submission->file_path);
+    }
+
+    public function test_submission_roster_endpoint_is_paginated_server_side(): void
+    {
+        $students = User::factory()->count(30)->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($students->pluck('id'));
+
+        $this->actingAs($this->owner)
+            ->getJson(route('assignments.submissions.list', $this->assignment))
+            ->assertOk()
+            ->assertJsonCount(25, 'submissions')
+            ->assertJsonPath('total_students', 30)
+            ->assertJsonPath('pagination.current_page', 1)
+            ->assertJsonPath('pagination.last_page', 2);
+
+        $this->actingAs($this->owner)
+            ->getJson(route('assignments.submissions.list', ['id' => $this->assignment->id, 'page' => 2]))
+            ->assertOk()
+            ->assertJsonCount(5, 'submissions')
+            ->assertJsonPath('pagination.current_page', 2);
+    }
+
     public function test_owner_can_bulk_archive_questions(): void
     {
         $secondQuestion = Question::create([
@@ -522,6 +571,7 @@ class AuthorizationIsolationTest extends TestCase
             $table->string('original_filename')->nullable();
             $table->string('mime_type')->nullable();
             $table->unsignedBigInteger('file_size')->nullable();
+            $table->char('checksum_sha256', 64)->nullable();
             $table->text('text_answer')->nullable();
             $table->decimal('grade', 5, 2)->nullable();
             $table->text('feedback')->nullable();

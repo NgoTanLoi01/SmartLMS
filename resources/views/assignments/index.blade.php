@@ -746,8 +746,42 @@
                             </div>
                         `).join('')}
                     </div>
-                    </form>`;
+                    </form>
+                    ${renderSubmissionPagination(data.pagination)}`;
             }
+
+            function renderSubmissionPagination(pagination = {}) {
+                if (!pagination.last_page || pagination.last_page <= 1) return '';
+
+                return `<div class="d-flex justify-content-between align-items-center gap-3 flex-wrap border-top px-3 py-3">
+                    <span class="small text-muted">Hiển thị ${esc(pagination.from || 0)}–${esc(pagination.to || 0)} học viên</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Phân trang bài nộp">
+                        <button type="button" class="btn btn-outline-secondary submission-page-link"
+                            data-url="${esc(pagination.prev_page_url || '')}" ${pagination.prev_page_url ? '' : 'disabled'}>Trang trước</button>
+                        <span class="btn btn-light disabled">${esc(pagination.current_page)} / ${esc(pagination.last_page)}</span>
+                        <button type="button" class="btn btn-outline-secondary submission-page-link"
+                            data-url="${esc(pagination.next_page_url || '')}" ${pagination.next_page_url ? '' : 'disabled'}>Trang sau</button>
+                    </div>
+                </div>`;
+            }
+
+            submissionsContent?.addEventListener('click', async function(event) {
+                const pageButton = event.target.closest('.submission-page-link');
+                if (!pageButton?.dataset.url) return;
+
+                pageButton.disabled = true;
+                try {
+                    const response = await fetch(pageButton.dataset.url, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'Không tải được trang bài nộp.');
+                    renderSubmissions(data);
+                } catch (error) {
+                    submissionsContent.insertAdjacentHTML('afterbegin',
+                        `<div class="alert alert-danger m-3">${esc(error.message)}</div>`);
+                }
+            });
 
             submissionsContent?.addEventListener('change', function(event) {
                 if (!event.target.matches('.select-all-submissions')) return;

@@ -835,7 +835,7 @@
                     <i class="fa-solid fa-database"></i>
                     Kho tri thức đã huấn luyện
                 </div>
-                <span class="doc-count-badge">{{ $documents->count() }} tài liệu</span>
+                <span class="doc-count-badge">{{ $documents->total() }} tài liệu</span>
             </div>
 
             <div class="docs-table-wrap">
@@ -912,6 +912,7 @@
                     </tbody>
                 </table>
             </div>
+            <x-ui.pagination :paginator="$documents" item-label="tài liệu" />
         </div>
 
     </div>

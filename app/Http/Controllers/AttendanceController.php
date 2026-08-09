@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Exports\AttendanceExport;
+use App\Jobs\NotifyFrequentAttendanceAbsences;
 use App\Models\AttendanceColumn;
 use App\Models\AttendanceData;
 use App\Models\Course;
-use App\Services\NotificationCenter;
+use App\Support\AttendanceStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -66,7 +67,7 @@ class AttendanceController extends Controller
         $attendanceNotes = [];
         foreach ($rawData as $d) {
             $attendanceData[$d->user_id][$d->attendance_column_id] = $columnTypes->get($d->attendance_column_id) === 'attendance'
-                ? $this->normalizeAttendanceStatus($d->value)
+                ? AttendanceStatus::normalize($d->value)
                 : $d->value;
             $attendanceNotes[$d->user_id][$d->attendance_column_id] = $d->note;
         }
@@ -150,91 +151,91 @@ class AttendanceController extends Controller
         $course = Course::findOrFail($courseId);
         Gate::authorize('manageAttendance', $course);
 
-        $columns = AttendanceColumn::where('course_id', $courseId)->get()->keyBy('id');
-        $allowedUserIds = $course->load('classes.students')
-            ->classes->flatMap->students->pluck('id')->unique();
+        $validated = $request->validate([
+            'data' => 'nullable|array|max:500',
+            'data.*' => 'array|max:500',
+            'data.*.*' => 'nullable|string|max:255',
+            'notes' => 'nullable|array|max:500',
+            'notes.*' => 'array|max:500',
+            'notes.*.*' => 'nullable|string|max:2000',
+        ]);
+        $submittedData = collect($validated['data'] ?? []);
 
-        foreach ($request->input('data', []) as $columnId => $users) {
+        if ($submittedData->isEmpty()) {
+            return back()->with('success', 'Không có thay đổi cần lưu.');
+        }
+
+        $columnIds = $submittedData->keys()->map(fn ($id) => (int) $id)->unique()->values();
+        $columns = AttendanceColumn::query()
+            ->where('course_id', $courseId)
+            ->whereIn('id', $columnIds)
+            ->get(['id', 'type'])
+            ->keyBy('id');
+        abort_unless($columns->count() === $columnIds->count(), 422, 'Dữ liệu chứa cột không thuộc khóa học.');
+
+        $submittedUserIds = $submittedData
+            ->flatMap(fn (array $users) => array_keys($users))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+        $allowedUserIds = DB::table('class_user')
+            ->join('class_course', 'class_user.class_id', '=', 'class_course.class_id')
+            ->where('class_course.course_id', $courseId)
+            ->whereIn('class_user.user_id', $submittedUserIds)
+            ->distinct()
+            ->pluck('class_user.user_id')
+            ->map(fn ($id) => (int) $id);
+        abort_unless($allowedUserIds->count() === $submittedUserIds->count(), 422, 'Dữ liệu chứa học viên không thuộc khóa học.');
+
+        $existing = AttendanceData::query()
+            ->whereIn('attendance_column_id', $columnIds)
+            ->whereIn('user_id', $submittedUserIds)
+            ->get(['attendance_column_id', 'user_id', 'value', 'note'])
+            ->keyBy(fn (AttendanceData $row): string => $row->attendance_column_id.':'.$row->user_id);
+        $notes = $validated['notes'] ?? [];
+        $rows = [];
+        $attendanceUserIds = [];
+
+        foreach ($submittedData as $columnId => $users) {
             $column = $columns->get((int) $columnId);
-            if (! $column) {
-                continue;
-            }
-
             foreach ($users as $userId => $value) {
-                if (! $allowedUserIds->contains((int) $userId)) {
+                $userId = (int) $userId;
+                $savedValue = $column->type === 'attendance' ? AttendanceStatus::normalize($value) : $value;
+                $current = $existing->get($column->id.':'.$userId);
+                $noteWasSubmitted = array_key_exists((string) $columnId, $notes)
+                    && array_key_exists((string) $userId, $notes[(string) $columnId]);
+                $savedNote = $noteWasSubmitted ? $notes[(string) $columnId][(string) $userId] : $current?->note;
+
+                if ($current && (string) $current->value === (string) $savedValue && (string) $current->note === (string) $savedNote) {
                     continue;
                 }
 
-                $savedValue = $column->type === 'attendance' ? $this->normalizeAttendanceStatus($value) : $value;
-                AttendanceData::query()->upsert(
-                    [[
-                        'attendance_column_id' => $column->id,
-                        'user_id' => $userId,
-                        'value' => $savedValue,
-                        'note' => $request->input("notes.{$column->id}.{$userId}"),
-                    ]],
-                    ['attendance_column_id', 'user_id'],
-                    ['value', 'note'],
-                );
+                $rows[] = [
+                    'attendance_column_id' => $column->id,
+                    'user_id' => $userId,
+                    'value' => $savedValue,
+                    'note' => $savedNote,
+                ];
+                if ($column->type === 'attendance') {
+                    $attendanceUserIds[] = $userId;
+                }
             }
         }
 
-        $this->notifyFrequentAbsences((int) $courseId, collect($request->input('data', []))->flatMap(fn ($users) => array_keys($users))->unique());
+        if ($rows !== []) {
+            DB::transaction(fn () => AttendanceData::query()->upsert(
+                $rows,
+                ['attendance_column_id', 'user_id'],
+                ['value', 'note'],
+            ));
+        }
+
+        $attendanceUserIds = array_values(array_unique($attendanceUserIds));
+        if ($attendanceUserIds !== []) {
+            NotifyFrequentAttendanceAbsences::dispatch((int) $courseId, $attendanceUserIds)->afterCommit();
+        }
 
         return back()->with('success', 'Đã lưu bảng điểm danh thành công!');
-    }
-
-    private function notifyFrequentAbsences(int $courseId, $userIds): void
-    {
-        $attendanceColumnIds = AttendanceColumn::where('course_id', $courseId)
-            ->where('type', 'attendance')
-            ->pluck('id');
-
-        foreach ($userIds as $userId) {
-            $absenceCount = AttendanceData::where('user_id', $userId)
-                ->whereIn('attendance_column_id', $attendanceColumnIds)
-                ->pluck('value')
-                ->filter(fn ($value) => $this->isAbsentValue($value))
-                ->count();
-
-            if ($absenceCount >= 3) {
-                app(NotificationCenter::class)->notifyUser(
-                    (int) $userId,
-                    'attendance_warning',
-                    'Cảnh báo chuyên cần',
-                    "Bạn đã có {$absenceCount} lượt vắng/nghỉ trong khóa học. Hãy trao đổi với giáo viên nếu cần hỗ trợ.",
-                    route('attendance.show', $courseId),
-                    ['course_id' => $courseId, 'absence_count' => $absenceCount],
-                    "attendance-warning:{$courseId}:{$userId}:{$absenceCount}"
-                );
-            }
-        }
-    }
-
-    private function isAbsentValue($value): bool
-    {
-        $normalized = Str::of((string) $value)->lower()->ascii()->trim()->toString();
-
-        return in_array($normalized, ['0', 'no', 'false', 'abs', 'absent', 'v', 'vang', 'nghi'], true)
-            || str_contains(Str::lower((string) $value), 'vắng')
-            || str_contains(Str::lower((string) $value), 'nghỉ');
-    }
-
-    private function normalizeAttendanceStatus($value): string
-    {
-        $normalized = Str::of((string) $value)->lower()->ascii()->trim()->toString();
-
-        if (in_array($normalized, ['absent', 'v', 'vang', 'nghi', '0', 'no', 'false'], true)) {
-            return 'absent';
-        }
-        if (in_array($normalized, ['late', 'muon', 'di muon'], true)) {
-            return 'late';
-        }
-        if (in_array($normalized, ['excused', 'phep', 'co phep', 'vang co phep'], true)) {
-            return 'excused';
-        }
-
-        return 'present';
     }
 
     // Xóa cột

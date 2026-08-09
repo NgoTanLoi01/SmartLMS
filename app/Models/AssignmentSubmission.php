@@ -8,7 +8,7 @@ class AssignmentSubmission extends Model
 {
     private const DISPLAY_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
-    protected $fillable = ['assignment_id', 'user_id', 'file_path', 'file_disk', 'original_filename', 'mime_type', 'file_size', 'text_answer', 'grade', 'feedback', 'ai_suggested_score', 'ai_feedback', 'ai_rubric_breakdown', 'ai_review_flags', 'ai_grading_notes', 'ai_analyzed_at', 'ai_analysis_history', 'submitted_at'];
+    protected $fillable = ['assignment_id', 'user_id', 'file_path', 'file_disk', 'original_filename', 'mime_type', 'file_size', 'checksum_sha256', 'text_answer', 'grade', 'feedback', 'ai_suggested_score', 'ai_feedback', 'ai_rubric_breakdown', 'ai_review_flags', 'ai_grading_notes', 'ai_analyzed_at', 'ai_analysis_history', 'submitted_at'];
 
     protected $casts = [
         'submitted_at' => 'datetime',

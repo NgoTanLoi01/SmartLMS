@@ -12,6 +12,10 @@ use Tests\TestCase;
 
 class DashboardMetricsTest extends TestCase
 {
+    private bool $captureQueries = false;
+
+    private int $queryCount = 0;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -21,6 +25,11 @@ class DashboardMetricsTest extends TestCase
         }
 
         $this->createSchema();
+        DB::listen(function (): void {
+            if ($this->captureQueries) {
+                $this->queryCount++;
+            }
+        });
     }
 
     protected function tearDown(): void
@@ -271,11 +280,42 @@ class DashboardMetricsTest extends TestCase
         $this->assertSame('success', $data['latest_backup']->status);
     }
 
+    public function test_dashboard_read_models_stay_within_role_query_budgets(): void
+    {
+        $admin = $this->user('budget-admin@example.com', User::ROLE_ADMIN);
+        $teacher = $this->user('budget-teacher@example.com', User::ROLE_TEACHER);
+        $student = $this->user('budget-student@example.com', User::ROLE_STUDENT);
+        $this->courseAndClass($teacher, $student);
+
+        [, $teacherQueries] = $this->dashboardDataWithQueryCount($teacher);
+        [, $studentQueries] = $this->dashboardDataWithQueryCount($student);
+        [, $adminQueries] = $this->dashboardDataWithQueryCount($admin);
+
+        $this->assertLessThanOrEqual(15, $teacherQueries, "Teacher Dashboard dùng {$teacherQueries} queries.");
+        $this->assertLessThanOrEqual(15, $studentQueries, "Student Dashboard dùng {$studentQueries} queries.");
+        $this->assertLessThanOrEqual(26, $adminQueries, "Admin Dashboard dùng {$adminQueries} queries.");
+    }
+
     private function dashboardData(User $user): array
     {
         $this->actingAs($user);
 
         return app(DashboardController::class)->index()->getData()['data'];
+    }
+
+    /** @return array{array<string,mixed>,int} */
+    private function dashboardDataWithQueryCount(User $user): array
+    {
+        $this->actingAs($user);
+        $this->queryCount = 0;
+        $this->captureQueries = true;
+        try {
+            $data = app(DashboardController::class)->index()->getData()['data'];
+        } finally {
+            $this->captureQueries = false;
+        }
+
+        return [$data, $this->queryCount];
     }
 
     private function user(string $email, string $role, bool $active = true): User

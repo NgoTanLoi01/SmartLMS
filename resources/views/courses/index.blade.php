@@ -140,7 +140,7 @@
                             <h2 id="delivery-courses-title">{{ $isStudent ? 'Khóa học đang tham gia' : 'Khóa triển khai' }}</h2>
                             <p>{{ $isStudent ? 'Chọn một khóa để xem lại chương và bài học.' : 'Các khóa đang được sử dụng cho lớp học thực tế.' }}</p>
                         </div>
-                        <span class="catalog-count">{{ $deliveryCourses->count() }} khóa</span>
+                        <span class="catalog-count">{{ $courseStats['delivery'] }} khóa</span>
                     </header>
                     <div class="catalog-grid">
                         @foreach ($deliveryCourses as $course)
@@ -158,7 +158,7 @@
                             <h2 id="template-courses-title">Khóa mẫu</h2>
                             <p>Nội dung chuẩn có thể tái sử dụng để tạo nhanh khóa triển khai.</p>
                         </div>
-                        <span class="catalog-count">{{ $templateCourses->count() }} mẫu</span>
+                        <span class="catalog-count">{{ $courseStats['templates'] }} mẫu</span>
                     </header>
                     <div class="catalog-grid">
                         @foreach ($templateCourses as $course)
@@ -167,6 +167,8 @@
                     </div>
                 </section>
             @endif
+
+            <x-ui.pagination :paginator="$courses" item-label="khóa học" />
         @endif
     </div>
 @endsection

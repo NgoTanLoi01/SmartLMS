@@ -135,6 +135,7 @@
                                             <div class="attendance-control">
                                                 <input type="hidden" class="attendance-value"
                                                     data-column-id="{{ $col->id }}"
+                                                    data-initial-value="{{ $status }}"
                                                     name="data[{{ $col->id }}][{{ $student->id }}]" value="{{ $status }}">
                                                 <button type="button" class="attendance-status-btn status-{{ $status }}"
                                                     data-status="{{ $status }}" @disabled($isStudentView)>
@@ -142,6 +143,7 @@
                                                     <span>{{ $statusLabels[$status] ?? 'Có mặt' }}</span>
                                                 </button>
                                                 <input type="hidden" id="{{ $noteId }}"
+                                                    data-initial-value="{{ $note }}"
                                                     name="notes[{{ $col->id }}][{{ $student->id }}]" value="{{ $note }}">
                                                 <button type="button" class="attendance-note-btn {{ $note ? 'has-note' : '' }}"
                                                     data-note-input="{{ $noteId }}" title="{{ $note ?: 'Thêm ghi chú' }}" @disabled($isStudentView)>
@@ -150,6 +152,7 @@
                                             </div>
                                         @else
                                             <input type="text" name="data[{{ $col->id }}][{{ $student->id }}]"
+                                                data-initial-value="{{ $attendanceData[$student->id][$col->id] ?? '' }}"
                                                 value="{{ $attendanceData[$student->id][$col->id] ?? '' }}"
                                                 placeholder="{{ $ph }}" @if ($isStudentView) readonly aria-label="{{ $col->name }}" @endif>
                                         @endif
@@ -314,6 +317,21 @@
 
         // ── Save flash ──
         document.getElementById('att-form').addEventListener('submit', function() {
+            const dataInputs = [...this.querySelectorAll('[name^="data["]')];
+            const notesByCell = new Map([...this.querySelectorAll('[name^="notes["]')].map(input => {
+                const match = input.name.match(/^notes\[([^\]]+)]\[([^\]]+)]$/);
+                return [match ? `${match[1]}:${match[2]}` : '', input];
+            }));
+
+            dataInputs.forEach(input => {
+                const match = input.name.match(/^data\[([^\]]+)]\[([^\]]+)]$/);
+                const note = match ? notesByCell.get(`${match[1]}:${match[2]}`) : null;
+                const dirty = input.value !== input.dataset.initialValue
+                    || (note && note.value !== note.dataset.initialValue);
+                input.disabled = !dirty;
+                if (note) note.disabled = !dirty;
+            });
+
             const flash = document.getElementById('saveFlash');
             flash.classList.add('show');
             setTimeout(() => flash.classList.remove('show'), 2200);

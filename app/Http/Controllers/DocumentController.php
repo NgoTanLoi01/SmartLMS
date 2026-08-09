@@ -33,12 +33,14 @@ class DocumentController extends Controller
             ->where('is_active', true)
             ->groupBy('document_name', 'course_id', 'uploaded_by')
             ->orderBy('created_at', 'desc')
-            ->get();
-        $uploaders = User::whereIn('id', $documents->pluck('uploaded_by')->filter()->unique())
+            ->paginate(18)
+            ->withQueryString();
+        $pageDocuments = $documents->getCollection();
+        $uploaders = User::whereIn('id', $pageDocuments->pluck('uploaded_by')->filter()->unique())
             ->get(['id', 'name'])
             ->keyBy('id');
-        $documentCourses = Course::whereIn('id', $documents->pluck('course_id')->filter())->get(['id', 'title'])->keyBy('id');
-        $documents->each(function ($document) use ($user, $uploaders, $documentCourses) {
+        $documentCourses = Course::whereIn('id', $pageDocuments->pluck('course_id')->filter())->get(['id', 'title'])->keyBy('id');
+        $pageDocuments->each(function ($document) use ($user, $uploaders, $documentCourses) {
             $document->uploader_name = $document->uploaded_by
                 ? ($uploaders->get($document->uploaded_by)?->name ?? 'Người dùng không còn tồn tại')
                 : 'Tài liệu cũ (chưa xác định)';

@@ -29,7 +29,7 @@ class MigrationRollbackIntegrityTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'class_user', 'classes', 'courses', 'users'] as $table) {
+            foreach (['assignment_submissions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'class_user', 'classes', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -242,5 +242,24 @@ class MigrationRollbackIntegrityTest extends TestCase
             'completed_at' => now(),
         ]);
         $this->assertDatabaseCount('quiz_attempts', 2);
+    }
+
+    public function test_submission_checksum_migration_is_nullable_and_reversible(): void
+    {
+        Schema::create('assignment_submissions', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('file_size')->nullable();
+        });
+        DB::table('assignment_submissions')->insert(['file_size' => 123]);
+
+        $migration = require database_path('migrations/2026_08_09_130000_add_checksum_to_assignment_submissions.php');
+        $migration->up();
+
+        $this->assertTrue(Schema::hasColumn('assignment_submissions', 'checksum_sha256'));
+        $this->assertDatabaseHas('assignment_submissions', ['id' => 1, 'checksum_sha256' => null]);
+
+        $migration->down();
+        $this->assertFalse(Schema::hasColumn('assignment_submissions', 'checksum_sha256'));
+        $this->assertDatabaseHas('assignment_submissions', ['id' => 1, 'file_size' => 123]);
     }
 }

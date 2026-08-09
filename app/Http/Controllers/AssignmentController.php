@@ -8,6 +8,7 @@ use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
 use App\Services\SubmissionArchiveService;
@@ -15,7 +16,6 @@ use App\Services\SubmissionFileService;
 use App\Support\AssignmentUploadTypes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
@@ -348,20 +348,32 @@ class AssignmentController extends Controller
     }
 
     // 1. Hàm lấy danh sách bài nộp cho Giáo viên (Dùng AJAX để load vào Modal)
-    public function listSubmissions($id)
+    public function listSubmissions(Request $request, $id)
     {
-        $assignment = Assignments::with('course.classes.students')->notArchived()->findOrFail($id);
+        $assignment = Assignments::with('course')->notArchived()->findOrFail($id);
         Gate::authorize('update', $assignment);
 
-        // Lấy danh sách ID học viên thuộc các lớp có gán khóa học này
-        $students = $assignment->course->classes->flatMap->students->unique('id');
+        $studentsQuery = User::query()
+            ->where('role', User::ROLE_STUDENT)
+            ->whereHas('classes.courses', fn ($query) => $query->where('courses.id', $assignment->course_id));
+        $submittedCount = AssignmentSubmission::query()
+            ->where('assignment_id', $assignment->id)
+            ->whereIn('user_id', (clone $studentsQuery)->select('users.id'))
+            ->count();
+        $students = $studentsQuery
+            ->with(['submissions' => fn ($query) => $query
+                ->where('assignment_id', $assignment->id)
+                ->select([
+                    'id', 'assignment_id', 'user_id', 'file_path', 'file_disk', 'text_answer',
+                    'grade', 'feedback', 'submitted_at', 'created_at', 'updated_at',
+                ])])
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate(25)
+            ->withQueryString();
 
-        // Lấy danh sách các bài đã nộp cho assignment này
-        $submissions = AssignmentSubmission::where('assignment_id', $id)->get()->keyBy('user_id');
-
-        // Kết hợp dữ liệu: Học viên + Bài nộp (nếu có)
-        $data = $students->map(function ($student) use ($submissions) {
-            $submission = $submissions->get($student->id);
+        $data = $students->getCollection()->map(function ($student) {
+            $submission = $student->submissions->first();
 
             return [
                 'student_name' => $student->name,
@@ -381,10 +393,19 @@ class AssignmentController extends Controller
         return response()->json([
             'assignment_title' => $assignment->title,
             'course_title' => $assignment->course->title,
-            'total_students' => $students->count(),
-            'submitted_count' => $data->filter(fn ($row) => ! empty($row['submission_id']))->count(),
+            'total_students' => $students->total(),
+            'submitted_count' => $submittedCount,
             'download_url' => route('assignments.submissions.download', $assignment->id),
-            'submissions' => $data,
+            'submissions' => $data->values(),
+            'pagination' => [
+                'current_page' => $students->currentPage(),
+                'last_page' => $students->lastPage(),
+                'per_page' => $students->perPage(),
+                'from' => $students->firstItem(),
+                'to' => $students->lastItem(),
+                'prev_page_url' => $students->previousPageUrl(),
+                'next_page_url' => $students->nextPageUrl(),
+            ],
         ]);
     }
 
@@ -462,58 +483,76 @@ class AssignmentController extends Controller
 
         $request->validate($rules);
 
-        // 3. Nếu đã có bài nộp cũ, thực hiện xóa file cũ trước khi lưu file mới
-        if ($request->hasFile('file') && $oldSubmission && $oldSubmission->file_path) {
-            $this->submissionFiles->delete($oldSubmission);
-        }
-
-        // 4. Lưu file mới vào folder assignments
+        // 3. Upload và kiểm tra file mới trước; file cũ chỉ bị xóa sau khi DB cập nhật thành công.
         $filePath = $oldSubmission?->file_path;
         $fileDisk = $oldSubmission?->file_disk ?: config('filesystems.submission_disk', 'local');
         $originalFilename = $oldSubmission?->original_filename;
         $mimeType = $oldSubmission?->mime_type;
         $fileSize = $oldSubmission?->file_size;
+        $checksum = $oldSubmission?->checksum_sha256;
+        $newUpload = null;
 
         if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $fileDisk = config('filesystems.submission_disk', 'local');
-            $originalFilename = $file->getClientOriginalName();
-            $mimeType = $file->getClientMimeType();
-            $fileSize = $file->getSize();
-            $extension = $file->getClientOriginalExtension();
-            $safeName = Str::slug(pathinfo($originalFilename, PATHINFO_FILENAME)) ?: 'submission';
-            $storedName = $safeName.'-'.now()->format('YmdHis').'-'.Str::random(8).($extension ? '.'.$extension : '');
-            $filePath = $file->storeAs("assignments/{$assignment->id}/students/{$user->id}", $storedName, $fileDisk);
+            try {
+                $newUpload = $this->submissionFiles->store($request->file('file'), $assignment->id, $user->id);
+            } catch (\Throwable $exception) {
+                report($exception);
+
+                throw ValidationException::withMessages([
+                    'file' => 'Không thể lưu file bài nộp vào kho dữ liệu. Vui lòng thử lại.',
+                ]);
+            }
+            $filePath = $newUpload['path'];
+            $fileDisk = $newUpload['disk'];
+            $originalFilename = $newUpload['original_filename'];
+            $mimeType = $newUpload['mime_type'];
+            $fileSize = $newUpload['file_size'];
+            $checksum = $newUpload['checksum_sha256'];
         } elseif ($assignment->type === 'essay') {
             $filePath = null;
             $fileDisk = config('filesystems.submission_disk', 'local');
             $originalFilename = null;
             $mimeType = null;
             $fileSize = null;
+            $checksum = null;
         }
 
-        // 5. Cập nhật hoặc tạo mới record trong Database
+        // 4. Cập nhật hoặc tạo mới record trong Database
         $submissionData = [
             'file_path' => $filePath,
             'file_disk' => $filePath ? $fileDisk : config('filesystems.submission_disk', 'local'),
             'original_filename' => $originalFilename,
             'mime_type' => $mimeType,
             'file_size' => $fileSize,
+            'checksum_sha256' => $checksum,
             'text_answer' => $request->input('text_answer'),
             'submitted_at' => now(),
         ];
 
         // Một học viên có đúng một bản nộp hiện hành cho mỗi bài tập. Upsert dựa trên
         // unique key ở migration để hai request đồng thời không thể tạo hai record.
-        AssignmentSubmission::query()->upsert(
-            [[
-                'assignment_id' => $id,
-                'user_id' => $user->id,
-                ...$submissionData,
-            ]],
-            ['assignment_id', 'user_id'],
-            array_keys($submissionData),
-        );
+        try {
+            AssignmentSubmission::query()->upsert(
+                [[
+                    'assignment_id' => $id,
+                    'user_id' => $user->id,
+                    ...$submissionData,
+                ]],
+                ['assignment_id', 'user_id'],
+                array_keys($submissionData),
+            );
+        } catch (\Throwable $exception) {
+            if ($newUpload) {
+                $this->submissionFiles->deletePath($newUpload['path'], $newUpload['disk']);
+            }
+
+            throw $exception;
+        }
+
+        if ($oldSubmission?->file_path
+            && ($oldSubmission->file_path !== $filePath || $oldSubmission->file_disk !== $fileDisk)) {
+            $this->submissionFiles->delete($oldSubmission);
+        }
 
         return back()->with('success', 'Bạn đã cập nhật bài nộp thành công!');
     }

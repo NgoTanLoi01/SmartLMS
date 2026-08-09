@@ -41,30 +41,7 @@ class CourseController extends Controller
             'class_id' => request('class_id'),
         ];
 
-        // Khởi tạo query cơ bản kèm đếm số lượng bài học (lessons)
-        $query = Course::with(['teacher', 'classes.students:id', 'learningProgram'])
-            ->withCount('modules') // Đếm số module
-            // Đếm tổng bài học của tất cả các module trong khóa học
-            ->withCount([
-                'modules as lessons_count' => function ($query) use ($user) {
-                    $query->leftJoin('lessons', 'modules.id', '=', 'lessons.module_id');
-
-                    if ($user->role === 'student') {
-                        $query->where('lessons.status', Lesson::STATUS_PUBLISHED)
-                            ->where(function ($visibilityQuery) {
-                                $visibilityQuery->whereNull('lessons.available_from')
-                                    ->orWhere('lessons.available_from', '<=', now());
-                            });
-                    } else {
-                        $query->where(function ($statusQuery) {
-                            $statusQuery->whereNull('lessons.status')
-                                ->orWhere('lessons.status', '!=', Lesson::STATUS_ARCHIVED);
-                        });
-                    }
-
-                    $query->select(DB::raw('count(lessons.id)'));
-                },
-            ]);
+        $query = Course::query();
 
         if ($filters['search'] !== '') {
             $search = $filters['search'];
@@ -94,38 +71,80 @@ class CourseController extends Controller
             });
         }
 
-        if ($user->role === 'admin') {
-            $courses = $query->latest()->get();
-        } elseif ($user->role === 'teacher') {
-            $courses = $query->where('teacher_id', $user->id)->latest()->get();
-        } else {
+        if ($user->role === 'teacher') {
+            $query->where('teacher_id', $user->id);
+        } elseif ($user->role === 'student') {
             // Học viên
             $classIds = $user->classes()->where('classes.status', Classroom::STATUS_ACTIVE)->pluck('classes.id');
-            $courses = $query
+            $query
                 ->whereHas('classes', function ($q) use ($classIds) {
                     $q->whereIn('classes.id', $classIds);
                 })
-                ->visibleToStudents()
-                ->latest()
-                ->get();
+                ->visibleToStudents();
         }
 
-        foreach ($courses as $course) {
-            $course->students_count = $course->classes
-                ->flatMap->students
-                ->unique('id')
-                ->count();
+        $stats = (clone $query)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN course_type = 'delivery' THEN 1 ELSE 0 END) as delivery")
+            ->selectRaw("SUM(CASE WHEN course_type = 'template' THEN 1 ELSE 0 END) as templates")
+            ->first();
+        $filteredCourseIds = (clone $query)->select('courses.id');
+        $lessonCountQuery = DB::table('lessons')
+            ->join('modules', 'lessons.module_id', '=', 'modules.id')
+            ->whereIn('modules.course_id', $filteredCourseIds)
+            ->where(fn ($moduleQuery) => $moduleQuery->whereNull('modules.status')->orWhere('modules.status', '!=', 'archived'));
+        if ($user->isStudent()) {
+            $lessonCountQuery
+                ->where('lessons.status', Lesson::STATUS_PUBLISHED)
+                ->where(fn ($visibilityQuery) => $visibilityQuery
+                    ->whereNull('lessons.available_from')
+                    ->orWhere('lessons.available_from', '<=', now()));
+        } else {
+            $lessonCountQuery->where(fn ($statusQuery) => $statusQuery
+                ->whereNull('lessons.status')
+                ->orWhere('lessons.status', '!=', Lesson::STATUS_ARCHIVED));
         }
 
-        $deliveryCourses = $courses->where('course_type', 'delivery')->values();
-        $templateCourses = $courses->where('course_type', 'template')->values();
+        $courses = $query
+            ->with(['teacher', 'learningProgram'])
+            ->withCount([
+                'modules',
+                'lessons' => function ($lessonQuery) use ($user) {
+                    $lessonQuery->where(fn ($moduleQuery) => $moduleQuery
+                        ->whereNull('modules.status')
+                        ->orWhere('modules.status', '!=', 'archived'));
+                    if ($user->isStudent()) {
+                        $lessonQuery
+                            ->where('lessons.status', Lesson::STATUS_PUBLISHED)
+                            ->where(fn ($visibilityQuery) => $visibilityQuery
+                                ->whereNull('lessons.available_from')
+                                ->orWhere('lessons.available_from', '<=', now()));
+                    } else {
+                        $lessonQuery->where(fn ($statusQuery) => $statusQuery
+                            ->whereNull('lessons.status')
+                            ->orWhere('lessons.status', '!=', Lesson::STATUS_ARCHIVED));
+                    }
+                },
+            ])
+            ->addSelect([
+                'students_count' => DB::table('class_course')
+                    ->join('class_user', 'class_course.class_id', '=', 'class_user.class_id')
+                    ->selectRaw('COUNT(DISTINCT class_user.user_id)')
+                    ->whereColumn('class_course.course_id', 'courses.id'),
+            ])
+            ->latest()
+            ->paginate(18)
+            ->withQueryString();
+
+        $deliveryCourses = $courses->getCollection()->where('course_type', 'delivery')->values();
+        $templateCourses = $courses->getCollection()->where('course_type', 'template')->values();
         $filterPrograms = $this->availablePrograms();
         $filterClasses = $this->availableClasses();
         $courseStats = [
-            'total' => $courses->count(),
-            'delivery' => $deliveryCourses->count(),
-            'templates' => $templateCourses->count(),
-            'lessons' => (int) $courses->sum('lessons_count'),
+            'total' => (int) ($stats->total ?? 0),
+            'delivery' => (int) ($stats->delivery ?? 0),
+            'templates' => (int) ($stats->templates ?? 0),
+            'lessons' => $lessonCountQuery->count(),
         ];
 
         return view('courses.index', compact('courses', 'deliveryCourses', 'templateCourses', 'filters', 'filterPrograms', 'filterClasses', 'courseStats'));
