@@ -24,6 +24,7 @@ export default defineConfig({
                 'resources/css/pages/submission-review.css',
                 'resources/css/pages/users-index.css',
                 'resources/js/app.js',
+                'resources/js/pages/attendance.js',
                 'resources/js/pages/course-editors.js',
                 'resources/js/pages/shared-documents.js',
             ],
