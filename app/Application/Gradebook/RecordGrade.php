@@ -7,6 +7,7 @@ use App\Models\Grade;
 use App\Models\GradeChangeLog;
 use App\Models\GradeFinalization;
 use App\Models\GradeItem;
+use App\Models\GradingPeriod;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -30,7 +31,7 @@ class RecordGrade
             $expectedVersion, $correlationId, $source
         ): Grade {
             $lockedItem = GradeItem::query()->with(['category', 'period'])->lockForUpdate()->findOrFail($item->id);
-            $this->assertWritable($lockedItem, $student);
+            $this->assertWritable($lockedItem, $student, $source);
             $this->validateGrade($lockedItem, $status, $rawPoints);
 
             $grade = Grade::query()
@@ -94,7 +95,7 @@ class RecordGrade
         });
     }
 
-    private function assertWritable(GradeItem $item, User $student): void
+    private function assertWritable(GradeItem $item, User $student, string $source): void
     {
         if (! $student->isStudent()) {
             throw new GradebookException('Chỉ tài khoản học viên mới có thể nhận điểm.');
@@ -107,6 +108,12 @@ class RecordGrade
         }
         if ($item->is_locked) {
             throw new GradebookException('Grade Item đang bị khóa.');
+        }
+        if ($item->period->status !== GradingPeriod::STATUS_OPEN && $source !== 'backfill') {
+            throw new GradebookException('Kỳ điểm chưa mở hoặc đã đóng.');
+        }
+        if ($item->source_type === GradeItem::SOURCE_LEGACY_ATTENDANCE && $source === 'teacher_ui') {
+            throw new GradebookException('Thành phần này đồng bộ từ bảng Điểm danh. Hãy sửa điểm tại bảng Điểm danh.');
         }
 
         if (GradeFinalization::query()

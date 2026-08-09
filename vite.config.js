@@ -26,6 +26,8 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/pages/attendance.js',
                 'resources/js/pages/course-editors.js',
+                'resources/js/pages/gradebook-setup.js',
+                'resources/js/pages/gradebook.js',
                 'resources/js/pages/shared-documents.js',
             ],
             refresh: true,

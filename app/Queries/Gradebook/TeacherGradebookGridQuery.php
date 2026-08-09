@@ -29,6 +29,7 @@ class TeacherGradebookGridQuery
             'categories' => fn ($query) => $query->where('is_active', true)->orderBy('position'),
             'categories.items' => fn ($query) => $query->where('is_published', true)->orderBy('position'),
             'categories.items.grades' => fn ($query) => $query->whereIn('user_id', $studentIds),
+            'categories.items.grades.adjustments' => fn ($query) => $query->orderBy('id'),
         ]);
         $adjustments = GradeAdjustment::query()
             ->where('grading_period_id', $period->id)

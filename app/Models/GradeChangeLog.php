@@ -28,4 +28,19 @@ class GradeChangeLog extends Model
         static::updating(fn () => throw new LogicException('Grade change log là append-only.'));
         static::deleting(fn () => throw new LogicException('Không được xóa grade change log.'));
     }
+
+    public function student()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function actor()
+    {
+        return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    public function item()
+    {
+        return $this->belongsTo(GradeItem::class, 'grade_item_id');
+    }
 }

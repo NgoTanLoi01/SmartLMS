@@ -21,6 +21,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use LogicException;
 use Tests\TestCase;
 
@@ -280,6 +281,31 @@ class GradebookFoundationTest extends TestCase
         $this->assertDatabaseHas('grade_finalizations', ['grading_period_id' => $period->id, 'user_id' => $this->student->id, 'state' => 'reopened']);
     }
 
+    public function test_teacher_can_store_each_non_graded_status_without_stale_points(): void
+    {
+        $this->enrollStudent();
+        $period = $this->period();
+        $category = $this->category($period, 'course', 'Tổng kết', '100');
+        $item = $this->item($period, $category, 'manual', GradeItem::TYPE_MANUAL, '10', '1');
+
+        $this->actingAs($this->teacher)->put(route('gradebook.grades.record', [$period, $item, $this->student]), [
+            'status' => Grade::STATUS_GRADED,
+            'raw_points' => '8.5',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $grade = Grade::where('grade_item_id', $item->id)->where('user_id', $this->student->id)->firstOrFail();
+        foreach ([Grade::STATUS_MISSING, Grade::STATUS_EXCUSED, Grade::STATUS_EXCLUDED, Grade::STATUS_UNGRADED] as $status) {
+            $this->actingAs($this->teacher)->put(route('gradebook.grades.record', [$period, $item, $this->student]), [
+                'status' => $status,
+                'expected_version' => $grade->fresh()->version,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+
+            $this->assertSame($status, $grade->fresh()->status);
+            $this->assertNull($grade->fresh()->raw_points);
+            $this->assertNull($grade->fresh()->effective_points);
+        }
+    }
+
     public function test_gradebook_without_period_keeps_legacy_scores_accessible_and_hides_rollout_jargon(): void
     {
         $this->actingAs($this->teacher)
@@ -289,6 +315,91 @@ class GradebookFoundationTest extends TestCase
             ->assertSee('Dữ liệu điểm hiện tại vẫn được giữ nguyên trong bảng Điểm danh.')
             ->assertSee(route('attendance.show', $this->course), false)
             ->assertDontSee('shadow backfill');
+    }
+
+    public function test_teacher_can_lock_and_unlock_a_component_with_optimistic_guard(): void
+    {
+        $this->enrollStudent();
+        $period = $this->period();
+        $category = $this->category($period, 'course', 'Tổng kết', '100');
+        $item = $this->item($period, $category, 'manual', GradeItem::TYPE_MANUAL, '10', '1');
+
+        $this->actingAs($this->teacher)->post(route('gradebook.items.lock', [$period, $item]), [
+            'expected_version' => $item->version,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertTrue($item->fresh()->is_locked);
+
+        $this->actingAs($this->teacher)->put(route('gradebook.grades.record', [$period, $item, $this->student]), [
+            'status' => Grade::STATUS_GRADED,
+            'raw_points' => '8',
+        ])->assertRedirect()->assertSessionHasErrors('gradebook');
+
+        $lockedVersion = $item->fresh()->version;
+        $this->actingAs($this->teacher)->post(route('gradebook.items.unlock', [$period, $item]), [
+            'expected_version' => $lockedVersion,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertFalse($item->fresh()->is_locked);
+
+        $this->actingAs($this->teacher)->post(route('gradebook.items.lock', [$period, $item]), [
+            'expected_version' => $lockedVersion,
+        ])->assertRedirect()->assertSessionHasErrors('gradebook');
+    }
+
+    public function test_period_close_requires_every_student_finalized_and_reopen_keeps_components_locked(): void
+    {
+        $this->enrollStudent();
+        $period = $this->period();
+        $category = $this->category($period, 'course', 'Tổng kết', '100');
+        $item = $this->item($period, $category, 'manual', GradeItem::TYPE_MANUAL, '10', '1');
+
+        $this->actingAs($this->teacher)->post(route('gradebook.periods.close', $period))
+            ->assertRedirect()->assertSessionHasErrors('gradebook');
+        $this->assertSame(GradingPeriod::STATUS_OPEN, $period->fresh()->status);
+
+        app(RecordGrade::class)->handle($item, $this->student, Grade::STATUS_GRADED, '8', $this->teacher);
+        app(FinalizeGrades::class)->finalize($period, $this->student, $this->teacher, 'close-test-finalize');
+
+        $this->actingAs($this->teacher)->post(route('gradebook.periods.close', $period))
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(GradingPeriod::STATUS_CLOSED, $period->fresh()->status);
+        $this->assertTrue($item->fresh()->is_locked);
+
+        $this->actingAs($this->teacher)->post(route('gradebook.reopen', [$period, $this->student]), [
+            'reason' => 'Không được mở riêng khi kỳ đã đóng',
+        ])->assertRedirect()->assertSessionHasErrors('gradebook');
+        $this->assertSame(GradeFinalization::STATE_FINALIZED, GradeFinalization::where('grading_period_id', $period->id)->where('user_id', $this->student->id)->value('state'));
+
+        $this->actingAs($this->teacher)->post(route('gradebook.periods.reopen', $period), ['reason' => 'Phúc khảo toàn kỳ'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(GradingPeriod::STATUS_OPEN, $period->fresh()->status);
+        $this->assertTrue($item->fresh()->is_locked);
+    }
+
+    public function test_teacher_adjusts_reverses_and_views_grade_history(): void
+    {
+        $period = $this->period();
+        $category = $this->category($period, 'course', 'Tổng kết', '100');
+        $item = $this->item($period, $category, 'manual', GradeItem::TYPE_MANUAL, '10', '1');
+        $grade = app(RecordGrade::class)->handle($item, $this->student, Grade::STATUS_GRADED, '7', $this->teacher);
+        $adjustmentKey = (string) Str::uuid();
+
+        $this->actingAs($this->teacher)->post(route('gradebook.adjustments.store', [$period, $grade]), [
+            'type' => GradeAdjustment::TYPE_BONUS,
+            'amount' => '1',
+            'reason' => 'Tiến bộ rõ rệt',
+            'idempotency_key' => $adjustmentKey,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $adjustment = GradeAdjustment::where('idempotency_key', $adjustmentKey)->firstOrFail();
+        $this->assertSame('8.0000', $grade->fresh()->effective_points);
+
+        $this->actingAs($this->teacher)->get(route('gradebook.history', [$period, 'student_id' => $this->student->id]))
+            ->assertOk()->assertSee('Lịch sử thay đổi điểm')->assertSee('Tiến bộ rõ rệt');
+
+        $this->actingAs($this->teacher)->post(route('gradebook.adjustments.reverse', [$period, $adjustment]), [
+            'reason' => 'Điều chỉnh nhầm',
+            'idempotency_key' => (string) Str::uuid(),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('7.0000', $grade->fresh()->effective_points);
     }
 
     /** @return array{GradingPeriod,array{hs1:GradeItem,hs2:GradeItem,exam:GradeItem}} */
@@ -365,6 +476,18 @@ class GradebookFoundationTest extends TestCase
             'password' => 'unused',
             'role' => $role,
         ]);
+    }
+
+    private function enrollStudent(): void
+    {
+        $classId = DB::table('classes')->insertGetId([
+            'name' => 'Lớp Gradebook '.uniqid(),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('class_course')->insert(['class_id' => $classId, 'course_id' => $this->course->id]);
+        DB::table('class_user')->insert(['class_id' => $classId, 'user_id' => $this->student->id]);
     }
 
     private function migration(): object

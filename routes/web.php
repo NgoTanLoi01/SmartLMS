@@ -17,6 +17,8 @@ use App\Http\Controllers\CourseQualityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GradebookController;
+use App\Http\Controllers\GradebookManagementController;
+use App\Http\Controllers\GradebookSetupController;
 use App\Http\Controllers\LearningProgramController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\ModuleController;
@@ -74,6 +76,15 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         ->name('grading.inbox');
     Route::middleware('role:admin,teacher')->group(function () {
         Route::get('/courses/{course}/gradebook', [GradebookController::class, 'index'])->name('gradebook.index');
+        Route::get('/courses/{course}/gradebook/setup', [GradebookSetupController::class, 'create'])->name('gradebook.setup.create');
+        Route::post('/courses/{course}/gradebook/setup', [GradebookSetupController::class, 'store'])->name('gradebook.setup.store');
+        Route::post('/gradebook/periods/{period}/items/{item}/lock', [GradebookManagementController::class, 'lockItem'])->name('gradebook.items.lock');
+        Route::post('/gradebook/periods/{period}/items/{item}/unlock', [GradebookManagementController::class, 'unlockItem'])->name('gradebook.items.unlock');
+        Route::post('/gradebook/periods/{period}/close', [GradebookManagementController::class, 'closePeriod'])->name('gradebook.periods.close');
+        Route::post('/gradebook/periods/{period}/reopen', [GradebookManagementController::class, 'reopenPeriod'])->name('gradebook.periods.reopen');
+        Route::post('/gradebook/periods/{period}/grades/{grade}/adjustments', [GradebookManagementController::class, 'adjust'])->name('gradebook.adjustments.store');
+        Route::post('/gradebook/periods/{period}/adjustments/{adjustment}/reverse', [GradebookManagementController::class, 'reverseAdjustment'])->name('gradebook.adjustments.reverse');
+        Route::get('/gradebook/periods/{period}/history', [GradebookManagementController::class, 'history'])->name('gradebook.history');
         Route::put('/gradebook/periods/{period}/items/{item}/students/{student}', [GradebookController::class, 'record'])->name('gradebook.grades.record');
         Route::post('/gradebook/periods/{period}/students/{student}/finalize', [GradebookController::class, 'finalize'])->name('gradebook.finalize');
         Route::post('/gradebook/periods/{period}/students/{student}/reopen', [GradebookController::class, 'reopen'])->name('gradebook.reopen');

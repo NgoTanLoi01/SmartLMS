@@ -36,14 +36,16 @@ class GradebookBackfillTest extends TestCase
         $this->requireIsolatedSqliteDatabase();
         $this->createSourceSchema();
         $this->migration()->up();
+        $this->legacyMappingMigration()->up();
         $this->seedSources();
     }
 
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
+            $this->legacyMappingMigration()->down();
             $this->migration()->down();
-            foreach (['quiz_attempts', 'quiz_sessions', 'quizzes', 'assignment_submissions', 'assignments', 'attendance_data', 'attendance_columns', 'courses', 'users'] as $table) {
+            foreach (['smart_notifications', 'quiz_attempts', 'quiz_sessions', 'quizzes', 'assignment_submissions', 'assignments', 'attendance_data', 'attendance_columns', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -81,6 +83,10 @@ class GradebookBackfillTest extends TestCase
             'user_id' => $this->studentOne->id,
             'status' => Grade::STATUS_GRADED,
             'raw_points' => 6.5,
+        ]);
+        $this->assertDatabaseHas('grade_items', [
+            'code' => 'hs1-legacy',
+            'absence_policy' => 'missing',
         ]);
         $this->assertDatabaseHas('grades', [
             'user_id' => $this->studentTwo->id,
@@ -161,6 +167,103 @@ class GradebookBackfillTest extends TestCase
         $service->backfill($manifest, false);
     }
 
+    public function test_teacher_setup_wizard_requires_preview_then_creates_an_additive_period(): void
+    {
+        $payload = $this->setupPayload('apply');
+
+        $this->actingAs($this->teacher)
+            ->get(route('gradebook.setup.create', $this->course))
+            ->assertOk()
+            ->assertSee('Thiết lập Sổ điểm')
+            ->assertSee('HS1')
+            ->assertSee('Bài tập nguồn');
+
+        $this->actingAs($this->teacher)
+            ->post(route('gradebook.setup.store', $this->course), $payload)
+            ->assertRedirect()
+            ->assertSessionHasErrors('gradebook_setup');
+        $this->assertDatabaseCount('grading_periods', 0);
+
+        $this->actingAs($this->teacher)
+            ->post(route('gradebook.setup.store', $this->course), $this->setupPayload('preview'))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('gradebook_setup_preview');
+        $this->assertDatabaseCount('grading_periods', 0);
+
+        $this->actingAs($this->teacher)
+            ->post(route('gradebook.setup.store', $this->course), $payload)
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('grading_periods', [
+            'course_id' => $this->course->id,
+            'code' => 'hk1-2026',
+            'status' => 'open',
+        ]);
+        $this->assertDatabaseHas('grade_categories', ['code' => 'process', 'weight_percent' => 40]);
+        $this->assertDatabaseHas('grade_categories', ['code' => 'exam', 'weight_percent' => 60]);
+        $this->assertDatabaseHas('grade_items', [
+            'source_type' => GradeItem::SOURCE_LEGACY_ATTENDANCE,
+            'source_id' => $this->columnId,
+            'absence_policy' => 'missing',
+        ]);
+        $this->assertDatabaseHas('attendance_data', [
+            'attendance_column_id' => $this->columnId,
+            'user_id' => $this->studentOne->id,
+            'value' => '6,5',
+        ]);
+    }
+
+    public function test_setup_wizard_rejects_invalid_weight_and_foreign_source_without_writing(): void
+    {
+        $invalidWeight = $this->setupPayload('preview');
+        $invalidWeight['categories'][0]['weight_percent'] = 30;
+
+        $this->actingAs($this->teacher)
+            ->post(route('gradebook.setup.store', $this->course), $invalidWeight)
+            ->assertRedirect()
+            ->assertSessionHasErrors('categories');
+
+        $otherCourse = Course::create([
+            'title' => 'Khóa nguồn ngoài',
+            'teacher_id' => $this->teacher->id,
+            'course_type' => 'delivery',
+            'status' => Course::STATUS_PUBLISHED,
+        ]);
+        $foreignColumn = DB::table('attendance_columns')->insertGetId([
+            'course_id' => $otherCourse->id,
+            'name' => 'HS1 ngoài khóa',
+            'type' => 'grade',
+            'order' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $foreignSource = $this->setupPayload('preview');
+        $foreignSource['items'][0]['source_id'] = $foreignColumn;
+
+        $this->actingAs($this->teacher)
+            ->post(route('gradebook.setup.store', $this->course), $foreignSource)
+            ->assertRedirect()
+            ->assertSessionHasErrors('gradebook_setup');
+        $this->assertDatabaseCount('grading_periods', 0);
+    }
+
+    public function test_setup_wizard_rejects_teacher_who_does_not_manage_the_course(): void
+    {
+        $otherTeacher = $this->user('other-setup-teacher@example.test', User::ROLE_TEACHER);
+
+        $this->actingAs($otherTeacher)
+            ->get(route('gradebook.setup.create', $this->course))
+            ->assertForbidden();
+
+        $this->actingAs($otherTeacher)
+            ->post(route('gradebook.setup.store', $this->course), $this->setupPayload('preview'))
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('grading_periods', 0);
+    }
+
     /** @return array<string,mixed> */
     private function approvedManifest(): array
     {
@@ -199,6 +302,52 @@ class GradebookBackfillTest extends TestCase
                     'code' => 'quiz-1', 'name' => 'Quiz', 'category_code' => 'assessment',
                     'item_type' => 'quiz', 'source_type' => 'quiz', 'source_id' => $this->quizId,
                     'max_points' => '10', 'item_weight' => '1', 'attempt_policy' => 'highest_released', 'is_published' => true,
+                ],
+            ],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function setupPayload(string $mode): array
+    {
+        return [
+            'mode' => $mode,
+            'period' => [
+                'code' => 'hk1-2026',
+                'name' => 'Học kỳ 1',
+                'starts_at' => null,
+                'ends_at' => null,
+                'missing_policy' => 'block',
+                'rounding_precision' => 1,
+            ],
+            'categories' => [
+                ['code' => 'process', 'name' => 'Quá trình', 'weight_percent' => 40, 'allow_over_max' => 0],
+                ['code' => 'exam', 'name' => 'Thi', 'weight_percent' => 60, 'allow_over_max' => 0],
+            ],
+            'items' => [
+                [
+                    'enabled' => 1,
+                    'source_type' => GradeItem::SOURCE_LEGACY_ATTENDANCE,
+                    'source_id' => $this->columnId,
+                    'code' => 'legacy-hs1',
+                    'name' => 'HS1',
+                    'category_code' => 'process',
+                    'item_type' => GradeItem::TYPE_HS1,
+                    'item_weight' => 1,
+                    'absence_policy' => 'missing',
+                    'attempt_policy' => null,
+                ],
+                [
+                    'enabled' => 1,
+                    'source_type' => GradeItem::SOURCE_QUIZ,
+                    'source_id' => $this->quizId,
+                    'code' => 'quiz-exam',
+                    'name' => 'Thi trắc nghiệm',
+                    'category_code' => 'exam',
+                    'item_type' => GradeItem::TYPE_EXAM,
+                    'item_weight' => 1,
+                    'absence_policy' => null,
+                    'attempt_policy' => 'highest_released',
                 ],
             ],
         ];
@@ -290,6 +439,15 @@ class GradebookBackfillTest extends TestCase
             $table->timestamp('available_from')->nullable();
             $table->timestamps();
         });
+        Schema::create('smart_notifications', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type')->nullable();
+            $table->string('title')->nullable();
+            $table->text('message')->nullable();
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
         Schema::create('attendance_columns', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('course_id');
@@ -361,5 +519,10 @@ class GradebookBackfillTest extends TestCase
     private function migration(): object
     {
         return require database_path('migrations/2026_08_09_140000_create_gradebook_foundation.php');
+    }
+
+    private function legacyMappingMigration(): object
+    {
+        return require database_path('migrations/2026_08_09_150000_add_legacy_mapping_policy_to_grade_items.php');
     }
 }

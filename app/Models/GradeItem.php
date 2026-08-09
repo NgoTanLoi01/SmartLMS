@@ -28,7 +28,7 @@ class GradeItem extends Model
 
     protected $fillable = [
         'course_id', 'grading_period_id', 'grade_category_id', 'code', 'name', 'item_type',
-        'source_type', 'source_id', 'max_points', 'item_weight', 'attempt_policy', 'due_at',
+        'source_type', 'source_id', 'max_points', 'item_weight', 'attempt_policy', 'absence_policy', 'due_at',
         'position', 'is_published', 'is_locked', 'version',
     ];
 

@@ -430,6 +430,7 @@ class GradebookMigrationService
                     'max_points' => $data['max_points'],
                     'item_weight' => $data['item_weight'] ?? 1,
                     'attempt_policy' => $data['attempt_policy'] ?? null,
+                    'absence_policy' => $data['absence_policy'] ?? null,
                     'due_at' => $data['due_at'] ?? null,
                     'position' => $data['position'] ?? 0,
                     'is_published' => $data['is_published'] ?? false,
@@ -494,6 +495,7 @@ class GradebookMigrationService
             || bccomp((string) $item->max_points, (string) $data['max_points'], 4) !== 0
             || bccomp((string) $item->item_weight, (string) ($data['item_weight'] ?? 1), 4) !== 0
             || $item->attempt_policy !== ($data['attempt_policy'] ?? null)
+            || $item->absence_policy !== ($data['absence_policy'] ?? null)
             || (int) $item->position !== (int) ($data['position'] ?? 0)
             || (bool) $item->is_published !== (bool) ($data['is_published'] ?? false)) {
             throw new GradebookException("Grade item {$data['code']} đã tồn tại nhưng không khớp manifest.");

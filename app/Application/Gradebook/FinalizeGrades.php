@@ -28,6 +28,9 @@ class FinalizeGrades
             if ((int) $lockedPeriod->course_id !== (int) $period->course_id) {
                 throw new GradebookException('Period không thuộc course yêu cầu.');
             }
+            if ($lockedPeriod->status !== GradingPeriod::STATUS_OPEN) {
+                throw new GradebookException('Chỉ kỳ điểm đang mở mới có thể chốt điểm.');
+            }
 
             GradeItem::query()->where('grading_period_id', $lockedPeriod->id)->lockForUpdate()->get();
             Grade::query()
@@ -117,8 +120,13 @@ class FinalizeGrades
         }
 
         return DB::transaction(function () use ($period, $student, $actor, $reason): GradeFinalization {
+            $lockedPeriod = GradingPeriod::query()->lockForUpdate()->findOrFail($period->id);
+            if ($lockedPeriod->status !== GradingPeriod::STATUS_OPEN) {
+                throw new GradebookException('Hãy mở lại toàn bộ kỳ điểm trước khi mở lại điểm học viên.');
+            }
+
             $finalization = GradeFinalization::query()
-                ->where('grading_period_id', $period->id)
+                ->where('grading_period_id', $lockedPeriod->id)
                 ->where('user_id', $student->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -136,7 +144,7 @@ class FinalizeGrades
             ])->save();
 
             GradeChangeLog::create([
-                'grading_period_id' => $period->id,
+                'grading_period_id' => $lockedPeriod->id,
                 'user_id' => $student->id,
                 'actor_id' => $actor->id,
                 'action' => 'reopen',

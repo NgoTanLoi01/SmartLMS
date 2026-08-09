@@ -8,6 +8,7 @@ use App\Models\Grade;
 use App\Models\GradeAdjustment;
 use App\Models\GradeChangeLog;
 use App\Models\GradeFinalization;
+use App\Models\GradingPeriod;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -25,7 +26,7 @@ class AdjustGrade
         string $idempotencyKey,
     ): GradeAdjustment {
         return DB::transaction(function () use ($grade, $type, $amount, $reason, $actor, $idempotencyKey): GradeAdjustment {
-            $lockedGrade = Grade::query()->with('item.category')->lockForUpdate()->findOrFail($grade->id);
+            $lockedGrade = Grade::query()->with(['item.category', 'item.period'])->lockForUpdate()->findOrFail($grade->id);
             $this->assertWritable($lockedGrade);
             $this->validate($type, $amount, $reason, $idempotencyKey);
 
@@ -96,7 +97,7 @@ class AdjustGrade
                 throw new GradebookException('Foundation hiện chỉ reversal adjustment ở item scope.');
             }
 
-            $grade = Grade::query()->with('item.category')->lockForUpdate()->findOrFail($target->grade_id);
+            $grade = Grade::query()->with(['item.category', 'item.period'])->lockForUpdate()->findOrFail($target->grade_id);
             $this->assertWritable($grade);
             if (trim($reason) === '') {
                 throw new GradebookException('Lý do reversal là bắt buộc.');
@@ -145,6 +146,9 @@ class AdjustGrade
 
     private function assertWritable(Grade $grade): void
     {
+        if ($grade->item->is_locked || $grade->item->period?->status !== GradingPeriod::STATUS_OPEN) {
+            throw new GradebookException('Thành phần hoặc kỳ điểm đang bị khóa.');
+        }
         if (GradeFinalization::query()
             ->where('grading_period_id', $grade->item->grading_period_id)
             ->where('user_id', $grade->user_id)
