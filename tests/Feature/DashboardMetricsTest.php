@@ -20,9 +20,7 @@ class DashboardMetricsTest extends TestCase
     {
         parent::setUp();
 
-        if (DB::connection()->getDriverName() !== 'sqlite') {
-            throw new \RuntimeException('DashboardMetricsTest chỉ được phép chạy trên SQLite cô lập.');
-        }
+        $this->requireIsolatedSqliteDatabase();
 
         $this->createSchema();
         DB::listen(function (): void {
@@ -34,8 +32,10 @@ class DashboardMetricsTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (array_reverse($this->tables()) as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach (array_reverse($this->tables()) as $table) {
+                Schema::dropIfExists($table);
+            }
         }
 
         parent::tearDown();

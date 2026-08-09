@@ -20,9 +20,7 @@ class AttendanceSaveBenchmarkTest extends TestCase
     {
         parent::setUp();
 
-        if (DB::connection()->getDriverName() !== 'sqlite') {
-            throw new \RuntimeException('Attendance benchmark chỉ được phép chạy trên SQLite cô lập.');
-        }
+        $this->requireIsolatedSqliteDatabase();
 
         DB::listen(function (QueryExecuted $query): void {
             if (! $this->capturing) {
@@ -43,7 +41,10 @@ class AttendanceSaveBenchmarkTest extends TestCase
 
     protected function tearDown(): void
     {
-        $this->dropSchema();
+        if ($this->usesIsolatedSqliteDatabase()) {
+            $this->dropSchema();
+        }
+
         parent::tearDown();
     }
 

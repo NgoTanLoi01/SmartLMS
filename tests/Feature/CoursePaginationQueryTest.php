@@ -15,18 +15,19 @@ class CoursePaginationQueryTest extends TestCase
     {
         parent::setUp();
 
-        if (DB::connection()->getDriverName() !== 'sqlite') {
-            throw new \RuntimeException('CoursePaginationQueryTest chỉ được phép chạy trên SQLite cô lập.');
-        }
+        $this->requireIsolatedSqliteDatabase();
 
         $this->createSchema();
     }
 
     protected function tearDown(): void
     {
-        foreach (['lessons', 'modules', 'class_user', 'class_course', 'classes', 'courses', 'learning_programs', 'users'] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach (['lessons', 'modules', 'class_user', 'class_course', 'classes', 'courses', 'learning_programs', 'users'] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
+
         parent::tearDown();
     }
 

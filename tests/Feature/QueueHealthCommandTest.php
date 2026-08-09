@@ -15,9 +15,7 @@ class QueueHealthCommandTest extends TestCase
     {
         parent::setUp();
 
-        if (DB::connection()->getDriverName() !== 'sqlite') {
-            throw new \RuntimeException('QueueHealthCommandTest chỉ được phép chạy trên SQLite cô lập.');
-        }
+        $this->requireIsolatedSqliteDatabase();
 
         Schema::create('jobs', function (Blueprint $table): void {
             $table->id();
@@ -32,7 +30,10 @@ class QueueHealthCommandTest extends TestCase
 
     protected function tearDown(): void
     {
-        Schema::dropIfExists('jobs');
+        if ($this->usesIsolatedSqliteDatabase()) {
+            Schema::dropIfExists('jobs');
+        }
+
         parent::tearDown();
     }
 

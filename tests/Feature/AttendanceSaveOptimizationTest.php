@@ -21,9 +21,7 @@ class AttendanceSaveOptimizationTest extends TestCase
     {
         parent::setUp();
 
-        if (DB::connection()->getDriverName() !== 'sqlite') {
-            throw new \RuntimeException('AttendanceSaveOptimizationTest chỉ được phép chạy trên SQLite cô lập.');
-        }
+        $this->requireIsolatedSqliteDatabase();
 
         $this->createSchema();
         DB::listen(function (QueryExecuted $query): void {
@@ -36,11 +34,13 @@ class AttendanceSaveOptimizationTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach ([
-            'smart_notifications', 'attendance_data', 'attendance_columns',
-            'class_course', 'class_user', 'classes', 'courses', 'users',
-        ] as $table) {
-            Schema::dropIfExists($table);
+        if ($this->usesIsolatedSqliteDatabase()) {
+            foreach ([
+                'smart_notifications', 'attendance_data', 'attendance_columns',
+                'class_course', 'class_user', 'classes', 'courses', 'users',
+            ] as $table) {
+                Schema::dropIfExists($table);
+            }
         }
 
         parent::tearDown();
