@@ -8,7 +8,7 @@
             ['code' => 'process', 'name' => 'Điểm quá trình', 'weight_percent' => 40, 'allow_over_max' => false],
             ['code' => 'exam', 'name' => 'Điểm thi', 'weight_percent' => 60, 'allow_over_max' => false],
         ]);
-        $sourceRows = old('items', $sources);
+        $sourceRows = $sources;
         $preview = session('gradebook_setup_preview');
     @endphp
     <div class="lms-page gradebook-setup-page" data-gradebook-setup>

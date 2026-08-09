@@ -17,7 +17,7 @@ class GradebookSetupController extends Controller
     {
         Gate::authorize('update', $course);
         $discovery = $migration->discover($course)['discovery'];
-        $sources = $this->sources($discovery);
+        $sources = $this->mergeOldInput($this->sources($discovery));
 
         return view('gradebook.setup', compact('course', 'sources'));
     }
@@ -107,6 +107,41 @@ class GradebookSetupController extends Controller
         ]);
 
         return $legacy->concat($assignments)->concat($quizzes)->values()->all();
+    }
+
+    /**
+     * Rehydrate editable old input with authoritative discovery metadata after validation redirects.
+     *
+     * @param  array<int,array<string,mixed>>  $sources
+     * @return array<int,array<string,mixed>>
+     */
+    private function mergeOldInput(array $sources): array
+    {
+        $oldItems = session()->getOldInput('items');
+        if (! is_array($oldItems)) {
+            return $sources;
+        }
+
+        $editable = [
+            'enabled', 'code', 'name', 'category_code', 'item_type', 'item_weight',
+            'absence_policy', 'attempt_policy',
+        ];
+        $oldBySource = collect($oldItems)->mapWithKeys(function ($item): array {
+            if (! is_array($item) || empty($item['source_type']) || empty($item['source_id'])) {
+                return [];
+            }
+
+            return [$item['source_type'].':'.(int) $item['source_id'] => $item];
+        });
+
+        return collect($sources)->map(function (array $source) use ($editable, $oldBySource): array {
+            $old = $oldBySource->get($source['source_type'].':'.(int) $source['source_id']);
+            if (! is_array($old)) {
+                return $source;
+            }
+
+            return [...$source, ...array_intersect_key($old, array_flip($editable))];
+        })->values()->all();
     }
 
     private function sourceCode(string $prefix, int $id, string $name): string

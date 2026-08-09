@@ -225,6 +225,11 @@ class GradebookBackfillTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasErrors('categories');
 
+        $this->actingAs($this->teacher)
+            ->get(route('gradebook.setup.create', $this->course))
+            ->assertOk()
+            ->assertSee('Điểm danh');
+
         $otherCourse = Course::create([
             'title' => 'Khóa nguồn ngoài',
             'teacher_id' => $this->teacher->id,
