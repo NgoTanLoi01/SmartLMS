@@ -268,6 +268,71 @@ class AuthorizationIsolationTest extends TestCase
         $this->assertFalse(Gate::forUser($this->otherTeacher)->allows('view', $submission));
     }
 
+    public function test_assignment_submission_workflow_keeps_one_current_submission_and_enforces_authorization(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $otherStudent = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+
+        $this->actingAs($student)
+            ->post(route('assignments.submit', $this->assignment), [
+                'text_answer' => 'Nội dung bài nộp lần đầu.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $submission = AssignmentSubmission::where('assignment_id', $this->assignment->id)
+            ->where('user_id', $student->id)
+            ->firstOrFail();
+
+        $this->actingAs($student)
+            ->post(route('assignments.submit', $this->assignment), [
+                'text_answer' => 'Nội dung bài nộp đã cập nhật.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseCount('assignment_submissions', 1);
+        $this->assertDatabaseHas('assignment_submissions', [
+            'id' => $submission->id,
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+            'text_answer' => 'Nội dung bài nộp đã cập nhật.',
+        ]);
+        $this->assertSame($submission->id, $student->fresh()->submissions()->sole()->id);
+
+        $this->actingAs($this->owner)
+            ->get(route('assignments.submissions.review', $submission))
+            ->assertOk()
+            ->assertSee('Nội dung bài nộp đã cập nhật.');
+
+        $this->actingAs($this->otherTeacher)
+            ->get(route('assignments.submissions.review', $submission))
+            ->assertForbidden();
+
+        $this->actingAs($otherStudent)
+            ->get(route('assignments.submissions.review', $submission))
+            ->assertForbidden();
+
+        $this->actingAs($this->owner)
+            ->post(route('assignments.grade', $submission), [
+                'grade' => 8.5,
+                'feedback' => 'Đạt yêu cầu.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('assignment_submissions', [
+            'id' => $submission->id,
+            'grade' => 8.5,
+            'feedback' => 'Đạt yêu cầu.',
+        ]);
+
+        $this->actingAs($student)
+            ->post(route('assignments.grade', $submission), ['grade' => 10])
+            ->assertForbidden();
+    }
+
     public function test_owner_can_bulk_archive_questions(): void
     {
         $secondQuestion = Question::create([
@@ -453,11 +518,16 @@ class AuthorizationIsolationTest extends TestCase
             $table->unsignedBigInteger('assignment_id');
             $table->unsignedBigInteger('user_id');
             $table->string('file_path')->nullable();
+            $table->string('file_disk')->default('public');
+            $table->string('original_filename')->nullable();
+            $table->string('mime_type')->nullable();
+            $table->unsignedBigInteger('file_size')->nullable();
             $table->text('text_answer')->nullable();
             $table->decimal('grade', 5, 2)->nullable();
             $table->text('feedback')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
+            $table->unique(['assignment_id', 'user_id']);
         });
         Schema::create('quizzes', function (Blueprint $table) {
             $table->id();

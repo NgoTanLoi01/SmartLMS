@@ -339,7 +339,7 @@ class ClassManagementController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:classes,code',
             'course_ids' => 'nullable|array',
-            'course_ids.*' => 'exists:courses,id',
+            'course_ids.*' => 'distinct|exists:courses,id',
             'status' => 'nullable|in:active,hidden,archived',
         ];
 
@@ -360,7 +360,7 @@ class ClassManagementController extends Controller
         ]);
 
         if ($request->has('course_ids')) {
-            $classroom->courses()->attach($request->course_ids);
+            $classroom->courses()->syncWithoutDetaching($request->course_ids);
         }
 
         return back()->with('success', 'Đã tạo lớp học và phân bổ khóa học thành công!');
@@ -375,7 +375,7 @@ class ClassManagementController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:classes,code,'.$id,
             'course_ids' => 'nullable|array',
-            'course_ids.*' => 'exists:courses,id',
+            'course_ids.*' => 'distinct|exists:courses,id',
             'status' => 'nullable|in:active,hidden,archived',
         ];
 

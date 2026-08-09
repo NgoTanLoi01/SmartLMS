@@ -1,7 +1,7 @@
     <script>
         // Fix lỗi Bootstrap 5 chặn focus (không cho gõ chữ) vào các popup bên trong TinyMCE (như popup chèn link)
         document.addEventListener('focusin', (e) => {
-            if (e.target.closest(".tox-tinymce-aux, .moxman-window, .tam-assetmanager-root") !== null) {
+            if (e.target instanceof Element && e.target.closest(".tox-tinymce, .tox-tinymce-aux, .moxman-window, .tam-assetmanager-root") !== null) {
                 e.stopImmediatePropagation();
             }
         });

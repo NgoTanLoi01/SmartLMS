@@ -79,6 +79,9 @@ class CourseDetailReviewExperienceTest extends TestCase
         $this->assertStringNotContainsString('images_upload_url', $modals);
         $this->assertStringContainsString("license_key: 'gpl'", $editor);
         $this->assertStringContainsString("from 'tinymce/tinymce'", $editor);
+        $this->assertStringContainsString('targets.length === 0', $editor);
+        $this->assertStringContainsString('smartLmsEditorPending', $editor);
+        $this->assertStringContainsString('!tinymce.get(target.id)', $editor);
         $this->assertStringContainsString("selector: '#addAssignmentInstructions, #editAssignmentInstructions'", $modals);
     }
 }

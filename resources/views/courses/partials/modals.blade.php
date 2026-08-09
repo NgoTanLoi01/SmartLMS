@@ -739,13 +739,6 @@
                 }
             });
 
-            // ── Fix Bootstrap modal + TinyMCE focus ──
-            $(document).on('focusin', function(e) {
-                if ($(e.target).closest('.tox-tinymce, .tox-tinymce-aux, .moxman-window').length) {
-                    e.stopImmediatePropagation();
-                }
-            });
-
             // ── Trigger save on edit form submit ──
             document.getElementById('editAssignmentForm')?.addEventListener('submit', () => window.tinymce?.triggerSave());
         });

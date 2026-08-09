@@ -166,12 +166,15 @@ class AttendanceController extends Controller
                 }
 
                 $savedValue = $column->type === 'attendance' ? $this->normalizeAttendanceStatus($value) : $value;
-                AttendanceData::updateOrCreate(
-                    ['attendance_column_id' => $column->id, 'user_id' => $userId],
-                    [
+                AttendanceData::query()->upsert(
+                    [[
+                        'attendance_column_id' => $column->id,
+                        'user_id' => $userId,
                         'value' => $savedValue,
                         'note' => $request->input("notes.{$column->id}.{$userId}"),
-                    ]
+                    ]],
+                    ['attendance_column_id', 'user_id'],
+                    ['value', 'note'],
                 );
             }
         }

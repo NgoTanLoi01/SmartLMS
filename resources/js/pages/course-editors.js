@@ -29,12 +29,31 @@ const baseContentStyle = `${oxideContentCss}\n${defaultContentCss}`;
 window.tinymce = tinymce;
 window.SmartLmsTinyMce = {
     init(options) {
-        return tinymce.init({
-            license_key: 'gpl',
-            skin: false,
-            content_css: false,
-            ...options,
-            content_style: `${baseContentStyle}\n${options.content_style ?? ''}`,
-        });
+        if (typeof options.selector !== 'string' || options.selector.trim() === '') {
+            return Promise.resolve([]);
+        }
+
+        const targets = Array.from(document.querySelectorAll(options.selector))
+            .filter((target) => !tinymce.get(target.id) && target.dataset.smartLmsEditorPending !== 'true');
+
+        if (targets.length === 0) {
+            return Promise.resolve([]);
+        }
+
+        return Promise.all(targets.map((target) => {
+            target.dataset.smartLmsEditorPending = 'true';
+
+            return tinymce.init({
+                license_key: 'gpl',
+                skin: false,
+                content_css: false,
+                ...options,
+                selector: undefined,
+                target,
+                content_style: `${baseContentStyle}\n${options.content_style ?? ''}`,
+            }).finally(() => {
+                delete target.dataset.smartLmsEditorPending;
+            });
+        })).then((editors) => editors.flat());
     },
 };

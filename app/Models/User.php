@@ -76,7 +76,7 @@ class User extends Authenticatable
 
     public function submissions()
     {
-        return $this->hasMany(Submission::class, 'student_id');
+        return $this->hasMany(AssignmentSubmission::class, 'user_id');
     }
 
     public function completedLessons()

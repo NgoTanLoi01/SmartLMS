@@ -493,17 +493,26 @@ class AssignmentController extends Controller
         }
 
         // 5. Cập nhật hoặc tạo mới record trong Database
-        AssignmentSubmission::updateOrCreate(
-            ['assignment_id' => $id, 'user_id' => $user->id],
-            [
-                'file_path' => $filePath,
-                'file_disk' => $filePath ? $fileDisk : config('filesystems.submission_disk', 'local'),
-                'original_filename' => $originalFilename,
-                'mime_type' => $mimeType,
-                'file_size' => $fileSize,
-                'text_answer' => $request->input('text_answer'),
-                'submitted_at' => now(),
-            ],
+        $submissionData = [
+            'file_path' => $filePath,
+            'file_disk' => $filePath ? $fileDisk : config('filesystems.submission_disk', 'local'),
+            'original_filename' => $originalFilename,
+            'mime_type' => $mimeType,
+            'file_size' => $fileSize,
+            'text_answer' => $request->input('text_answer'),
+            'submitted_at' => now(),
+        ];
+
+        // Một học viên có đúng một bản nộp hiện hành cho mỗi bài tập. Upsert dựa trên
+        // unique key ở migration để hai request đồng thời không thể tạo hai record.
+        AssignmentSubmission::query()->upsert(
+            [[
+                'assignment_id' => $id,
+                'user_id' => $user->id,
+                ...$submissionData,
+            ]],
+            ['assignment_id', 'user_id'],
+            array_keys($submissionData),
         );
 
         return back()->with('success', 'Bạn đã cập nhật bài nộp thành công!');
