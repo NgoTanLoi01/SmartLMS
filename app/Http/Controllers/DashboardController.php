@@ -9,6 +9,7 @@ use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\QuizSession;
 use App\Models\User;
+use App\Queries\Dashboard\PendingGradingQuery;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Schema;
 class DashboardController extends Controller
 {
     private const DASHBOARD_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+    public function __construct(private PendingGradingQuery $pendingGradingQuery) {}
 
     public function index()
     {
@@ -123,22 +126,12 @@ class DashboardController extends Controller
                 ->take(6)
                 ->get();
 
-            $gradeCounts = DB::table('assignment_submissions')
-                ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')
-                ->whereIn('assignments.course_id', $courseIds)
-                ->whereNull('assignments.deleted_at')
-                ->where($this->notArchivedColumn('assignments.status'))
-                ->selectRaw('SUM(CASE WHEN assignment_submissions.grade IS NULL THEN 1 ELSE 0 END) as pending_count')
-                ->selectRaw('SUM(CASE WHEN assignment_submissions.grade IS NOT NULL THEN 1 ELSE 0 END) as graded_count')
-                ->first();
-            $data['pending_assignment_grades'] = (int) ($gradeCounts->pending_count ?? 0);
-            $gradedCount = (int) ($gradeCounts->graded_count ?? 0);
-
-            $data['pending_quiz_grades'] = QuizAttempt::query()
-                ->where('status', QuizAttempt::STATUS_PENDING_GRADING)
-                ->whereHas('quiz', fn ($query) => $query->whereIn('course_id', $courseIds))
-                ->count();
-            $data['pending_grades'] = $data['pending_assignment_grades'] + $data['pending_quiz_grades'];
+            $grading = $this->pendingGradingQuery->forTeacher($courseIds);
+            $data['pending_assignment_grades'] = $grading['pending_assignment_grades'];
+            $data['pending_quiz_grades'] = $grading['pending_quiz_grades'];
+            $data['pending_grades'] = $grading['pending_grades'];
+            $data['grading_queue'] = $grading['grading_queue'];
+            $gradedCount = $grading['graded_assignment_count'];
 
             // Tổng học viên
             $data['total_students'] = DB::table('class_user')
@@ -188,60 +181,6 @@ class DashboardController extends Controller
                 ->orderBy('schedules.schedule_date', 'asc')
                 ->orderBy('schedules.start_time', 'asc')
                 ->first();
-
-            $assignmentQueue = DB::table('assignment_submissions')
-                ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')
-                ->join('courses', 'assignments.course_id', '=', 'courses.id')
-                ->join('users', 'assignment_submissions.user_id', '=', 'users.id')
-                ->whereIn('assignments.course_id', $courseIds)
-                ->whereNull('assignment_submissions.grade')
-                ->whereNull('assignments.deleted_at')
-                ->where($this->notArchivedColumn('assignments.status'))
-                ->select(
-                    'assignment_submissions.*',
-                    'assignments.title as assignment_title',
-                    'assignments.due_date',
-                    'users.name as student_name',
-                    'courses.title as course_title',
-                    'courses.id as course_id'
-                )
-                ->orderByRaw('COALESCE(assignment_submissions.submitted_at, assignment_submissions.created_at) ASC')
-                ->take(8)
-                ->get()
-                ->map(fn ($submission) => (object) [
-                    'type' => 'assignment',
-                    'title' => $submission->assignment_title,
-                    'student_name' => $submission->student_name,
-                    'course_title' => $submission->course_title,
-                    'queued_at' => $submission->submitted_at ?? $submission->created_at,
-                    'due_date' => $submission->due_date,
-                    'attempt_number' => null,
-                    'action_url' => route('assignments.submissions.review', $submission->id),
-                ]);
-
-            $quizQueue = QuizAttempt::query()
-                ->with(['quiz.course:id,title', 'user:id,name'])
-                ->where('status', QuizAttempt::STATUS_PENDING_GRADING)
-                ->whereHas('quiz', fn ($query) => $query->whereIn('course_id', $courseIds))
-                ->oldest('completed_at')
-                ->take(8)
-                ->get()
-                ->map(fn (QuizAttempt $attempt) => (object) [
-                    'type' => 'quiz',
-                    'title' => $attempt->quiz?->title ?? 'Bài kiểm tra',
-                    'student_name' => $attempt->user?->name ?? 'Học viên',
-                    'course_title' => $attempt->quiz?->course?->title ?? 'Khóa học',
-                    'queued_at' => $attempt->completed_at ?? $attempt->updated_at,
-                    'due_date' => null,
-                    'attempt_number' => $attempt->attempt_number,
-                    'action_url' => route('quiz-attempts.grade', $attempt),
-                ]);
-
-            $data['grading_queue'] = $assignmentQueue
-                ->concat($quizQueue)
-                ->sortBy('queued_at')
-                ->take(5)
-                ->values();
 
             $gradeSummary = DB::table('assignment_submissions')
                 ->join('assignments', 'assignment_submissions.assignment_id', '=', 'assignments.id')

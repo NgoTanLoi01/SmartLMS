@@ -163,7 +163,7 @@ class DashboardMetricsTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        DB::table('assignment_submissions')->insert([
+        $pendingSubmissionId = DB::table('assignment_submissions')->insertGetId([
             'assignment_id' => $pendingAssignment,
             'user_id' => $student->id,
             'submitted_at' => now()->subHours(3),
@@ -198,6 +198,14 @@ class DashboardMetricsTest extends TestCase
         $this->assertSame(['assignment', 'quiz'], $data['grading_queue']->pluck('type')->all());
         $this->assertSame(1, $data['attention_students_count']);
         $this->assertSame(4.0, round((float) $data['attention_students']->first()->avg_grade, 1));
+        $this->assertSame(
+            ['Bài nộp chờ lâu nhất', 'Hôm nay chưa có ca dạy sắp tới', 'Theo dõi học viên cần hỗ trợ'],
+            array_column($data['teacher_priority_suggestions'], 'title')
+        );
+        $this->assertSame(
+            route('assignments.submissions.review', $pendingSubmissionId),
+            $data['teacher_priority_suggestions'][0]['action_url']
+        );
     }
 
     public function test_admin_dashboard_separates_active_accounts_and_operational_backlog(): void
