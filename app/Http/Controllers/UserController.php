@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Application\Identity\UpdateUserProfile;
+use App\Http\Requests\User\UpdateUserProfileRequest;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\UserDeletionGuard;
@@ -11,6 +13,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ViewErrorBag;
 
 class UserController extends Controller
 {
@@ -56,7 +59,13 @@ class UserController extends Controller
             )
             ->first();
 
-        return view('users.index', compact('users', 'userStats'));
+        $editingUser = null;
+        $errors = $request->session()->get('errors');
+        if ($errors instanceof ViewErrorBag && $errors->hasBag('editUser')) {
+            $editingUser = User::find($request->old('editing_user_id'));
+        }
+
+        return view('users.index', compact('users', 'userStats', 'editingUser'));
     }
 
     public function store(Request $request)
@@ -167,6 +176,16 @@ class UserController extends Controller
         return back()->with('success', $isActive
             ? 'Đã cập nhật trạng thái và thời hạn tài khoản.'
             : 'Đã vô hiệu hóa tài khoản và thu hồi các phiên đăng nhập.');
+    }
+
+    public function update(
+        UpdateUserProfileRequest $request,
+        User $user,
+        UpdateUserProfile $updateUserProfile
+    ) {
+        $updatedUser = $updateUserProfile->handle($user, $request->profileData());
+
+        return back()->with('success', "Đã cập nhật thông tin tài khoản {$updatedUser->name}.");
     }
 
     public function destroy($id, UserDeletionGuard $deletionGuard)

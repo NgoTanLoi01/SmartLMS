@@ -191,6 +191,20 @@
                                             <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end user-action-menu">
+                                            <button type="button" class="dropdown-item edit-user-btn"
+                                                data-bs-toggle="modal" data-bs-target="#editUserModal"
+                                                data-action="{{ route('users.update', $user) }}"
+                                                data-user-id="{{ $user->id }}"
+                                                data-name="{{ $user->name }}"
+                                                data-email="{{ $user->email }}"
+                                                data-role-label="{{ $user->isAdmin() ? 'Quản trị viên' : ($user->isTeacher() ? 'Giáo viên' : 'Học viên') }}"
+                                                data-is-student="{{ $user->isStudent() ? '1' : '0' }}"
+                                                data-username="{{ $user->username }}"
+                                                data-student-code="{{ $user->student_code }}">
+                                                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Sửa thông tin
+                                            </button>
+
+                                            <div class="dropdown-divider"></div>
                                             <form action="{{ route('users.resetPassword', $user->id) }}" method="POST"
                                                 onsubmit="return confirm('Cấp lại mật khẩu mặc định cho tài khoản này?');">
                                                 @csrf
@@ -300,6 +314,100 @@
         </div>
     </div>
 
+    @php
+        $editUserHasErrors = $errors->hasBag('editUser');
+        $editingIsStudent = $editingUser?->isStudent() ?? false;
+        $editingRoleLabel = $editingUser?->isAdmin()
+            ? 'Quản trị viên'
+            : ($editingUser?->isTeacher() ? 'Giáo viên' : 'Học viên');
+    @endphp
+    <div class="modal fade user-modal" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalTitle"
+        aria-hidden="true" data-reopen="{{ $editUserHasErrors && $editingUser ? '1' : '0' }}">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="editUserForm" action="{{ $editingUser ? route('users.update', $editingUser) : '' }}" method="POST"
+                class="modal-content">
+                @csrf
+                @method('PATCH')
+                <input id="editingUserId" type="hidden" name="editing_user_id"
+                    value="{{ old('editing_user_id', $editingUser?->id) }}">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark" id="editUserModalTitle">Sửa thông tin người dùng</h5>
+                        <div class="small text-muted">Cập nhật hồ sơ và thông tin đăng nhập</div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    @if ($editUserHasErrors)
+                        <div class="alert alert-danger small" role="alert">
+                            Vui lòng kiểm tra lại các thông tin được đánh dấu bên dưới.
+                        </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted" for="editUserName">Họ và tên</label>
+                        <input id="editUserName" type="text" name="name"
+                            class="form-control @error('name', 'editUser') is-invalid @enderror"
+                            value="{{ old('name', $editingUser?->name) }}" autocomplete="name" required>
+                        @error('name', 'editUser')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted" for="editUserEmail">Email</label>
+                        <input id="editUserEmail" type="email" name="email"
+                            class="form-control @error('email', 'editUser') is-invalid @enderror"
+                            value="{{ old('email', $editingUser?->email) }}" autocomplete="email">
+                        <div class="form-text">
+                            Email bắt buộc với giáo viên và quản trị viên; học viên có thể để trống để dùng email nội bộ.
+                        </div>
+                        @error('email', 'editUser')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Vai trò</label>
+                        <div id="editUserRole" class="form-control bg-light" aria-readonly="true">
+                            {{ $editingUser ? $editingRoleLabel : '' }}
+                        </div>
+                        <div class="form-text">Vai trò và trạng thái tài khoản được quản lý bằng luồng riêng.</div>
+                    </div>
+
+                    <div id="editStudentFields" class="{{ $editingIsStudent ? '' : 'd-none' }}">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted" for="editUsername">Tên đăng nhập</label>
+                            <input id="editUsername" type="text" name="username"
+                                class="form-control @error('username', 'editUser') is-invalid @enderror"
+                                value="{{ old('username', $editingUser?->username) }}"
+                                {{ $editingIsStudent ? 'required' : 'disabled' }} autocomplete="username">
+                            @error('username', 'editUser')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-bold small text-muted" for="editStudentCode">Mã học viên</label>
+                            <input id="editStudentCode" type="text" name="student_code"
+                                class="form-control @error('student_code', 'editUser') is-invalid @enderror"
+                                value="{{ old('student_code', $editingUser?->student_code) }}"
+                                {{ $editingIsStudent ? '' : 'disabled' }}>
+                            @error('student_code', 'editUser')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="lms-btn lms-btn-outline" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="lms-btn lms-btn-primary">
+                        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="modal fade user-modal" id="lifecycleModal" tabindex="-1" aria-labelledby="lifecycleModalTitle"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -354,6 +462,8 @@
             const reasonGroup = document.getElementById('deactivationReasonGroup');
 
             const syncReasonState = () => {
+                if (!status || !reasonGroup || !reason) return;
+
                 const inactive = status.value === '0';
                 reasonGroup.classList.toggle('d-none', !inactive);
                 reason.required = inactive;
@@ -362,6 +472,8 @@
 
             document.querySelectorAll('.manage-lifecycle-btn').forEach((button) => {
                 button.addEventListener('click', () => {
+                    if (!form || !accountName || !status || !expiresAt || !reason) return;
+
                     form.action = button.dataset.action;
                     accountName.textContent = button.dataset.name;
                     status.value = button.dataset.active;
@@ -371,7 +483,43 @@
                 });
             });
 
-            status.addEventListener('change', syncReasonState);
+            status?.addEventListener('change', syncReasonState);
+
+            const editModal = document.getElementById('editUserModal');
+            const editForm = document.getElementById('editUserForm');
+            const editingUserId = document.getElementById('editingUserId');
+            const editName = document.getElementById('editUserName');
+            const editEmail = document.getElementById('editUserEmail');
+            const editRole = document.getElementById('editUserRole');
+            const studentFields = document.getElementById('editStudentFields');
+            const editUsername = document.getElementById('editUsername');
+            const editStudentCode = document.getElementById('editStudentCode');
+
+            const fillEditForm = (button) => {
+                if (!editForm || !editingUserId || !editName || !editEmail || !editRole ||
+                    !studentFields || !editUsername || !editStudentCode) return;
+
+                const isStudent = button.dataset.isStudent === '1';
+                editForm.action = button.dataset.action;
+                editingUserId.value = button.dataset.userId;
+                editName.value = button.dataset.name || '';
+                editEmail.value = button.dataset.email || '';
+                editRole.textContent = button.dataset.roleLabel || '';
+                editUsername.value = button.dataset.username || '';
+                editStudentCode.value = button.dataset.studentCode || '';
+                studentFields.classList.toggle('d-none', !isStudent);
+                editUsername.disabled = !isStudent;
+                editUsername.required = isStudent;
+                editStudentCode.disabled = !isStudent;
+            };
+
+            document.querySelectorAll('.edit-user-btn').forEach((button) => {
+                button.addEventListener('click', () => fillEditForm(button));
+            });
+
+            if (editModal?.dataset.reopen === '1' && window.bootstrap?.Modal) {
+                window.bootstrap.Modal.getOrCreateInstance(editModal).show();
+            }
         });
     </script>
 @endsection

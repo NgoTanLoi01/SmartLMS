@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Database\Schema\Blueprint;
@@ -131,6 +132,7 @@ class AccountLifecycleTest extends TestCase
             ->assertSee('Tổng tài khoản')
             ->assertSee('Cần xử lý')
             ->assertSee('Cấp tài khoản mới')
+            ->assertSee('Sửa thông tin')
             ->assertSee('Cấp lại mật khẩu')
             ->assertSee('Quản lý vòng đời tài khoản')
             ->assertSee('Đang hoạt động')
@@ -168,6 +170,173 @@ class AccountLifecycleTest extends TestCase
                 'role' => User::ROLE_TEACHER,
             ])
             ->assertSessionHasErrors(['name', 'password'], null, 'createUser');
+    }
+
+    public function test_admin_can_update_user_profile_without_changing_role_password_or_lifecycle(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'profile-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $target = $this->createUser([
+            'name' => 'Giáo viên cũ',
+            'email' => 'old-teacher@example.com',
+            'role' => User::ROLE_TEACHER,
+            'is_active' => false,
+            'deactivation_reason' => 'Đang tạm nghỉ',
+        ]);
+        $originalPassword = $target->password;
+
+        $this->actingAs($admin)
+            ->from(route('users.index'))
+            ->patch(route('users.update', $target), [
+                'editing_user_id' => $target->id,
+                'name' => 'Giáo viên mới',
+                'email' => 'new-teacher@example.com',
+            ])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $target->refresh();
+        $this->assertSame('Giáo viên mới', $target->name);
+        $this->assertSame('new-teacher@example.com', $target->email);
+        $this->assertSame(User::ROLE_TEACHER, $target->role);
+        $this->assertSame($originalPassword, $target->password);
+        $this->assertFalse($target->is_active);
+        $this->assertSame('Đang tạm nghỉ', $target->deactivation_reason);
+
+        $auditLog = AuditLog::query()
+            ->where('action', AuditLogger::ACCOUNT_PROFILE_UPDATED)
+            ->where('auditable_id', $target->id)
+            ->firstOrFail();
+        $this->assertSame('Giáo viên cũ', $auditLog->old_values['name']);
+        $this->assertSame('Giáo viên mới', $auditLog->new_values['name']);
+    }
+
+    public function test_admin_can_update_student_login_identifiers_and_internal_email(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'student-profile-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $student = $this->createUser([
+            'name' => 'Học viên cũ',
+            'username' => 'hocviencu',
+            'student_code' => 'hv001',
+            'email' => 'hocviencu@student.smartlms',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('users.index'))
+            ->patch(route('users.update', $student), [
+                'editing_user_id' => $student->id,
+                'name' => 'Học viên mới',
+                'username' => '  Hoc-Vien.Moi  ',
+                'student_code' => ' HV- 002 ',
+                'email' => '',
+            ])
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('success');
+
+        $student->refresh();
+        $this->assertSame('Học viên mới', $student->name);
+        $this->assertSame('hoc-vien.moi', $student->username);
+        $this->assertSame('hv002', $student->student_code);
+        $this->assertSame('hoc.vien.moi@student.smartlms', $student->email);
+    }
+
+    public function test_update_user_profile_rejects_duplicate_student_identifiers_in_edit_error_bag(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'duplicate-profile-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $existing = $this->createUser([
+            'username' => 'existing-student',
+            'student_code' => 'hv009',
+            'email' => 'existing-student@example.com',
+            'role' => User::ROLE_STUDENT,
+        ]);
+        $target = $this->createUser([
+            'name' => 'Học viên mục tiêu',
+            'username' => 'target-student',
+            'student_code' => 'hv010',
+            'email' => 'target-student@example.com',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        $response = $this->followingRedirects()
+            ->actingAs($admin)
+            ->from(route('users.index'))
+            ->patch(route('users.update', $target), [
+                'editing_user_id' => $target->id,
+                'name' => 'Tên không được lưu',
+                'username' => $existing->username,
+                'student_code' => 'HV-009',
+                'email' => $target->email,
+            ]);
+
+        $response
+            ->assertOk()
+            ->assertSee('Vui lòng kiểm tra lại các thông tin được đánh dấu bên dưới.')
+            ->assertSee('Tên đăng nhập này đã được sử dụng.')
+            ->assertSee('Mã học viên này đã được sử dụng.')
+            ->assertSee('data-reopen="1"', false);
+
+        $this->assertSame('Học viên mục tiêu', $target->fresh()->name);
+    }
+
+    public function test_non_admin_cannot_update_user_profile(): void
+    {
+        $teacher = $this->createUser(['email' => 'profile-teacher@example.com']);
+        $target = $this->createUser(['email' => 'profile-target@example.com']);
+
+        $this->actingAs($teacher)
+            ->patch(route('users.update', $target), [
+                'editing_user_id' => $target->id,
+                'name' => 'Không được phép',
+                'email' => 'forbidden@example.com',
+            ])
+            ->assertForbidden();
+
+        $this->assertNotSame('Không được phép', $target->fresh()->name);
+    }
+
+    public function test_student_internal_email_collision_is_rejected_before_update(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'internal-email-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $this->createUser([
+            'username' => 'alpha.beta',
+            'email' => 'alpha.beta@student.smartlms',
+            'role' => User::ROLE_STUDENT,
+        ]);
+        $target = $this->createUser([
+            'name' => 'Học viên chưa đổi',
+            'username' => 'target-alpha',
+            'email' => 'target-alpha@student.smartlms',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        $response = $this->followingRedirects()
+            ->actingAs($admin)
+            ->from(route('users.index'))
+            ->patch(route('users.update', $target), [
+                'editing_user_id' => $target->id,
+                'name' => 'Tên không được lưu',
+                'username' => 'alpha-beta',
+                'student_code' => '',
+                'email' => '',
+            ]);
+
+        $response
+            ->assertOk()
+            ->assertSee('Email nội bộ tạo từ tên đăng nhập đã được sử dụng.');
+        $this->assertSame('Học viên chưa đổi', $target->fresh()->name);
+        $this->assertSame('target-alpha', $target->fresh()->username);
     }
 
     public function test_attendance_page_has_link_back_to_current_course(): void

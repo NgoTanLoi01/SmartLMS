@@ -35,6 +35,8 @@ class AuditLogger
 
     public const ACCOUNT_LIFECYCLE_UPDATED = 'account_lifecycle_updated';
 
+    public const ACCOUNT_PROFILE_UPDATED = 'account_profile_updated';
+
     public static function log(
         string $action,
         ?Model $auditable = null,

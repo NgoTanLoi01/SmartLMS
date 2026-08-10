@@ -536,7 +536,7 @@
                     <h2 id="operations-title">Không bỏ quên phần quản trị phía sau lớp học</h2>
                     <p>Từ phiên đăng nhập đến backup dữ liệu, SmartLMS có các lớp kiểm soát cần thiết để quản trị viên
                         theo dõi hệ thống sau khi triển khai.</p>
-                    <a class="text-link" href="https://github.com/NgoTanLoi01/LMS_System#readme" target="_blank"
+                    <a class="text-link" href="#" target="_blank"
                         rel="noopener noreferrer">Xem tài liệu hệ thống <i
                             class="fa-solid fa-arrow-up-right-from-square"></i></a>
                 </div>
@@ -587,13 +587,13 @@
             <div class="footer-links">
                 <div><strong>Sản phẩm</strong><a href="#capabilities">Chức năng</a><a href="#roles">Theo vai
                         trò</a><a href="#ai">AI & dữ liệu</a></div>
-                <div><strong>Tài nguyên</strong><a href="https://github.com/NgoTanLoi01/LMS_System#readme"
+                <div><strong>Tài nguyên</strong><a href="#"
                         target="_blank" rel="noopener noreferrer">Hướng dẫn</a><a
-                        href="https://github.com/NgoTanLoi01/LMS_System" target="_blank" rel="noopener noreferrer">Mã
+                        href="#" target="_blank" rel="noopener noreferrer">Mã
                         nguồn</a><a href="mailto:ngotanloi2424@gmail.com">Hỗ trợ</a></div>
                 <div><strong>Truy cập</strong><a href="{{ route('login') }}">Đăng nhập</a><a
                         href="{{ route('home') }}">Trang chủ</a><a
-                        href="https://github.com/NgoTanLoi01/LMS_System/issues" target="_blank"
+                        href="#" target="_blank"
                         rel="noopener noreferrer">Báo lỗi</a></div>
             </div>
         </div>
