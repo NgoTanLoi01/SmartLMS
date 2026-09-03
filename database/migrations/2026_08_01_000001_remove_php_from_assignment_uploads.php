@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    private const SAFE_DEFAULT = 'pdf,docx,txt,md,html,htm,css,js,png,jpg,jpeg';
+    private const SAFE_DEFAULT = 'pdf,docx,txt,md,html,htm,css,js,png,jpg,jpeg,ppt,pptx,xls,xlsx,zip,rar';
 
     public function up(): void
     {

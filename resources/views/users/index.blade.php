@@ -191,6 +191,20 @@
                                             <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end user-action-menu">
+                                            @if ($user->hasRole(\App\Models\User::ROLE_STUDENT, \App\Models\User::ROLE_TEACHER))
+                                                <button type="button" class="dropdown-item edit-user-btn"
+                                                    data-bs-toggle="modal" data-bs-target="#editUserModal"
+                                                    data-user-id="{{ $user->id }}"
+                                                    data-action="{{ route('users.update', $user) }}"
+                                                    data-name="{{ $user->name }}"
+                                                    data-email="{{ $user->email }}"
+                                                    data-username="{{ $user->username }}"
+                                                    data-student-code="{{ $user->student_code }}"
+                                                    data-role="{{ $user->role }}">
+                                                    <i class="fa-solid fa-user-pen" aria-hidden="true"></i> Sửa thông tin
+                                                </button>
+                                            @endif
+
                                             <form action="{{ route('users.resetPassword', $user->id) }}" method="POST"
                                                 onsubmit="return confirm('Cấp lại mật khẩu mặc định cho tài khoản này?');">
                                                 @csrf
@@ -300,6 +314,73 @@
         </div>
     </div>
 
+    <div class="modal fade user-modal" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="editUserForm" method="POST" class="modal-content">
+                @csrf
+                @method('PATCH')
+                <input id="editUserId" type="hidden" name="_edit_user_id" value="{{ old('_edit_user_id') }}">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark" id="editUserModalTitle">Sửa thông tin tài khoản</h5>
+                        <div class="small text-muted">
+                            <span id="editUserRoleLabel"></span> · Vai trò tài khoản được giữ nguyên
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    @if ($errors->getBag('editUser')->any())
+                        <div class="alert alert-danger small" role="alert">
+                            <div class="fw-bold mb-1">Chưa thể cập nhật tài khoản:</div>
+                            <ul class="mb-0 ps-3">
+                                @foreach ($errors->getBag('editUser')->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted" for="editUserName">Họ và tên</label>
+                        <input id="editUserName" type="text" name="name" class="form-control" maxlength="255"
+                            autocomplete="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted" for="editUserEmail">Email</label>
+                        <input id="editUserEmail" type="email" name="email" class="form-control" maxlength="255"
+                            autocomplete="email">
+                        <div id="editUserEmailHelp" class="form-text"></div>
+                    </div>
+                    <div id="editStudentFields">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted" for="editUsername">Tên đăng nhập</label>
+                            <input id="editUsername" type="text" name="username" class="form-control" maxlength="255"
+                                pattern="[A-Za-z0-9._-]+" autocomplete="username">
+                            <div class="form-text">Cho phép chữ cái, chữ số, dấu chấm, gạch dưới và gạch ngang.</div>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-bold small text-muted" for="editStudentCode">Mã học viên</label>
+                            <input id="editStudentCode" type="text" name="student_code" class="form-control"
+                                maxlength="50">
+                        </div>
+                    </div>
+                    <div class="alert alert-info small border-0 mt-3 mb-0">
+                        <i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>
+                        Nếu email hoặc tên đăng nhập thay đổi, các phiên đăng nhập hiện tại của tài khoản sẽ được thu hồi.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="lms-btn lms-btn-outline" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="lms-btn lms-btn-primary">
+                        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Lưu thông tin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="modal fade user-modal" id="lifecycleModal" tabindex="-1" aria-labelledby="lifecycleModalTitle"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -346,6 +427,52 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const editForm = document.getElementById('editUserForm');
+            const editUserId = document.getElementById('editUserId');
+            const editName = document.getElementById('editUserName');
+            const editEmail = document.getElementById('editUserEmail');
+            const editUsername = document.getElementById('editUsername');
+            const editStudentCode = document.getElementById('editStudentCode');
+            const editStudentFields = document.getElementById('editStudentFields');
+            const editRoleLabel = document.getElementById('editUserRoleLabel');
+            const editEmailHelp = document.getElementById('editUserEmailHelp');
+
+            const populateEditForm = (button) => {
+                const isStudent = button.dataset.role === 'student';
+                editForm.action = button.dataset.action;
+                editUserId.value = button.dataset.userId;
+                editName.value = button.dataset.name || '';
+                editEmail.value = button.dataset.email || '';
+                editUsername.value = button.dataset.username || '';
+                editStudentCode.value = button.dataset.studentCode || '';
+                editStudentFields.classList.toggle('d-none', !isStudent);
+                editUsername.required = isStudent;
+                editEmail.required = !isStudent;
+                editRoleLabel.textContent = isStudent ? 'Học viên' : 'Giáo viên';
+                editEmailHelp.textContent = isStudent
+                    ? 'Có thể để trống để hệ thống sử dụng email nội bộ theo tên đăng nhập.'
+                    : 'Email là thông tin đăng nhập bắt buộc của giáo viên.';
+            };
+
+            const editButtons = Array.from(document.querySelectorAll('.edit-user-btn'));
+            editButtons.forEach((button) => {
+                button.addEventListener('click', () => populateEditForm(button));
+            });
+
+            const failedEditUserId = @json((string) old('_edit_user_id'));
+            const hasEditErrors = @json($errors->getBag('editUser')->any());
+            if (hasEditErrors && failedEditUserId) {
+                const button = editButtons.find((candidate) => candidate.dataset.userId === failedEditUserId);
+                if (button) {
+                    populateEditForm(button);
+                    editName.value = @json(old('name', ''));
+                    editEmail.value = @json(old('email', ''));
+                    editUsername.value = @json(old('username', ''));
+                    editStudentCode.value = @json(old('student_code', ''));
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('editUserModal')).show();
+                }
+            }
+
             const form = document.getElementById('lifecycleForm');
             const accountName = document.getElementById('lifecycleAccountName');
             const status = document.getElementById('lifecycleStatus');

@@ -133,7 +133,7 @@ class PrivateLearningFileMigrationTest extends TestCase
 
         $this->assertSame('pdf,png', DB::table('assignments')->where('id', 1)->value('allowed_extensions'));
         $this->assertSame(
-            'pdf,docx,txt,md,html,htm,css,js,png,jpg,jpeg',
+            'pdf,docx,txt,md,html,htm,css,js,png,jpg,jpeg,ppt,pptx,xls,xlsx,zip,rar',
             DB::table('assignments')->where('id', 2)->value('allowed_extensions')
         );
     }

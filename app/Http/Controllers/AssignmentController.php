@@ -147,8 +147,9 @@ class AssignmentController extends Controller
             'grading_scale' => 'nullable|integer|min:1|max:100',
             'ai_grading_enabled' => 'nullable|boolean',
             'due_date' => 'required|date',
-            'allowed_extensions' => 'nullable|string',
-            'max_file_size' => 'nullable|integer',
+            'allowed_extensions' => 'nullable|array|min:1|max:20',
+            'allowed_extensions.*' => 'string|max:10',
+            'max_file_size' => 'nullable|integer|min:1|max:20480',
             'status' => 'required|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
         ]);
@@ -163,6 +164,7 @@ class AssignmentController extends Controller
             'grading_scale', 'due_date', 'allowed_extensions', 'max_file_size', 'status', 'available_from',
         ]);
         $data['allowed_extensions'] = $this->normalizeAllowedExtensions($data['allowed_extensions'] ?? null);
+        $data['max_file_size'] = $data['max_file_size'] ?? 20480;
         $data['grading_scale'] = $data['grading_scale'] ?? 10;
         $data['ai_grading_enabled'] = $request->boolean('ai_grading_enabled');
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
@@ -458,7 +460,7 @@ class AssignmentController extends Controller
 
         // 2. Validate nội dung theo loại bài tập
         $allowed = AssignmentUploadTypes::safeExtensions($assignment->allowed_extensions);
-        $maxSize = $assignment->max_file_size ?? 10240;
+        $maxSize = $assignment->max_file_size ?? 20480;
         $rules = [];
 
         if ($allowed === []) {
@@ -481,7 +483,13 @@ class AssignmentController extends Controller
             $rules['text_answer'] = 'nullable|string';
         }
 
-        $request->validate($rules);
+        $request->validate($rules, [
+            'file.mimes' => 'File không đúng định dạng yêu cầu. Chỉ chấp nhận: '.implode(', ', array_map(
+                static fn (string $extension): string => '.'.strtoupper($extension),
+                $allowed
+            )).'.',
+            'file.max' => 'File vượt quá dung lượng tối đa '.number_format($maxSize / 1024, 1).' MB.',
+        ]);
 
         // 3. Upload và kiểm tra file mới trước; file cũ chỉ bị xóa sau khi DB cập nhật thành công.
         $filePath = $oldSubmission?->file_path;
@@ -596,7 +604,8 @@ class AssignmentController extends Controller
             'type' => 'nullable|in:file,essay,mixed',
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
-            'allowed_extensions' => 'nullable|string|max:255',
+            'allowed_extensions' => 'nullable|array|min:1|max:20',
+            'allowed_extensions.*' => 'string|max:10',
             'max_file_size' => 'nullable|integer|min:1|max:20480',
         ]);
 
@@ -667,7 +676,7 @@ class AssignmentController extends Controller
         return $this->submissionFiles->preview($submission);
     }
 
-    private function normalizeAllowedExtensions(?string $extensions): string
+    private function normalizeAllowedExtensions(string|array|null $extensions): string
     {
         try {
             return AssignmentUploadTypes::normalize($extensions);

@@ -558,6 +558,11 @@
                 const assignmentType = this.getAttribute('data-assignment-type') || 'file';
                 const needsFile = ['file', 'mixed'].includes(assignmentType);
                 const needsEssay = ['essay', 'mixed'].includes(assignmentType);
+                const allowedExtensions = (this.getAttribute('data-extensions') || @json(\App\Support\AssignmentUploadTypes::DEFAULT))
+                    .split(',')
+                    .map(extension => extension.trim().toLowerCase())
+                    .filter(Boolean);
+                const maxFileSize = Number(this.getAttribute('data-max-file-size')) || 20480;
                 const badge = document.getElementById('assignment-badge');
                 const grade = this.getAttribute('data-grade');
                 const feedback = this.getAttribute('data-feedback');
@@ -583,11 +588,17 @@
                 const btnEditSub = document.getElementById('btn-edit-submission');
                 const deleteForm = document.getElementById('delete-submission-form');
                 const submitForm = document.getElementById('course-submit-assignment-form');
+                const fileInputHelp = document.getElementById('assignment-file-input-help');
 
                 if (fileUploadField) fileUploadField.classList.toggle('d-none', !needsFile);
                 if (fileInput) {
                     fileInput.required = needsFile && status !== 'submitted';
+                    fileInput.accept = allowedExtensions.map(extension => `.${extension}`).join(',');
+                    fileInput.setCustomValidity('');
                     if (!needsFile) fileInput.value = '';
+                }
+                if (fileInputHelp) {
+                    fileInputHelp.textContent = `Chấp nhận ${allowedExtensions.map(extension => `.${extension.toUpperCase()}`).join(', ')}; tối đa ${(maxFileSize / 1024).toLocaleString('vi-VN')} MB.`;
                 }
                 if (essayAnswerField) essayAnswerField.classList.toggle('d-none', !needsEssay);
                 if (essayAnswerInput) {
@@ -674,12 +685,46 @@
                     }
                 }
 
-                if (submitForm) submitForm.action = `/assignments/${id}/submit`;
+                if (submitForm) {
+                    submitForm.action = `/assignments/${id}/submit`;
+                    submitForm.dataset.allowedExtensions = allowedExtensions.join(',');
+                    submitForm.dataset.maxFileSize = String(maxFileSize);
+                }
                 assignmentArea.scrollIntoView({
                     behavior: courseScrollBehavior
                 });
                 assignmentArea.focus({ preventScroll: true });
             });
+        });
+
+        const courseSubmissionForm = document.getElementById('course-submit-assignment-form');
+        courseSubmissionForm?.addEventListener('submit', (event) => {
+            const fileInput = document.getElementById('assignment-file-input');
+            const file = fileInput?.files?.[0];
+            if (!file || !fileInput) return;
+
+            const allowedExtensions = (courseSubmissionForm.dataset.allowedExtensions || '')
+                .split(',')
+                .filter(Boolean);
+            const maxFileSize = Number(courseSubmissionForm.dataset.maxFileSize) || 20480;
+            const extension = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+            let message = '';
+
+            if (!allowedExtensions.includes(extension)) {
+                message = `File phải có một trong các định dạng: ${allowedExtensions.map(item => `.${item.toUpperCase()}`).join(', ')}.`;
+            } else if (file.size > maxFileSize * 1024) {
+                message = `File vượt quá dung lượng tối đa ${(maxFileSize / 1024).toLocaleString('vi-VN')} MB.`;
+            }
+
+            fileInput.setCustomValidity(message);
+            if (message) {
+                event.preventDefault();
+                fileInput.reportValidity();
+            }
+        });
+
+        document.getElementById('assignment-file-input')?.addEventListener('change', function() {
+            this.setCustomValidity('');
         });
 
         // ==========================================

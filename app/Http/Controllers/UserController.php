@@ -11,6 +11,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -110,6 +112,99 @@ class UserController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        if (! $user->hasRole(User::ROLE_STUDENT, User::ROLE_TEACHER)) {
+            return back()->with('error', 'Chỉ có thể sửa thông tin tài khoản học viên hoặc giáo viên tại đây.');
+        }
+
+        $isStudent = $user->isStudent();
+        $request->merge([
+            'name' => trim((string) $request->input('name')),
+            'email' => Str::lower(trim((string) $request->input('email'))),
+            'username' => Str::lower(trim((string) $request->input('username'))),
+        ]);
+
+        $data = $request->validateWithBag('editUser', [
+            '_edit_user_id' => ['required', 'integer', Rule::in([$user->getKey()])],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                $isStudent ? 'nullable' : 'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user),
+            ],
+            'username' => [
+                $isStudent ? 'required' : 'nullable',
+                'string',
+                'max:255',
+                'regex:/^[A-Za-z0-9._-]+$/',
+                Rule::unique('users', 'username')->ignore($user),
+            ],
+            'student_code' => ['nullable', 'string', 'max:50'],
+        ], [
+            'username.regex' => 'Tên đăng nhập chỉ được chứa chữ cái, chữ số, dấu chấm, gạch dưới hoặc gạch ngang.',
+        ]);
+
+        $studentCode = $isStudent
+            ? StudentLoginCode::normalizeStudentCode($data['student_code'] ?? null)
+            : null;
+
+        if ($studentCode && User::query()
+            ->whereKeyNot($user->getKey())
+            ->where('student_code', $studentCode)
+            ->exists()) {
+            return back()
+                ->withErrors(['student_code' => 'Mã học viên này đã tồn tại.'], 'editUser')
+                ->withInput();
+        }
+
+        $username = $isStudent ? $data['username'] : null;
+        $submittedEmail = (string) ($data['email'] ?? '');
+        $usesInternalStudentEmail = $isStudent
+            && ($submittedEmail === '' || (
+                Str::endsWith(Str::lower((string) $user->email), '@student.smartlms')
+                && $submittedEmail === Str::lower($user->email)
+            ));
+        $email = $usesInternalStudentEmail
+            ? StudentLoginCode::emailFromUsername($username)
+            : $submittedEmail;
+
+        if (User::query()
+            ->whereKeyNot($user->getKey())
+            ->where('email', $email)
+            ->exists()) {
+            return back()
+                ->withErrors(['email' => 'Email này đã được sử dụng.'], 'editUser')
+                ->withInput();
+        }
+
+        $trackedFields = ['name', 'email', 'username', 'student_code'];
+        $oldValues = AuditLogger::snapshot($user, $trackedFields);
+        $loginChanged = $user->email !== $email || $user->username !== $username;
+
+        $user->forceFill([
+            'name' => $data['name'],
+            'email' => $email,
+            'username' => $username,
+            'student_code' => $studentCode,
+        ])->save();
+
+        if ($loginChanged) {
+            $this->revokeSessionsAndTokens($user);
+        }
+
+        AuditLogger::log(
+            AuditLogger::ACCOUNT_PROFILE_UPDATED,
+            $user,
+            $oldValues,
+            AuditLogger::snapshot($user, $trackedFields),
+            description: "Cập nhật thông tin tài khoản {$user->name}"
+        );
+
+        return back()->with('success', 'Đã cập nhật thông tin '.($isStudent ? 'học viên' : 'giáo viên').'.');
     }
 
     public function updateLifecycle(Request $request, User $user)

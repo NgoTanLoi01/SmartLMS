@@ -28,4 +28,24 @@ class AssignmentUploadTypesTest extends TestCase
 
         AssignmentUploadTypes::normalize('pdf,php');
     }
+
+    public function test_powerpoint_excel_and_archive_formats_are_available(): void
+    {
+        $extensions = AssignmentUploadTypes::safeExtensions(null);
+
+        $this->assertContains('ppt', $extensions);
+        $this->assertContains('pptx', $extensions);
+        $this->assertContains('xls', $extensions);
+        $this->assertContains('xlsx', $extensions);
+        $this->assertContains('zip', $extensions);
+        $this->assertContains('rar', $extensions);
+    }
+
+    public function test_checkbox_array_is_normalized_for_database_storage(): void
+    {
+        $this->assertSame(
+            'ppt,pptx,pdf',
+            AssignmentUploadTypes::normalize(['.PPT', 'pptx', 'PDF', 'pptx'])
+        );
+    }
 }

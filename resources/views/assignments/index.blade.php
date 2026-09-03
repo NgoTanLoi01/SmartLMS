@@ -130,6 +130,8 @@
                         'hidden' => 'Đang ẩn',
                         default => 'Bản nháp',
                     };
+                    $allowedFormats = \App\Support\AssignmentUploadTypes::safeExtensions($assignment->allowed_extensions);
+                    $maxFileSizeMb = number_format(($assignment->max_file_size ?? 20480) / 1024, 0);
                 @endphp
                 <article class="assignment-card {{ $isOverdue ? 'is-overdue' : '' }}">
                     <div class="assignment-card__head">
@@ -158,6 +160,14 @@
                             </strong></span>
                         </div>
                     </div>
+                    @if (($assignment->type ?? 'file') !== 'essay')
+                        <div class="alert alert-info border-0 py-2 px-3 small mb-3">
+                            <i class="fa-solid fa-file-circle-check me-1" aria-hidden="true"></i>
+                            <strong>File yêu cầu:</strong>
+                            {{ collect($allowedFormats)->map(fn ($extension) => '.'.strtoupper($extension))->join(', ') }}
+                            · tối đa {{ $maxFileSizeMb }} MB
+                        </div>
+                    @endif
 
                     <div class="assignment-card__footer">
                         @if ($isStudent)
@@ -166,6 +176,7 @@
                                 data-title="{{ $assignment->title }}"
                                 data-instructions="{{ strip_tags($assignment->instructions) }}"
                                 data-extensions="{{ $assignment->allowed_extensions }}"
+                                data-max-file-size="{{ $assignment->max_file_size ?? 20480 }}"
                                 data-type="{{ $assignment->type ?? 'file' }}"
                                 data-has-file="{{ $submission && $submission->file_path ? '1' : '0' }}"
                                 data-text-answer='@json($submission?->text_answer ?? "")'>
@@ -291,16 +302,11 @@
                                 <option value="archived">Lưu trữ</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted">Định dạng cho phép (Cách nhau dấu
-                                phẩy)</label>
-                            <input type="text" name="allowed_extensions" class="form-control bg-light border-0 py-2"
-                                value="pdf,docx,txt,md,html,htm,css,js,png,jpg,jpeg">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted">Dung lượng tối đa (KB)</label>
-                            <input type="number" name="max_file_size" class="form-control bg-light border-0 py-2"
-                                value="5120">
+                        <div class="col-12">
+                            @include('assignments.partials.upload-format-selector', [
+                                'fieldPrefix' => 'assignment-index-add',
+                                'controlClass' => 'form-select bg-light border-0 py-2',
+                            ])
                         </div>
                     </div>
                 </div>
@@ -335,7 +341,7 @@
                     <div class="mb-3" id="submitFileField">
                         <label class="form-label fw-bold small text-muted">Chọn file từ máy tính</label>
                         <input type="file" name="file" id="submitFileInput" class="form-control bg-light border-0 py-2">
-                        <div class="form-text small">Chỉ chấp nhận file định dạng yêu cầu, tối đa 5MB.</div>
+                        <div id="submitFileRequirements" class="alert alert-info border-0 py-2 px-3 small mt-2 mb-0"></div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -461,6 +467,32 @@
             const lessonSelect = document.getElementById('createAssignmentLessonSelect');
             let allowedExtensions = [];
             let currentAssignmentType = 'file';
+            let currentMaxFileSize = 20480;
+
+            document.querySelectorAll('[data-upload-settings]').forEach((settings) => {
+                const form = settings.closest('form');
+                const typeSelect = form?.querySelector('[name="type"]');
+                const inputs = Array.from(settings.querySelectorAll('.assignment-format-input'));
+
+                settings.querySelectorAll('[data-format-action]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        inputs.forEach((input) => {
+                            input.checked = button.dataset.formatAction === 'all' || input.dataset.default === '1';
+                        });
+                    });
+                });
+
+                const syncVisibility = () => {
+                    const needsFile = typeSelect?.value !== 'essay';
+                    settings.classList.toggle('d-none', !needsFile);
+                    settings.querySelectorAll('input, select, button').forEach((control) => {
+                        control.disabled = !needsFile;
+                    });
+                };
+
+                typeSelect?.addEventListener('change', syncVisibility);
+                syncVisibility();
+            });
 
             function syncLessonOptions() {
                 if (!courseSelect || !lessonSelect) return;
@@ -492,7 +524,7 @@
                     const title = button.getAttribute('data-title');
                     const instructions = button.getAttribute('data-instructions');
                     const extensions = button.getAttribute('data-extensions') ||
-                        'pdf,docx,txt,md,html,htm,css,js,png,jpg,jpeg';
+                        'pdf,docx,txt,md,html,htm,css,js,png,jpg,jpeg,ppt,pptx,xls,xlsx,zip,rar';
                     const textAnswer = JSON.parse(button.getAttribute('data-text-answer') || '""');
                     currentAssignmentType = button.getAttribute('data-type') || 'file';
                     const needsFile = ['file', 'mixed'].includes(currentAssignmentType);
@@ -504,13 +536,17 @@
                     const essayInput = document.getElementById('submitTextAnswer');
 
                     allowedExtensions = extensions.split(',').map(e => e.trim().toLowerCase());
+                    currentMaxFileSize = Number(button.getAttribute('data-max-file-size')) || 20480;
 
                     document.getElementById('submitModalTitle').innerText = 'Nộp bài: ' + title;
                     document.getElementById('submitInstructions').innerText = instructions;
+                    document.getElementById('submitFileRequirements').innerHTML =
+                        `<i class="fa-solid fa-file-circle-check me-1"></i><strong>Định dạng được chấp nhận:</strong> ${allowedExtensions.map(extension => `.${extension.toUpperCase()}`).join(', ')} · tối đa ${(currentMaxFileSize / 1024).toLocaleString('vi-VN')} MB`;
                     document.getElementById('submitForm').action = `/assignments/${id}/submit`;
                     if (fileField) fileField.classList.toggle('d-none', !needsFile);
                     if (fileInput) {
                         fileInput.required = needsFile && !hasExistingFile;
+                        fileInput.accept = allowedExtensions.map(extension => `.${extension}`).join(',');
                         fileInput.value = '';
                     }
                     if (essayField) essayField.classList.toggle('d-none', !needsEssay);
@@ -544,7 +580,7 @@
                     if (needsFile && !file) return; // để Laravel validate required
                     if (!file) return;
 
-                    const maxSize = 5 * 1024 * 1024; // 5MB
+                    const maxSize = currentMaxFileSize * 1024;
                     const ext = file.name.split('.').pop().toLowerCase();
 
                     if (!allowedExtensions.includes(ext)) {
@@ -559,7 +595,7 @@
                         e.preventDefault();
                         const sizeMB = (file.size / 1024 / 1024).toFixed(2);
                         showError(
-                            `File của bạn nặng <strong>${sizeMB} MB</strong>, vượt quá giới hạn cho phép <strong>5 MB</strong>. Vui lòng nén file hoặc chọn file nhỏ hơn.`
+                            `File của bạn nặng <strong>${sizeMB} MB</strong>, vượt quá giới hạn cho phép <strong>${(currentMaxFileSize / 1024).toLocaleString('vi-VN')} MB</strong>. Vui lòng nén file hoặc chọn file nhỏ hơn.`
                         );
                         return;
                     }

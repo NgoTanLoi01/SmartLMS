@@ -270,6 +270,60 @@ class AuthorizationIsolationTest extends TestCase
         $this->assertFalse(Gate::forUser($this->otherTeacher)->allows('view', $submission));
     }
 
+    public function test_teacher_can_select_submission_formats_and_student_sees_the_requirement(): void
+    {
+        $this->actingAs($this->owner)
+            ->post(route('assignments.store'), [
+                'course_id' => $this->course->id,
+                'lesson_id' => $this->lesson->id,
+                'type' => 'file',
+                'title' => 'Bài thuyết trình cuối khóa',
+                'instructions' => 'Nộp bài thuyết trình theo đúng định dạng.',
+                'due_date' => now()->addWeek()->toDateTimeString(),
+                'allowed_extensions' => ['ppt', 'pptx', 'pdf'],
+                'max_file_size' => 10240,
+                'status' => Assignments::STATUS_PUBLISHED,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $assignment = Assignments::where('title', 'Bài thuyết trình cuối khóa')->sole();
+        $this->assertSame('ppt,pptx,pdf', $assignment->allowed_extensions);
+        $this->assertSame(10240, $assignment->max_file_size);
+
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+
+        $this->actingAs($student)
+            ->get(route('assignments.index'))
+            ->assertOk()
+            ->assertSee('Bài thuyết trình cuối khóa')
+            ->assertSee('.PPT, .PPTX, .PDF')
+            ->assertSee('tối đa 10 MB');
+    }
+
+    public function test_submission_rejects_a_file_format_not_selected_by_the_teacher(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+        $this->assignment->update([
+            'type' => 'file',
+            'allowed_extensions' => 'ppt,pptx',
+            'max_file_size' => 10240,
+        ]);
+
+        $this->actingAs($student)
+            ->post(route('assignments.submit', $this->assignment), [
+                'file' => UploadedFile::fake()->createWithContent('answer.txt', 'not a presentation'),
+            ])
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseMissing('assignment_submissions', [
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+        ]);
+    }
+
     public function test_assignment_submission_workflow_keeps_one_current_submission_and_enforces_authorization(): void
     {
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);

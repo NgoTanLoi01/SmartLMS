@@ -193,6 +193,9 @@
                                         'mixed' => 'File + tự luận',
                                         default => 'Nộp file',
                                     };
+                                    $assignmentFormats = \App\Support\AssignmentUploadTypes::safeExtensions(
+                                        $assignment->allowed_extensions,
+                                    );
                                 @endphp
 
                                 <div class="list-group-item border-0 px-0 py-0 assignment-item-wrapper {{ $submission ? 'submitted' : '' }} d-flex align-items-center justify-content-between shadow-none"
@@ -206,6 +209,8 @@
                                         data-due="{{ $assignment->due_date ? $assignment->due_date->format('d/m/Y H:i') : '' }}"
                                         data-raw-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
                                         data-assignment-type="{{ $assignment->type ?? 'file' }}"
+                                        data-extensions="{{ implode(',', $assignmentFormats) }}"
+                                        data-max-file-size="{{ $assignment->max_file_size ?? 20480 }}"
                                         data-status="{{ $submission ? 'submitted' : 'pending' }}"
                                         data-grade="{{ $submission->grade ?? '' }}"
                                         data-feedback="{{ $submission->feedback ?? '' }}"
@@ -283,6 +288,8 @@
                                                 data-due="{{ $assignment->due_date ? $assignment->due_date->format('Y-m-d\TH:i') : '' }}"
                                                 data-lesson="{{ $lesson->id }}"
                                                 data-type="{{ $assignment->type ?? 'file' }}"
+                                                data-extensions="{{ implode(',', $assignmentFormats) }}"
+                                                data-max-file-size="{{ $assignment->max_file_size ?? 20480 }}"
                                                 data-status="{{ $assignment->status ?? 'published' }}"
                                                 data-available-from="{{ $assignment->available_from?->format('Y-m-d\TH:i') }}"
                                                 title="Sửa bài tập" aria-label="Sửa bài tập {{ $assignment->title }}">

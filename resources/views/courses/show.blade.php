@@ -607,7 +607,7 @@
                                             <div id="file-upload-field" class="flex-grow-1">
                                                 <input type="file" name="file" id="assignment-file-input"
                                                     class="form-control bg-white border-0 shadow-sm">
-                                                <div class="form-text small">Chỉ cần chọn file với bài dạng nộp file.</div>
+                                                <div id="assignment-file-input-help" class="form-text small"></div>
                                             </div>
                                             <button class="btn btn-warning text-dark px-4 fw-bold flex-shrink-0"
                                                 type="submit">

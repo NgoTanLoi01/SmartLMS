@@ -170,6 +170,122 @@ class AccountLifecycleTest extends TestCase
             ->assertSessionHasErrors(['name', 'password'], null, 'createUser');
     }
 
+    public function test_admin_can_update_teacher_information_and_login_session_is_revoked(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'profile-update-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $teacher = $this->createUser([
+            'name' => 'Giáo viên cũ',
+            'email' => 'old-teacher@example.com',
+            'role' => User::ROLE_TEACHER,
+        ]);
+        DB::table('sessions')->insert([
+            'id' => 'teacher-profile-session',
+            'user_id' => $teacher->id,
+            'payload' => 'test',
+            'last_activity' => now()->timestamp,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('users.update', $teacher), [
+                '_edit_user_id' => $teacher->id,
+                'name' => 'Giáo viên mới',
+                'email' => 'new-teacher@example.com',
+                'username' => '',
+                'student_code' => '',
+            ])
+            ->assertSessionHas('success');
+
+        $teacher->refresh();
+        $this->assertSame('Giáo viên mới', $teacher->name);
+        $this->assertSame('new-teacher@example.com', $teacher->email);
+        $this->assertSame(User::ROLE_TEACHER, $teacher->role);
+        $this->assertNull($teacher->username);
+        $this->assertNull($teacher->student_code);
+        $this->assertDatabaseMissing('sessions', ['id' => 'teacher-profile-session']);
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => AuditLogger::ACCOUNT_PROFILE_UPDATED,
+            'auditable_id' => $teacher->id,
+        ]);
+    }
+
+    public function test_admin_can_update_student_login_information(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'student-update-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $student = $this->createUser([
+            'name' => 'Học viên cũ',
+            'username' => 'hocviencu',
+            'student_code' => 'hv001',
+            'email' => 'hocviencu@student.smartlms',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('users.update', $student), [
+                '_edit_user_id' => $student->id,
+                'name' => 'Học viên mới',
+                'email' => 'hocviencu@student.smartlms',
+                'username' => 'Hoc.Vien-02',
+                'student_code' => 'HV 002',
+            ])
+            ->assertSessionHas('success');
+
+        $student->refresh();
+        $this->assertSame('Học viên mới', $student->name);
+        $this->assertSame('hoc.vien-02', $student->username);
+        $this->assertSame('hv002', $student->student_code);
+        $this->assertSame('hoc.vien.02@student.smartlms', $student->email);
+        $this->assertSame(User::ROLE_STUDENT, $student->role);
+    }
+
+    public function test_non_admin_cannot_update_user_information(): void
+    {
+        $teacher = $this->createUser(['email' => 'profile-editor@example.com']);
+        $student = $this->createUser([
+            'email' => 'profile-target@example.com',
+            'username' => 'profiletarget',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        $this->actingAs($teacher)
+            ->patch(route('users.update', $student), [
+                '_edit_user_id' => $student->id,
+                'name' => 'Không được cập nhật',
+                'email' => 'changed@example.com',
+                'username' => 'changed',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('Tài khoản kiểm thử', $student->fresh()->name);
+    }
+
+    public function test_user_information_update_uses_edit_modal_error_bag(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'profile-validation-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $student = $this->createUser([
+            'email' => 'profile-validation-student@example.com',
+            'username' => 'validationstudent',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('users.update', $student), [
+                '_edit_user_id' => $student->id,
+                'name' => '',
+                'email' => 'invalid-email',
+                'username' => 'invalid username',
+            ])
+            ->assertSessionHasErrors(['name', 'email', 'username'], null, 'editUser');
+    }
+
     public function test_attendance_page_has_link_back_to_current_course(): void
     {
         $teacher = $this->createUser(['email' => 'attendance-navigation@example.com']);

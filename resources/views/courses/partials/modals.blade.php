@@ -303,6 +303,13 @@
                 </div>
 
                 <div class="cm-field">
+                    @include('assignments.partials.upload-format-selector', [
+                        'fieldPrefix' => 'course-assignment-add',
+                        'controlClass' => 'cm-ctrl',
+                    ])
+                </div>
+
+                <div class="cm-field">
                     <label class="cm-label">Nội dung yêu cầu</label>
                     <textarea name="instructions" id="addAssignmentInstructions" class="cm-ctrl" rows="5"
                         placeholder="Nhập yêu cầu chi tiết..."></textarea>
@@ -408,6 +415,13 @@
                         <input type="datetime-local" name="available_from" id="editAssignmentAvailableFrom" class="cm-ctrl">
                         <div class="cm-hint">Bỏ trống nếu mở ngay.</div>
                     </div>
+                </div>
+
+                <div class="cm-field">
+                    @include('assignments.partials.upload-format-selector', [
+                        'fieldPrefix' => 'course-assignment-edit',
+                        'controlClass' => 'cm-ctrl',
+                    ])
                 </div>
 
                 <div class="cm-field">
@@ -718,6 +732,31 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('[data-upload-settings]').forEach((settings) => {
+                const form = settings.closest('form');
+                const typeSelect = form?.querySelector('[name="type"]');
+                const inputs = Array.from(settings.querySelectorAll('.assignment-format-input'));
+
+                settings.querySelectorAll('[data-format-action]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        inputs.forEach((input) => {
+                            input.checked = button.dataset.formatAction === 'all' || input.dataset.default === '1';
+                        });
+                    });
+                });
+
+                const syncVisibility = () => {
+                    const needsFile = typeSelect?.value !== 'essay';
+                    settings.classList.toggle('d-none', !needsFile);
+                    settings.querySelectorAll('input, select, button').forEach((control) => {
+                        control.disabled = !needsFile;
+                    });
+                };
+
+                typeSelect?.addEventListener('change', syncVisibility);
+                syncVisibility();
+            });
+
             if (!window.SmartLmsTinyMce) return;
 
             // ── TinyMCE init ──
@@ -756,6 +795,10 @@
             const gradingRubric = JSON.parse(button.dataset.gradingRubric || '""');
             const gradingScale = button.dataset.gradingScale || '10';
             const aiEnabled = button.dataset.aiEnabled || '0';
+            const allowedExtensions = (button.dataset.extensions || @json(\App\Support\AssignmentUploadTypes::DEFAULT))
+                .split(',')
+                .map(extension => extension.trim().toLowerCase());
+            const maxFileSize = button.dataset.maxFileSize || '20480';
 
             document.getElementById('editAssignmentForm').action = `/assignments/${id}`;
             document.getElementById('editAssignmentTitle').value = title;
@@ -768,6 +811,12 @@
             document.getElementById('editAssignmentGradingRubric').value = gradingRubric;
             document.getElementById('editAssignmentGradingScale').value = gradingScale;
             document.getElementById('editAssignmentAiEnabled').value = aiEnabled;
+            document.querySelectorAll('[data-upload-settings="course-assignment-edit"] .assignment-format-input')
+                .forEach((input) => {
+                    input.checked = allowedExtensions.includes(input.value);
+                });
+            document.getElementById('course-assignment-edit-max-file-size').value = maxFileSize;
+            document.getElementById('editAssignmentType').dispatchEvent(new Event('change'));
 
             setTimeout(() => {
                 window.tinymce?.get('editAssignmentInstructions')?.setContent(instructions);
