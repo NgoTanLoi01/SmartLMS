@@ -59,6 +59,11 @@ class Assignments extends Model
             && (! $this->available_from || $this->available_from->lte(now()));
     }
 
+    public function isSubmissionDeadlinePassed(): bool
+    {
+        return $this->due_date?->isPast() ?? false;
+    }
+
     public function course()
     {
         return $this->belongsTo(Course::class);

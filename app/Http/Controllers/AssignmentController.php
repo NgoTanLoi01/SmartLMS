@@ -15,6 +15,7 @@ use App\Services\SubmissionArchiveService;
 use App\Services\SubmissionFileService;
 use App\Support\AssignmentUploadTypes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -302,38 +303,51 @@ class AssignmentController extends Controller
         $filePreviewType = $this->submissionFiles->previewType($submission);
         $fileName = $submission->original_filename ?: ($submission->file_path ? basename($submission->file_path) : null);
 
-        $students = $course->classes()
-            ->where('classes.status', 'active')
-            ->with('students')
-            ->get()
-            ->flatMap->students
-            ->unique('id')
-            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
-            ->values();
-        $submissions = AssignmentSubmission::where('assignment_id', $assignment->id)
-            ->orderBy('submitted_at')
-            ->get()
-            ->keyBy('user_id');
-        $gradingQueue = $students->map(function ($student) use ($submissions, $submission) {
-            $studentSubmission = $submissions->get($student->id);
-
-            return [
-                'student_id' => $student->id,
-                'student_name' => $student->name,
-                'student_code' => $student->student_code,
-                'submission_id' => $studentSubmission?->id,
-                'submitted_at' => $studentSubmission?->submitted_at,
-                'grade' => $studentSubmission?->grade,
-                'is_current' => $studentSubmission?->id === $submission->id,
-                'status' => ! $studentSubmission ? 'missing' : ($studentSubmission->grade === null ? 'pending' : 'graded'),
-            ];
-        });
+        $canGrade = Gate::allows('grade', $submission);
+        $gradingQueue = collect();
         $queueStats = [
-            'total' => $gradingQueue->count(),
-            'submitted' => $gradingQueue->whereNotNull('submission_id')->count(),
-            'pending' => $gradingQueue->where('status', 'pending')->count(),
-            'graded' => $gradingQueue->where('status', 'graded')->count(),
+            'total' => 0,
+            'submitted' => 0,
+            'pending' => 0,
+            'graded' => 0,
         ];
+
+        // Dữ liệu lớp và hàng đợi chấm là dữ liệu riêng của giáo viên/admin.
+        // Học viên xem bài của mình không được tải dữ liệu của các bạn cùng lớp.
+        if ($canGrade) {
+            $students = $course->classes()
+                ->where('classes.status', 'active')
+                ->with('students')
+                ->get()
+                ->flatMap->students
+                ->unique('id')
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                ->values();
+            $submissions = AssignmentSubmission::where('assignment_id', $assignment->id)
+                ->orderBy('submitted_at')
+                ->get()
+                ->keyBy('user_id');
+            $gradingQueue = $students->map(function ($student) use ($submissions, $submission) {
+                $studentSubmission = $submissions->get($student->id);
+
+                return [
+                    'student_id' => $student->id,
+                    'student_name' => $student->name,
+                    'student_code' => $student->student_code,
+                    'submission_id' => $studentSubmission?->id,
+                    'submitted_at' => $studentSubmission?->submitted_at,
+                    'grade' => $studentSubmission?->grade,
+                    'is_current' => $studentSubmission?->id === $submission->id,
+                    'status' => ! $studentSubmission ? 'missing' : ($studentSubmission->grade === null ? 'pending' : 'graded'),
+                ];
+            });
+            $queueStats = [
+                'total' => $gradingQueue->count(),
+                'submitted' => $gradingQueue->whereNotNull('submission_id')->count(),
+                'pending' => $gradingQueue->where('status', 'pending')->count(),
+                'graded' => $gradingQueue->where('status', 'graded')->count(),
+            ];
+        }
 
         return view('assignments.submission_review', compact(
             'submission',
@@ -344,6 +358,7 @@ class AssignmentController extends Controller
             'filePreviewUrl',
             'filePreviewType',
             'fileName',
+            'canGrade',
             'gradingQueue',
             'queueStats',
         ));
@@ -458,6 +473,8 @@ class AssignmentController extends Controller
         // 1. Lấy thông tin bài nộp cũ nếu có
         $oldSubmission = AssignmentSubmission::where('assignment_id', $id)->where('user_id', $user->id)->first();
 
+        $this->ensureSubmissionCanBeChanged($assignment, $oldSubmission);
+
         // 2. Validate nội dung theo loại bài tập
         $allowed = AssignmentUploadTypes::safeExtensions($assignment->allowed_extensions);
         $maxSize = $assignment->max_file_size ?? 20480;
@@ -540,15 +557,28 @@ class AssignmentController extends Controller
         // Một học viên có đúng một bản nộp hiện hành cho mỗi bài tập. Upsert dựa trên
         // unique key ở migration để hai request đồng thời không thể tạo hai record.
         try {
-            AssignmentSubmission::query()->upsert(
-                [[
-                    'assignment_id' => $id,
-                    'user_id' => $user->id,
-                    ...$submissionData,
-                ]],
-                ['assignment_id', 'user_id'],
-                array_keys($submissionData),
-            );
+            DB::transaction(function () use ($id, $user, $submissionData): void {
+                $lockedAssignment = Assignments::query()->lockForUpdate()->findOrFail($id);
+                $lockedSubmission = AssignmentSubmission::query()
+                    ->where('assignment_id', $id)
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                // Kiểm tra lại bên trong transaction để việc chấm điểm hoặc deadline
+                // thay đổi đồng thời không thể bị một request nộp bài ghi đè.
+                $this->ensureSubmissionCanBeChanged($lockedAssignment, $lockedSubmission);
+
+                AssignmentSubmission::query()->upsert(
+                    [[
+                        'assignment_id' => $id,
+                        'user_id' => $user->id,
+                        ...$submissionData,
+                    ]],
+                    ['assignment_id', 'user_id'],
+                    array_keys($submissionData),
+                );
+            });
         } catch (\Throwable $exception) {
             if ($newUpload) {
                 $this->submissionFiles->deletePath($newUpload['path'], $newUpload['disk']);
@@ -568,21 +598,32 @@ class AssignmentController extends Controller
     // Học viên hủy bài đã nộp
     public function deleteSubmission($id)
     {
-        $submission = AssignmentSubmission::where('id', $id)
-            ->where('user_id', auth()->id()) // Chỉ cho phép xóa bài của chính mình
-            ->firstOrFail();
-        Gate::authorize('delete', $submission);
+        DB::transaction(function () use ($id): void {
+            $submission = AssignmentSubmission::with('assignment')->where('id', $id)
+                ->where('user_id', auth()->id()) // Chỉ cho phép xóa bài của chính mình
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        // Không cho phép xóa nếu đã có điểm
-        if ($submission->grade !== null) {
-            return back()->withErrors(['Không thể hủy bài nộp vì giáo viên đã chấm điểm!']);
-        }
+            // Kiểm tra trạng thái nghiệp vụ tại backend để request trực tiếp không thể bypass UI.
+            if ($submission->grade !== null) {
+                throw ValidationException::withMessages([
+                    'submission' => 'Bài nộp đã được chấm điểm nên không thể hủy.',
+                ]);
+            }
 
-        // Xóa file vật lý trong storage
-        $this->submissionFiles->delete($submission);
+            if ($submission->assignment->isSubmissionDeadlinePassed()) {
+                throw ValidationException::withMessages([
+                    'submission' => 'Bài tập đã quá hạn từ '.$submission->assignment->due_date->format('H:i d/m/Y').'. Bạn không thể hủy bài nộp.',
+                ]);
+            }
 
-        // Xóa record trong DB
-        $submission->delete();
+            Gate::authorize('delete', $submission);
+
+            // Xóa file vật lý và record trong cùng vùng khóa để tránh bài bị chấm
+            // sau khi đã kiểm tra nhưng trước lúc thao tác hủy hoàn tất.
+            $this->submissionFiles->delete($submission);
+            $submission->delete();
+        });
 
         return back()->with('success', 'Đã hủy bài nộp thành công!');
     }
@@ -683,6 +724,21 @@ class AssignmentController extends Controller
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages([
                 'allowed_extensions' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    private function ensureSubmissionCanBeChanged(Assignments $assignment, ?AssignmentSubmission $submission): void
+    {
+        if ($submission?->grade !== null) {
+            throw ValidationException::withMessages([
+                'submission' => 'Bài nộp đã được chấm điểm nên không thể cập nhật.',
+            ]);
+        }
+
+        if ($assignment->isSubmissionDeadlinePassed()) {
+            throw ValidationException::withMessages([
+                'submission' => 'Bài tập đã quá hạn từ '.$assignment->due_date->format('H:i d/m/Y').'. Bạn không thể nộp mới hoặc cập nhật bài làm.',
             ]);
         }
     }

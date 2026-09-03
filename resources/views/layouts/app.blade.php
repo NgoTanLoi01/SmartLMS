@@ -214,6 +214,11 @@
                         <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
                     </div>
                 @endif
+                @if ($errors->has('submission'))
+                    <div class="alert-error" role="alert">
+                        <i class="fa-solid fa-circle-exclamation"></i> {{ $errors->first('submission') }}
+                    </div>
+                @endif
                 @yield('content')
             </div>
         </main>

@@ -78,6 +78,10 @@ body {
     grid-template-columns: 250px minmax(0, 1fr) 390px;
 }
 
+.grading-workspace--student {
+    grid-template-columns: minmax(0, 1fr) 330px;
+}
+
 .grading-queue,
 .grading-aside {
     max-height: calc(100vh - 110px);

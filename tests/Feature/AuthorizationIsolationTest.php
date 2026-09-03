@@ -389,6 +389,150 @@ class AuthorizationIsolationTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_direct_http_request_cannot_create_or_update_submission_after_deadline(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+        $this->assignment->update(['due_date' => now()->subMinute()]);
+
+        $response = $this->actingAs($student)
+            ->post(route('assignments.submit', $this->assignment), [
+                'text_answer' => 'Nội dung cố nộp sau khi đã quá hạn.',
+            ]);
+        $response->assertRedirect()->assertSessionHasErrors('submission');
+        $this->assertStringContainsString('đã quá hạn', session('errors')->first('submission'));
+
+        $this->assertDatabaseMissing('assignment_submissions', [
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+        ]);
+
+        $submission = AssignmentSubmission::create([
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+            'text_answer' => 'Nội dung trước deadline.',
+            'submitted_at' => now()->subMinutes(5),
+        ]);
+
+        $this->actingAs($student)
+            ->post(route('assignments.submit', $this->assignment), [
+                'text_answer' => 'Nội dung cố cập nhật sau deadline.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('submission');
+
+        $this->assertSame('Nội dung trước deadline.', $submission->fresh()->text_answer);
+    }
+
+    public function test_direct_http_request_cannot_update_or_delete_a_graded_submission(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+        $submission = AssignmentSubmission::create([
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+            'text_answer' => 'Bài đã được giáo viên chấm.',
+            'grade' => 8.5,
+            'feedback' => 'Đạt yêu cầu.',
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->actingAs($student)
+            ->post(route('assignments.submit', $this->assignment), [
+                'text_answer' => 'Cố sửa nội dung đã chấm.',
+            ]);
+        $response->assertRedirect()->assertSessionHasErrors('submission');
+        $this->assertStringContainsString('đã được chấm điểm', session('errors')->first('submission'));
+
+        $this->actingAs($student)
+            ->delete(route('assignments.submissions.delete', $submission))
+            ->assertRedirect()
+            ->assertSessionHasErrors('submission');
+
+        $this->assertDatabaseHas('assignment_submissions', [
+            'id' => $submission->id,
+            'text_answer' => 'Bài đã được giáo viên chấm.',
+            'grade' => 8.5,
+        ]);
+    }
+
+    public function test_direct_http_request_cannot_delete_submission_after_deadline(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+        $this->assignment->update(['due_date' => now()->subMinute()]);
+        $submission = AssignmentSubmission::create([
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+            'text_answer' => 'Bài nộp trước khi hết hạn.',
+            'submitted_at' => now()->subMinutes(5),
+        ]);
+
+        $response = $this->actingAs($student)
+            ->delete(route('assignments.submissions.delete', $submission));
+        $response->assertRedirect()->assertSessionHasErrors('submission');
+        $this->assertStringContainsString('đã quá hạn', session('errors')->first('submission'));
+
+        $this->assertDatabaseHas('assignment_submissions', ['id' => $submission->id]);
+    }
+
+    public function test_student_review_only_contains_their_own_submission_data(): void
+    {
+        $student = User::factory()->create([
+            'name' => 'Học viên hiện tại',
+            'email' => 'current-student@example.test',
+            'role' => User::ROLE_STUDENT,
+        ]);
+        $classmate = User::factory()->create([
+            'name' => 'Bạn cùng lớp bí mật',
+            'email' => 'classmate-secret@example.test',
+            'role' => User::ROLE_STUDENT,
+        ]);
+        $this->classroom->students()->attach([$student->id, $classmate->id]);
+        $ownSubmission = AssignmentSubmission::create([
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+            'text_answer' => 'Nội dung bài làm của chính tôi.',
+            'grade' => 7.5,
+            'feedback' => 'Nhận xét dành riêng cho tôi.',
+            'submitted_at' => now(),
+        ]);
+        $classmateSubmission = AssignmentSubmission::create([
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $classmate->id,
+            'text_answer' => 'Nội dung bí mật của bạn cùng lớp.',
+            'grade' => 9.5,
+            'feedback' => 'Nhận xét bí mật của bạn cùng lớp.',
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($student)
+            ->get(route('assignments.submissions.review', $classmateSubmission))
+            ->assertForbidden();
+
+        $this->actingAs($student)
+            ->get(route('assignments.submissions.review', $ownSubmission))
+            ->assertOk()
+            ->assertSee('Bài làm của bạn')
+            ->assertSee('Nội dung bài làm của chính tôi.')
+            ->assertSee('Nhận xét dành riêng cho tôi.')
+            ->assertDontSee('Danh sách học viên')
+            ->assertDontSee('Bạn cùng lớp bí mật')
+            ->assertDontSee('classmate-secret@example.test')
+            ->assertDontSee('Nội dung bí mật của bạn cùng lớp.')
+            ->assertDontSee('Nhận xét bí mật của bạn cùng lớp.')
+            ->assertDontSee('9.5')
+            ->assertDontSee('Tải bài nộp (.zip)')
+            ->assertDontSee('AI phân tích bài làm');
+
+        $this->actingAs($this->owner)
+            ->get(route('assignments.submissions.review', $ownSubmission))
+            ->assertOk()
+            ->assertSee('Danh sách học viên')
+            ->assertSee('Bạn cùng lớp bí mật')
+            ->assertSee('Đã chấm: 9.5');
+    }
+
     public function test_file_submission_is_stored_on_configured_private_disk_with_checksum(): void
     {
         Storage::fake('r2');

@@ -38,25 +38,28 @@
                             {{ $assignment->due_date?->format('d/m/Y H:i') ?? '---' }}</span>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('assignments.submissions.download', $assignment->id) }}"
-                    class="review-download-form">
-                    @csrf
-                    <select name="mode" aria-label="Phạm vi tải bài nộp">
-                        <option value="all">Tất cả bài đã nộp</option>
-                        <option value="ungraded">Chỉ bài chưa chấm</option>
-                    </select>
-                    <button type="submit" class="btn-download-zip">
-                        <i class="fa-solid fa-file-zipper"></i>
-                        Tải bài nộp (.zip)
-                    </button>
-                </form>
+                @if ($canGrade)
+                    <form method="POST" action="{{ route('assignments.submissions.download', $assignment->id) }}"
+                        class="review-download-form">
+                        @csrf
+                        <select name="mode" aria-label="Phạm vi tải bài nộp">
+                            <option value="all">Tất cả bài đã nộp</option>
+                            <option value="ungraded">Chỉ bài chưa chấm</option>
+                        </select>
+                        <button type="submit" class="btn-download-zip">
+                            <i class="fa-solid fa-file-zipper"></i>
+                            Tải bài nộp (.zip)
+                        </button>
+                    </form>
+                @endif
             </div>
 
             {{-- GRADING WORKSPACE --}}
-            <div class="grading-workspace">
+            <div class="grading-workspace {{ $canGrade ? '' : 'grading-workspace--student' }}">
 
                 {{-- LEFT: STUDENT QUEUE --}}
-                <aside class="grading-queue">
+                @if ($canGrade)
+                    <aside class="grading-queue">
                     <div class="grading-queue__head">
                         <h2 class="grading-queue__title">Danh sách học viên</h2>
                         <div class="grading-queue__stats">{{ $queueStats['pending'] }} chờ chấm · {{ $queueStats['graded'] }} đã chấm</div>
@@ -94,7 +97,8 @@
                             @if ($item['submission_id']) </a> @else </div> @endif
                         @endforeach
                     </div>
-                </aside>
+                    </aside>
+                @endif
 
                 {{-- CENTER: CONTENT --}}
                 <main class="grading-content">
@@ -140,7 +144,7 @@
                         <div class="panel__head">
                             <div class="panel__label">
                                 <span class="icon-dot idot--green"><i class="fa-solid fa-pen-nib"></i></span>
-                                Bài làm học viên
+                                {{ $canGrade ? 'Bài làm học viên' : 'Bài làm của bạn' }}
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <div class="submit-meta">
@@ -220,6 +224,8 @@
                 <aside class="grading-aside">
                     <div class="grading-card">
                         <div class="panel">
+
+                            @if ($canGrade)
 
                             {{-- STUDENT PROFILE --}}
                             <div class="student-profile">
@@ -374,6 +380,32 @@
                                 </div>
                             </form>
 
+                            @else
+                                <div class="panel__head">
+                                    <div class="panel__label">
+                                        <span class="icon-dot idot--green"><i class="fa-solid fa-chart-simple"></i></span>
+                                        Kết quả của bạn
+                                    </div>
+                                </div>
+                                <div class="panel__body">
+                                    @if ($submission->grade !== null)
+                                        <div class="score-input-wrap mb-3">
+                                            <strong>{{ $submission->grade }}</strong>
+                                            <span class="score-max">/ {{ $assignment->grading_scale ?? 10 }}</span>
+                                        </div>
+                                        @if (trim((string) $submission->feedback))
+                                            <div class="form-lbl mb-2">Nhận xét của giáo viên</div>
+                                            <div class="instruction-box">{{ $submission->feedback }}</div>
+                                        @endif
+                                    @else
+                                        <div class="ai-notice">
+                                            <i class="fa-solid fa-hourglass-half"></i>
+                                            <span>Bài nộp của bạn đang chờ giáo viên chấm điểm.</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+
                         </div>
                     </div>
                 </aside>
@@ -384,6 +416,7 @@
 @endsection
 
 @push('scripts')
+    @if ($canGrade)
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const search = document.getElementById('queueSearch');
@@ -548,4 +581,5 @@
             });
         });
     </script>
+    @endif
 @endpush
