@@ -14,6 +14,10 @@ class Schedule extends Model
 
     protected $fillable = ['class_id', 'course_id', 'schedule_date', 'start_time', 'end_time', 'room', 'note', 'status'];
 
+    protected $casts = [
+        'schedule_date' => 'date:Y-m-d',
+    ];
+
     public function scopeNotArchived($query)
     {
         $statusColumn = $query->getModel()->getTable().'.status';

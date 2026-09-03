@@ -149,6 +149,7 @@ class PersonalAssistantService
         }
 
         return $query
+            ->where('courses.course_type', 'delivery')
             ->where('courses.status', Course::STATUS_PUBLISHED)
             ->where(function ($visibility) {
                 $visibility->whereNull('courses.available_from')

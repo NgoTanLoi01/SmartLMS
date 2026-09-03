@@ -11,6 +11,10 @@ class SchedulePolicy
 {
     public function create(User $user, Classroom $classroom, Course $course): bool
     {
+        if ($classroom->status === Classroom::STATUS_ARCHIVED || $course->status === Course::STATUS_ARCHIVED) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return $classroom->courses()->whereKey($course->id)->exists();
         }

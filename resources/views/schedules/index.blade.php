@@ -288,64 +288,196 @@
         }
 
         /* ── Modal ── */
-        .modal-content {
-            border: 1px solid #e8edf3;
-            border-radius: 14px;
-            box-shadow: 0 16px 48px rgba(0, 0, 0, .1);
+        #scheduleModal .modal-dialog {
+            max-width: 620px;
         }
 
-        .modal-header {
-            padding: 20px 24px 0;
-            border: none;
+        #scheduleModal .modal-content {
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, .22);
+            border-radius: 20px;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .2);
         }
 
-        .modal-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #0f172a;
+        #scheduleModal .modal-header {
+            align-items: flex-start;
+            padding: 22px 26px 18px;
+            border-bottom: 1px solid #eef2f7;
+            background: linear-gradient(135deg, #f8fbff 0%, #fff 72%);
         }
 
-        .modal-title i {
+        .sch-modal-heading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .sch-modal-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            border-radius: 12px;
             color: #2563eb;
-            margin-right: 7px;
+            background: #eaf2ff;
+            font-size: 17px;
         }
 
-        .modal-body {
-            padding: 18px 24px;
+        #scheduleModal .modal-title {
+            margin: 0 0 3px;
+            color: #0f172a;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.35;
         }
 
-        .modal-footer {
-            padding: 0 24px 20px;
-            border: none;
+        .sch-modal-subtitle {
+            margin: 0;
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        #scheduleModal .btn-close {
+            width: 32px;
+            height: 32px;
+            margin: 2px 0 0 auto;
+            padding: 0;
+            border-radius: 9px;
+            background-size: 11px;
+            opacity: .55;
+        }
+
+        #scheduleModal .btn-close:hover {
+            background-color: #eef2f7;
+            opacity: .85;
+        }
+
+        #scheduleModal .modal-body {
+            padding: 20px 26px 22px;
+        }
+
+        #scheduleModal .modal-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            padding: 15px 26px;
+            border-top: 1px solid #eef2f7;
+            background: #f8fafc;
         }
 
         .modal-lbl {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .055em;
-            color: #94a3b8;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .modal-row {
             display: flex;
-            gap: 12px;
-            margin-bottom: 14px;
+            align-items: center;
+            gap: 3px;
+            margin-bottom: 7px;
+            color: #475569;
+            font-size: 12.5px;
+            font-weight: 600;
+            line-height: 1.3;
         }
 
-        .modal-row .modal-grp {
-            flex: 1;
-            min-width: 0;
-            margin-bottom: 0;
+        .modal-required {
+            color: #ef4444;
+        }
+
+        #scheduleModal .sch-ctrl {
+            height: 42px;
+            border-color: #dbe3ee;
+            border-radius: 10px;
+            padding: 0 12px;
+            font-size: 13.5px;
+            background-color: #fff;
+        }
+
+        #scheduleModal .sch-ctrl:hover:not(:disabled) {
+            border-color: #b8c5d6;
+        }
+
+        #scheduleModal .sch-ctrl:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .11);
+        }
+
+        .sch-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px 14px;
         }
 
         .modal-grp {
-            margin-bottom: 14px;
+            min-width: 0;
+        }
+
+        .modal-grp--wide {
+            grid-column: 1 / -1;
+        }
+
+        .sch-exam-option {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            grid-column: 1 / -1;
+            min-height: 52px;
+            margin-top: 1px;
+            padding: 10px 12px;
+            border: 1px solid #dbe3ee;
+            border-radius: 11px;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: border-color .15s, background-color .15s, box-shadow .15s;
+        }
+
+        .sch-exam-option:hover {
+            border-color: #b9cdf4;
+            background: #f3f7ff;
+        }
+
+        .sch-exam-option:has(input:checked) {
+            border-color: #93b4f8;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .07);
+        }
+
+        .sch-exam-option .form-check-input {
+            width: 17px;
+            height: 17px;
+            flex: 0 0 17px;
+            margin: 0;
+        }
+
+        .sch-exam-option__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            border-radius: 8px;
+            color: #d97706;
+            background: #fff7ed;
+        }
+
+        .sch-exam-option__copy {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+
+        .sch-exam-option__copy strong {
+            color: #334155;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .sch-exam-option__copy small {
+            color: #7c8ba1;
+            font-size: 11.5px;
         }
 
         .footer-r {
@@ -364,6 +496,12 @@
             padding: 10px 14px;
             font-size: 13px;
             margin-bottom: 14px;
+        }
+
+        .sch-alert--success {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #047857;
         }
 
         /* ── Responsive ── */
@@ -407,28 +545,39 @@
                 font-size: 12px !important;
             }
 
-            .modal-header {
-                padding: 18px 18px 0;
+            #scheduleModal .modal-dialog {
+                max-width: none;
+                margin: 10px;
             }
 
-            .modal-body {
+            #scheduleModal .modal-content {
+                min-height: auto;
+                border-radius: 16px;
+            }
+
+            #scheduleModal .modal-header {
+                padding: 18px;
+            }
+
+            #scheduleModal .modal-body {
+                padding: 18px;
+            }
+
+            #scheduleModal .modal-footer {
                 padding: 14px 18px;
-            }
-
-            .modal-footer {
-                padding: 0 18px 18px;
                 flex-direction: column;
                 align-items: stretch;
                 gap: 10px;
             }
 
-            .modal-row {
-                flex-direction: column;
-                gap: 0;
+            .sch-modal-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
             }
 
-            .modal-row .modal-grp {
-                margin-bottom: 14px;
+            .modal-grp--wide,
+            .sch-exam-option {
+                grid-column: auto;
             }
 
             .footer-r {
@@ -446,9 +595,6 @@
             }
         }
     </style>
-
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <div class="sch-page">
 
@@ -534,47 +680,69 @@
         </div>
 
         {{-- Calendar --}}
+        <div id="scheduleFeedback" class="sch-alert d-none" role="alert"></div>
         <div class="sch-cal-card">
-            <div id="sch-calendar"></div>
+            <div id="sch-calendar"
+                data-events-url="{{ route('schedules.index') }}"
+                data-store-url="{{ route('schedules.store') }}"
+                data-update-url-template="{{ route('schedules.update', '__ID__') }}"
+                data-delete-url-template="{{ route('schedules.destroy', '__ID__') }}"
+                data-courses-url-template="{{ url('/schedules/get-courses/__ID__') }}"
+                data-old-import-course-id="{{ old('default_course_id') }}"></div>
         </div>
 
     </div>{{-- /sch-page --}}
 
     {{-- ── Modal ── --}}
     <div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="modalTitle" aria-modal="true">
-        <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">
-                        <i class="fa-solid fa-calendar-plus"></i>Thêm lịch học mới
-                    </h5>
+                    <div class="sch-modal-heading">
+                        <span class="sch-modal-icon" id="scheduleModalIcon" aria-hidden="true">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title" id="modalTitle">Thêm lịch học mới</h5>
+                            <p class="sch-modal-subtitle" id="scheduleModalSubtitle">
+                                Khai báo lớp, khóa học và khung giờ cho buổi học.
+                            </p>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
 
                 <div class="modal-body">
                     <input type="hidden" id="schedule_id">
+                    <div id="scheduleModalError" class="sch-alert d-none" role="alert"></div>
 
-                    <div class="modal-grp">
-                        <label class="modal-lbl" for="class_id">Lớp học</label>
-                        <select class="sch-ctrl w-100" id="class_id" required>
-                            <option value="">-- Chọn lớp học --</option>
-                            @foreach ($classes as $cls)
-                                <option value="{{ $cls->id }}">{{ $cls->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <div class="sch-modal-grid">
+                        <div class="modal-grp modal-grp--wide">
+                            <label class="modal-lbl" for="class_id">
+                                Lớp học <span class="modal-required">*</span>
+                            </label>
+                            <select class="sch-ctrl w-100" id="class_id" required>
+                                <option value="">-- Chọn lớp học --</option>
+                                @foreach ($classes as $cls)
+                                    <option value="{{ $cls->id }}">{{ $cls->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                    <div class="modal-grp">
-                        <label class="modal-lbl" for="course_id">Khóa học</label>
-                        <select class="sch-ctrl w-100" id="course_id" required disabled>
-                            <option value="">Vui lòng chọn lớp trước...</option>
-                        </select>
-                    </div>
+                        <div class="modal-grp modal-grp--wide">
+                            <label class="modal-lbl" for="course_id">
+                                Khóa học <span class="modal-required">*</span>
+                            </label>
+                            <select class="sch-ctrl w-100" id="course_id" required disabled>
+                                <option value="">Vui lòng chọn lớp trước...</option>
+                            </select>
+                        </div>
 
-                    <div class="modal-row">
                         <div class="modal-grp">
-                            <label class="modal-lbl" for="schedule_date">Ngày học</label>
+                            <label class="modal-lbl" for="schedule_date">
+                                Ngày học <span class="modal-required">*</span>
+                            </label>
                             <input type="date" class="sch-ctrl w-100" id="schedule_date" required>
                         </div>
                         <div class="modal-grp">
@@ -582,23 +750,29 @@
                             <input type="text" class="sch-ctrl w-100" id="room"
                                 placeholder="VD: Phòng 302, Online">
                         </div>
-                    </div>
 
-                    <div class="modal-row" style="margin-bottom:0;">
                         <div class="modal-grp">
-                            <label class="modal-lbl" for="start_time">Giờ bắt đầu</label>
+                            <label class="modal-lbl" for="start_time">
+                                Giờ bắt đầu <span class="modal-required">*</span>
+                            </label>
                             <input type="time" class="sch-ctrl w-100" id="start_time" required>
                         </div>
                         <div class="modal-grp">
-                            <label class="modal-lbl" for="end_time">Giờ kết thúc</label>
+                            <label class="modal-lbl" for="end_time">
+                                Giờ kết thúc <span class="modal-required">*</span>
+                            </label>
                             <input type="time" class="sch-ctrl w-100" id="end_time" required>
                         </div>
-                    </div>
 
-                    <div class="form-check mt-3">
-                        <input class="form-check-input" type="checkbox" value="1" id="note_exam">
-                        <label class="form-check-label" for="note_exam">
-                            Thi kết thúc môn
+                        <label class="sch-exam-option" for="note_exam">
+                            <input class="form-check-input" type="checkbox" value="1" id="note_exam">
+                            <span class="sch-exam-option__icon" aria-hidden="true">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                            </span>
+                            <span class="sch-exam-option__copy">
+                                <strong>Đây là buổi thi kết thúc môn</strong>
+                                <small>Lịch sẽ được làm nổi bật để học viên dễ nhận biết.</small>
+                            </span>
                         </label>
                     </div>
                 </div>
@@ -619,211 +793,8 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const calendarEl = document.getElementById('sch-calendar');
-            const scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
-
-            /* ── Calendar ── */
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: isMobile ? 'dayGridMonth' : 'timeGridWeek',
-                headerToolbar: {
-                    left: isMobile ? 'prev,next' : 'prev,next today',
-                    center: 'title',
-                    right: isMobile ? 'today' : 'timeGridWeek,dayGridMonth',
-                },
-                buttonText: {
-                    today: 'Hôm nay',
-                    week: 'Tuần',
-                    month: 'Tháng'
-                },
-                slotMinTime: '07:00:00',
-                slotMaxTime: '22:00:00',
-                allDaySlot: false,
-                locale: 'vi',
-                events: '/schedules',
-                selectable: true,
-                eventColor: '#2563eb',
-
-                select: function(info) {
-                    resetForm();
-                    document.getElementById('modalTitle').innerHTML =
-                        '<i class="fa-solid fa-calendar-plus"></i>Thêm lịch học mới';
-                    document.getElementById('btnDelete').classList.add('d-none');
-
-                    const dateStr = info.startStr.split('T')[0];
-                    const startT = info.startStr.split('T')[1]?.substring(0, 5) || '07:30';
-                    const endT = info.endStr.split('T')[1]?.substring(0, 5) || '09:00';
-
-                    document.getElementById('schedule_date').value = dateStr;
-                    document.getElementById('start_time').value = startT;
-                    document.getElementById('end_time').value = endT;
-
-                    scheduleModal.show();
-                },
-
-                eventClick: function(info) {
-                    const ev = info.event;
-                    document.getElementById('schedule_id').value = ev.id;
-                    document.getElementById('modalTitle').innerHTML =
-                        '<i class="fa-solid fa-calendar-edit"></i>Cập nhật lịch học';
-                    document.getElementById('btnDelete').classList.remove('d-none');
-
-                    document.getElementById('class_id').value = ev.extendedProps.class_id;
-                    document.getElementById('schedule_date').value = ev.startStr.split('T')[0];
-                    document.getElementById('start_time').value = ev.startStr.split('T')[1].substring(0,
-                        5);
-                    document.getElementById('end_time').value = ev.endStr ?
-                        ev.endStr.split('T')[1].substring(0, 5) : '';
-                    document.getElementById('room').value = ev.extendedProps.room || '';
-                    document.getElementById('note_exam').checked = ev.extendedProps.note === 'Thi kết thúc môn';
-
-                    fetchCourses(ev.extendedProps.class_id, ev.extendedProps.course_id);
-                    scheduleModal.show();
-                },
-            });
-
-            calendar.render();
-
-            /* ── Lớp → Khóa học (modal) ── */
-            document.getElementById('class_id').addEventListener('change', function() {
-                fetchCourses(this.value);
-            });
-
-            /* ── Lớp → Khóa học (import) ── */
-            const importClassSel = document.getElementById('import_class_id');
-            if (importClassSel) {
-                importClassSel.addEventListener('change', function() {
-                    fetchImportCourses(this.value);
-                });
-                if (importClassSel.value) {
-                    fetchImportCourses(importClassSel.value, '{{ old('default_course_id') }}');
-                }
-            }
-
-            function fetchCourses(classId, selectedCourseId = null) {
-                const sel = document.getElementById('course_id');
-                if (!classId) {
-                    sel.innerHTML = '<option value="">Vui lòng chọn lớp trước...</option>';
-                    sel.disabled = true;
-                    return;
-                }
-                sel.innerHTML = '<option value="">Đang tải...</option>';
-                sel.disabled = true;
-
-                fetch(`/schedules/get-courses/${classId}`)
-                    .then(r => r.json())
-                    .then(courses => {
-                        sel.innerHTML = '<option value="">-- Chọn khóa học --</option>';
-                        courses.forEach(c => {
-                            const opt = document.createElement('option');
-                            opt.value = c.id;
-                            opt.textContent = c.title;
-                            if (selectedCourseId == c.id) opt.selected = true;
-                            sel.appendChild(opt);
-                        });
-                        sel.disabled = false;
-                    });
-            }
-
-            function fetchImportCourses(classId, selectedCourseId = null) {
-                const sel = document.getElementById('default_course_id');
-                if (!sel) return;
-                if (!classId) {
-                    sel.innerHTML = '<option value="">Tự khớp theo tên môn...</option>';
-                    sel.disabled = true;
-                    return;
-                }
-                sel.innerHTML = '<option value="">Đang tải...</option>';
-                sel.disabled = true;
-
-                fetch(`/schedules/get-courses/${classId}`)
-                    .then(r => r.json())
-                    .then(courses => {
-                        sel.innerHTML = '<option value="">Tự khớp theo tên môn...</option>';
-                        courses.forEach(c => {
-                            const opt = document.createElement('option');
-                            opt.value = c.id;
-                            opt.textContent = c.title;
-                            if (selectedCourseId == c.id) opt.selected = true;
-                            sel.appendChild(opt);
-                        });
-                        sel.disabled = false;
-                    });
-            }
-
-            /* ── Lưu ── */
-            document.getElementById('btnSave').addEventListener('click', function() {
-                const id = document.getElementById('schedule_id').value;
-                const url = id ? `/schedules/${id}` : '/schedules';
-                const method = id ? 'PUT' : 'POST';
-
-                const data = {
-                    class_id: document.getElementById('class_id').value,
-                    course_id: document.getElementById('course_id').value,
-                    schedule_date: document.getElementById('schedule_date').value,
-                    start_time: document.getElementById('start_time').value,
-                    end_time: document.getElementById('end_time').value,
-                    room: document.getElementById('room').value,
-                    note: document.getElementById('note_exam').checked ? 'Thi kết thúc môn' : '',
-                };
-
-                if (!data.class_id || !data.course_id || !data.schedule_date ||
-                    !data.start_time || !data.end_time) {
-                    alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
-                    return;
-                }
-
-                fetch(url, {
-                        method,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                        body: JSON.stringify(data),
-                    })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.status === 'success') {
-                            scheduleModal.hide();
-                            calendar.refetchEvents();
-                        }
-                    });
-            });
-
-            /* ── Xóa ── */
-            document.getElementById('btnDelete').addEventListener('click', function() {
-                if (!confirm('Lưu trữ lịch học này? Lịch sẽ không còn hiển thị nhưng dữ liệu vẫn được giữ lại.')) return;
-                const id = document.getElementById('schedule_id').value;
-
-                fetch(`/schedules/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                    })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.status === 'success') {
-                            scheduleModal.hide();
-                            calendar.refetchEvents();
-                        }
-                    });
-            });
-
-            /* ── Reset form ── */
-            function resetForm() {
-                ['schedule_id', 'schedule_date', 'start_time', 'end_time', 'room'].forEach(id => {
-                    document.getElementById(id).value = '';
-                });
-                document.getElementById('note_exam').checked = false;
-                document.getElementById('class_id').value = '';
-                const sel = document.getElementById('course_id');
-                sel.innerHTML = '<option value="">Vui lòng chọn lớp trước...</option>';
-                sel.disabled = true;
-            }
-        });
-    </script>
 @endsection
+
+@push('scripts')
+    @vite('resources/js/pages/schedules.js')
+@endpush

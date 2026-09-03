@@ -6,6 +6,7 @@ use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class StudentScheduleController extends Controller
 {
@@ -35,8 +36,12 @@ class StudentScheduleController extends Controller
             : null;
 
         if ($request->ajax() || $request->wantsJson() || $request->has('start')) {
+            [$rangeStart, $rangeEnd] = $this->calendarRange($request);
+
             return response()->json(
                 $this->scheduleQuery($classIds, $courseIds, $selectedCourseId)
+                    ->where('schedules.schedule_date', '>=', $rangeStart)
+                    ->where('schedules.schedule_date', '<', $rangeEnd)
                     ->get()
                     ->map(fn ($schedule) => $this->calendarEvent($schedule))
                     ->values()
@@ -52,14 +57,14 @@ class StudentScheduleController extends Controller
             ->get();
 
         $weekSchedules = $this->scheduleQuery($classIds, $courseIds, $selectedCourseId)
-            ->whereDate('schedules.schedule_date', '>=', $today->toDateString())
+            ->where($this->notEndedCondition())
             ->whereDate('schedules.schedule_date', '<=', $endOfWeek->toDateString())
             ->orderBy('schedules.schedule_date')
             ->orderBy('schedules.start_time')
             ->get();
 
         $upcomingSchedules = $this->scheduleQuery($classIds, $courseIds, $selectedCourseId)
-            ->whereDate('schedules.schedule_date', '>=', $today->toDateString())
+            ->where($this->notEndedCondition())
             ->orderBy('schedules.schedule_date')
             ->orderBy('schedules.start_time')
             ->limit(8)
@@ -68,7 +73,7 @@ class StudentScheduleController extends Controller
         $examSchedules = $this->scheduleQuery($classIds, $courseIds, $selectedCourseId)
             ->whereNotNull('schedules.note')
             ->where('schedules.note', '!=', '')
-            ->whereDate('schedules.schedule_date', '>=', $today->toDateString())
+            ->where($this->notEndedCondition())
             ->orderBy('schedules.schedule_date')
             ->orderBy('schedules.start_time')
             ->limit(5)
@@ -95,6 +100,12 @@ class StudentScheduleController extends Controller
             ->join('classes', 'schedules.class_id', '=', 'classes.id')
             ->whereIn('schedules.class_id', $classIds)
             ->whereIn('schedules.course_id', $courseIds)
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('class_course')
+                    ->whereColumn('class_course.class_id', 'schedules.class_id')
+                    ->whereColumn('class_course.course_id', 'schedules.course_id');
+            })
             ->where('schedules.status', 'active')
             ->where('classes.status', 'active')
             ->where('courses.status', 'published')
@@ -127,5 +138,44 @@ class StudentScheduleController extends Controller
                 'note' => $schedule->note,
             ],
         ];
+    }
+
+    private function notEndedCondition(): \Closure
+    {
+        $now = now();
+
+        return function ($query) use ($now): void {
+            $query->whereDate('schedules.schedule_date', '>', $now->toDateString())
+                ->orWhere(function ($todayQuery) use ($now): void {
+                    $todayQuery->whereDate('schedules.schedule_date', $now->toDateString())
+                        ->where('schedules.end_time', '>=', $now->format('H:i:s'));
+                });
+        };
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function calendarRange(Request $request): array
+    {
+        $validated = $request->validate([
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after:start',
+        ]);
+
+        $start = isset($validated['start'])
+            ? Carbon::parse($validated['start'])->startOfDay()
+            : now()->startOfMonth()->subMonth();
+        $end = isset($validated['end'])
+            ? Carbon::parse($validated['end'])->startOfDay()
+            : now()->startOfMonth()->addMonths(2);
+
+        if ($start->diffInDays($end) > 370) {
+            throw ValidationException::withMessages([
+                'range' => 'Khoảng thời gian xem lịch không được vượt quá 370 ngày.',
+            ]);
+        }
+
+        return [$start->toDateString(), $end->toDateString()];
     }
 }

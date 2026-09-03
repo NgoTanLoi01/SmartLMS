@@ -4,19 +4,25 @@ namespace App\Imports;
 
 use App\Models\Classroom;
 use App\Models\Schedule;
+use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
-class ScheduleImport implements ToCollection
+class ScheduleImport implements ToCollection, WithChunkReading
 {
     public int $importedCount = 0;
 
     public int $duplicateCount = 0;
 
     public int $invalidCount = 0;
+
+    public int $conflictCount = 0;
+
+    public array $importedByClass = [];
 
     public array $unmatchedSubjects = [];
 
@@ -29,12 +35,15 @@ class ScheduleImport implements ToCollection
     public function __construct(
         private readonly ?int $defaultClassId = null,
         private readonly ?int $defaultCourseId = null,
-        private readonly array $allowedClassIds = []
+        private readonly ?array $allowedClassIds = null,
+        private readonly ScheduleConflictService $scheduleConflicts = new ScheduleConflictService,
     ) {
         $query = Classroom::with(['courses' => fn ($query) => $query->notArchived()])
             ->notArchived();
 
-        if (! empty($this->allowedClassIds)) {
+        // `null` chỉ dành cho admin. Mảng rỗng của giáo viên phải trả về 0 lớp,
+        // không được hiểu thành quyền truy cập toàn hệ thống.
+        if ($this->allowedClassIds !== null) {
             $query->whereIn('id', $this->allowedClassIds);
         }
 
@@ -95,7 +104,7 @@ class ScheduleImport implements ToCollection
                     ->notArchived()
                     ->where('class_id', $classroom->id)
                     ->where('course_id', $courseId)
-                    ->whereDate('schedule_date', $scheduleDate)
+                    ->where('schedule_date', $scheduleDate)
                     ->where('start_time', $timeRange['start'])
                     ->where('end_time', $timeRange['end'])
                     ->where(function ($query) use ($room) {
@@ -114,11 +123,7 @@ class ScheduleImport implements ToCollection
                     continue;
                 }
 
-                if ($note) {
-                    $this->clearCourseExamNote($classroom->id, $courseId);
-                }
-
-                Schedule::create([
+                $scheduleData = [
                     'class_id' => $classroom->id,
                     'course_id' => $courseId,
                     'schedule_date' => $scheduleDate,
@@ -127,11 +132,29 @@ class ScheduleImport implements ToCollection
                     'room' => $room,
                     'note' => $note,
                     'status' => Schedule::STATUS_ACTIVE,
-                ]);
+                ];
+
+                if ($this->scheduleConflicts->conflicts($scheduleData, null, $classroom) !== []) {
+                    $this->conflictCount++;
+
+                    continue;
+                }
+
+                if ($note) {
+                    $this->clearCourseExamNote($classroom->id, $courseId);
+                }
+
+                Schedule::create($scheduleData);
 
                 $this->importedCount++;
+                $this->importedByClass[$classroom->id] = ($this->importedByClass[$classroom->id] ?? 0) + 1;
             }
         }
+    }
+
+    public function chunkSize(): int
+    {
+        return 500;
     }
 
     private function detectHeaders(Collection $row): ?array
@@ -192,9 +215,13 @@ class ScheduleImport implements ToCollection
             return null;
         }
 
-        foreach (['d/m/Y', 'd-m-Y', 'Y-m-d', 'm/d/Y'] as $format) {
+        foreach (['d/m/Y', 'j/n/Y', 'd-m-Y', 'j-n-Y', 'Y-m-d'] as $format) {
             try {
-                return Carbon::createFromFormat($format, $value)->format('Y-m-d');
+                $date = Carbon::createFromFormat('!'.$format, $value);
+
+                if ($date && $date->format($format) === $value) {
+                    return $date->format('Y-m-d');
+                }
             } catch (\Throwable) {
                 continue;
             }
@@ -218,7 +245,7 @@ class ScheduleImport implements ToCollection
         $normalized = str_replace(['–', '—', 'đến', 'toi', 'to'], '-', $normalized);
         $normalized = preg_replace('/\s+/', '', $normalized);
 
-        if (! preg_match('/(\d{1,2})(?:[:ghh](\d{1,2}))?-(\d{1,2})(?:[:ghh](\d{1,2}))?/', $normalized, $matches)) {
+        if (! preg_match('/^(\d{1,2})(?:[:ghh](\d{1,2}))?-(\d{1,2})(?:[:ghh](\d{1,2}))?$/', $normalized, $matches)) {
             return null;
         }
 
@@ -272,19 +299,29 @@ class ScheduleImport implements ToCollection
     {
         $normalizedClassName = $this->normalize($className);
 
-        return $this->classrooms->filter(function ($classroom) use ($normalizedClassName) {
+        $exactMatches = $this->classrooms->filter(function ($classroom) use ($normalizedClassName) {
             $code = $this->normalize((string) $classroom->code);
             $name = $this->normalize((string) $classroom->name);
 
-            return $normalizedClassName !== ''
-                && (
-                    $code === $normalizedClassName
-                    || $name === $normalizedClassName
-                    || ($code !== '' && str_contains($name, $code) && str_contains($normalizedClassName, $code))
-                    || str_contains($name, $normalizedClassName)
-                    || str_contains($normalizedClassName, $name)
-                );
+            return $normalizedClassName !== '' && ($code === $normalizedClassName || $name === $normalizedClassName);
         })->values();
+
+        if ($exactMatches->isNotEmpty()) {
+            return $exactMatches->count() === 1 ? $exactMatches : collect();
+        }
+
+        $fuzzyMatches = $this->classrooms->filter(function ($classroom) use ($normalizedClassName) {
+            $code = $this->normalize((string) $classroom->code);
+            $name = $this->normalize((string) $classroom->name);
+
+            return $normalizedClassName !== '' && (
+                ($code !== '' && str_contains($name, $code) && str_contains($normalizedClassName, $code))
+                || str_contains($name, $normalizedClassName)
+                || str_contains($normalizedClassName, $name)
+            );
+        })->values();
+
+        return $fuzzyMatches->count() === 1 ? $fuzzyMatches : collect();
     }
 
     private function resolveCourseId(string $subject, Classroom $classroom): ?int
@@ -296,22 +333,37 @@ class ScheduleImport implements ToCollection
             return $this->defaultCourseForClass($classroom);
         }
 
-        foreach ($classroom->courses as $course) {
+        $exactMatches = $classroom->courses->filter(function ($course) use ($subject, $baseSubject) {
             $title = $this->normalize($course->title);
             $baseTitle = $this->normalizeCourseName($title);
 
-            if ($title !== '' && (
-                $title === $subject
-                || str_contains($subject, $title)
+            return $title !== '' && ($title === $subject || ($baseSubject !== '' && $baseTitle === $baseSubject));
+        })->values();
+
+        if ($exactMatches->count() === 1) {
+            return $exactMatches->first()->id;
+        }
+
+        if ($exactMatches->count() > 1) {
+            return null;
+        }
+
+        $fuzzyMatches = $classroom->courses->filter(function ($course) use ($subject, $baseSubject) {
+            $title = $this->normalize($course->title);
+            $baseTitle = $this->normalizeCourseName($title);
+
+            return $title !== '' && (
+                str_contains($subject, $title)
                 || str_contains($title, $subject)
                 || ($baseSubject !== '' && $baseTitle !== '' && (
-                    $baseTitle === $baseSubject
-                    || str_contains($baseSubject, $baseTitle)
+                    str_contains($baseSubject, $baseTitle)
                     || str_contains($baseTitle, $baseSubject)
                 ))
-            )) {
-                return $course->id;
-            }
+            );
+        })->values();
+
+        if ($fuzzyMatches->count() === 1) {
+            return $fuzzyMatches->first()->id;
         }
 
         return $this->defaultCourseForClass($classroom);

@@ -17,6 +17,8 @@ class AuditLogger
 
     public const STUDENTS_IMPORTED = 'students_imported';
 
+    public const SCHEDULE_CREATED = 'schedule_created';
+
     public const SCHEDULE_UPDATED = 'schedule_updated';
 
     public const SCHEDULE_ARCHIVED = 'schedule_archived';

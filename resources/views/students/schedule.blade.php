@@ -285,8 +285,6 @@
         }
     </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-
     @php
         $formatScheduleDate = function ($schedule) {
             return \Illuminate\Support\Carbon::parse($schedule->schedule_date);
@@ -353,8 +351,12 @@
                     <h2 class="ss-panel-title"><i class="fa-solid fa-calendar text-primary"></i>Lịch học</h2>
                     <span class="badge bg-danger-subtle text-danger rounded-pill">Đỏ: có ghi chú/thi</span>
                 </div>
+                <div id="studentScheduleError" class="alert alert-danger d-none" role="alert">
+                    Không tải được lịch học. Vui lòng tải lại trang hoặc thử lại sau.
+                </div>
                 <div class="ss-calendar-wrap">
-                    <div id="student-calendar"></div>
+                    <div id="student-calendar"
+                        data-events-url="{{ route('students.schedule', array_filter(['course_id' => $filters['course_id'] ?? null])) }}"></div>
                 </div>
             </div>
 
@@ -440,63 +442,5 @@
 @endsection
 
 @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const calendarEl = document.getElementById('student-calendar');
-            if (!calendarEl) return;
-
-            const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
-            const detailModal = new bootstrap.Modal(document.getElementById('scheduleDetailModal'));
-            const eventUrl = @json(route('students.schedule', array_filter(['course_id' => $filters['course_id'] ?? null])));
-
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: isMobile ? 'dayGridMonth' : 'timeGridWeek',
-                headerToolbar: {
-                    left: isMobile ? 'prev,next' : 'prev,next today',
-                    center: 'title',
-                    right: isMobile ? 'today' : 'timeGridWeek,dayGridMonth',
-                },
-                buttonText: {
-                    today: 'Hôm nay',
-                    week: 'Tuần',
-                    month: 'Tháng',
-                },
-                locale: 'vi',
-                allDaySlot: false,
-                slotMinTime: '07:00:00',
-                slotMaxTime: '22:00:00',
-                events: eventUrl,
-                eventClick: function(info) {
-                    const event = info.event;
-                    const props = event.extendedProps || {};
-                    const start = event.start ? event.start.toLocaleString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                    }) : '';
-                    const end = event.end ? event.end.toLocaleTimeString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    }) : '';
-
-                    document.getElementById('scheduleDetailTitle').textContent = event.title;
-                    document.getElementById('scheduleDetailCourse').textContent = props.course || '—';
-                    document.getElementById('scheduleDetailClass').textContent = props.class || '—';
-                    document.getElementById('scheduleDetailTime').textContent = end ? `${start} - ${end}` : start;
-                    document.getElementById('scheduleDetailRoom').textContent = props.room || 'Chưa cập nhật';
-
-                    const noteWrap = document.getElementById('scheduleDetailNoteWrap');
-                    const note = props.note || '';
-                    document.getElementById('scheduleDetailNote').textContent = note;
-                    noteWrap.classList.toggle('d-none', !note);
-
-                    detailModal.show();
-                },
-            });
-
-            calendar.render();
-        });
-    </script>
+    @vite('resources/js/pages/student-schedule.js')
 @endpush

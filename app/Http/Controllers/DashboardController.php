@@ -528,7 +528,18 @@ class DashboardController extends Controller
                 ->where('class_user.user_id', $user->id)
                 ->where($this->activeOrLegacyColumn('schedules.status'))
                 ->where('classes.status', 'active')
-                ->where($this->notArchivedColumn('courses.status'))
+                ->where('courses.course_type', 'delivery')
+                ->where('courses.status', Course::STATUS_PUBLISHED)
+                ->where(function ($visibility) {
+                    $visibility->whereNull('courses.available_from')
+                        ->orWhere('courses.available_from', '<=', now());
+                })
+                ->whereExists(function ($courseClass) {
+                    $courseClass->selectRaw('1')
+                        ->from('class_course')
+                        ->whereColumn('class_course.class_id', 'schedules.class_id')
+                        ->whereColumn('class_course.course_id', 'schedules.course_id');
+                })
 
                 ->whereDate('schedules.schedule_date', '>=', $startOfWeek)
 
@@ -549,7 +560,18 @@ class DashboardController extends Controller
                 ->where('class_user.user_id', $user->id)
                 ->where($this->activeOrLegacyColumn('schedules.status'))
                 ->where('classes.status', 'active')
-                ->where($this->notArchivedColumn('courses.status'))
+                ->where('courses.course_type', 'delivery')
+                ->where('courses.status', Course::STATUS_PUBLISHED)
+                ->where(function ($visibility) {
+                    $visibility->whereNull('courses.available_from')
+                        ->orWhere('courses.available_from', '<=', now());
+                })
+                ->whereExists(function ($courseClass) {
+                    $courseClass->selectRaw('1')
+                        ->from('class_course')
+                        ->whereColumn('class_course.class_id', 'schedules.class_id')
+                        ->whereColumn('class_course.course_id', 'schedules.course_id');
+                })
                 ->where(function ($query) use ($todayDate, $now) {
                     $query->whereDate('schedules.schedule_date', '>', $todayDate)
                         ->orWhere(function ($todayQuery) use ($todayDate, $now) {

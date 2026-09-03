@@ -164,6 +164,265 @@ class AuthorizationIsolationTest extends TestCase
         }
     }
 
+    public function test_teacher_without_classes_cannot_bypass_schedule_import_scope(): void
+    {
+        $targetDate = now()->addDays(3);
+        $csv = implode("\n", [
+            'Ngày,Giờ học,Tên môn học,Lớp,Phòng học',
+            $targetDate->format('d/m/Y').',12:00-13:00,Khóa của A,Lớp của A,P101',
+        ]);
+
+        $this->actingAs($this->otherTeacher)
+            ->post(route('schedules.import'), [
+                'file' => UploadedFile::fake()->createWithContent('schedule.csv', $csv),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseMissing('schedules', [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $targetDate->toDateString(),
+            'start_time' => '12:00:00',
+        ]);
+    }
+
+    public function test_schedule_import_rejects_a_renamed_executable(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('schedules.import'), [
+                'file' => UploadedFile::fake()->createWithContent(
+                    'schedule.xlsx',
+                    "#!/bin/sh\necho unsafe\n"
+                ),
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseCount('schedules', 1);
+    }
+
+    public function test_admin_can_import_schedule_without_an_explicit_class_scope(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+        $targetDate = now()->addDays(4);
+        $csv = implode("\n", [
+            'Ngày,Giờ học,Tên môn học,Lớp,Phòng học',
+            $targetDate->format('d/m/Y').',12:00-13:00,Khóa của A,Lớp của A,P102',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('schedules.import'), [
+                'file' => UploadedFile::fake()->createWithContent('schedule.csv', $csv),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('schedules', [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $targetDate->toDateString(),
+            'start_time' => '12:00:00',
+            'room' => 'P102',
+        ]);
+        $this->assertDatabaseHas('smart_notifications', [
+            'user_id' => $student->id,
+            'type' => 'schedule',
+            'title' => 'Lịch học mới đã được nhập',
+        ]);
+    }
+
+    public function test_import_skips_conflicts_without_mutating_existing_exam_note(): void
+    {
+        $this->schedule->update(['note' => 'Thi kết thúc môn']);
+        $csv = implode("\n", [
+            'Ngày,Giờ học,Tên môn học,Lớp,Phòng học',
+            now()->format('d/m/Y').',09:00-11:00,Khóa của A - Thi kết thúc môn,Lớp của A,P103',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('schedules.import'), [
+                'file' => UploadedFile::fake()->createWithContent('schedule.csv', $csv),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error', fn (string $message) => str_contains($message, 'Bỏ qua 1 lịch bị trùng giờ'));
+
+        $this->assertDatabaseCount('schedules', 1);
+        $this->assertDatabaseHas('schedules', [
+            'id' => $this->schedule->id,
+            'note' => 'Thi kết thúc môn',
+        ]);
+    }
+
+    public function test_direct_http_request_rejects_overlapping_class_schedule(): void
+    {
+        $this->actingAs($this->owner)
+            ->postJson(route('schedules.store'), [
+                'class_id' => $this->classroom->id,
+                'course_id' => $this->course->id,
+                'schedule_date' => now()->toDateString(),
+                'start_time' => '09:00',
+                'end_time' => '11:00',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('schedule')
+            ->assertJsonFragment(['Lớp học đã có lịch trong khoảng thời gian này. Giáo viên đã có lịch dạy trong khoảng thời gian này.']);
+
+        $this->assertDatabaseCount('schedules', 1);
+    }
+
+    public function test_direct_http_request_rejects_teacher_and_room_conflicts(): void
+    {
+        $secondClass = Classroom::create([
+            'name' => 'Lớp thứ hai của A',
+            'code' => 'A-02',
+            'teacher_id' => $this->owner->id,
+            'status' => Classroom::STATUS_ACTIVE,
+        ]);
+        $secondClass->courses()->attach($this->course);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('schedules.store'), [
+                'class_id' => $secondClass->id,
+                'course_id' => $this->course->id,
+                'schedule_date' => now()->toDateString(),
+                'start_time' => '09:30',
+                'end_time' => '10:30',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('schedule')
+            ->assertJsonFragment(['Giáo viên đã có lịch dạy trong khoảng thời gian này.']);
+
+        $this->schedule->update(['room' => 'P101']);
+        $otherCourse = Course::create([
+            'title' => 'Khóa của B',
+            'description' => 'Test',
+            'teacher_id' => $this->otherTeacher->id,
+            'course_type' => 'delivery',
+            'status' => Course::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+        $otherClass = Classroom::create([
+            'name' => 'Lớp của B',
+            'code' => 'B-01',
+            'teacher_id' => $this->otherTeacher->id,
+            'status' => Classroom::STATUS_ACTIVE,
+        ]);
+        $otherClass->courses()->attach($otherCourse);
+
+        $this->actingAs($this->otherTeacher)
+            ->postJson(route('schedules.store'), [
+                'class_id' => $otherClass->id,
+                'course_id' => $otherCourse->id,
+                'schedule_date' => now()->toDateString(),
+                'start_time' => '08:30',
+                'end_time' => '09:30',
+                'room' => ' p101 ',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('schedule')
+            ->assertJsonFragment(['Phòng p101 đã được sử dụng trong khoảng thời gian này.']);
+
+        $this->assertDatabaseCount('schedules', 1);
+    }
+
+    public function test_direct_http_request_cannot_bypass_conflicts_when_updating_schedule(): void
+    {
+        $secondSchedule = Schedule::create([
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->toDateString(),
+            'start_time' => '12:00:00',
+            'end_time' => '13:00:00',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->putJson(route('schedules.update', $secondSchedule), [
+                'class_id' => $this->classroom->id,
+                'course_id' => $this->course->id,
+                'schedule_date' => now()->toDateString(),
+                'start_time' => '09:00',
+                'end_time' => '11:00',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('schedule');
+
+        $this->assertDatabaseHas('schedules', [
+            'id' => $secondSchedule->id,
+            'start_time' => '12:00:00',
+            'end_time' => '13:00:00',
+        ]);
+    }
+
+    public function test_schedule_event_api_only_returns_requested_date_range(): void
+    {
+        $inside = Schedule::create([
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->addDays(10)->toDateString(),
+            'start_time' => '13:00:00',
+            'end_time' => '15:00:00',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+        Schedule::create([
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->addMonths(3)->toDateString(),
+            'start_time' => '13:00:00',
+            'end_time' => '15:00:00',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+
+        $response = $this->actingAs($this->owner)->getJson(route('schedules.index', [
+            'start' => now()->addDays(9)->toIso8601String(),
+            'end' => now()->addDays(12)->toIso8601String(),
+        ]));
+
+        $response->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $inside->id);
+    }
+
+    public function test_student_schedule_requires_the_exact_class_course_pair(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $secondCourse = Course::create([
+            'title' => 'Khóa thứ hai',
+            'description' => 'Test',
+            'teacher_id' => $this->owner->id,
+            'course_type' => 'delivery',
+            'status' => Course::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+        $secondClass = Classroom::create([
+            'name' => 'Lớp thứ hai',
+            'code' => 'A-03',
+            'teacher_id' => $this->owner->id,
+            'status' => Classroom::STATUS_ACTIVE,
+        ]);
+        $this->classroom->students()->attach($student);
+        $secondClass->students()->attach($student);
+        $secondClass->courses()->attach($secondCourse);
+
+        $invalidPairSchedule = Schedule::create([
+            'class_id' => $this->classroom->id,
+            'course_id' => $secondCourse->id,
+            'schedule_date' => now()->addDay()->toDateString(),
+            'start_time' => '13:00:00',
+            'end_time' => '15:00:00',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+
+        $response = $this->actingAs($student)->getJson(route('students.schedule', [
+            'start' => now()->subDay()->toIso8601String(),
+            'end' => now()->addDays(3)->toIso8601String(),
+        ]));
+
+        $response->assertOk();
+        $this->assertNotContains($invalidPairSchedule->id, $response->collect()->pluck('id')->all());
+        $this->assertContains($this->schedule->id, $response->collect()->pluck('id')->all());
+    }
+
     public function test_lesson_content_is_lazy_loaded_only_for_authorized_users(): void
     {
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
@@ -802,6 +1061,8 @@ class AuthorizationIsolationTest extends TestCase
             $table->date('schedule_date');
             $table->time('start_time');
             $table->time('end_time');
+            $table->string('room')->nullable();
+            $table->string('note')->nullable();
             $table->string('status')->default(Schedule::STATUS_ACTIVE);
             $table->timestamps();
         });

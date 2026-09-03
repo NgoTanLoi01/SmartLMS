@@ -6,16 +6,22 @@ use App\Imports\ScheduleImport;
 use App\Models\Classroom;
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Rules\SafeSpreadsheet;
 use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
+use App\Services\ScheduleConflictService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ScheduleController extends Controller
 {
+    public function __construct(private ScheduleConflictService $scheduleConflicts) {}
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -25,6 +31,8 @@ class ScheduleController extends Controller
         }
 
         if ($request->ajax() || $request->wantsJson() || $request->has('start')) {
+            [$rangeStart, $rangeEnd] = $this->calendarRange($request);
+
             // SỬ DỤNG DB JOIN ĐỂ TRÁNH LỖI MODEL RELATIONSHIP
             $query = DB::table('schedules')
                 ->join('courses', 'schedules.course_id', '=', 'courses.id')
@@ -32,6 +40,8 @@ class ScheduleController extends Controller
                 ->where('schedules.status', 'active')
                 ->where('classes.status', '!=', 'archived')
                 ->where('courses.status', '!=', 'archived')
+                ->where('schedules.schedule_date', '>=', $rangeStart)
+                ->where('schedules.schedule_date', '<', $rangeEnd)
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name');
 
             // Nếu là giáo viên, chỉ lấy lịch của họ
@@ -99,9 +109,9 @@ class ScheduleController extends Controller
         $validated = $request->validate([
             'class_id' => 'required|exists:classes,id',
             'course_id' => 'required|exists:courses,id',
-            'schedule_date' => 'required|date',
-            'start_time' => 'required',
-            'end_time' => 'required|after:start_time',
+            'schedule_date' => 'required|date_format:Y-m-d',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
             'room' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:255',
         ]);
@@ -110,10 +120,27 @@ class ScheduleController extends Controller
         $course = Course::findOrFail($validated['course_id']);
         Gate::authorize('create', [Schedule::class, $classroom, $course]);
 
-        $this->clearCourseExamNoteIfNeeded($request);
+        $scheduleData = array_merge($validated, [
+            'room' => $this->normalizeRoom($validated['room'] ?? null),
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
 
-        $schedule = Schedule::create(array_merge($validated, ['status' => Schedule::STATUS_ACTIVE]));
+        $schedule = DB::transaction(function () use ($scheduleData, $classroom) {
+            $this->scheduleConflicts->ensureNoConflicts($scheduleData, null, $classroom);
+            $this->clearCourseExamNoteIfNeeded($scheduleData);
+
+            return Schedule::create($scheduleData);
+        });
         $this->notifyScheduleChange($schedule, 'Lịch học mới', 'Lịch học mới đã được thêm.');
+
+        AuditLogger::log(
+            AuditLogger::SCHEDULE_CREATED,
+            $schedule,
+            null,
+            AuditLogger::snapshot($schedule),
+            ['class_id' => $schedule->class_id, 'course_id' => $schedule->course_id],
+            'Tạo lịch học.'
+        );
 
         return response()->json(['status' => 'success', 'message' => 'Đã thêm lịch học!']);
     }
@@ -128,15 +155,14 @@ class ScheduleController extends Controller
         ]);
 
         $user = auth()->user();
-        $sourceQuery = DB::table('schedules')
-            ->join('classes', 'schedules.class_id', '=', 'classes.id')
-            ->whereDate('schedules.schedule_date', $validated['source_date'])
-            ->where('schedules.status', Schedule::STATUS_ACTIVE)
-            ->where('classes.status', '!=', Classroom::STATUS_ARCHIVED)
-            ->select('schedules.*');
+        $sourceQuery = Schedule::query()
+            ->with(['classroom', 'course'])
+            ->whereDate('schedule_date', $validated['source_date'])
+            ->where('status', Schedule::STATUS_ACTIVE)
+            ->whereHas('classroom', fn ($query) => $query->where('status', '!=', Classroom::STATUS_ARCHIVED));
 
         if ($user->role === 'teacher') {
-            $sourceQuery->where('classes.teacher_id', $user->id);
+            $sourceQuery->whereHas('classroom', fn ($query) => $query->where('teacher_id', $user->id));
         } elseif ($user->role !== 'admin') {
             abort(403);
         }
@@ -149,32 +175,13 @@ class ScheduleController extends Controller
 
         $copied = 0;
         $skipped = 0;
+        $copiedSchedules = collect();
 
-        DB::transaction(function () use ($sourceSchedules, $validated, &$copied, &$skipped) {
+        DB::transaction(function () use ($sourceSchedules, $validated, &$copied, &$skipped, $copiedSchedules) {
             foreach ($sourceSchedules as $schedule) {
-                $isDuplicate = DB::table('schedules')
-                    ->where('class_id', $schedule->class_id)
-                    ->where('course_id', $schedule->course_id)
-                    ->where('status', Schedule::STATUS_ACTIVE)
-                    ->whereDate('schedule_date', $validated['target_date'])
-                    ->where('start_time', $schedule->start_time)
-                    ->where('end_time', $schedule->end_time)
-                    ->where(function ($query) use ($schedule) {
-                        if ($schedule->room === null) {
-                            $query->whereNull('room');
-                        } else {
-                            $query->where('room', $schedule->room);
-                        }
-                    })
-                    ->exists();
+                Gate::authorize('create', [Schedule::class, $schedule->classroom, $schedule->course]);
 
-                if ($isDuplicate) {
-                    $skipped++;
-
-                    continue;
-                }
-
-                Schedule::create([
+                $scheduleData = [
                     'class_id' => $schedule->class_id,
                     'course_id' => $schedule->course_id,
                     'schedule_date' => $validated['target_date'],
@@ -183,10 +190,30 @@ class ScheduleController extends Controller
                     'room' => $schedule->room,
                     'note' => null,
                     'status' => Schedule::STATUS_ACTIVE,
-                ]);
+                ];
+
+                if ($this->scheduleConflicts->conflicts($scheduleData, null, $schedule->classroom) !== []) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                $copiedSchedules->push(Schedule::create($scheduleData));
 
                 $copied++;
             }
+        });
+
+        $copiedSchedules->groupBy('class_id')->each(function ($classSchedules, $classId) use ($validated): void {
+            app(NotificationCenter::class)->notifyClassStudents(
+                (int) $classId,
+                'schedule',
+                'Lịch học mới đã được sao chép',
+                "Có {$classSchedules->count()} buổi học mới vào ngày ".Carbon::parse($validated['target_date'])->format('d/m/Y').'.',
+                route('students.schedule'),
+                ['schedule_ids' => $classSchedules->pluck('id')->all()],
+                'schedule:copy:'.Str::uuid()
+            );
         });
 
         AuditLogger::log(
@@ -221,7 +248,7 @@ class ScheduleController extends Controller
         $validated = $request->validate([
             'import_class_id' => 'nullable|exists:classes,id',
             'default_course_id' => 'nullable|exists:courses,id',
-            'file' => 'required|mimes:xlsx,xls,csv|max:5120',
+            'file' => ['required', 'file', 'max:5120', new SafeSpreadsheet],
         ]);
 
         $user = auth()->user();
@@ -230,7 +257,7 @@ class ScheduleController extends Controller
             abort(403);
         }
 
-        $allowedClassIds = [];
+        $allowedClassIds = null;
         if ($user->role === 'teacher') {
             $allowedClassIds = Classroom::where('teacher_id', $user->id)->pluck('id')->all();
         }
@@ -251,12 +278,13 @@ class ScheduleController extends Controller
             $import = new ScheduleImport(
                 isset($validated['import_class_id']) ? (int) $validated['import_class_id'] : null,
                 isset($validated['default_course_id']) ? (int) $validated['default_course_id'] : null,
-                $allowedClassIds
+                $allowedClassIds,
+                $this->scheduleConflicts,
             );
 
             Excel::import($import, $request->file('file'));
 
-            if ($import->importedCount === 0 && $import->duplicateCount === 0 && $import->invalidCount === 0) {
+            if ($import->importedCount === 0 && $import->duplicateCount === 0 && $import->invalidCount === 0 && $import->conflictCount === 0) {
                 return back()->with('error', 'Không tìm thấy dữ liệu lịch học hợp lệ trong file Excel.');
             }
 
@@ -266,6 +294,9 @@ class ScheduleController extends Controller
             }
             if ($import->invalidCount > 0) {
                 $message .= " Có {$import->invalidCount} dòng chưa nhập được do thiếu dữ liệu hoặc không khớp khóa học.";
+            }
+            if ($import->conflictCount > 0) {
+                $message .= " Bỏ qua {$import->conflictCount} lịch bị trùng giờ lớp, giáo viên hoặc phòng.";
             }
 
             $unmatchedClasses = collect($import->unmatchedClasses)->unique()->take(3)->values();
@@ -286,6 +317,7 @@ class ScheduleController extends Controller
                     'imported_count' => $import->importedCount,
                     'duplicate_count' => $import->duplicateCount,
                     'invalid_count' => $import->invalidCount,
+                    'conflict_count' => $import->conflictCount,
                     'unmatched_classes' => collect($import->unmatchedClasses)->unique()->values()->all(),
                     'unmatched_subjects' => collect($import->unmatchedSubjects)->unique()->values()->all(),
                 ],
@@ -297,9 +329,23 @@ class ScheduleController extends Controller
                 'Import lịch học từ Excel.'
             );
 
+            collect($import->importedByClass)->each(function ($count, $classId): void {
+                app(NotificationCenter::class)->notifyClassStudents(
+                    (int) $classId,
+                    'schedule',
+                    'Lịch học mới đã được nhập',
+                    "Có {$count} buổi học mới được thêm từ file lịch.",
+                    route('students.schedule'),
+                    ['imported_count' => $count],
+                    'schedule:import:'.Str::uuid()
+                );
+            });
+
             return back()->with($import->importedCount > 0 ? 'success' : 'error', $message);
         } catch (\Exception $e) {
-            return back()->with('error', 'Có lỗi khi nhập lịch: '.$e->getMessage());
+            report($e);
+
+            return back()->with('error', 'Không thể nhập lịch lúc này. Vui lòng kiểm tra file và thử lại.');
         }
     }
 
@@ -308,9 +354,9 @@ class ScheduleController extends Controller
         $validated = $request->validate([
             'class_id' => 'required|exists:classes,id',
             'course_id' => 'required|exists:courses,id',
-            'schedule_date' => 'required|date',
-            'start_time' => 'required',
-            'end_time' => 'required|after:start_time',
+            'schedule_date' => 'required|date_format:Y-m-d',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
             'room' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:255',
             'status' => 'nullable|in:active,hidden,archived',
@@ -322,10 +368,21 @@ class ScheduleController extends Controller
         $targetCourse = Course::findOrFail($validated['course_id']);
         Gate::authorize('create', [Schedule::class, $targetClassroom, $targetCourse]);
         $oldValues = AuditLogger::snapshot($schedule);
-        $this->clearCourseExamNoteIfNeeded($request, $schedule->id);
-        $schedule->update(array_merge($validated, [
+        $oldClassId = (int) $schedule->class_id;
+        $scheduleData = array_merge($validated, [
+            'room' => $this->normalizeRoom($validated['room'] ?? null),
             'status' => $validated['status'] ?? $schedule->status ?? Schedule::STATUS_ACTIVE,
-        ]));
+        ]);
+
+        DB::transaction(function () use ($schedule, $scheduleData, $targetClassroom): void {
+            $this->scheduleConflicts->ensureNoConflicts($scheduleData, $schedule->id, $targetClassroom);
+            $this->clearCourseExamNoteIfNeeded($scheduleData, $schedule->id);
+            $schedule->update($scheduleData);
+        });
+
+        if ($oldClassId !== (int) $schedule->class_id) {
+            $this->notifyPreviousClassOfMove($oldClassId, $schedule, $oldValues);
+        }
 
         $this->notifyScheduleChange($schedule, 'Lịch học đã thay đổi', 'Giáo viên vừa cập nhật thời gian hoặc thông tin buổi học.');
 
@@ -368,15 +425,15 @@ class ScheduleController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Đã lưu trữ lịch học!']);
     }
 
-    private function clearCourseExamNoteIfNeeded(Request $request, ?int $exceptScheduleId = null): void
+    private function clearCourseExamNoteIfNeeded(array $attributes, ?int $exceptScheduleId = null): void
     {
-        if ($request->input('note') !== 'Thi kết thúc môn') {
+        if (($attributes['note'] ?? null) !== 'Thi kết thúc môn') {
             return;
         }
 
         Schedule::query()
-            ->where('class_id', $request->input('class_id'))
-            ->where('course_id', $request->input('course_id'))
+            ->where('class_id', $attributes['class_id'])
+            ->where('course_id', $attributes['course_id'])
             ->notArchived()
             ->when($exceptScheduleId, fn ($query) => $query->where('id', '!=', $exceptScheduleId))
             ->where('note', 'Thi kết thúc môn')
@@ -395,7 +452,65 @@ class ScheduleController extends Controller
             "{$message} Thời gian: {$time} ngày {$date}.",
             route('students.schedule'),
             ['schedule_id' => $schedule->id, 'course_id' => $schedule->course_id],
-            "schedule:{$schedule->id}:{$schedule->updated_at->timestamp}:".md5($title)
+            'schedule:'.$schedule->id.':'.md5($title.'|'.json_encode([
+                $schedule->class_id,
+                $schedule->course_id,
+                $schedule->schedule_date,
+                $schedule->start_time,
+                $schedule->end_time,
+                $schedule->room,
+                $schedule->note,
+                $schedule->status,
+            ]))
         );
+    }
+
+    private function notifyPreviousClassOfMove(int $oldClassId, Schedule $schedule, array $oldValues): void
+    {
+        app(NotificationCenter::class)->notifyClassStudents(
+            $oldClassId,
+            'schedule',
+            'Lịch học đã chuyển sang lớp khác',
+            'Một buổi học lúc '.Carbon::parse($oldValues['start_time'])->format('H:i').' ngày '
+                .Carbon::parse($oldValues['schedule_date'])->format('d/m/Y').' không còn thuộc lớp của bạn.',
+            route('students.schedule'),
+            ['schedule_id' => $schedule->id, 'course_id' => $schedule->course_id],
+            'schedule:'.$schedule->id.':moved-from:'.$oldClassId.':'.md5(json_encode($oldValues))
+        );
+    }
+
+    private function normalizeRoom(?string $room): ?string
+    {
+        $room = preg_replace('/\s+/', ' ', trim((string) $room));
+
+        return $room !== '' ? $room : null;
+    }
+
+    /**
+     * FullCalendar gửi `end` theo dạng mốc loại trừ (exclusive).
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function calendarRange(Request $request): array
+    {
+        $validated = $request->validate([
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after:start',
+        ]);
+
+        $start = isset($validated['start'])
+            ? Carbon::parse($validated['start'])->startOfDay()
+            : now()->startOfMonth()->subMonth();
+        $end = isset($validated['end'])
+            ? Carbon::parse($validated['end'])->startOfDay()
+            : now()->startOfMonth()->addMonths(2);
+
+        if ($start->diffInDays($end) > 370) {
+            throw ValidationException::withMessages([
+                'range' => 'Khoảng thời gian xem lịch không được vượt quá 370 ngày.',
+            ]);
+        }
+
+        return [$start->toDateString(), $end->toDateString()];
     }
 }
