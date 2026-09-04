@@ -45,6 +45,10 @@ class AuditLogger
 
     public const ACCOUNT_PROFILE_UPDATED = 'account_profile_updated';
 
+    public const TRASH_RESTORED = 'trash_restored';
+
+    public const TRASH_PERMANENTLY_DELETED = 'trash_permanently_deleted';
+
     public static function log(
         string $action,
         ?Model $auditable = null,

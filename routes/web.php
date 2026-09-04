@@ -37,6 +37,7 @@ use App\Http\Controllers\StudentScheduleController;
 use App\Http\Controllers\SystemBackupController;
 use App\Http\Controllers\TeachingContractController;
 use App\Http\Controllers\TeachingRecordController;
+use App\Http\Controllers\TrashController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -73,6 +74,13 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::patch('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::middleware('role:admin,teacher')->group(function () {
+        Route::get('/trash', [TrashController::class, 'index'])->name('trash.index');
+        Route::patch('/trash/restore', [TrashController::class, 'restore'])->name('trash.restore');
+        Route::delete('/trash/permanent', [TrashController::class, 'permanentlyDelete'])
+            ->middleware('role:admin')
+            ->name('trash.permanent-delete');
+    });
     Route::middleware('role:admin')->group(function () {
         Route::get('/system/storage', [StorageHealthController::class, 'index'])->name('system.storage.index');
         Route::post('/system/storage/test', [StorageHealthController::class, 'test'])->name('system.storage.test');
@@ -270,7 +278,9 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::get('/quizzes/{id}', [QuizController::class, 'show'])->name('quizzes.show');
         Route::delete('/quizzes/{id}', [QuizController::class, 'destroy'])->name('quizzes.destroy');
         Route::patch('/quizzes/{id}/restore', [QuizController::class, 'restore'])->name('quizzes.restore');
-        Route::delete('/quizzes/{id}/force', [QuizController::class, 'forceDestroy'])->name('quizzes.force-destroy');
+        Route::delete('/quizzes/{id}/force', [QuizController::class, 'forceDestroy'])
+            ->middleware('role:admin')
+            ->name('quizzes.force-destroy');
         Route::get('/quizzes/{id}/submissions', [QuizController::class, 'submissions'])->name('quizzes.submissions');
         Route::get('/quizzes/{quiz}/sessions', [QuizSessionController::class, 'index'])->name('quizzes.sessions.index');
         Route::post('/quizzes/{quiz}/sessions', [QuizSessionController::class, 'store'])->name('quizzes.sessions.store');

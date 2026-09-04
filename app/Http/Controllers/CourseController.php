@@ -13,13 +13,11 @@ use App\Models\Question;
 use App\Models\QuizAttempt;
 use App\Models\QuizSession;
 use App\Services\CourseCloningService;
+use App\Services\PermanentDeletionService;
 use App\Services\QuizQuestionSelectionService;
-use App\Services\StoredAssetReferenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -28,6 +26,7 @@ class CourseController extends Controller
     public function __construct(
         private CourseCloningService $courseCloner,
         private QuizQuestionSelectionService $quizQuestionSelector,
+        private PermanentDeletionService $permanentDeletion,
     ) {}
 
     public function index()
@@ -453,46 +452,7 @@ class CourseController extends Controller
                 ->with('error', 'Hãy lưu trữ khóa học trước khi xóa vĩnh viễn.');
         }
 
-        $lessonFiles = Lesson::whereHas('module', fn ($query) => $query->where('course_id', $course->id))
-            ->whereNotNull('attachment')
-            ->get(['attachment', 'attachment_disk']);
-
-        $assignmentIds = Assignments::where('course_id', $course->id)->pluck('id');
-        $submissionFiles = AssignmentSubmission::whereIn('assignment_id', $assignmentIds)
-            ->whereNotNull('file_path')
-            ->get(['file_path', 'file_disk']);
-        $legacySubmissionFiles = Schema::hasTable('submissions')
-            ? DB::table('submissions')
-                ->whereIn('assignment_id', $assignmentIds)
-                ->whereNotNull('file_path')
-                ->pluck('file_path')
-            : collect();
-
-        DB::transaction(function () use ($course, $assignmentIds) {
-            // Bảng submissions cũ không khai báo cascade nên cần dọn trước.
-            if (Schema::hasTable('submissions')) {
-                DB::table('submissions')->whereIn('assignment_id', $assignmentIds)->delete();
-            }
-            if (Schema::hasTable('document_chunks')) {
-                DB::table('document_chunks')->where('course_id', $course->id)->delete();
-            }
-            $course->delete();
-        });
-
-        $lessonFiles->each(function ($file) {
-            $disk = $file->attachment_disk ?: 'public';
-            rescue(
-                fn () => app(StoredAssetReferenceService::class)->deleteIfUnindexed($disk, $file->attachment),
-                report: false
-            );
-        });
-        $submissionFiles->each(function ($file) {
-            $disk = $file->file_disk ?: 'public';
-            rescue(fn () => Storage::disk($disk)->delete($file->file_path), report: false);
-        });
-        $legacySubmissionFiles->each(
-            fn ($path) => rescue(fn () => Storage::disk('public')->delete($path), report: false)
-        );
+        $this->permanentDeletion->purgeCourse($course);
 
         return redirect()->route('courses.index')
             ->with('success', 'Đã xóa vĩnh viễn khóa học và toàn bộ dữ liệu liên quan.');

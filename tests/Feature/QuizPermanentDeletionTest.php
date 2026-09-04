@@ -15,6 +15,8 @@ class QuizPermanentDeletionTest extends TestCase
 {
     private User $teacher;
 
+    private User $admin;
+
     private Course $course;
 
     protected function setUp(): void
@@ -27,6 +29,13 @@ class QuizPermanentDeletionTest extends TestCase
             'email' => 'archive-teacher@example.com',
             'password' => Hash::make('password'),
             'role' => User::ROLE_TEACHER,
+            'is_active' => true,
+        ]);
+        $this->admin = User::create([
+            'name' => 'Quản trị viên',
+            'email' => 'archive-admin@example.com',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_ADMIN,
             'is_active' => true,
         ]);
         $this->course = Course::create([
@@ -47,7 +56,7 @@ class QuizPermanentDeletionTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_teacher_can_permanently_delete_archived_quiz_without_attempts(): void
+    public function test_admin_can_permanently_delete_archived_quiz_without_attempts(): void
     {
         $quiz = $this->archivedQuiz('Đề tạo nhầm');
         $sessionId = DB::table('quiz_sessions')->insertGetId([
@@ -61,7 +70,7 @@ class QuizPermanentDeletionTest extends TestCase
             'user_id' => $this->teacher->id,
         ]);
 
-        $this->actingAs($this->teacher)
+        $this->actingAs($this->admin)
             ->delete(route('quizzes.force-destroy', $quiz), ['confirmation' => $quiz->title])
             ->assertRedirect(route('quizzes.archived', $this->course));
 
@@ -80,11 +89,22 @@ class QuizPermanentDeletionTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $this->actingAs($this->teacher)
+        $this->actingAs($this->admin)
             ->from(route('quizzes.archived', $this->course))
             ->delete(route('quizzes.force-destroy', $quiz), ['confirmation' => $quiz->title])
             ->assertRedirect(route('quizzes.archived', $this->course))
             ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('quizzes', ['id' => $quiz->id, 'status' => Quiz::STATUS_ARCHIVED]);
+    }
+
+    public function test_teacher_cannot_permanently_delete_archived_quiz(): void
+    {
+        $quiz = $this->archivedQuiz('Đề chỉ admin được xóa');
+
+        $this->actingAs($this->teacher)
+            ->delete(route('quizzes.force-destroy', $quiz), ['confirmation' => $quiz->title])
+            ->assertForbidden();
 
         $this->assertDatabaseHas('quizzes', ['id' => $quiz->id, 'status' => Quiz::STATUS_ARCHIVED]);
     }

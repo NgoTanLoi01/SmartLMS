@@ -189,6 +189,7 @@ class QuizController extends Controller
 
     public function forceDestroy(Request $request, $id)
     {
+        abort_unless($request->user()?->isAdmin(), 403);
         $quiz = Quiz::where('status', Quiz::STATUS_ARCHIVED)->findOrFail($id);
         Gate::authorize('delete', $quiz);
         $request->validate(['confirmation' => ['required', 'string']]);
