@@ -27,6 +27,12 @@ class AuditLogger
 
     public const SCHEDULE_IMPORTED = 'schedule_imported';
 
+    public const SCHEDULE_SERIES_CREATED = 'schedule_series_created';
+
+    public const SCHEDULE_SERIES_UPDATED = 'schedule_series_updated';
+
+    public const SCHEDULE_SERIES_ARCHIVED = 'schedule_series_archived';
+
     public const CONTRACT_CREATED = 'contract_created';
 
     public const CONTRACT_UPDATED = 'contract_updated';

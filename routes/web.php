@@ -327,6 +327,12 @@ Route::middleware(['auth', 'account.active'])->group(function () {
 
         Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules.index');
         Route::get('/schedules/get-courses/{class_id}', [ScheduleController::class, 'getCoursesByClass']);
+        Route::post('/schedules/series/preview', [ScheduleController::class, 'previewSeries'])
+            ->middleware('throttle:30,1')
+            ->name('schedules.series.preview');
+        Route::post('/schedules/series', [ScheduleController::class, 'storeSeries'])
+            ->middleware('throttle:30,1')
+            ->name('schedules.series.store');
         Route::post('/schedules/copy-day', [ScheduleController::class, 'copyDay'])->name('schedules.copyDay');
         Route::post('/schedules/import', [ScheduleController::class, 'importExcel'])->name('schedules.import');
         Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');

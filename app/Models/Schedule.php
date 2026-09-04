@@ -12,10 +12,22 @@ class Schedule extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
-    protected $fillable = ['class_id', 'course_id', 'schedule_date', 'start_time', 'end_time', 'room', 'note', 'status'];
+    protected $fillable = [
+        'series_id',
+        'series_position',
+        'class_id',
+        'course_id',
+        'schedule_date',
+        'start_time',
+        'end_time',
+        'room',
+        'note',
+        'status',
+    ];
 
     protected $casts = [
         'schedule_date' => 'date:Y-m-d',
+        'series_position' => 'integer',
     ];
 
     public function scopeNotArchived($query)

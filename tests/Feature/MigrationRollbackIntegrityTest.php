@@ -29,7 +29,7 @@ class MigrationRollbackIntegrityTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['assignment_submissions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'class_user', 'classes', 'courses', 'users'] as $table) {
+            foreach (['assignment_submissions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -261,5 +261,24 @@ class MigrationRollbackIntegrityTest extends TestCase
         $migration->down();
         $this->assertFalse(Schema::hasColumn('assignment_submissions', 'checksum_sha256'));
         $this->assertDatabaseHas('assignment_submissions', ['id' => 1, 'file_size' => 123]);
+    }
+
+    public function test_schedule_series_migration_is_reversible(): void
+    {
+        Schema::create('schedules', function (Blueprint $table): void {
+            $table->id();
+            $table->string('status')->default('active');
+        });
+
+        $migration = require database_path('migrations/2026_09_03_000002_add_series_columns_to_schedules_table.php');
+        $migration->up();
+
+        $this->assertTrue(Schema::hasColumn('schedules', 'series_id'));
+        $this->assertTrue(Schema::hasColumn('schedules', 'series_position'));
+
+        $migration->down();
+
+        $this->assertFalse(Schema::hasColumn('schedules', 'series_id'));
+        $this->assertFalse(Schema::hasColumn('schedules', 'series_position'));
     }
 }

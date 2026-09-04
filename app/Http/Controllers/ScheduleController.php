@@ -10,6 +10,7 @@ use App\Rules\SafeSpreadsheet;
 use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
 use App\Services\ScheduleConflictService;
+use App\Services\ScheduleRecurrenceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ScheduleController extends Controller
 {
-    public function __construct(private ScheduleConflictService $scheduleConflicts) {}
+    public function __construct(
+        private ScheduleConflictService $scheduleConflicts,
+        private ScheduleRecurrenceService $scheduleRecurrence
+    ) {}
 
     public function index(Request $request)
     {
@@ -69,6 +73,8 @@ class ScheduleController extends Controller
                         'course_id' => $schedule->course_id,
                         'room' => $schedule->room,
                         'note' => $schedule->note,
+                        'series_id' => $schedule->series_id ?? null,
+                        'series_position' => $schedule->series_position ?? null,
                     ],
                     'backgroundColor' => $hasExamNote ? '#dc2626' : '#0d6efd',
                     'borderColor' => $hasExamNote ? '#dc2626' : '#0d6efd',
@@ -143,6 +149,116 @@ class ScheduleController extends Controller
         );
 
         return response()->json(['status' => 'success', 'message' => 'Đã thêm lịch học!']);
+    }
+
+    public function previewSeries(Request $request)
+    {
+        $validated = $this->validateSeriesRequest($request);
+        [$scheduleData, $recurrenceData, $classroom] = $this->prepareSeriesData($validated);
+        $preview = $this->scheduleRecurrence->preview($scheduleData, $recurrenceData, $classroom);
+        $conflictCount = collect($preview)->where('has_conflict', true)->count();
+
+        return response()->json([
+            'occurrences' => $preview,
+            'summary' => [
+                'total' => count($preview),
+                'available' => count($preview) - $conflictCount,
+                'conflicts' => $conflictCount,
+            ],
+        ]);
+    }
+
+    public function storeSeries(Request $request)
+    {
+        $validated = $this->validateSeriesRequest($request);
+        [$scheduleData, $recurrenceData, $classroom] = $this->prepareSeriesData($validated);
+        $dates = $this->scheduleRecurrence->dates(array_merge($scheduleData, $recurrenceData));
+        $skipConflicts = (bool) ($validated['skip_conflicts'] ?? false);
+        $seriesId = (string) Str::uuid();
+        $skipped = 0;
+
+        $createdSchedules = DB::transaction(function () use (
+            $dates,
+            $scheduleData,
+            $classroom,
+            $skipConflicts,
+            $seriesId,
+            &$skipped
+        ) {
+            $created = collect();
+            $conflictsByDate = $this->scheduleConflicts->conflictsForDates(
+                $scheduleData,
+                $dates,
+                null,
+                $classroom
+            );
+
+            foreach ($dates as $position => $date) {
+                $candidate = array_merge($scheduleData, [
+                    'schedule_date' => $date->toDateString(),
+                    'series_id' => $seriesId,
+                    'series_position' => $position + 1,
+                ]);
+                $conflicts = $conflictsByDate[$date->toDateString()] ?? [];
+
+                if ($conflicts !== []) {
+                    if ($skipConflicts) {
+                        $skipped++;
+
+                        continue;
+                    }
+
+                    throw ValidationException::withMessages([
+                        'schedule' => 'Buổi '.($position + 1).' ngày '.$date->format('d/m/Y').' bị trùng lịch: '.implode(' ', $conflicts),
+                    ]);
+                }
+
+                $created->push(Schedule::create($candidate));
+            }
+
+            if ($created->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'schedule' => 'Tất cả các buổi trong chuỗi đều bị trùng. Không có lịch nào được tạo.',
+                ]);
+            }
+
+            return $created;
+        });
+
+        $this->notifySeriesChange(
+            $createdSchedules->first(),
+            $createdSchedules->count(),
+            'Chuỗi lịch học mới',
+            'Một chuỗi lịch học mới đã được thêm.'
+        );
+
+        AuditLogger::log(
+            AuditLogger::SCHEDULE_SERIES_CREATED,
+            $createdSchedules->first(),
+            null,
+            [
+                'series_id' => $seriesId,
+                'created_count' => $createdSchedules->count(),
+                'skipped_count' => $skipped,
+                'first_date' => $createdSchedules->min('schedule_date')?->format('Y-m-d'),
+                'last_date' => $createdSchedules->max('schedule_date')?->format('Y-m-d'),
+            ],
+            ['class_id' => $scheduleData['class_id'], 'course_id' => $scheduleData['course_id']],
+            'Tạo chuỗi lịch học lặp lại.'
+        );
+
+        $message = 'Đã tạo '.$createdSchedules->count().' buổi học trong chuỗi.';
+        if ($skipped > 0) {
+            $message .= " Đã bỏ qua {$skipped} buổi bị trùng.";
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            'series_id' => $seriesId,
+            'created_count' => $createdSchedules->count(),
+            'skipped_count' => $skipped,
+        ]);
     }
 
     public function copyDay(Request $request)
@@ -360,6 +476,7 @@ class ScheduleController extends Controller
             'room' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:255',
             'status' => 'nullable|in:active,hidden,archived',
+            'update_scope' => 'nullable|in:occurrence,series',
         ]);
 
         $schedule = Schedule::with(['classroom', 'course'])->findOrFail($id);
@@ -367,6 +484,13 @@ class ScheduleController extends Controller
         $targetClassroom = Classroom::findOrFail($validated['class_id']);
         $targetCourse = Course::findOrFail($validated['course_id']);
         Gate::authorize('create', [Schedule::class, $targetClassroom, $targetCourse]);
+        $updateScope = $validated['update_scope'] ?? 'occurrence';
+        unset($validated['update_scope']);
+
+        if ($updateScope === 'series') {
+            return $this->updateSeries($schedule, $validated, $targetClassroom);
+        }
+
         $oldValues = AuditLogger::snapshot($schedule);
         $oldClassId = (int) $schedule->class_id;
         $scheduleData = array_merge($validated, [
@@ -401,10 +525,18 @@ class ScheduleController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Đã cập nhật lịch!']);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $validated = $request->validate([
+            'delete_scope' => 'nullable|in:occurrence,series',
+        ]);
         $schedule = Schedule::with(['classroom', 'course'])->findOrFail($id);
         Gate::authorize('delete', $schedule);
+
+        if (($validated['delete_scope'] ?? 'occurrence') === 'series') {
+            return $this->archiveSeries($schedule);
+        }
+
         $oldValues = AuditLogger::snapshot($schedule);
         $schedule->update(['status' => Schedule::STATUS_ARCHIVED]);
 
@@ -423,6 +555,138 @@ class ScheduleController extends Controller
         );
 
         return response()->json(['status' => 'success', 'message' => 'Đã lưu trữ lịch học!']);
+    }
+
+    private function updateSeries(Schedule $schedule, array $validated, Classroom $targetClassroom)
+    {
+        if (! $schedule->series_id) {
+            throw ValidationException::withMessages([
+                'update_scope' => 'Buổi học này không thuộc chuỗi lịch.',
+            ]);
+        }
+
+        $members = Schedule::query()
+            ->with(['classroom', 'course'])
+            ->where('series_id', $schedule->series_id)
+            ->notArchived()
+            ->orderBy('series_position')
+            ->get();
+
+        $members->each(fn (Schedule $member) => Gate::authorize('update', $member));
+
+        if ($members->count() > 1 && ($validated['note'] ?? null) === 'Thi kết thúc môn') {
+            throw ValidationException::withMessages([
+                'note' => 'Không thể đánh dấu toàn bộ chuỗi là lịch thi kết thúc môn.',
+            ]);
+        }
+
+        $dayShift = (int) Carbon::parse($schedule->schedule_date)
+            ->startOfDay()
+            ->diffInDays(Carbon::parse($validated['schedule_date'])->startOfDay(), false);
+        $memberIds = $members->modelKeys();
+        $baseData = array_merge($validated, [
+            'room' => $this->normalizeRoom($validated['room'] ?? null),
+            'status' => $validated['status'] ?? $schedule->status ?? Schedule::STATUS_ACTIVE,
+        ]);
+        $updates = $members->mapWithKeys(function (Schedule $member) use ($baseData, $dayShift): array {
+            return [$member->id => array_merge($baseData, [
+                'schedule_date' => Carbon::parse($member->schedule_date)->addDays($dayShift)->toDateString(),
+            ])];
+        });
+        $conflictsByDate = $this->scheduleConflicts->conflictsForDates(
+            $baseData,
+            $updates->pluck('schedule_date')->all(),
+            $memberIds,
+            $targetClassroom
+        );
+
+        foreach ($members as $member) {
+            $candidateDate = $updates[$member->id]['schedule_date'];
+            $conflicts = $conflictsByDate[$candidateDate] ?? [];
+
+            if ($conflicts !== []) {
+                throw ValidationException::withMessages([
+                    'schedule' => 'Buổi số '.$member->series_position.' ngày '
+                        .Carbon::parse($updates[$member->id]['schedule_date'])->format('d/m/Y')
+                        .' bị trùng lịch: '.implode(' ', $conflicts),
+                ]);
+            }
+        }
+
+        $oldClassIds = $members->pluck('class_id')->map(fn ($id) => (int) $id)->unique()->values();
+        $oldSnapshot = $members->map(fn (Schedule $member) => AuditLogger::snapshot($member))->all();
+
+        DB::transaction(function () use ($members, $updates): void {
+            foreach ($members as $member) {
+                $member->update($updates[$member->id]);
+            }
+        });
+
+        $freshFirst = $members->first()->fresh();
+        $oldClassIds
+            ->reject(fn (int $classId) => $classId === (int) $freshFirst->class_id)
+            ->each(fn (int $classId) => $this->notifyArchivedOrMovedSeries($classId, $members->count(), false));
+        $this->notifySeriesChange(
+            $freshFirst,
+            $members->count(),
+            'Chuỗi lịch học đã thay đổi',
+            'Giáo viên vừa cập nhật thông tin của cả chuỗi.'
+        );
+
+        AuditLogger::log(
+            AuditLogger::SCHEDULE_SERIES_UPDATED,
+            $schedule,
+            ['members' => $oldSnapshot],
+            ['members' => $members->map(fn (Schedule $member) => AuditLogger::snapshot($member->fresh()))->all()],
+            ['series_id' => $schedule->series_id, 'updated_count' => $members->count()],
+            'Cập nhật toàn bộ chuỗi lịch học.'
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Đã cập nhật '.$members->count().' buổi trong chuỗi lịch!',
+            'updated_count' => $members->count(),
+        ]);
+    }
+
+    private function archiveSeries(Schedule $schedule)
+    {
+        if (! $schedule->series_id) {
+            throw ValidationException::withMessages([
+                'delete_scope' => 'Buổi học này không thuộc chuỗi lịch.',
+            ]);
+        }
+
+        $members = Schedule::query()
+            ->with(['classroom', 'course'])
+            ->where('series_id', $schedule->series_id)
+            ->notArchived()
+            ->get();
+        $members->each(fn (Schedule $member) => Gate::authorize('delete', $member));
+        $oldSnapshot = $members->map(fn (Schedule $member) => AuditLogger::snapshot($member))->all();
+
+        DB::transaction(fn () => Schedule::query()
+            ->whereKey($members->modelKeys())
+            ->update(['status' => Schedule::STATUS_ARCHIVED]));
+
+        $members->groupBy('class_id')->each(
+            fn ($classMembers, $classId) => $this->notifyArchivedOrMovedSeries((int) $classId, $classMembers->count(), true)
+        );
+
+        AuditLogger::log(
+            AuditLogger::SCHEDULE_SERIES_ARCHIVED,
+            $schedule,
+            ['members' => $oldSnapshot],
+            ['status' => Schedule::STATUS_ARCHIVED],
+            ['series_id' => $schedule->series_id, 'archived_count' => $members->count()],
+            'Lưu trữ toàn bộ chuỗi lịch học.'
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Đã lưu trữ '.$members->count().' buổi trong chuỗi lịch!',
+            'archived_count' => $members->count(),
+        ]);
     }
 
     private function clearCourseExamNoteIfNeeded(array $attributes, ?int $exceptScheduleId = null): void
@@ -477,6 +741,99 @@ class ScheduleController extends Controller
             ['schedule_id' => $schedule->id, 'course_id' => $schedule->course_id],
             'schedule:'.$schedule->id.':moved-from:'.$oldClassId.':'.md5(json_encode($oldValues))
         );
+    }
+
+    private function notifySeriesChange(Schedule $schedule, int $count, string $title, string $message): void
+    {
+        $range = Schedule::query()
+            ->where('series_id', $schedule->series_id)
+            ->notArchived()
+            ->selectRaw('MIN(schedule_date) as first_date, MAX(schedule_date) as last_date')
+            ->first();
+        $firstDate = Carbon::parse($range->first_date ?? $schedule->schedule_date)->format('d/m/Y');
+        $lastDate = Carbon::parse($range->last_date ?? $schedule->schedule_date)->format('d/m/Y');
+
+        app(NotificationCenter::class)->notifyClassStudents(
+            (int) $schedule->class_id,
+            'schedule',
+            $title,
+            "{$message} Gồm {$count} buổi, từ {$firstDate} đến {$lastDate}.",
+            route('students.schedule'),
+            ['series_id' => $schedule->series_id, 'schedule_count' => $count],
+            'schedule-series:'.$schedule->series_id.':'.md5($title.'|'.$message.'|'.$count.'|'.$firstDate.'|'.$lastDate)
+        );
+    }
+
+    private function notifyArchivedOrMovedSeries(int $classId, int $count, bool $archived): void
+    {
+        app(NotificationCenter::class)->notifyClassStudents(
+            $classId,
+            'schedule',
+            $archived ? 'Chuỗi lịch học đã hủy' : 'Chuỗi lịch học đã chuyển lớp',
+            $archived
+                ? "{$count} buổi học trong một chuỗi lịch đã được hủy."
+                : "{$count} buổi học trong một chuỗi lịch không còn thuộc lớp của bạn.",
+            route('students.schedule'),
+            ['schedule_count' => $count],
+            'schedule-series:'.$classId.':'.($archived ? 'archived:' : 'moved:').Str::uuid()
+        );
+    }
+
+    private function validateSeriesRequest(Request $request): array
+    {
+        return $request->validate([
+            'class_id' => 'required|exists:classes,id',
+            'course_id' => 'required|exists:courses,id',
+            'schedule_date' => 'required|date_format:Y-m-d',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'room' => 'nullable|string|max:100',
+            'note' => 'nullable|string|max:255',
+            'repeat_interval' => 'required|integer|in:1,2',
+            'end_mode' => 'required|in:count,date',
+            'occurrence_count' => 'nullable|required_if:end_mode,count|integer|min:2|max:'.ScheduleRecurrenceService::MAX_OCCURRENCES,
+            'repeat_until' => 'nullable|required_if:end_mode,date|date_format:Y-m-d|after:schedule_date',
+            'skip_conflicts' => 'nullable|boolean',
+        ], [
+            'occurrence_count.min' => 'Chuỗi lịch phải có ít nhất 2 buổi.',
+            'occurrence_count.max' => 'Một chuỗi lịch không được vượt quá '.ScheduleRecurrenceService::MAX_OCCURRENCES.' buổi.',
+            'repeat_until.after' => 'Ngày kết thúc phải sau ngày của buổi học đầu tiên.',
+        ]);
+    }
+
+    /**
+     * @return array{0: array, 1: array, 2: Classroom}
+     */
+    private function prepareSeriesData(array $validated): array
+    {
+        $classroom = Classroom::findOrFail($validated['class_id']);
+        $course = Course::findOrFail($validated['course_id']);
+        Gate::authorize('create', [Schedule::class, $classroom, $course]);
+
+        if (trim((string) ($validated['note'] ?? '')) !== '') {
+            throw ValidationException::withMessages([
+                'note' => 'Lịch thi kết thúc môn chỉ có thể tạo dưới dạng một buổi riêng lẻ.',
+            ]);
+        }
+
+        $scheduleData = [
+            'class_id' => (int) $validated['class_id'],
+            'course_id' => (int) $validated['course_id'],
+            'schedule_date' => $validated['schedule_date'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'room' => $this->normalizeRoom($validated['room'] ?? null),
+            'note' => null,
+            'status' => Schedule::STATUS_ACTIVE,
+        ];
+        $recurrenceData = [
+            'repeat_interval' => (int) $validated['repeat_interval'],
+            'end_mode' => $validated['end_mode'],
+            'occurrence_count' => isset($validated['occurrence_count']) ? (int) $validated['occurrence_count'] : null,
+            'repeat_until' => $validated['repeat_until'] ?? null,
+        ];
+
+        return [$scheduleData, $recurrenceData, $classroom];
     }
 
     private function normalizeRoom(?string $room): ?string

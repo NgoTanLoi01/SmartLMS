@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AuthorizationIsolationTest extends TestCase
@@ -381,6 +382,214 @@ class AuthorizationIsolationTest extends TestCase
         ]));
 
         $response->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $inside->id);
+    }
+
+    public function test_recurring_schedule_preview_lists_conflicting_occurrences(): void
+    {
+        $response = $this->actingAs($this->owner)->postJson(route('schedules.series.preview'), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+            'repeat_interval' => 1,
+            'end_mode' => 'count',
+            'occurrence_count' => 3,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('summary.total', 3)
+            ->assertJsonPath('summary.available', 2)
+            ->assertJsonPath('summary.conflicts', 1)
+            ->assertJsonPath('occurrences.0.has_conflict', true)
+            ->assertJsonPath('occurrences.1.has_conflict', false);
+    }
+
+    public function test_recurring_schedule_preview_supports_biweekly_repetition_until_a_date(): void
+    {
+        $startDate = now()->addDay()->startOfDay();
+
+        $response = $this->actingAs($this->owner)->postJson(route('schedules.series.preview'), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $startDate->toDateString(),
+            'start_time' => '12:00',
+            'end_time' => '13:00',
+            'repeat_interval' => 2,
+            'end_mode' => 'date',
+            'repeat_until' => $startDate->copy()->addDays(28)->toDateString(),
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('summary.total', 3)
+            ->assertJsonPath('occurrences.0.date', $startDate->toDateString())
+            ->assertJsonPath('occurrences.1.date', $startDate->copy()->addDays(14)->toDateString())
+            ->assertJsonPath('occurrences.2.date', $startDate->copy()->addDays(28)->toDateString());
+    }
+
+    public function test_recurring_schedule_can_skip_conflicts_and_preserve_series_positions(): void
+    {
+        $response = $this->actingAs($this->owner)->postJson(route('schedules.series.store'), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+            'room' => 'P202',
+            'repeat_interval' => 1,
+            'end_mode' => 'count',
+            'occurrence_count' => 3,
+            'skip_conflicts' => true,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('created_count', 2)
+            ->assertJsonPath('skipped_count', 1);
+
+        $seriesId = $response->json('series_id');
+        $this->assertNotEmpty($seriesId);
+        $this->assertDatabaseCount('schedules', 3);
+        $this->assertSame(
+            [2, 3],
+            Schedule::query()->where('series_id', $seriesId)->orderBy('series_position')->pluck('series_position')->all()
+        );
+    }
+
+    public function test_recurring_schedule_without_skip_is_atomic_when_a_conflict_exists(): void
+    {
+        $this->actingAs($this->owner)->postJson(route('schedules.series.store'), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+            'repeat_interval' => 1,
+            'end_mode' => 'count',
+            'occurrence_count' => 3,
+            'skip_conflicts' => false,
+        ])->assertUnprocessable()->assertJsonValidationErrors('schedule');
+
+        $this->assertDatabaseCount('schedules', 1);
+    }
+
+    public function test_teacher_cannot_preview_a_recurring_schedule_for_another_teachers_class(): void
+    {
+        $this->actingAs($this->otherTeacher)->postJson(route('schedules.series.preview'), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->addDay()->toDateString(),
+            'start_time' => '12:00',
+            'end_time' => '13:00',
+            'repeat_interval' => 1,
+            'end_mode' => 'count',
+            'occurrence_count' => 3,
+        ])->assertForbidden();
+    }
+
+    public function test_updating_one_occurrence_does_not_modify_the_rest_of_the_series(): void
+    {
+        $series = $this->createScheduleSeries();
+        $selected = $series[1];
+
+        $this->actingAs($this->owner)->putJson(route('schedules.update', $selected), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $selected->schedule_date->format('Y-m-d'),
+            'start_time' => '14:00',
+            'end_time' => '15:00',
+            'update_scope' => 'occurrence',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('schedules', ['id' => $selected->id, 'start_time' => '14:00']);
+        $this->assertDatabaseHas('schedules', ['id' => $series[0]->id, 'start_time' => '12:00:00']);
+        $this->assertDatabaseHas('schedules', ['id' => $series[2]->id, 'start_time' => '12:00:00']);
+    }
+
+    public function test_updating_a_series_shifts_all_dates_and_checks_the_series_as_a_unit(): void
+    {
+        $series = $this->createScheduleSeries();
+        $selected = $series[1];
+        $newSelectedDate = $selected->schedule_date->copy()->addDay();
+
+        $this->actingAs($this->owner)->putJson(route('schedules.update', $selected), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $newSelectedDate->format('Y-m-d'),
+            'start_time' => '14:00',
+            'end_time' => '15:00',
+            'room' => 'P303',
+            'update_scope' => 'series',
+        ])->assertOk()->assertJsonPath('updated_count', 3);
+
+        foreach ($series as $member) {
+            $this->assertDatabaseHas('schedules', [
+                'id' => $member->id,
+                'schedule_date' => $member->schedule_date->copy()->addDay()->format('Y-m-d'),
+                'start_time' => '14:00',
+                'end_time' => '15:00',
+                'room' => 'P303',
+            ]);
+        }
+    }
+
+    public function test_conflict_in_one_occurrence_rolls_back_the_entire_series_update(): void
+    {
+        $series = $this->createScheduleSeries();
+        $selected = $series[0];
+        Schedule::create([
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->addDays(15)->toDateString(),
+            'start_time' => '12:30:00',
+            'end_time' => '13:30:00',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->owner)->putJson(route('schedules.update', $selected), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $selected->schedule_date->copy()->addDay()->toDateString(),
+            'start_time' => '12:00',
+            'end_time' => '13:00',
+            'update_scope' => 'series',
+        ])->assertUnprocessable()->assertJsonValidationErrors('schedule');
+
+        foreach ($series as $member) {
+            $this->assertDatabaseHas('schedules', [
+                'id' => $member->id,
+                'schedule_date' => $member->schedule_date->toDateString(),
+                'start_time' => '12:00:00',
+            ]);
+        }
+    }
+
+    public function test_archiving_a_series_does_not_archive_unrelated_schedules(): void
+    {
+        $series = $this->createScheduleSeries();
+
+        $this->actingAs($this->owner)
+            ->deleteJson(route('schedules.destroy', $series[1]), ['delete_scope' => 'series'])
+            ->assertOk()
+            ->assertJsonPath('archived_count', 3);
+
+        $this->assertSame(3, Schedule::query()->where('series_id', $series[0]->series_id)->where('status', Schedule::STATUS_ARCHIVED)->count());
+        $this->assertDatabaseHas('schedules', ['id' => $this->schedule->id, 'status' => Schedule::STATUS_ACTIVE]);
+    }
+
+    public function test_recurring_schedule_http_request_cannot_exceed_the_occurrence_limit(): void
+    {
+        $this->actingAs($this->owner)->postJson(route('schedules.series.store'), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->addDay()->toDateString(),
+            'start_time' => '12:00',
+            'end_time' => '13:00',
+            'repeat_interval' => 1,
+            'end_mode' => 'count',
+            'occurrence_count' => 105,
+        ])->assertUnprocessable()->assertJsonValidationErrors('occurrence_count');
+
+        $this->assertDatabaseCount('schedules', 1);
     }
 
     public function test_student_schedule_requires_the_exact_class_course_pair(): void
@@ -1056,6 +1265,8 @@ class AuthorizationIsolationTest extends TestCase
         });
         Schema::create('schedules', function (Blueprint $table) {
             $table->id();
+            $table->uuid('series_id')->nullable();
+            $table->unsignedSmallInteger('series_position')->nullable();
             $table->unsignedBigInteger('class_id');
             $table->unsignedBigInteger('course_id');
             $table->date('schedule_date');
@@ -1150,5 +1361,26 @@ class AuthorizationIsolationTest extends TestCase
             'question_text' => 'Câu hỏi của A',
             'difficulty' => 'easy',
         ]);
+    }
+
+    /**
+     * @return array<int, Schedule>
+     */
+    private function createScheduleSeries(): array
+    {
+        $seriesId = (string) Str::uuid();
+
+        return collect([7, 14, 21])->map(function (int $days, int $index) use ($seriesId): Schedule {
+            return Schedule::create([
+                'series_id' => $seriesId,
+                'series_position' => $index + 1,
+                'class_id' => $this->classroom->id,
+                'course_id' => $this->course->id,
+                'schedule_date' => now()->addDays($days)->toDateString(),
+                'start_time' => '12:00:00',
+                'end_time' => '13:00:00',
+                'status' => Schedule::STATUS_ACTIVE,
+            ]);
+        })->all();
     }
 }

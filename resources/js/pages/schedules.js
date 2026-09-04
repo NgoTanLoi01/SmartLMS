@@ -19,8 +19,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalTitle = document.getElementById('modalTitle');
     const modalSubtitle = document.getElementById('scheduleModalSubtitle');
     const modalIcon = document.querySelector('#scheduleModalIcon i');
+    const repeatEnabled = document.getElementById('repeat_enabled');
+    const recurrenceBody = document.getElementById('recurrenceBody');
+    const recurrenceCreateSection = document.getElementById('recurrenceCreateSection');
+    const seriesEditSection = document.getElementById('seriesEditSection');
+    const endMode = document.getElementById('end_mode');
+    const occurrenceCountGroup = document.getElementById('occurrenceCountGroup');
+    const repeatUntilGroup = document.getElementById('repeatUntilGroup');
+    const previewButton = document.getElementById('btnPreviewSeries');
+    const previewContainer = document.getElementById('seriesPreview');
+    const previewSummary = document.getElementById('seriesPreviewSummary');
+    const previewList = document.getElementById('seriesPreviewList');
+    const examCheckbox = document.getElementById('note_exam');
     let modalCoursesRequest;
     let importCoursesRequest;
+    let previewRequest;
+    let currentEventIsSeries = false;
 
     const routeFromTemplate = (template, value) => template.replace('__ID__', encodeURIComponent(value));
 
@@ -82,13 +96,117 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const timeInputValue = (date) => `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 
-    const setModalMode = (editing) => {
+    const setModalMode = (editing, isSeries = false) => {
+        currentEventIsSeries = editing && isSeries;
         modalTitle.textContent = editing ? 'Cập nhật lịch học' : 'Thêm lịch học mới';
         modalSubtitle.textContent = editing
-            ? 'Điều chỉnh thông tin và lưu lại thay đổi của buổi học.'
+            ? (isSeries
+                ? 'Điều chỉnh riêng buổi này hoặc áp dụng thay đổi cho cả chuỗi.'
+                : 'Điều chỉnh thông tin và lưu lại thay đổi của buổi học.')
             : 'Khai báo lớp, khóa học và khung giờ cho buổi học.';
         modalIcon.className = editing ? 'fa-solid fa-calendar-pen' : 'fa-solid fa-calendar-plus';
         deleteButton?.classList.toggle('d-none', !editing);
+        recurrenceCreateSection?.classList.toggle('d-none', editing);
+        seriesEditSection?.classList.toggle('d-none', !currentEventIsSeries);
+        if (currentEventIsSeries) {
+            document.getElementById('series_scope_occurrence').checked = true;
+        }
+    };
+
+    const baseScheduleData = () => ({
+        class_id: document.getElementById('class_id').value,
+        course_id: document.getElementById('course_id').value,
+        schedule_date: document.getElementById('schedule_date').value,
+        start_time: document.getElementById('start_time').value,
+        end_time: document.getElementById('end_time').value,
+        room: document.getElementById('room').value,
+        note: examCheckbox.checked ? 'Thi kết thúc môn' : '',
+    });
+
+    const recurrenceData = () => ({
+        repeat_interval: Number(document.getElementById('repeat_interval').value),
+        end_mode: endMode.value,
+        occurrence_count: endMode.value === 'count'
+            ? Number(document.getElementById('occurrence_count').value)
+            : null,
+        repeat_until: endMode.value === 'date'
+            ? document.getElementById('repeat_until').value
+            : null,
+        skip_conflicts: document.getElementById('skip_conflicts').checked,
+    });
+
+    const hasRequiredScheduleData = (data) => (
+        data.class_id && data.course_id && data.schedule_date && data.start_time && data.end_time
+    );
+
+    const addDays = (dateValue, days) => {
+        if (!dateValue) return '';
+        const date = new Date(`${dateValue}T00:00:00`);
+        date.setDate(date.getDate() + days);
+        return dateInputValue(date);
+    };
+
+    const invalidatePreview = () => {
+        previewRequest?.abort();
+        previewContainer?.classList.add('d-none');
+        previewList?.replaceChildren();
+    };
+
+    const syncRepeatUntil = () => {
+        const startDate = document.getElementById('schedule_date').value;
+        const repeatUntil = document.getElementById('repeat_until');
+        if (!repeatUntil || !startDate) return;
+        repeatUntil.min = addDays(startDate, 1);
+        if (!repeatUntil.value || repeatUntil.value <= startDate) {
+            repeatUntil.value = addDays(startDate, 49);
+        }
+    };
+
+    const syncRecurrenceUi = () => {
+        const enabled = repeatEnabled?.checked === true;
+        recurrenceBody?.classList.toggle('d-none', !enabled);
+        examCheckbox.disabled = enabled;
+        examCheckbox.closest('.sch-exam-option')?.classList.toggle('opacity-50', enabled);
+        if (enabled) examCheckbox.checked = false;
+        invalidatePreview();
+        syncRepeatUntil();
+    };
+
+    const syncEndMode = () => {
+        const endsByDate = endMode?.value === 'date';
+        occurrenceCountGroup?.classList.toggle('d-none', endsByDate);
+        repeatUntilGroup?.classList.toggle('d-none', !endsByDate);
+        syncRepeatUntil();
+        invalidatePreview();
+    };
+
+    const renderSeriesPreview = (payload) => {
+        previewList.replaceChildren();
+        previewSummary.textContent = `${payload.summary.total} buổi · ${payload.summary.available} có thể tạo · ${payload.summary.conflicts} bị trùng`;
+
+        payload.occurrences.forEach((occurrence) => {
+            const row = document.createElement('div');
+            row.className = `sch-preview-item${occurrence.has_conflict ? ' sch-preview-item--conflict' : ''}`;
+
+            const position = document.createElement('span');
+            position.className = 'sch-preview-position';
+            position.textContent = occurrence.position;
+
+            const date = document.createElement('span');
+            date.className = 'sch-preview-date';
+            date.textContent = occurrence.date_label;
+
+            const status = document.createElement('span');
+            status.className = 'sch-preview-status';
+            status.textContent = occurrence.has_conflict
+                ? occurrence.conflicts.join(' ')
+                : 'Không có xung đột';
+
+            row.append(position, date, status);
+            previewList.appendChild(row);
+        });
+
+        previewContainer.classList.remove('d-none');
     };
 
     const calendar = new Calendar(calendarEl, {
@@ -121,14 +239,15 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         eventClick(info) {
             const event = info.event;
+            resetForm();
             document.getElementById('schedule_id').value = event.id;
-            setModalMode(true);
+            setModalMode(true, Boolean(event.extendedProps.series_id));
             document.getElementById('class_id').value = event.extendedProps.class_id;
             document.getElementById('schedule_date').value = dateInputValue(event.start);
             document.getElementById('start_time').value = timeInputValue(event.start);
             document.getElementById('end_time').value = event.end ? timeInputValue(event.end) : '';
             document.getElementById('room').value = event.extendedProps.room || '';
-            document.getElementById('note_exam').checked = event.extendedProps.note === 'Thi kết thúc môn';
+            examCheckbox.checked = event.extendedProps.note === 'Thi kết thúc môn';
             fetchCourses(event.extendedProps.class_id, event.extendedProps.course_id);
             scheduleModal.show();
         },
@@ -138,6 +257,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('class_id')?.addEventListener('change', function () {
         fetchCourses(this.value);
+        invalidatePreview();
+    });
+
+    repeatEnabled?.addEventListener('change', syncRecurrenceUi);
+    endMode?.addEventListener('change', syncEndMode);
+    document.getElementById('schedule_date')?.addEventListener('change', () => {
+        syncRepeatUntil();
+        invalidatePreview();
+    });
+    ['course_id', 'start_time', 'end_time', 'room', 'repeat_interval', 'occurrence_count', 'repeat_until']
+        .forEach((id) => document.getElementById(id)?.addEventListener('change', invalidatePreview));
+
+    previewButton?.addEventListener('click', async () => {
+        showModalError();
+        const scheduleData = baseScheduleData();
+        if (!hasRequiredScheduleData(scheduleData)) {
+            showModalError('Vui lòng điền đầy đủ thông tin bắt buộc trước khi xem trước.');
+            return;
+        }
+
+        previewRequest?.abort();
+        previewRequest = new AbortController();
+        setBusy(previewButton, true, 'Đang kiểm tra...');
+        try {
+            const payload = await requestJson(calendarEl.dataset.seriesPreviewUrl, {
+                method: 'POST',
+                body: JSON.stringify({ ...scheduleData, ...recurrenceData() }),
+                signal: previewRequest.signal,
+            });
+            renderSeriesPreview(payload);
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            showModalError(error.message);
+        } finally {
+            setBusy(previewButton, false);
+        }
     });
 
     const importClassSelect = document.getElementById('import_class_id');
@@ -194,22 +349,32 @@ document.addEventListener('DOMContentLoaded', () => {
     saveButton?.addEventListener('click', async () => {
         showModalError();
         const id = document.getElementById('schedule_id').value;
+        const recurring = !id && repeatEnabled?.checked;
         const data = {
-            class_id: document.getElementById('class_id').value,
-            course_id: document.getElementById('course_id').value,
-            schedule_date: document.getElementById('schedule_date').value,
-            start_time: document.getElementById('start_time').value,
-            end_time: document.getElementById('end_time').value,
-            room: document.getElementById('room').value,
-            note: document.getElementById('note_exam').checked ? 'Thi kết thúc môn' : '',
+            ...baseScheduleData(),
+            ...(recurring ? recurrenceData() : {}),
+            ...(id && currentEventIsSeries ? {
+                update_scope: document.querySelector('input[name="series_scope"]:checked')?.value || 'occurrence',
+            } : {}),
         };
 
-        if (!data.class_id || !data.course_id || !data.schedule_date || !data.start_time || !data.end_time) {
+        if (!hasRequiredScheduleData(data)) {
             showModalError('Vui lòng điền đầy đủ thông tin bắt buộc.');
             return;
         }
 
-        const url = id ? routeFromTemplate(calendarEl.dataset.updateUrlTemplate, id) : calendarEl.dataset.storeUrl;
+        if (recurring && data.end_mode === 'count' && (!data.occurrence_count || data.occurrence_count < 2)) {
+            showModalError('Chuỗi lịch phải có ít nhất 2 buổi.');
+            return;
+        }
+        if (recurring && data.end_mode === 'date' && !data.repeat_until) {
+            showModalError('Vui lòng chọn ngày kết thúc chuỗi lịch.');
+            return;
+        }
+
+        const url = id
+            ? routeFromTemplate(calendarEl.dataset.updateUrlTemplate, id)
+            : (recurring ? calendarEl.dataset.seriesStoreUrl : calendarEl.dataset.storeUrl);
         setBusy(saveButton, true, 'Đang lưu...');
         try {
             const result = await requestJson(url, {
@@ -227,15 +392,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     deleteButton?.addEventListener('click', async () => {
-        if (!confirm('Lưu trữ lịch học này? Lịch sẽ không còn hiển thị nhưng dữ liệu vẫn được giữ lại.')) return;
         const id = document.getElementById('schedule_id').value;
         if (!id) return;
+        const deleteScope = currentEventIsSeries
+            ? (document.querySelector('input[name="series_scope"]:checked')?.value || 'occurrence')
+            : 'occurrence';
+        const confirmation = deleteScope === 'series'
+            ? 'Lưu trữ toàn bộ chuỗi lịch? Tất cả các buổi trong chuỗi sẽ không còn hiển thị.'
+            : 'Lưu trữ lịch học này? Lịch sẽ không còn hiển thị nhưng dữ liệu vẫn được giữ lại.';
+        if (!confirm(confirmation)) return;
 
         showModalError();
         setBusy(deleteButton, true, 'Đang lưu trữ...');
         try {
             const result = await requestJson(routeFromTemplate(calendarEl.dataset.deleteUrlTemplate, id), {
                 method: 'DELETE',
+                body: JSON.stringify({ delete_scope: deleteScope }),
             });
             scheduleModal.hide();
             calendar.refetchEvents();
@@ -251,7 +423,19 @@ document.addEventListener('DOMContentLoaded', () => {
         ['schedule_id', 'schedule_date', 'start_time', 'end_time', 'room'].forEach((id) => {
             document.getElementById(id).value = '';
         });
-        document.getElementById('note_exam').checked = false;
+        examCheckbox.checked = false;
+        examCheckbox.disabled = false;
+        examCheckbox.closest('.sch-exam-option')?.classList.remove('opacity-50');
+        repeatEnabled.checked = false;
+        document.getElementById('repeat_interval').value = '1';
+        endMode.value = 'count';
+        document.getElementById('occurrence_count').value = '8';
+        document.getElementById('repeat_until').value = '';
+        document.getElementById('skip_conflicts').checked = false;
+        recurrenceBody.classList.add('d-none');
+        occurrenceCountGroup.classList.remove('d-none');
+        repeatUntilGroup.classList.add('d-none');
+        invalidatePreview();
         document.getElementById('class_id').value = '';
         const courseSelect = document.getElementById('course_id');
         courseSelect.innerHTML = '<option value="">Vui lòng chọn lớp trước...</option>';

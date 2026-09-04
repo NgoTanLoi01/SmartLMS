@@ -289,7 +289,7 @@
 
         /* ── Modal ── */
         #scheduleModal .modal-dialog {
-            max-width: 620px;
+            max-width: 720px;
         }
 
         #scheduleModal .modal-content {
@@ -480,6 +480,175 @@
             font-size: 11.5px;
         }
 
+        .sch-recurrence {
+            grid-column: 1 / -1;
+            overflow: hidden;
+            border: 1px solid #dbe3ee;
+            border-radius: 13px;
+            background: #f8fafc;
+        }
+
+        .sch-recurrence-toggle {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            width: 100%;
+            padding: 12px 14px;
+            cursor: pointer;
+        }
+
+        .sch-recurrence-toggle .form-check-input {
+            width: 34px;
+            height: 18px;
+            flex: 0 0 34px;
+            margin: 0;
+        }
+
+        .sch-recurrence-toggle__copy {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .sch-recurrence-toggle__copy strong {
+            color: #334155;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .sch-recurrence-toggle__copy small {
+            color: #7c8ba1;
+            font-size: 11.5px;
+        }
+
+        .sch-recurrence-body {
+            padding: 14px;
+            border-top: 1px solid #e2e8f0;
+            background: #fff;
+        }
+
+        .sch-recurrence-fields {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .sch-recurrence-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 13px;
+        }
+
+        .sch-skip-option {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #475569;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .sch-preview {
+            max-height: 210px;
+            overflow: auto;
+            margin-top: 13px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .sch-preview-summary {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding: 9px 11px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #475569;
+            background: #f8fafc;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+
+        .sch-preview-item {
+            display: grid;
+            grid-template-columns: 34px minmax(135px, .8fr) minmax(0, 1.4fr);
+            align-items: center;
+            gap: 8px;
+            padding: 8px 11px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 11.5px;
+        }
+
+        .sch-preview-item:last-child {
+            border-bottom: 0;
+        }
+
+        .sch-preview-position {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 27px;
+            height: 27px;
+            border-radius: 8px;
+            color: #2563eb;
+            background: #eff6ff;
+            font-weight: 700;
+        }
+
+        .sch-preview-item--conflict .sch-preview-position {
+            color: #b45309;
+            background: #fff7ed;
+        }
+
+        .sch-preview-date {
+            color: #334155;
+            font-weight: 600;
+        }
+
+        .sch-preview-status {
+            color: #15803d;
+        }
+
+        .sch-preview-item--conflict .sch-preview-status {
+            color: #b45309;
+        }
+
+        .sch-series-scope {
+            grid-column: 1 / -1;
+            padding: 13px 14px;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            background: #eff6ff;
+        }
+
+        .sch-series-scope__title {
+            margin: 0 0 8px;
+            color: #1e3a8a;
+            font-size: 12.5px;
+            font-weight: 700;
+        }
+
+        .sch-series-scope__options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+        }
+
+        .sch-series-scope__options label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin: 0;
+            padding: 7px 11px;
+            border: 1px solid #dbeafe;
+            border-radius: 9px;
+            color: #475569;
+            background: #fff;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
         .footer-r {
             display: flex;
             gap: 8px;
@@ -576,8 +745,27 @@
             }
 
             .modal-grp--wide,
-            .sch-exam-option {
+            .sch-exam-option,
+            .sch-recurrence,
+            .sch-series-scope {
                 grid-column: auto;
+            }
+
+            .sch-recurrence-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .sch-recurrence-actions {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .sch-preview-item {
+                grid-template-columns: 30px minmax(0, 1fr);
+            }
+
+            .sch-preview-status {
+                grid-column: 2;
             }
 
             .footer-r {
@@ -685,6 +873,8 @@
             <div id="sch-calendar"
                 data-events-url="{{ route('schedules.index') }}"
                 data-store-url="{{ route('schedules.store') }}"
+                data-series-store-url="{{ route('schedules.series.store') }}"
+                data-series-preview-url="{{ route('schedules.series.preview') }}"
                 data-update-url-template="{{ route('schedules.update', '__ID__') }}"
                 data-delete-url-template="{{ route('schedules.destroy', '__ID__') }}"
                 data-courses-url-template="{{ url('/schedules/get-courses/__ID__') }}"
@@ -774,6 +964,74 @@
                                 <small>Lịch sẽ được làm nổi bật để học viên dễ nhận biết.</small>
                             </span>
                         </label>
+
+                        <div class="sch-recurrence" id="recurrenceCreateSection">
+                            <label class="sch-recurrence-toggle" for="repeat_enabled">
+                                <input class="form-check-input" type="checkbox" role="switch" id="repeat_enabled">
+                                <span class="sch-recurrence-toggle__copy">
+                                    <strong>Lặp lại lịch học</strong>
+                                    <small>Tạo lịch hàng tuần hoặc cách tuần và kiểm tra trùng trước khi lưu.</small>
+                                </span>
+                            </label>
+                            <div class="sch-recurrence-body d-none" id="recurrenceBody">
+                                <div class="sch-recurrence-fields">
+                                    <div class="modal-grp">
+                                        <label class="modal-lbl" for="repeat_interval">Tần suất</label>
+                                        <select class="sch-ctrl w-100" id="repeat_interval">
+                                            <option value="1">Hàng tuần</option>
+                                            <option value="2">Cách tuần</option>
+                                        </select>
+                                    </div>
+                                    <div class="modal-grp">
+                                        <label class="modal-lbl" for="end_mode">Kết thúc theo</label>
+                                        <select class="sch-ctrl w-100" id="end_mode">
+                                            <option value="count">Số buổi</option>
+                                            <option value="date">Ngày kết thúc</option>
+                                        </select>
+                                    </div>
+                                    <div class="modal-grp" id="occurrenceCountGroup">
+                                        <label class="modal-lbl" for="occurrence_count">Tổng số buổi</label>
+                                        <input type="number" class="sch-ctrl w-100" id="occurrence_count" min="2"
+                                            max="104" value="8">
+                                    </div>
+                                    <div class="modal-grp d-none" id="repeatUntilGroup">
+                                        <label class="modal-lbl" for="repeat_until">Ngày kết thúc</label>
+                                        <input type="date" class="sch-ctrl w-100" id="repeat_until">
+                                    </div>
+                                </div>
+                                <div class="sch-recurrence-actions">
+                                    <label class="sch-skip-option" for="skip_conflicts">
+                                        <input class="form-check-input" type="checkbox" id="skip_conflicts">
+                                        Bỏ qua các buổi bị trùng khi tạo
+                                    </label>
+                                    <button type="button" class="sch-btn sch-btn-ghost" id="btnPreviewSeries">
+                                        <i class="fa-solid fa-list-check"></i> Xem trước chuỗi
+                                    </button>
+                                </div>
+                                <div class="sch-preview d-none" id="seriesPreview" aria-live="polite">
+                                    <div class="sch-preview-summary" id="seriesPreviewSummary"></div>
+                                    <div id="seriesPreviewList"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sch-series-scope d-none" id="seriesEditSection">
+                            <p class="sch-series-scope__title">
+                                <i class="fa-solid fa-link me-1"></i> Buổi học này thuộc một chuỗi lặp lại
+                            </p>
+                            <div class="sch-series-scope__options">
+                                <label for="series_scope_occurrence">
+                                    <input class="form-check-input" type="radio" name="series_scope"
+                                        id="series_scope_occurrence" value="occurrence" checked>
+                                    Chỉ buổi này
+                                </label>
+                                <label for="series_scope_all">
+                                    <input class="form-check-input" type="radio" name="series_scope"
+                                        id="series_scope_all" value="series">
+                                    Cả chuỗi
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
