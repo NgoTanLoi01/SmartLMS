@@ -111,6 +111,54 @@ class LearningMaterial extends Model
         return '#';
     }
 
+    public function previewType(): ?string
+    {
+        if (! $this->isFile()) {
+            return null;
+        }
+
+        $extension = $this->fileExtension();
+
+        return match (true) {
+            $extension === 'pdf' => 'pdf',
+            in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true) => 'image',
+            in_array($extension, ['mp4', 'm4v', 'webm', 'ogv', 'ogg'], true) => 'video',
+            in_array($extension, [
+                'txt', 'md', 'markdown', 'csv', 'json', 'xml', 'yaml', 'yml', 'log',
+                'html', 'htm', 'css', 'js', 'ts', 'php', 'py', 'java', 'c', 'cpp',
+                'h', 'hpp', 'sql', 'sh', 'vue', 'jsx', 'tsx',
+            ], true) => 'text',
+            default => null,
+        };
+    }
+
+    public function previewContentType(): string
+    {
+        $extension = $this->fileExtension();
+
+        return match ($this->previewType()) {
+            'pdf' => 'application/pdf',
+            'image' => match ($extension) {
+                'jpg', 'jpeg' => 'image/jpeg',
+                'gif' => 'image/gif',
+                'webp' => 'image/webp',
+                default => 'image/png',
+            },
+            'video' => match ($extension) {
+                'webm' => 'video/webm',
+                'ogv', 'ogg' => 'video/ogg',
+                default => 'video/mp4',
+            },
+            'text' => 'text/plain; charset=UTF-8',
+            default => 'application/octet-stream',
+        };
+    }
+
+    private function fileExtension(): string
+    {
+        return strtolower(pathinfo($this->original_name ?: (string) $this->file_path, PATHINFO_EXTENSION));
+    }
+
     public function fileExists(): bool
     {
         return $this->isFile()

@@ -221,6 +221,7 @@ class CourseController extends Controller
             ->map(function ($assignment) use ($canManageMaterials) {
                 $material = $assignment->material;
                 $lockLabel = $assignment->lockLabel();
+                $previewType = $material->previewType();
 
                 return [
                     'id' => $assignment->id,
@@ -239,6 +240,8 @@ class CourseController extends Controller
                     'status' => $assignment->status,
                     'is_locked' => ! $canManageMaterials && $lockLabel !== null,
                     'url' => $material->downloadUrl($assignment),
+                    'preview_type' => $previewType,
+                    'preview_url' => $previewType ? route('materials.preview', $assignment) : null,
                     'target' => $material->isLink() ? '_blank' : '_self',
                 ];
             })

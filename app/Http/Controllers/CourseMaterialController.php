@@ -226,15 +226,7 @@ class CourseMaterialController extends Controller
 
     public function download(LearningMaterialAssignment $assignment)
     {
-        $assignment->load(['material', 'course.classes', 'lesson', 'unlockLesson']);
-        Gate::authorize('view', $assignment->course);
-
-        if (! $this->canManage($assignment->course) && ! $assignment->visibleToStudent(auth()->user())) {
-            abort(403);
-        }
-
-        $material = $assignment->material;
-        abort_unless($material && $material->status !== LearningMaterial::STATUS_ARCHIVED, 404);
+        $material = $this->authorizedAssignmentMaterial($assignment);
 
         if ($material->isLink()) {
             return redirect()->away($material->url);
@@ -248,16 +240,27 @@ class CourseMaterialController extends Controller
         );
     }
 
+    public function preview(LearningMaterialAssignment $assignment)
+    {
+        return $this->previewResponse($this->authorizedAssignmentMaterial($assignment));
+    }
+
     public function downloadLibrary(LearningMaterial $material)
     {
-        abort_unless($material->status !== LearningMaterial::STATUS_ARCHIVED, 404);
-        abort_unless($material->accessibleBy(auth()->user()), 403);
-        abort_unless($material->isFile() && $material->fileExists(), 404, 'Không tìm thấy file học liệu.');
+        $this->authorizeLibraryMaterial($material);
+        abort_unless($material->fileExists(), 404, 'Không tìm thấy file học liệu.');
 
         return Storage::disk($material->disk)->download(
             $material->file_path,
             $material->original_name ?: basename($material->file_path)
         );
+    }
+
+    public function previewLibrary(LearningMaterial $material)
+    {
+        $this->authorizeLibraryMaterial($material);
+
+        return $this->previewResponse($material);
     }
 
     public function scanLegacy()
@@ -408,6 +411,49 @@ class CourseMaterialController extends Controller
     private function canManage(Course $course): bool
     {
         return auth()->check() && Gate::allows('update', $course);
+    }
+
+    private function authorizedAssignmentMaterial(LearningMaterialAssignment $assignment): LearningMaterial
+    {
+        $assignment->load(['material', 'course.classes', 'lesson', 'unlockLesson']);
+        abort_unless($assignment->course, 404);
+        Gate::authorize('view', $assignment->course);
+
+        if (! $this->canManage($assignment->course) && ! $assignment->visibleToStudent(auth()->user())) {
+            abort(403);
+        }
+
+        $material = $assignment->material;
+        abort_unless($material && $material->status !== LearningMaterial::STATUS_ARCHIVED, 404);
+
+        return $material;
+    }
+
+    private function authorizeLibraryMaterial(LearningMaterial $material): void
+    {
+        abort_unless($material->status !== LearningMaterial::STATUS_ARCHIVED, 404);
+        abort_unless($material->accessibleBy(auth()->user()), 403);
+        abort_unless($material->isFile(), 404, 'Học liệu liên kết không có file để tải hoặc xem trước.');
+    }
+
+    private function previewResponse(LearningMaterial $material)
+    {
+        abort_unless($material->previewType(), 404, 'Định dạng học liệu này không hỗ trợ xem trước.');
+        abort_unless($material->fileExists(), 404, 'Không tìm thấy file học liệu.');
+
+        return Storage::disk($material->disk)->response(
+            $material->file_path,
+            $material->original_name ?: basename($material->file_path),
+            [
+                'Content-Type' => $material->previewContentType(),
+                'Cache-Control' => 'private, no-store',
+                'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; media-src 'self'",
+                'Referrer-Policy' => 'no-referrer',
+                'X-Content-Type-Options' => 'nosniff',
+                'X-Frame-Options' => 'SAMEORIGIN',
+            ],
+            'inline'
+        );
     }
 
     private function dispatchLegacyOperation(bool $dryRun)

@@ -457,6 +457,7 @@
                         @foreach ($assignments as $assignment)
                             @php($material = $assignment->material)
                             @continue(!$material)
+                            @php($previewType = $material->previewType())
                             <div class="material-card">
                                 <div class="material-main">
                                     <span class="material-icon">
@@ -485,14 +486,26 @@
                                 </div>
 
                                 <div class="material-actions">
-                                    <a href="{{ $material->downloadUrl($assignment) }}"
-                                        target="{{ $material->isLink() ? '_blank' : '_self' }}"
-                                        @if ($material->isFile()) data-no-page-transition @endif
-                                        class="btn btn-primary material-btn">
-                                        <i
-                                            class="fa-solid {{ $material->isLink() ? 'fa-up-right-from-square' : 'fa-download' }} me-1"></i>
-                                        {{ $material->isLink() ? 'Mở' : 'Tải' }}
-                                    </a>
+                                    @if ($material->isLink())
+                                        <a href="{{ $material->url }}" target="_blank" rel="noopener"
+                                            class="btn btn-primary material-btn">
+                                            <i class="fa-solid fa-up-right-from-square me-1"></i>Mở
+                                        </a>
+                                    @elseif ($previewType)
+                                        <button class="btn btn-primary material-btn" type="button"
+                                            data-bs-toggle="modal" data-bs-target="#materialPreviewModal"
+                                            data-material-preview
+                                            data-preview-url="{{ route('materials.preview', $assignment) }}"
+                                            data-preview-type="{{ $previewType }}"
+                                            data-preview-title="{{ $material->title }}">
+                                            <i class="fa-solid fa-eye me-1"></i>Xem
+                                        </button>
+                                    @else
+                                        <a href="{{ route('materials.download', $assignment) }}"
+                                            data-no-page-transition class="btn btn-primary material-btn">
+                                            <i class="fa-solid fa-download me-1"></i>Tải
+                                        </a>
+                                    @endif
 
                                     @if ($isManager)
                                         <button class="btn btn-outline-secondary material-btn" type="button"
@@ -583,6 +596,8 @@
             </div>
         </div>
     </div>
+
+    @include('courses.partials.material-preview-modal')
 @endsection
 
 @push('scripts')

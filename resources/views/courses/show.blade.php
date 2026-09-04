@@ -812,6 +812,7 @@
     @endif
 
     @include('courses.partials.modals')
+    @include('courses.partials.material-preview-modal')
     @include('courses.partials.scripts')
 
     @include('courses.partials.show-page-scripts')

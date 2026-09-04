@@ -170,12 +170,23 @@
             lessonMaterialContainer.classList.toggle('d-none', materials.length === 0);
 
             materials.forEach((material) => {
-                const item = document.createElement('a');
+                const canPreview = material.source_type !== 'link' && material.preview_type && material.preview_url;
+                const item = document.createElement(canPreview ? 'button' : 'a');
                 item.className = 'lesson-material-card';
-                item.href = material.url || '#';
-                item.target = material.target || '_self';
-                if (item.target === '_blank') item.rel = 'noopener';
-                if (material.source_type !== 'link') item.dataset.noPageTransition = '';
+                if (canPreview) {
+                    item.type = 'button';
+                    item.dataset.bsToggle = 'modal';
+                    item.dataset.bsTarget = '#materialPreviewModal';
+                    item.dataset.materialPreview = '';
+                    item.dataset.previewUrl = material.preview_url;
+                    item.dataset.previewType = material.preview_type;
+                    item.dataset.previewTitle = material.title || 'Học liệu';
+                } else {
+                    item.href = material.url || '#';
+                    item.target = material.target || '_self';
+                    if (item.target === '_blank') item.rel = 'noopener';
+                    if (material.source_type !== 'link') item.dataset.noPageTransition = '';
+                }
 
                 const icon = document.createElement('span');
                 icon.className = 'lesson-material-icon';
@@ -201,7 +212,7 @@
 
                 const action = document.createElement('span');
                 action.className = 'btn btn-sm btn-light border fw-bold';
-                action.textContent = material.source_type === 'link' ? 'Mở' : 'Tải';
+                action.textContent = material.source_type === 'link' ? 'Mở' : (canPreview ? 'Xem' : 'Tải');
 
                 item.appendChild(icon);
                 item.appendChild(content);

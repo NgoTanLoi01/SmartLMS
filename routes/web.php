@@ -166,7 +166,9 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     Route::get('/materials', [CourseMaterialController::class, 'library'])->name('materials.index');
     Route::get('/courses/{course}/materials', [CourseMaterialController::class, 'index'])->name('courses.materials.index');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+    Route::get('/materials/{assignment}/preview', [CourseMaterialController::class, 'preview'])->name('materials.preview');
     Route::get('/materials/{assignment}/download', [CourseMaterialController::class, 'download'])->name('materials.download');
+    Route::get('/materials/library/{material}/preview', [CourseMaterialController::class, 'previewLibrary'])->name('materials.library.preview');
     Route::get('/materials/library/{material}/download', [CourseMaterialController::class, 'downloadLibrary'])->name('materials.library.download');
 
     Route::middleware('role:admin,teacher')->group(function () {

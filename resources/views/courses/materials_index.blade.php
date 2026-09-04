@@ -847,6 +847,7 @@
                         <div class="materials-asset-grid">
                             @foreach ($materials as $material)
                                 @php($sourceCourse = $material->sources->pluck('course')->filter()->first())
+                                @php($previewType = $material->previewType())
                                 <article class="materials-asset" data-type="{{ $material->type ?? 'other' }}">
                                     <div class="materials-asset-top">
                                         <span class="materials-asset-icon"><i
@@ -871,6 +872,15 @@
                                         @if ($material->isLink())
                                             <a class="materials-action materials-action--download"
                                                 href="{{ $material->url }}" target="_blank" rel="noopener">Mở link</a>
+                                        @elseif ($previewType)
+                                            <button class="materials-action materials-action--download" type="button"
+                                                data-bs-toggle="modal" data-bs-target="#materialPreviewModal"
+                                                data-material-preview
+                                                data-preview-url="{{ route('materials.library.preview', $material) }}"
+                                                data-preview-type="{{ $previewType }}"
+                                                data-preview-title="{{ $material->title }}">
+                                                <i class="fa-solid fa-eye"></i>Xem
+                                            </button>
                                         @else
                                             <a class="materials-action materials-action--download"
                                                 href="{{ route('materials.library.download', $material) }}"><i
@@ -924,6 +934,8 @@
             </section>
         </div>
     </div>
+
+    @include('courses.partials.material-preview-modal')
 @endsection
 
 @push('scripts')
