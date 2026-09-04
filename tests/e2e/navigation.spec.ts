@@ -48,3 +48,17 @@ test('menu điện thoại mở, đóng bằng Escape và không che nội dung 
     await page.keyboard.press('Escape');
     await expect(sidebar).not.toHaveClass(/show/);
 });
+
+test('học viên có thể đóng menu điện thoại từ thẻ tài khoản', async ({ page }) => {
+    const account = accountFor('student');
+    test.skip(!account, 'Chưa cấu hình tài khoản E2E cho học viên.');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, account!);
+
+    const sidebar = page.getByTestId('main-sidebar');
+    await page.locator('#sidebarToggle').click();
+    await expect(sidebar).toHaveClass(/show/);
+    await page.locator('#studentSidebarClose').click();
+    await expect(sidebar).not.toHaveClass(/show/);
+});

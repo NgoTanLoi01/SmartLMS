@@ -8,8 +8,11 @@
     $studentItemIsActive = fn (array $item): bool => request()->routeIs(...(array) ($item['patterns'] ?? $item['route']))
         && (empty($item['except']) || ! request()->routeIs(...(array) $item['except']));
 
-    $studentPrimaryItems = [
+    $studentOverviewItems = [
         ['label' => 'Trang chủ', 'route' => 'dashboard', 'patterns' => ['dashboard'], 'icon' => 'fa-house', 'testid' => 'nav-dashboard'],
+    ];
+
+    $studentLearningItems = [
         ['label' => 'Khóa học của tôi', 'route' => 'courses.index', 'patterns' => ['courses.*'], 'except' => ['courses.materials.*'], 'icon' => 'fa-circle-play', 'testid' => 'nav-courses'],
         ['label' => 'Lịch học', 'route' => 'students.schedule', 'patterns' => ['students.schedule'], 'icon' => 'fa-calendar-days', 'testid' => 'nav-student-schedule'],
         ['label' => 'Bài tập', 'route' => 'assignments.index', 'patterns' => ['assignments.*'], 'icon' => 'fa-clipboard-check', 'testid' => 'nav-assignments'],
@@ -65,9 +68,25 @@
 <aside class="sidebar" id="sidebar" aria-label="Điều hướng chính" data-testid="main-sidebar">
 
     @if ($isStudent)
+        <div class="student-sidebar-profile" data-testid="student-sidebar-profile">
+            <span class="student-sidebar-profile__avatar" aria-hidden="true">
+                {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
+            </span>
+            <span class="student-sidebar-profile__identity">
+                <span class="student-sidebar-profile__eyebrow">Tài khoản học viên</span>
+                <strong>{{ $user->name }}</strong>
+                <small>{{ $user->student_code ?: $user->email }}</small>
+            </span>
+            <button class="student-sidebar-profile__close" id="studentSidebarClose" type="button"
+                aria-label="Đóng menu">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+        </div>
+
         <nav class="sidebar-nav sidebar-nav--student" aria-label="Menu học viên" data-testid="nav-student-primary">
             <div class="student-nav-section student-nav-section--primary">
-                @foreach ($studentPrimaryItems as $item)
+                <h2 class="student-nav-section__title">Tổng quan</h2>
+                @foreach ($studentOverviewItems as $item)
                     @php $itemActive = $studentItemIsActive($item); @endphp
                     <a class="sidebar-item sidebar-item--student {{ $itemActive ? 'active' : '' }}"
                         href="{{ route($item['route']) }}" data-testid="{{ $item['testid'] }}"
@@ -78,9 +97,9 @@
                 @endforeach
             </div>
 
-            <section class="student-nav-section" aria-labelledby="studentResourcesTitle">
-                <h2 class="student-nav-section__title" id="studentResourcesTitle">Học tập của bạn</h2>
-                @foreach ($studentResourceItems as $item)
+            <section class="student-nav-section" aria-labelledby="studentLearningTitle">
+                <h2 class="student-nav-section__title" id="studentLearningTitle">Học tập</h2>
+                @foreach ($studentLearningItems as $item)
                     @php $itemActive = $studentItemIsActive($item); @endphp
                     <a class="sidebar-item sidebar-item--student {{ $itemActive ? 'active' : '' }}"
                         href="{{ route($item['route']) }}" data-testid="{{ $item['testid'] }}"
@@ -91,7 +110,25 @@
                 @endforeach
             </section>
 
-            <section class="student-nav-section" aria-labelledby="studentUtilitiesTitle">
+            <section class="student-nav-section" aria-labelledby="studentResourcesTitle">
+                <h2 class="student-nav-section__title" id="studentResourcesTitle">Tài nguyên</h2>
+                @foreach ($studentResourceItems as $item)
+                    @php $itemActive = $studentItemIsActive($item); @endphp
+                    <a class="sidebar-item sidebar-item--student {{ $itemActive ? 'active' : '' }}"
+                        href="{{ route($item['route']) }}" data-testid="{{ $item['testid'] }}"
+                        @if ($itemActive) aria-current="page" @endif>
+                        <i class="fa-solid {{ $item['icon'] }}" aria-hidden="true"></i>
+                        <span>{{ $item['label'] }}</span>
+                        @if ($item['route'] === 'notifications.index' && ($topbarUnreadCount ?? 0) > 0)
+                            <span class="sidebar-item__badge" aria-label="{{ $topbarUnreadCount }} thông báo chưa đọc">
+                                {{ $topbarUnreadCount > 99 ? '99+' : $topbarUnreadCount }}
+                            </span>
+                        @endif
+                    </a>
+                @endforeach
+            </section>
+
+            <section class="student-nav-section student-nav-section--utilities" aria-labelledby="studentUtilitiesTitle">
                 <h2 class="student-nav-section__title" id="studentUtilitiesTitle">Tiện ích</h2>
                 @foreach ($utilityItems as $item)
                     @php $itemActive = $studentItemIsActive($item); @endphp

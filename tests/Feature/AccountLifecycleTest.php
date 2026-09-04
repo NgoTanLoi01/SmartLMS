@@ -149,11 +149,29 @@ class AccountLifecycleTest extends TestCase
         $sidebar = view('layouts.partials.sidebar')->render();
 
         $this->assertStringContainsString('Menu học viên', $sidebar);
+        $this->assertStringContainsString('student-sidebar-profile', $sidebar);
+        $this->assertStringContainsString('Tài khoản học viên', $sidebar);
         $this->assertStringContainsString('Khóa học của tôi', $sidebar);
         $this->assertStringContainsString('Kết quả học tập', $sidebar);
-        $this->assertStringContainsString('Học tập của bạn', $sidebar);
+        $this->assertStringContainsString('>Học tập</h2>', $sidebar);
+        $this->assertStringContainsString('>Tài nguyên</h2>', $sidebar);
         $this->assertStringNotContainsString('data-testid="nav-group-learning"', $sidebar);
         $this->assertStringNotContainsString('Quản trị hệ thống', $sidebar);
+    }
+
+    public function test_student_sidebar_displays_unread_notification_badge(): void
+    {
+        $student = $this->createUser([
+            'email' => 'student-sidebar-badge@example.com',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        $this->actingAs($student);
+
+        $sidebar = view('layouts.partials.sidebar', ['topbarUnreadCount' => 3])->render();
+
+        $this->assertStringContainsString('3 thông báo chưa đọc', $sidebar);
+        $this->assertStringContainsString('sidebar-item__badge', $sidebar);
     }
 
     public function test_create_user_validation_uses_the_account_modal_error_bag(): void

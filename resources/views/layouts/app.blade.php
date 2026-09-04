@@ -240,6 +240,7 @@
             const sidebar = document.getElementById('sidebar');
             const backdrop = document.getElementById('sidebarBackdrop');
             const mobileToggle = document.getElementById('sidebarToggle');
+            const studentSidebarClose = document.getElementById('studentSidebarClose');
             const toggle = document.getElementById('sidebarCollapseToggle');
             if (!sidebar || !toggle) return;
 
@@ -291,6 +292,7 @@
                 mobileToggle?.setAttribute('aria-expanded', 'false');
             };
 
+            studentSidebarClose?.addEventListener('click', closeMobileSidebar);
             mobileToggle?.addEventListener('click', () => {
                 const open = sidebar.classList.toggle('show');
                 backdrop?.classList.toggle('show', open);
