@@ -36,6 +36,11 @@
                         <div class="d-flex align-items-center gap-2">
                             <span class="module-number-badge">Chương {{ str_pad((string) ($moduleIndex + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="module-title-text">{{ $module->title }}</span>
+                            @if ($isManager && ($module->status ?? \App\Models\Module::STATUS_PUBLISHED) !== \App\Models\Module::STATUS_PUBLISHED)
+                                <span class="badge rounded-pill {{ $module->status === \App\Models\Module::STATUS_DRAFT ? 'text-bg-warning' : 'text-bg-secondary' }}">
+                                    {{ $module->status === \App\Models\Module::STATUS_DRAFT ? 'Bản nháp' : 'Đang ẩn' }}
+                                </span>
+                            @endif
                         </div>
                         <span class="module-meta module-meta--numbered">
                             {{ $lessonCount }} bài học{{ $durationStr ? ' · ' . $durationStr : '' }}
@@ -46,9 +51,17 @@
                 @if ($isManager)
                     <div class="action-buttons d-flex align-items-center pe-2">
                         <button type="button" class="btn-action btn-edit edit-module-btn border-0"
-                            data-id="{{ $module->id }}" data-title="{{ $module->title }}" data-bs-toggle="modal"
+                            data-id="{{ $module->id }}" data-title="{{ $module->title }}"
+                            data-status="{{ $module->status ?? 'published' }}" data-bs-toggle="modal"
                             data-bs-target="#editModuleModal" title="Sửa chương" aria-label="Sửa chương {{ $module->title }}">
                             <i class="fa-solid fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn-action content-clone-btn border-0 bg-transparent text-primary"
+                            data-clone-type="module" data-source-id="{{ $module->id }}"
+                            data-source-title="{{ $module->title }}" data-bs-toggle="modal"
+                            data-bs-target="#contentCloneModal" title="Sao chép chương"
+                            aria-label="Sao chép chương {{ $module->title }}">
+                            <i class="fa-solid fa-clone"></i>
                         </button>
                         <form action="{{ route('modules.destroy', $module->id) }}" method="POST"
                             class="d-inline mb-0">
@@ -165,6 +178,14 @@
                                             data-bs-toggle="modal" data-bs-target="#editLessonModal"
                                             title="Sửa bài học" aria-label="Sửa bài học {{ $lesson->title }}">
                                             <i class="fa-solid fa-edit"></i>
+                                        </button>
+                                        <button type="button"
+                                            class="btn-action content-clone-btn border-0 bg-transparent text-primary"
+                                            data-clone-type="lesson" data-source-id="{{ $lesson->id }}"
+                                            data-source-title="{{ $lesson->title }}" data-bs-toggle="modal"
+                                            data-bs-target="#contentCloneModal" title="Sao chép bài học"
+                                            aria-label="Sao chép bài học {{ $lesson->title }}">
+                                            <i class="fa-solid fa-clone"></i>
                                         </button>
                                         <form action="{{ route('lessons.destroy', $lesson->id) }}" method="POST"
                                             class="d-inline mb-0">
@@ -294,6 +315,14 @@
                                                 data-available-from="{{ $assignment->available_from?->format('Y-m-d\TH:i') }}"
                                                 title="Sửa bài tập" aria-label="Sửa bài tập {{ $assignment->title }}">
                                                 <i class="fa-solid fa-edit"></i>
+                                            </button>
+                                            <button type="button"
+                                                class="btn-action content-clone-btn border-0 bg-transparent text-primary"
+                                                data-clone-type="assignment" data-source-id="{{ $assignment->id }}"
+                                                data-source-title="{{ $assignment->title }}" data-bs-toggle="modal"
+                                                data-bs-target="#contentCloneModal" title="Sao chép bài tập"
+                                                aria-label="Sao chép bài tập {{ $assignment->title }}">
+                                                <i class="fa-solid fa-clone"></i>
                                             </button>
                                             <form action="{{ route('assignments.destroy', $assignment->id) }}"
                                                 method="POST" class="d-inline mb-0">
@@ -469,6 +498,14 @@
 
                                 @if ($isManager)
                                     <div class="action-buttons d-flex pe-2 gap-1">
+                                        <button type="button"
+                                            class="btn-action content-clone-btn border-0 bg-transparent text-primary"
+                                            data-clone-type="quiz" data-source-id="{{ $quiz->id }}"
+                                            data-source-title="{{ $quiz->title }}" data-bs-toggle="modal"
+                                            data-bs-target="#contentCloneModal" title="Sao chép bài kiểm tra"
+                                            aria-label="Sao chép bài kiểm tra {{ $quiz->title }}">
+                                            <i class="fa-solid fa-clone"></i>
+                                        </button>
                                         <a href="{{ route('quizzes.sessions.index', $quiz) }}"
                                             class="btn-action text-white d-flex align-items-center px-2"
                                             style="background:#0d6efd;width:auto;text-decoration:none;border-radius:6px;font-size:11px;font-weight:700;gap:3px;"

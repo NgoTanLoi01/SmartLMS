@@ -6,11 +6,25 @@ use Illuminate\Database\Eloquent\Model;
 
 class Module extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+
     public const STATUS_PUBLISHED = 'published';
+
+    public const STATUS_HIDDEN = 'hidden';
 
     public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = ['course_id', 'template_origin_id', 'title', 'order', 'status'];
+
+    public function scopeVisibleToStudents($query)
+    {
+        return $query->where($query->getModel()->getTable().'.status', self::STATUS_PUBLISHED);
+    }
+
+    public function isVisibleToStudents(): bool
+    {
+        return $this->status === self::STATUS_PUBLISHED;
+    }
 
     public function scopeNotArchived($query)
     {

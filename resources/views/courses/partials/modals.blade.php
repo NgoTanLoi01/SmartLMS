@@ -58,6 +58,14 @@
                     <label class="cm-label">Tên chương học</label>
                     <input type="text" name="title" id="editModuleTitle" class="cm-ctrl" required>
                 </div>
+                <div class="cm-field">
+                    <label class="cm-label">Trạng thái chương</label>
+                    <select name="status" id="editModuleStatus" class="cm-ctrl" required>
+                        <option value="published">Đã xuất bản</option>
+                        <option value="draft">Bản nháp</option>
+                        <option value="hidden">Tạm ẩn</option>
+                    </select>
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -68,6 +76,114 @@
         </form>
     </div>
 </div>
+
+{{-- ============================================================
+     MODAL: SAO CHÉP NỘI DUNG RIÊNG LẺ
+     ============================================================ --}}
+<div class="modal fade cm-modal" id="contentCloneModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form action="{{ route('content-clones.store') }}" method="POST" class="modal-content" id="contentCloneForm">
+            @csrf
+            <input type="hidden" name="source_type" id="contentCloneSourceType">
+            <input type="hidden" name="source_id" id="contentCloneSourceId">
+
+            <div class="modal-header">
+                <div class="cm-header-icon icon-blue"><i class="fa-solid fa-clone"></i></div>
+                <h5 class="modal-title">Sao chép nội dung</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="cm-info-banner">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>
+                        Đang sao chép <strong id="contentCloneSourceTitle"></strong>.
+                        Bản sao luôn ở trạng thái nháp và không kèm bài nộp, lượt thi hoặc điểm cũ.
+                    </span>
+                </div>
+
+                <div class="cm-field d-none" id="contentCloneTargetCourseField">
+                    <label class="cm-label" for="contentCloneTargetCourse">Khóa học đích</label>
+                    <select name="target_course_id" id="contentCloneTargetCourse" class="cm-ctrl">
+                        <option value="">-- Chọn khóa học --</option>
+                    </select>
+                </div>
+
+                <div class="cm-field d-none" id="contentCloneTargetModuleField">
+                    <label class="cm-label" for="contentCloneTargetModule">Chương đích</label>
+                    <select name="target_module_id" id="contentCloneTargetModule" class="cm-ctrl" disabled>
+                        <option value="">-- Chọn chương --</option>
+                    </select>
+                </div>
+
+                <div class="cm-field d-none" id="contentCloneTargetLessonField">
+                    <label class="cm-label" for="contentCloneTargetLesson">Bài học đích</label>
+                    <select name="target_lesson_id" id="contentCloneTargetLesson" class="cm-ctrl" disabled>
+                        <option value="">-- Chọn bài học --</option>
+                    </select>
+                </div>
+
+                <div class="cm-section-title" id="contentCloneOptionsTitle">
+                    <i class="fa-solid fa-sliders"></i>Tùy chọn đi kèm
+                </div>
+                <div class="content-clone-options">
+                    <label class="content-clone-option" data-clone-option="assignments">
+                        <input type="checkbox" name="copy_assignments" value="1" checked>
+                        <span><i class="fa-solid fa-file-signature"></i></span>
+                        <span><strong>Sao chép bài tập</strong><small>Kèm các bài tập thuộc bài học được sao chép.</small></span>
+                    </label>
+                    <label class="content-clone-option" data-clone-option="materials">
+                        <input type="checkbox" name="copy_materials" value="1" checked>
+                        <span><i class="fa-solid fa-paperclip"></i></span>
+                        <span><strong>Sao chép học liệu</strong><small>Giữ tệp đính kèm và tạo liên kết tới học liệu trong kho.</small></span>
+                    </label>
+                    <label class="content-clone-option" data-clone-option="rubrics">
+                        <input type="checkbox" name="copy_rubrics" value="1" checked>
+                        <span><i class="fa-solid fa-list-check"></i></span>
+                        <span><strong>Sao chép rubric</strong><small>Giữ tiêu chí chấm; không sao chép điểm hoặc nhận xét cũ.</small></span>
+                    </label>
+                    <label class="content-clone-option" data-clone-option="questions">
+                        <input type="checkbox" name="copy_questions" value="1" checked>
+                        <span><i class="fa-solid fa-circle-question"></i></span>
+                        <span><strong>Sao chép câu hỏi</strong><small>Gắn ngân hàng dùng chung và sao chép câu hỏi riêng của khóa nguồn.</small></span>
+                    </label>
+                </div>
+                <div class="cm-info-banner cm-info-banner--draft mt-3 mb-0" data-clone-module-note>
+                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                    <span>Chương sẽ được sao chép ngay trong khóa học hiện tại.</span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="cm-btn cm-btn-primary" id="contentCloneSubmit">
+                    <i class="fa-solid fa-clone"></i> Tạo bản sao nháp
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@php
+    $contentCloneTargets = ($cloneTargetCourses ?? collect())
+        ->map(fn($targetCourse) => [
+            'id' => $targetCourse->id,
+            'title' => $targetCourse->title,
+            'modules' => $targetCourse->modules
+                ->map(fn($module) => [
+                    'id' => $module->id,
+                    'title' => $module->title,
+                    'lessons' => $module->lessons
+                        ->map(fn($lesson) => [
+                            'id' => $lesson->id,
+                            'title' => $lesson->title,
+                        ])
+                        ->values(),
+                ])
+                ->values(),
+        ])
+        ->values();
+@endphp
+<script type="application/json" id="contentCloneTargets">@json($contentCloneTargets)</script>
 
 {{-- ============================================================
      3. MODAL: THÊM BÀI HỌC

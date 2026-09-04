@@ -84,4 +84,20 @@ class CourseDetailReviewExperienceTest extends TestCase
         $this->assertStringContainsString('!tinymce.get(target.id)', $editor);
         $this->assertStringContainsString("selector: '#addAssignmentInstructions, #editAssignmentInstructions'", $modals);
     }
+
+    public function test_course_manager_can_open_individual_content_clone_workflow(): void
+    {
+        $sidebar = file_get_contents(resource_path('views/courses/partials/sidebar.blade.php'));
+        $modals = file_get_contents(resource_path('views/courses/partials/modals.blade.php'));
+        $interactions = file_get_contents(resource_path('views/courses/partials/scripts/interactions.blade.php'));
+
+        foreach (['module', 'lesson', 'assignment', 'quiz'] as $type) {
+            $this->assertStringContainsString('data-clone-type="'.$type.'"', $sidebar);
+        }
+
+        $this->assertStringContainsString('id="contentCloneModal"', $modals);
+        $this->assertStringContainsString('không kèm bài nộp, lượt thi hoặc điểm cũ', $modals);
+        $this->assertStringContainsString("module: ['assignments', 'materials', 'rubrics']", $interactions);
+        $this->assertStringContainsString("quiz: ['questions']", $interactions);
+    }
 }

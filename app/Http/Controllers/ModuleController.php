@@ -35,7 +35,12 @@ class ModuleController extends Controller
     {
         $module = Module::findOrFail($id);
         Gate::authorize('update', $module);
-        $module->update($request->validate(['title' => 'required|max:255']));
+        $data = $request->validate([
+            'title' => 'required|max:255',
+            'status' => 'nullable|in:draft,published,hidden',
+        ]);
+        $data['status'] = $data['status'] ?? $module->status ?? Module::STATUS_PUBLISHED;
+        $module->update($data);
 
         return back()->with('success', 'Đã cập nhật chương!');
     }

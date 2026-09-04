@@ -10,6 +10,7 @@ use App\Http\Controllers\CaroController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ChessController;
 use App\Http\Controllers\ClassManagementController;
+use App\Http\Controllers\ContentCloneController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseMaterialController;
 use App\Http\Controllers\CoursePlannerController;
@@ -186,6 +187,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
     // 2.5. QUẢN LÝ CHƯƠNG MỤC & BÀI GIẢNG (CURRICULUM)
     // ==========================================
     Route::middleware('role:admin,teacher')->group(function () {
+        Route::post('/content-clones', [ContentCloneController::class, 'store'])->name('content-clones.store');
         Route::post('/modules', [ModuleController::class, 'store'])->name('modules.store');
         Route::post('/modules/reorder', [ModuleController::class, 'reorder'])->name('modules.reorder');
         Route::put('/modules/{id}', [ModuleController::class, 'update'])->name('modules.update');

@@ -1136,6 +1136,41 @@ class AuthorizationIsolationTest extends TestCase
             ->assertDontSee('Bài tập của A');
     }
 
+    public function test_content_clone_http_request_cannot_bypass_source_or_target_course_permissions(): void
+    {
+        $otherCourse = Course::create([
+            'title' => 'Khóa đích của B',
+            'teacher_id' => $this->otherTeacher->id,
+            'status' => Course::STATUS_PUBLISHED,
+        ]);
+        $otherModule = Module::create([
+            'course_id' => $otherCourse->id,
+            'title' => 'Chương đích của B',
+            'status' => Module::STATUS_PUBLISHED,
+        ]);
+
+        $payload = [
+            'source_type' => 'lesson',
+            'source_id' => $this->lesson->id,
+            'target_course_id' => $otherCourse->id,
+            'target_module_id' => $otherModule->id,
+            'copy_assignments' => 1,
+        ];
+
+        $this->actingAs($this->owner)
+            ->post(route('content-clones.store'), $payload)
+            ->assertForbidden();
+
+        $this->actingAs($this->otherTeacher)
+            ->post(route('content-clones.store'), $payload)
+            ->assertForbidden();
+
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->actingAs($student)
+            ->post(route('content-clones.store'), $payload)
+            ->assertForbidden();
+    }
+
     private function createSchema(): void
     {
         Schema::create('users', function (Blueprint $table) {

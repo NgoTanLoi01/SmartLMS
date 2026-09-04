@@ -1048,7 +1048,139 @@
         });
 
         // ==========================================
-        // 8. SỬA CHƯƠNG
+        // 8. SAO CHÉP NỘI DUNG RIÊNG LẺ
+        // ==========================================
+        (() => {
+            const targetsElement = document.getElementById('contentCloneTargets');
+            const form = document.getElementById('contentCloneForm');
+            if (!targetsElement || !form) return;
+
+            let cloneTargets = [];
+            try {
+                cloneTargets = JSON.parse(targetsElement.textContent || '[]');
+            } catch (error) {
+                cloneTargets = [];
+            }
+
+            const sourceType = document.getElementById('contentCloneSourceType');
+            const sourceId = document.getElementById('contentCloneSourceId');
+            const sourceTitle = document.getElementById('contentCloneSourceTitle');
+            const courseField = document.getElementById('contentCloneTargetCourseField');
+            const moduleField = document.getElementById('contentCloneTargetModuleField');
+            const lessonField = document.getElementById('contentCloneTargetLessonField');
+            const courseSelect = document.getElementById('contentCloneTargetCourse');
+            const moduleSelect = document.getElementById('contentCloneTargetModule');
+            const lessonSelect = document.getElementById('contentCloneTargetLesson');
+            const moduleNote = form.querySelector('[data-clone-module-note]');
+            const optionsTitle = document.getElementById('contentCloneOptionsTitle');
+            const submit = document.getElementById('contentCloneSubmit');
+
+            const labels = {
+                module: 'chương',
+                lesson: 'bài học',
+                assignment: 'bài tập',
+                quiz: 'bài kiểm tra',
+            };
+            const applicableOptions = {
+                module: ['assignments', 'materials', 'rubrics'],
+                lesson: ['assignments', 'materials', 'rubrics'],
+                assignment: ['rubrics'],
+                quiz: ['questions'],
+            };
+
+            const escapeHtml = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            const currentTarget = () => cloneTargets.find(course => Number(course.id) === Number(courseSelect.value));
+
+            function populateCourses() {
+                courseSelect.innerHTML = '<option value="">-- Chọn khóa học --</option>' + cloneTargets
+                    .map(course => `<option value="${Number(course.id)}">${escapeHtml(course.title)}</option>`)
+                    .join('');
+            }
+
+            function populateDestinationContent() {
+                const target = currentTarget();
+                const modules = target?.modules || [];
+                moduleSelect.innerHTML = '<option value="">-- Chọn chương --</option>' + modules
+                    .map(module => `<option value="${Number(module.id)}">${escapeHtml(module.title)}</option>`)
+                    .join('');
+                moduleSelect.disabled = !target || modules.length === 0;
+
+                lessonSelect.innerHTML = '<option value="">-- Chọn bài học --</option>' + modules
+                    .filter(module => (module.lessons || []).length > 0)
+                    .map(module => `<optgroup label="${escapeHtml(module.title)}">${module.lessons
+                        .map(lesson => `<option value="${Number(lesson.id)}">${escapeHtml(lesson.title)}</option>`)
+                        .join('')}</optgroup>`)
+                    .join('');
+                lessonSelect.disabled = !target || !modules.some(module => (module.lessons || []).length > 0);
+            }
+
+            function syncRubricOption() {
+                const type = sourceType.value;
+                const assignmentInput = form.querySelector('[name="copy_assignments"]');
+                const rubricOption = form.querySelector('[data-clone-option="rubrics"]');
+                const rubricInput = rubricOption?.querySelector('input');
+                const dependsOnAssignments = ['module', 'lesson'].includes(type);
+                const disabled = dependsOnAssignments && !assignmentInput?.checked;
+                rubricOption?.classList.toggle('is-disabled', disabled);
+                if (rubricInput) rubricInput.disabled = disabled;
+            }
+
+            function configureModal(button) {
+                const type = button.dataset.cloneType;
+                const needsCourse = type !== 'module';
+                const needsModule = type === 'lesson';
+                const needsLesson = type === 'assignment';
+                sourceType.value = type;
+                sourceId.value = button.dataset.sourceId || '';
+                sourceTitle.textContent = `${labels[type] || 'nội dung'} “${button.dataset.sourceTitle || ''}”`;
+
+                courseField.classList.toggle('d-none', !needsCourse);
+                moduleField.classList.toggle('d-none', !needsModule);
+                lessonField.classList.toggle('d-none', !needsLesson);
+                moduleNote.classList.toggle('d-none', needsCourse);
+                courseSelect.required = needsCourse;
+                moduleSelect.required = needsModule;
+                lessonSelect.required = needsLesson;
+
+                form.querySelectorAll('[data-clone-option]').forEach(option => {
+                    const optionName = option.dataset.cloneOption;
+                    const visible = (applicableOptions[type] || []).includes(optionName);
+                    const input = option.querySelector('input');
+                    option.classList.toggle('d-none', !visible);
+                    option.classList.remove('is-disabled');
+                    input.disabled = !visible;
+                    input.checked = visible;
+                });
+                optionsTitle.classList.toggle('d-none', (applicableOptions[type] || []).length === 0);
+
+                populateCourses();
+                courseSelect.value = needsCourse ? String(currentCourseId) : '';
+                populateDestinationContent();
+                moduleSelect.value = '';
+                lessonSelect.value = '';
+                syncRubricOption();
+            }
+
+            document.addEventListener('click', event => {
+                const button = event.target.closest('.content-clone-btn');
+                if (button) configureModal(button);
+            });
+            courseSelect.addEventListener('change', populateDestinationContent);
+            form.querySelector('[name="copy_assignments"]')?.addEventListener('change', syncRubricOption);
+            form.addEventListener('submit', () => {
+                submit.disabled = true;
+                submit.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang sao chép...';
+            });
+        })();
+
+        // ==========================================
+        // 9. SỬA CHƯƠNG
         // ==========================================
         document.addEventListener('click', function(e) {
             const btn = e.target.closest('.edit-module-btn');
@@ -1057,6 +1189,7 @@
             e.stopPropagation(); // Không trigger accordion
             document.getElementById('editModuleForm').action = '/modules/' + btn.dataset.id;
             document.getElementById('editModuleTitle').value = btn.dataset.title;
+            document.getElementById('editModuleStatus').value = btn.dataset.status || 'published';
         });
 
         document.querySelectorAll('[data-course-mode]').forEach(btn => {

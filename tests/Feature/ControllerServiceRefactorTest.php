@@ -5,9 +5,14 @@ namespace Tests\Feature;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Models\LearningMaterial;
+use App\Models\LearningMaterialAssignment;
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Models\Question;
+use App\Models\QuestionBank;
 use App\Models\Quiz;
+use App\Models\QuizPassage;
 use App\Models\User;
 use App\Services\CourseCloningService;
 use App\Services\SubmissionFileService;
@@ -104,6 +109,39 @@ class ControllerServiceRefactorTest extends TestCase
             $table->timestamps();
             $table->softDeletes();
         });
+        Schema::create('assignment_submissions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('assignment_id');
+            $table->unsignedBigInteger('user_id');
+            $table->string('file_path')->nullable();
+            $table->decimal('grade', 5, 2)->nullable();
+            $table->text('feedback')->nullable();
+            $table->timestamp('submitted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('learning_materials', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->string('type')->default('document');
+            $table->string('source_type')->default('file');
+            $table->string('disk')->nullable();
+            $table->string('file_path')->nullable();
+            $table->unsignedBigInteger('uploaded_by')->nullable();
+            $table->string('status')->default('published');
+            $table->timestamps();
+        });
+        Schema::create('learning_material_assignments', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('learning_material_id');
+            $table->unsignedBigInteger('course_id');
+            $table->unsignedBigInteger('class_id')->nullable();
+            $table->unsignedBigInteger('lesson_id')->nullable();
+            $table->unsignedBigInteger('unlock_when_lesson_id')->nullable();
+            $table->timestamp('available_from')->nullable();
+            $table->string('status')->default('published');
+            $table->unsignedInteger('sort_order')->default(0);
+            $table->timestamps();
+        });
         Schema::create('quizzes', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('course_id');
@@ -133,11 +171,20 @@ class ControllerServiceRefactorTest extends TestCase
             $table->unsignedBigInteger('question_bank_id');
             $table->timestamps();
         });
+        Schema::create('quiz_passages', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('course_id');
+            $table->string('title');
+            $table->longText('content');
+            $table->string('source_label')->nullable();
+            $table->timestamps();
+        });
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('course_id')->nullable();
             $table->unsignedBigInteger('template_origin_id')->nullable();
             $table->unsignedBigInteger('question_bank_id')->nullable();
+            $table->unsignedBigInteger('quiz_passage_id')->nullable();
             $table->string('question_type')->default('single_choice');
             $table->text('question_text');
             $table->json('answer_config')->nullable();
@@ -157,7 +204,7 @@ class ControllerServiceRefactorTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['options', 'questions', 'course_question_bank', 'question_banks', 'quizzes', 'assignments', 'lessons', 'modules', 'courses', 'users'] as $table) {
+            foreach (['options', 'questions', 'quiz_passages', 'course_question_bank', 'question_banks', 'quizzes', 'learning_material_assignments', 'learning_materials', 'assignment_submissions', 'assignments', 'lessons', 'modules', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -301,6 +348,153 @@ class ControllerServiceRefactorTest extends TestCase
         $this->assertSame($deliveryQuiz->id, Quiz::where('course_id', $delivery->id)->where('template_origin_id', $quiz->id)->firstOrFail()->id);
         $this->assertSame('Quiz mới', $deliveryQuiz->fresh()->title);
         $this->assertSame(3, $deliveryQuiz->fresh()->max_attempts);
+    }
+
+    public function test_individual_module_clone_is_draft_and_never_copies_submissions_or_grades(): void
+    {
+        Storage::fake('public');
+        config(['filesystems.lesson_attachment_disk' => 'public']);
+        Storage::disk('public')->put('lessons/source.pdf', 'lesson-content');
+
+        $teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $course = Course::create([
+            'title' => 'Khóa PHP',
+            'teacher_id' => $teacher->id,
+            'status' => Course::STATUS_PUBLISHED,
+        ]);
+        $module = Module::create([
+            'course_id' => $course->id,
+            'title' => 'PHP cơ bản',
+            'order' => 1,
+            'status' => Module::STATUS_PUBLISHED,
+        ]);
+        $lesson = Lesson::create([
+            'module_id' => $module->id,
+            'title' => 'Biến và kiểu dữ liệu',
+            'attachment' => 'lessons/source.pdf',
+            'attachment_disk' => 'public',
+            'attachment_original_name' => 'source.pdf',
+            'order' => 1,
+            'status' => Lesson::STATUS_PUBLISHED,
+        ]);
+        $assignment = Assignments::create([
+            'course_id' => $course->id,
+            'lesson_id' => $lesson->id,
+            'type' => 'file',
+            'title' => 'Bài tập biến',
+            'instructions' => 'Nộp bài thực hành',
+            'grading_rubric' => 'Đúng cú pháp: 5 điểm',
+            'grading_scale' => 10,
+            'due_date' => now()->addWeek(),
+            'status' => Assignments::STATUS_PUBLISHED,
+        ]);
+        AssignmentSubmission::create([
+            'assignment_id' => $assignment->id,
+            'user_id' => $student->id,
+            'grade' => 9,
+            'submitted_at' => now(),
+        ]);
+        $material = LearningMaterial::create([
+            'title' => 'Slide PHP',
+            'type' => 'slide',
+            'source_type' => LearningMaterial::SOURCE_FILE,
+            'disk' => 'public',
+            'file_path' => 'materials/php.pptx',
+            'uploaded_by' => $teacher->id,
+            'status' => LearningMaterial::STATUS_PUBLISHED,
+        ]);
+        LearningMaterialAssignment::create([
+            'learning_material_id' => $material->id,
+            'course_id' => $course->id,
+            'lesson_id' => $lesson->id,
+            'status' => LearningMaterialAssignment::STATUS_PUBLISHED,
+        ]);
+
+        $result = app(CourseCloningService::class)->cloneModule($module, [
+            'copy_assignments' => true,
+            'copy_materials' => true,
+            'copy_rubrics' => true,
+        ]);
+
+        $copy = $result['model']->fresh(['lessons.assignments']);
+        $copiedLesson = $copy->lessons->firstOrFail();
+        $copiedAssignment = $copiedLesson->assignments->firstOrFail();
+
+        $this->assertSame(Module::STATUS_DRAFT, $copy->status);
+        $this->assertSame(Lesson::STATUS_DRAFT, $copiedLesson->status);
+        $this->assertSame(Assignments::STATUS_DRAFT, $copiedAssignment->status);
+        $this->assertSame($assignment->grading_rubric, $copiedAssignment->grading_rubric);
+        $this->assertNotSame($lesson->attachment, $copiedLesson->attachment);
+        $this->assertSame(1, AssignmentSubmission::count());
+        $this->assertFalse($copiedAssignment->submissions()->exists());
+        $this->assertDatabaseHas('learning_material_assignments', [
+            'learning_material_id' => $material->id,
+            'course_id' => $course->id,
+            'lesson_id' => $copiedLesson->id,
+            'status' => LearningMaterialAssignment::STATUS_HIDDEN,
+        ]);
+    }
+
+    public function test_individual_lesson_assignment_and_quiz_can_be_copied_to_another_course(): void
+    {
+        $teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $sourceCourse = Course::create(['title' => 'Khóa nguồn', 'teacher_id' => $teacher->id, 'status' => Course::STATUS_PUBLISHED]);
+        $targetCourse = Course::create(['title' => 'Khóa đích', 'teacher_id' => $teacher->id, 'status' => Course::STATUS_PUBLISHED]);
+        $sourceModule = Module::create(['course_id' => $sourceCourse->id, 'title' => 'Nguồn', 'status' => Module::STATUS_PUBLISHED]);
+        $targetModule = Module::create(['course_id' => $targetCourse->id, 'title' => 'Đích', 'status' => Module::STATUS_PUBLISHED]);
+        $sourceLesson = Lesson::create(['module_id' => $sourceModule->id, 'title' => 'Bài nguồn', 'status' => Lesson::STATUS_PUBLISHED]);
+        $targetLesson = Lesson::create(['module_id' => $targetModule->id, 'title' => 'Bài đích', 'status' => Lesson::STATUS_PUBLISHED]);
+        $sourceAssignment = Assignments::create([
+            'course_id' => $sourceCourse->id,
+            'lesson_id' => $sourceLesson->id,
+            'title' => 'Bài tập nguồn',
+            'instructions' => 'Yêu cầu',
+            'grading_rubric' => 'Rubric nguồn',
+            'due_date' => now()->addDay(),
+            'status' => Assignments::STATUS_PUBLISHED,
+        ]);
+        $sourceQuiz = Quiz::create([
+            'course_id' => $sourceCourse->id,
+            'title' => 'Quiz nguồn',
+            'time_limit' => 20,
+            'status' => Quiz::STATUS_PUBLISHED,
+        ]);
+        $bank = QuestionBank::create(['name' => 'Ngân hàng dùng chung', 'teacher_id' => $teacher->id]);
+        $sourceCourse->questionBanks()->attach($bank);
+        $passage = QuizPassage::create([
+            'course_id' => $sourceCourse->id,
+            'title' => 'Đoạn văn PHP',
+            'content' => 'Nội dung dùng chung cho nhóm câu hỏi.',
+            'source_label' => 'Tài liệu nội bộ',
+        ]);
+        $sourceQuestion = Question::create([
+            'course_id' => $sourceCourse->id,
+            'question_bank_id' => null,
+            'quiz_passage_id' => $passage->id,
+            'question_text' => 'PHP là viết tắt của gì?',
+            'difficulty' => 'easy',
+            'status' => Question::STATUS_PUBLISHED,
+        ]);
+        $sourceQuestion->options()->create(['option_text' => 'PHP Hypertext Preprocessor', 'is_correct' => true]);
+
+        $lessonResult = app(CourseCloningService::class)->cloneLesson($sourceLesson, $targetModule);
+        $assignmentResult = app(CourseCloningService::class)->cloneAssignment($sourceAssignment, $targetLesson, false);
+        $quizResult = app(CourseCloningService::class)->cloneQuiz($sourceQuiz, $targetCourse, true);
+
+        $this->assertSame($targetModule->id, $lessonResult['model']->module_id);
+        $this->assertSame(Lesson::STATUS_DRAFT, $lessonResult['model']->status);
+        $this->assertSame($targetCourse->id, $assignmentResult['model']->course_id);
+        $this->assertNull($assignmentResult['model']->grading_rubric);
+        $this->assertSame(Assignments::STATUS_DRAFT, $assignmentResult['model']->status);
+        $this->assertSame($targetCourse->id, $quizResult['model']->course_id);
+        $this->assertSame(Quiz::STATUS_DRAFT, $quizResult['model']->status);
+        $this->assertTrue($targetCourse->questionBanks()->whereKey($bank->id)->exists());
+        $copiedQuestion = Question::query()->where('course_id', $targetCourse->id)->firstOrFail();
+        $this->assertSame($sourceQuestion->question_text, $copiedQuestion->question_text);
+        $this->assertSame(1, $copiedQuestion->options()->count());
+        $this->assertSame('Đoạn văn PHP', $copiedQuestion->passage?->title);
+        $this->assertSame($targetCourse->id, $copiedQuestion->passage?->course_id);
     }
 
     public function test_submission_file_service_detects_preview_types_and_deletes_stored_file(): void

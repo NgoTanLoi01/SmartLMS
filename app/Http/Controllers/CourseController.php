@@ -194,7 +194,7 @@ class CourseController extends Controller
 
                         return $module;
                     })
-                    ->filter(fn ($module) => $module->lessons->isNotEmpty())
+                    ->filter(fn ($module) => $module->isVisibleToStudents() && $module->lessons->isNotEmpty())
                     ->values()
             );
             $course->setRelation('quizzes', $course->quizzes->filter(fn ($quiz) => $quiz->isVisibleToStudents())->values());
@@ -210,6 +210,21 @@ class CourseController extends Controller
             ->get();
 
         $canManageMaterials = Gate::allows('update', $course);
+        $cloneTargetCourses = collect();
+        if ($canManageMaterials) {
+            $cloneTargetCourses = Course::query()
+                ->notArchived()
+                ->when(
+                    auth()->user()->isTeacher(),
+                    fn ($query) => $query->where('teacher_id', auth()->id())
+                )
+                ->with([
+                    'modules' => fn ($query) => $query->notArchived()->orderBy('order'),
+                    'modules.lessons' => fn ($query) => $query->notArchived()->orderBy('order'),
+                ])
+                ->orderBy('title')
+                ->get(['id', 'title', 'teacher_id']);
+        }
         if (! $canManageMaterials && auth()->user()->role === 'student') {
             $courseMaterialAssignments = $courseMaterialAssignments
                 ->filter(fn ($assignment) => $assignment->visibleToStudent(auth()->user()))
@@ -287,7 +302,7 @@ class CourseController extends Controller
             }
         }
 
-        return view('courses.show', compact('course', 'userSubmissions', 'userQuizAttempts', 'userQuizCanRetry', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards', 'quizQuestionAvailability', 'quizQuestionTypeLabels', 'quizDifficultyLabels'));
+        return view('courses.show', compact('course', 'userSubmissions', 'userQuizAttempts', 'userQuizCanRetry', 'courseDashboard', 'courseMaterialAssignments', 'courseMaterialCards', 'cloneTargetCourses', 'quizQuestionAvailability', 'quizQuestionTypeLabels', 'quizDifficultyLabels'));
     }
 
     public function create()

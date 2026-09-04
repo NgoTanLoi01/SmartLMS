@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Models\Assignments;
 use App\Models\Course;
+use App\Models\LearningMaterialAssignment;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Question;
 use App\Models\Quiz;
+use App\Models\QuizPassage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,6 +23,128 @@ class CourseCloningService
         'quizzes' => 'Bài kiểm tra',
         'question_banks' => 'Liên kết ngân hàng câu hỏi',
     ];
+
+    public function cloneModule(Module $sourceModule, array $options = []): array
+    {
+        return DB::transaction(function () use ($sourceModule, $options) {
+            $sourceModule->loadMissing(['course', 'lessons.assignments']);
+            $copyAssignments = (bool) ($options['copy_assignments'] ?? false);
+            $copyMaterials = (bool) ($options['copy_materials'] ?? false);
+            $copyRubrics = (bool) ($options['copy_rubrics'] ?? false);
+
+            $targetModule = Module::create([
+                'course_id' => $sourceModule->course_id,
+                'template_origin_id' => null,
+                'title' => $this->copyTitle($sourceModule->title),
+                'order' => Module::query()->where('course_id', $sourceModule->course_id)->notArchived()->max('order') + 1,
+                'status' => Module::STATUS_DRAFT,
+            ]);
+
+            $lessonMap = [];
+            $assignmentCount = 0;
+            foreach ($sourceModule->lessons as $sourceLesson) {
+                $targetLesson = $this->cloneLessonRecord($sourceLesson, $targetModule, $copyMaterials, false);
+                $lessonMap[$sourceLesson->id] = $targetLesson->id;
+
+                if ($copyAssignments) {
+                    foreach ($sourceLesson->assignments as $sourceAssignment) {
+                        $this->cloneAssignmentRecord($sourceAssignment, $targetLesson, $copyRubrics, false);
+                        $assignmentCount++;
+                    }
+                }
+            }
+
+            $materialCount = $copyMaterials
+                ? $this->cloneMaterialAssignments($sourceModule->course, $lessonMap)
+                : 0;
+
+            return [
+                'type' => 'module',
+                'model' => $targetModule,
+                'lessons' => count($lessonMap),
+                'assignments' => $assignmentCount,
+                'materials' => $materialCount,
+            ];
+        }, 3);
+    }
+
+    public function cloneLesson(Lesson $sourceLesson, Module $targetModule, array $options = []): array
+    {
+        return DB::transaction(function () use ($sourceLesson, $targetModule, $options) {
+            $sourceLesson->loadMissing(['module.course', 'assignments']);
+            $copyAssignments = (bool) ($options['copy_assignments'] ?? false);
+            $copyMaterials = (bool) ($options['copy_materials'] ?? false);
+            $copyRubrics = (bool) ($options['copy_rubrics'] ?? false);
+            $targetLesson = $this->cloneLessonRecord($sourceLesson, $targetModule, $copyMaterials);
+            $assignmentCount = 0;
+
+            if ($copyAssignments) {
+                foreach ($sourceLesson->assignments as $sourceAssignment) {
+                    $this->cloneAssignmentRecord($sourceAssignment, $targetLesson, $copyRubrics, false);
+                    $assignmentCount++;
+                }
+            }
+
+            $materialCount = $copyMaterials
+                ? $this->cloneMaterialAssignments($targetModule->course, [$sourceLesson->id => $targetLesson->id])
+                : 0;
+
+            return [
+                'type' => 'lesson',
+                'model' => $targetLesson,
+                'lessons' => 1,
+                'assignments' => $assignmentCount,
+                'materials' => $materialCount,
+            ];
+        }, 3);
+    }
+
+    public function cloneAssignment(Assignments $sourceAssignment, Lesson $targetLesson, bool $copyRubric): array
+    {
+        return DB::transaction(function () use ($sourceAssignment, $targetLesson, $copyRubric) {
+            $targetAssignment = $this->cloneAssignmentRecord($sourceAssignment, $targetLesson, $copyRubric);
+
+            return [
+                'type' => 'assignment',
+                'model' => $targetAssignment,
+                'assignments' => 1,
+            ];
+        }, 3);
+    }
+
+    public function cloneQuiz(Quiz $sourceQuiz, Course $targetCourse, bool $copyQuestions): array
+    {
+        return DB::transaction(function () use ($sourceQuiz, $targetCourse, $copyQuestions) {
+            $sourceQuiz->refresh();
+            $sourceQuiz->loadMissing('course.questionBanks');
+            $targetQuiz = Quiz::create([
+                'course_id' => $targetCourse->id,
+                'template_origin_id' => null,
+                'title' => $this->copyTitle($sourceQuiz->title),
+                'time_limit' => $sourceQuiz->time_limit,
+                'max_attempts' => $sourceQuiz->max_attempts ?: 1,
+                'is_random' => $sourceQuiz->is_random,
+                'easy_count' => $sourceQuiz->easy_count,
+                'medium_count' => $sourceQuiz->medium_count,
+                'hard_count' => $sourceQuiz->hard_count,
+                'question_distribution' => $sourceQuiz->question_distribution,
+                'status' => Quiz::STATUS_DRAFT,
+                'published_at' => null,
+                'available_from' => null,
+            ]);
+
+            $questionCount = $copyQuestions
+                ? $this->cloneQuestionPool($sourceQuiz->course, $targetCourse)
+                : 0;
+
+            return [
+                'type' => 'quiz',
+                'model' => $targetQuiz,
+                'quizzes' => 1,
+                'questions' => $questionCount,
+            ];
+        }, 3);
+    }
 
     public function cloneContent(Course $sourceCourse, Course $targetCourse): void
     {
@@ -415,6 +539,146 @@ class CourseCloningService
             ->update(['status' => Question::STATUS_ARCHIVED]);
 
         return $sources->count();
+    }
+
+    private function cloneLessonRecord(
+        Lesson $sourceLesson,
+        Module $targetModule,
+        bool $copyMaterials,
+        bool $appendCopyLabel = true
+    ): Lesson {
+        $attachment = $copyMaterials
+            ? $this->copyLessonAttachment($sourceLesson)
+            : ['attachment' => null, 'attachment_disk' => null];
+
+        return Lesson::create([
+            'module_id' => $targetModule->id,
+            'template_origin_id' => null,
+            'title' => $appendCopyLabel ? $this->copyTitle($sourceLesson->title) : $sourceLesson->title,
+            'content' => $sourceLesson->content,
+            'video_url' => $sourceLesson->video_url,
+            'attachment_path' => $copyMaterials ? $sourceLesson->attachment_path : null,
+            'attachment' => $attachment['attachment'],
+            'attachment_disk' => $attachment['attachment_disk'],
+            'attachment_original_name' => $copyMaterials ? $sourceLesson->attachment_original_name : null,
+            'attachment_mime_type' => $copyMaterials ? $sourceLesson->attachment_mime_type : null,
+            'attachment_size' => $copyMaterials ? $sourceLesson->attachment_size : null,
+            'order' => Lesson::query()->where('module_id', $targetModule->id)->notArchived()->max('order') + 1,
+            'status' => Lesson::STATUS_DRAFT,
+            'published_at' => null,
+            'available_from' => null,
+        ]);
+    }
+
+    private function cloneAssignmentRecord(
+        Assignments $sourceAssignment,
+        Lesson $targetLesson,
+        bool $copyRubric,
+        bool $appendCopyLabel = true
+    ): Assignments {
+        $sourceAssignment->refresh();
+        $targetLesson->loadMissing('module');
+
+        return Assignments::create([
+            'course_id' => $targetLesson->module->course_id,
+            'template_origin_id' => null,
+            'lesson_id' => $targetLesson->id,
+            'type' => $sourceAssignment->type ?: 'file',
+            'title' => $appendCopyLabel ? $this->copyTitle($sourceAssignment->title) : $sourceAssignment->title,
+            'instructions' => $sourceAssignment->instructions,
+            'grading_rubric' => $copyRubric ? $sourceAssignment->grading_rubric : null,
+            'grading_scale' => $sourceAssignment->grading_scale,
+            'ai_grading_enabled' => $copyRubric && $sourceAssignment->ai_grading_enabled,
+            'due_date' => $sourceAssignment->due_date,
+            'allowed_extensions' => $sourceAssignment->allowed_extensions,
+            'max_file_size' => $sourceAssignment->max_file_size,
+            'status' => Assignments::STATUS_DRAFT,
+            'published_at' => null,
+            'available_from' => null,
+        ]);
+    }
+
+    private function cloneMaterialAssignments(Course $targetCourse, array $lessonMap): int
+    {
+        if ($lessonMap === []) {
+            return 0;
+        }
+
+        $sourceAssignments = LearningMaterialAssignment::query()
+            ->notArchived()
+            ->whereIn('lesson_id', array_keys($lessonMap))
+            ->get();
+
+        foreach ($sourceAssignments as $sourceAssignment) {
+            LearningMaterialAssignment::create([
+                'learning_material_id' => $sourceAssignment->learning_material_id,
+                'course_id' => $targetCourse->id,
+                'class_id' => null,
+                'lesson_id' => $lessonMap[$sourceAssignment->lesson_id],
+                'unlock_when_lesson_id' => $lessonMap[$sourceAssignment->unlock_when_lesson_id] ?? null,
+                'available_from' => null,
+                'status' => LearningMaterialAssignment::STATUS_HIDDEN,
+                'sort_order' => $sourceAssignment->sort_order,
+            ]);
+        }
+
+        return $sourceAssignments->count();
+    }
+
+    private function cloneQuestionPool(Course $sourceCourse, Course $targetCourse): int
+    {
+        if ($sourceCourse->is($targetCourse)) {
+            return 0;
+        }
+
+        $sourceCourse->loadMissing('questionBanks');
+        $targetCourse->questionBanks()->syncWithoutDetaching($sourceCourse->questionBanks->pluck('id')->all());
+
+        $questions = Question::query()
+            ->with(['options', 'passage'])
+            ->notArchived()
+            ->where('course_id', $sourceCourse->id)
+            ->whereNull('question_bank_id')
+            ->get();
+
+        $passageMap = [];
+        foreach ($questions as $sourceQuestion) {
+            $targetPassageId = null;
+            if ($sourceQuestion->passage) {
+                $targetPassageId = $passageMap[$sourceQuestion->quiz_passage_id] ??= QuizPassage::create([
+                    'course_id' => $targetCourse->id,
+                    'title' => $sourceQuestion->passage->title,
+                    'content' => $sourceQuestion->passage->content,
+                    'source_label' => $sourceQuestion->passage->source_label,
+                ])->id;
+            }
+
+            $targetQuestion = Question::create([
+                'course_id' => $targetCourse->id,
+                'template_origin_id' => null,
+                'question_bank_id' => null,
+                'quiz_passage_id' => $targetPassageId,
+                'question_type' => $sourceQuestion->question_type,
+                'question_text' => $sourceQuestion->question_text,
+                'answer_config' => $sourceQuestion->answer_config,
+                'difficulty' => $sourceQuestion->difficulty,
+                'status' => $sourceQuestion->status ?? Question::STATUS_PUBLISHED,
+            ]);
+
+            foreach ($sourceQuestion->options as $sourceOption) {
+                $targetQuestion->options()->create([
+                    'option_text' => $sourceOption->option_text,
+                    'is_correct' => $sourceOption->is_correct,
+                ]);
+            }
+        }
+
+        return $questions->count();
+    }
+
+    private function copyTitle(string $title): string
+    {
+        return Str::limit($title, 244, '').' (Bản sao)';
     }
 
     private function copyLessonAttachment(Lesson $lesson, ?Lesson $targetLesson = null): array
