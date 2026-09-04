@@ -123,7 +123,7 @@
                         ? ($submission ? 'submitted' : ($isOverdue ? 'overdue' : 'pending'))
                         : ($assignment->status ?? 'draft');
                     $statusLabel = match ($status) {
-                        'submitted' => $submission?->grade !== null ? 'Đã chấm' : 'Đã nộp',
+                        'submitted' => $submission?->isGradePublished() ? 'Đã chấm' : 'Đã nộp',
                         'overdue' => 'Đã quá hạn',
                         'pending' => 'Chờ hoàn thành',
                         'published' => 'Đã xuất bản',
@@ -185,7 +185,7 @@
                                 {{ $submission ? 'Cập nhật bài làm' : 'Làm bài' }}
                             </button>
 
-                            @if ($submission?->grade !== null)
+                            @if ($submission?->isGradePublished())
                                 <span class="assignment-grade">{{ $submission->grade }}/{{ $assignment->grading_scale ?? 10 }} điểm</span>
                             @endif
                         @else

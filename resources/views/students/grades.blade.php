@@ -401,14 +401,16 @@
                                     <td>{{ $assignment?->course?->title ?? '—' }}</td>
                                     <td>{{ $submission->formatSubmittedAt('d/m/Y H:i:s') ?? '—' }}</td>
                                     <td>
-                                        @if ($submission->grade !== null)
+                                        @if ($submission->isGradePublished())
                                             <span class="score-pill">{{ rtrim(rtrim(number_format((float) $submission->grade, 1), '0'), '.') }}<span>/{{ $scale }}</span></span>
                                         @else
-                                            <span class="badge bg-warning-subtle text-warning rounded-pill">Chờ chấm</span>
+                                            <span class="badge bg-warning-subtle text-warning rounded-pill">
+                                                {{ $submission->grade !== null ? 'Chờ công bố' : 'Chờ chấm' }}
+                                            </span>
                                         @endif
                                     </td>
                                     <td style="max-width:260px;">
-                                        @if (trim((string) $submission->feedback))
+                                        @if ($submission->isGradePublished() && trim((string) $submission->feedback))
                                             <span class="feedback-preview"><i class="fa-solid fa-comment-dots"></i><span>{{ \Illuminate\Support\Str::limit($submission->feedback, 90) }}</span></span>
                                         @else
                                             <span class="text-muted">—</span>

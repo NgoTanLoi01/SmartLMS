@@ -17,6 +17,7 @@ use App\Http\Controllers\CoursePlannerController;
 use App\Http\Controllers\CourseQualityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\GradingFeedbackTemplateController;
 use App\Http\Controllers\LearningProgramController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\ModuleController;
@@ -214,6 +215,11 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::delete('/assignments/{id}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
         Route::get('/assignments/{id}/submissions-list', [AssignmentController::class, 'listSubmissions'])->name('assignments.submissions.list');
         Route::post('/assignments/{id}/submissions/download', [AssignmentController::class, 'downloadSubmissionsArchive'])->name('assignments.submissions.download');
+        Route::get('/assignments/{id}/grades/export', [AssignmentController::class, 'exportGrades'])->name('assignments.grades.export');
+        Route::post('/assignments/{id}/grades/import', [AssignmentController::class, 'importGrades'])->name('assignments.grades.import');
+        Route::post('/assignments/{id}/grades/status', [AssignmentController::class, 'bulkGradeStatus'])->name('assignments.grades.bulk-status');
+        Route::post('/grading-feedback-templates', [GradingFeedbackTemplateController::class, 'store'])->name('grading-feedback-templates.store');
+        Route::delete('/grading-feedback-templates/{template}', [GradingFeedbackTemplateController::class, 'destroy'])->name('grading-feedback-templates.destroy');
         Route::post('/submissions/{id}/ai-analysis', [AssignmentController::class, 'analyzeSubmissionWithAi'])
             ->middleware('throttle:ai-generation')
             ->name('assignments.submissions.ai-analysis');

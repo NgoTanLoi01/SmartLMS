@@ -29,7 +29,7 @@ class MigrationRollbackIntegrityTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['assignment_submissions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
+            foreach (['grading_feedback_templates', 'assignment_submissions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -261,6 +261,41 @@ class MigrationRollbackIntegrityTest extends TestCase
         $migration->down();
         $this->assertFalse(Schema::hasColumn('assignment_submissions', 'checksum_sha256'));
         $this->assertDatabaseHas('assignment_submissions', ['id' => 1, 'file_size' => 123]);
+    }
+
+    public function test_assignment_grading_workflow_migrations_backfill_and_roll_back(): void
+    {
+        Schema::create('assignment_submissions', function (Blueprint $table): void {
+            $table->id();
+            $table->decimal('grade', 5, 2)->nullable();
+            $table->text('feedback')->nullable();
+            $table->timestamps();
+        });
+        DB::table('assignment_submissions')->insert([
+            'grade' => 8.5,
+            'updated_at' => now(),
+            'created_at' => now(),
+        ]);
+
+        $workflowMigration = require database_path('migrations/2026_09_04_000001_add_grading_workflow_to_assignment_submissions.php');
+        $workflowMigration->up();
+        $this->assertDatabaseHas('assignment_submissions', [
+            'id' => 1,
+            'grading_status' => 'published',
+        ]);
+        $this->assertTrue(Schema::hasColumn('assignment_submissions', 'rubric_scores'));
+        $this->assertTrue(Schema::hasColumn('assignment_submissions', 'grade_published_at'));
+
+        $templateMigration = require database_path('migrations/2026_09_04_000002_create_grading_feedback_templates_table.php');
+        $templateMigration->up();
+        $this->assertTrue(Schema::hasTable('grading_feedback_templates'));
+        $templateMigration->down();
+        $this->assertFalse(Schema::hasTable('grading_feedback_templates'));
+
+        $workflowMigration->down();
+        $this->assertFalse(Schema::hasColumn('assignment_submissions', 'grading_status'));
+        $this->assertFalse(Schema::hasColumn('assignment_submissions', 'rubric_scores'));
+        $this->assertFalse(Schema::hasColumn('assignment_submissions', 'grade_published_at'));
     }
 
     public function test_schedule_series_migration_is_reversible(): void

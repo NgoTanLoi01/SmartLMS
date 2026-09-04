@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AssignmentSubmission;
 use App\Models\BackupRun;
 use App\Models\Classroom;
 use App\Models\Course;
@@ -491,6 +492,7 @@ class DashboardController extends Controller
                 ->join('courses', 'assignments.course_id', '=', 'courses.id')
                 ->where('assignment_submissions.user_id', $user->id)
                 ->whereIn('assignments.course_id', $courseIds)
+                ->where('assignment_submissions.grading_status', AssignmentSubmission::GRADING_PUBLISHED)
                 ->where(function ($query) {
                     $query->whereNotNull('assignment_submissions.grade')
                         ->orWhereNotNull('assignment_submissions.feedback');

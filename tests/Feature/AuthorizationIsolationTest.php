@@ -7,6 +7,7 @@ use App\Models\AssignmentSubmission;
 use App\Models\AttendanceColumn;
 use App\Models\Classroom;
 use App\Models\Course;
+use App\Models\GradingFeedbackTemplate;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\Question;
@@ -68,7 +69,8 @@ class AuthorizationIsolationTest extends TestCase
         if ($this->usesIsolatedSqliteDatabase()) {
             foreach ([
                 'smart_notifications',
-                'assignment_submissions', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
+                'grading_feedback_templates',
+                'quiz_attempts', 'quiz_sessions', 'assignment_submissions', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
                 'quizzes', 'assignments', 'lessons', 'modules', 'class_course', 'class_user', 'classes', 'courses', 'users',
             ] as $table) {
                 Schema::dropIfExists($table);
@@ -857,6 +859,194 @@ class AuthorizationIsolationTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_draft_grade_is_private_until_teacher_publishes_it(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+        $this->assignment->update([
+            'grading_rubric' => "Nội dung: 6 điểm\nTrình bày: 4 điểm",
+        ]);
+        $submission = AssignmentSubmission::create([
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+            'text_answer' => 'Bài làm cần chấm theo rubric.',
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('assignments.grade', $submission), [
+                'grade' => 8.75,
+                'action' => 'publish',
+                'rubric_scores' => [
+                    ['score' => 5],
+                    ['score' => 2],
+                ],
+            ])
+            ->assertSessionHasErrors('rubric_scores');
+        $this->assertNull($submission->fresh()->grade);
+
+        $this->actingAs($this->owner)
+            ->post(route('assignments.grade', $submission), [
+                'grade' => 8.75,
+                'feedback' => 'Phản hồi nháp bí mật.',
+                'action' => 'save_draft',
+                'rubric_scores' => [
+                    ['score' => 5.5],
+                    ['score' => 3.25],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $submission->refresh();
+        $this->assertSame(AssignmentSubmission::GRADING_DRAFT, $submission->grading_status);
+        $this->assertNull($submission->grade_published_at);
+        $this->assertCount(2, $submission->rubric_scores);
+
+        $this->actingAs($student)
+            ->get(route('assignments.submissions.review', $submission))
+            ->assertOk()
+            ->assertSee('chưa công bố')
+            ->assertDontSee('8.75')
+            ->assertDontSee('Phản hồi nháp bí mật.');
+
+        $this->actingAs($student)
+            ->get(route('students.grades'))
+            ->assertOk()
+            ->assertSee('Chờ công bố')
+            ->assertDontSee('8.75')
+            ->assertDontSee('Phản hồi nháp bí mật.');
+
+        $this->actingAs($this->owner)
+            ->post(route('assignments.grade', $submission), [
+                'grade' => 8.75,
+                'feedback' => 'Phản hồi đã công bố.',
+                'action' => 'publish',
+                'rubric_scores' => [
+                    ['score' => 5.5],
+                    ['score' => 3.25],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('assignment_submissions', [
+            'id' => $submission->id,
+            'grading_status' => AssignmentSubmission::GRADING_PUBLISHED,
+        ]);
+        $this->actingAs($student)
+            ->get(route('assignments.submissions.review', $submission))
+            ->assertOk()
+            ->assertSee('8.75')
+            ->assertSee('Phản hồi đã công bố.');
+    }
+
+    public function test_bulk_grade_status_rejects_cross_assignment_ids_and_enforces_teacher_scope(): void
+    {
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $this->classroom->students()->attach($student);
+        $submission = AssignmentSubmission::create([
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+            'grade' => 7,
+            'grading_status' => AssignmentSubmission::GRADING_DRAFT,
+            'submitted_at' => now(),
+        ]);
+        $otherAssignment = Assignments::create([
+            'course_id' => $this->course->id,
+            'lesson_id' => $this->lesson->id,
+            'title' => 'Bài tập khác',
+            'instructions' => 'Không thuộc thao tác hàng loạt.',
+            'due_date' => now()->addDay(),
+            'status' => Assignments::STATUS_PUBLISHED,
+        ]);
+        $foreignSubmission = AssignmentSubmission::create([
+            'assignment_id' => $otherAssignment->id,
+            'user_id' => User::factory()->create(['role' => User::ROLE_STUDENT])->id,
+            'grade' => 9,
+            'grading_status' => AssignmentSubmission::GRADING_DRAFT,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($this->owner)
+            ->post(route('assignments.grades.bulk-status', $this->assignment), [
+                'action' => 'publish',
+                'submission_ids' => [$submission->id, $foreignSubmission->id],
+            ])
+            ->assertSessionHasErrors('submission_ids');
+
+        $this->assertSame(AssignmentSubmission::GRADING_DRAFT, $submission->fresh()->grading_status);
+        $this->actingAs($this->otherTeacher)
+            ->post(route('assignments.grades.bulk-status', $this->assignment), [
+                'action' => 'publish',
+                'submission_ids' => [$submission->id],
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($this->owner)
+            ->post(route('assignments.grades.bulk-status', $this->assignment), [
+                'action' => 'publish',
+                'submission_ids' => [$submission->id],
+            ])
+            ->assertRedirect();
+        $this->assertSame(AssignmentSubmission::GRADING_PUBLISHED, $submission->fresh()->grading_status);
+    }
+
+    public function test_grade_import_export_and_feedback_templates_enforce_http_authorization(): void
+    {
+        $student = User::factory()->create([
+            'role' => User::ROLE_STUDENT,
+            'student_code' => 'HV-IMPORT-01',
+        ]);
+        $this->classroom->students()->attach($student);
+        $submission = AssignmentSubmission::create([
+            'assignment_id' => $this->assignment->id,
+            'user_id' => $student->id,
+            'submitted_at' => now(),
+        ]);
+        $csv = implode("\n", [
+            'ID bài nộp,Mã học viên,Họ và tên,Email,Điểm,Trạng thái,Nhận xét,Nộp lúc',
+            implode(',', [$submission->id, 'HV-IMPORT-01', 'Hoc vien', $student->email, '9.25', 'Nháp', 'Nhận xét nhập file', '']),
+        ]);
+
+        $this->actingAs($this->otherTeacher)
+            ->post(route('assignments.grades.import', $this->assignment), [
+                'file' => UploadedFile::fake()->createWithContent('grades.csv', $csv),
+            ])
+            ->assertForbidden();
+        $this->actingAs($this->otherTeacher)
+            ->get(route('assignments.grades.export', $this->assignment))
+            ->assertForbidden();
+
+        $this->actingAs($this->owner)
+            ->post(route('assignments.grades.import', $this->assignment), [
+                'file' => UploadedFile::fake()->createWithContent('grades.csv', $csv),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+        $this->assertDatabaseHas('assignment_submissions', [
+            'id' => $submission->id,
+            'grade' => 9.25,
+            'grading_status' => AssignmentSubmission::GRADING_DRAFT,
+            'feedback' => 'Nhận xét nhập file',
+        ]);
+        $this->actingAs($this->owner)
+            ->get(route('assignments.grades.export', $this->assignment))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $this->actingAs($this->owner)
+            ->post(route('grading-feedback-templates.store'), [
+                'title' => 'Đạt yêu cầu',
+                'content' => 'Bài làm đúng trọng tâm.',
+            ])
+            ->assertRedirect();
+        $template = GradingFeedbackTemplate::sole();
+        $this->actingAs($this->otherTeacher)
+            ->delete(route('grading-feedback-templates.destroy', $template))
+            ->assertForbidden();
+        $this->assertDatabaseHas('grading_feedback_templates', ['id' => $template->id]);
+    }
+
     public function test_direct_http_request_cannot_create_or_update_submission_after_deadline(): void
     {
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
@@ -963,6 +1153,8 @@ class AuthorizationIsolationTest extends TestCase
             'text_answer' => 'Nội dung bài làm của chính tôi.',
             'grade' => 7.5,
             'feedback' => 'Nhận xét dành riêng cho tôi.',
+            'grading_status' => AssignmentSubmission::GRADING_PUBLISHED,
+            'grade_published_at' => now(),
             'submitted_at' => now(),
         ]);
         $classmateSubmission = AssignmentSubmission::create([
@@ -971,6 +1163,8 @@ class AuthorizationIsolationTest extends TestCase
             'text_answer' => 'Nội dung bí mật của bạn cùng lớp.',
             'grade' => 9.5,
             'feedback' => 'Nhận xét bí mật của bạn cùng lớp.',
+            'grading_status' => AssignmentSubmission::GRADING_PUBLISHED,
+            'grade_published_at' => now(),
             'submitted_at' => now(),
         ]);
 
@@ -998,7 +1192,7 @@ class AuthorizationIsolationTest extends TestCase
             ->assertOk()
             ->assertSee('Danh sách học viên')
             ->assertSee('Bạn cùng lớp bí mật')
-            ->assertSee('Đã chấm: 9.5');
+            ->assertSee('Đã công bố: 9.5');
     }
 
     public function test_file_submission_is_stored_on_configured_private_disk_with_checksum(): void
@@ -1177,6 +1371,7 @@ class AuthorizationIsolationTest extends TestCase
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('student_code')->nullable();
             $table->string('password');
             $table->string('role');
             $table->rememberToken();
@@ -1192,6 +1387,13 @@ class AuthorizationIsolationTest extends TestCase
             $table->json('data')->nullable();
             $table->string('dedupe_key')->nullable();
             $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('grading_feedback_templates', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('title');
+            $table->text('content');
             $table->timestamps();
         });
         Schema::create('courses', function (Blueprint $table) {
@@ -1276,6 +1478,9 @@ class AuthorizationIsolationTest extends TestCase
             $table->text('text_answer')->nullable();
             $table->decimal('grade', 5, 2)->nullable();
             $table->text('feedback')->nullable();
+            $table->string('grading_status')->default(AssignmentSubmission::GRADING_PENDING);
+            $table->json('rubric_scores')->nullable();
+            $table->timestamp('grade_published_at')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
             $table->unique(['assignment_id', 'user_id']);
@@ -1288,6 +1493,26 @@ class AuthorizationIsolationTest extends TestCase
             $table->string('status')->default(Quiz::STATUS_PUBLISHED);
             $table->timestamp('published_at')->nullable();
             $table->timestamp('available_from')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('quiz_sessions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('quiz_id');
+            $table->timestamp('ends_at')->nullable();
+            $table->string('result_release_policy')->default('immediate');
+            $table->timestamp('results_released_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('quiz_attempts', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('quiz_id');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('quiz_session_id')->nullable();
+            $table->string('status')->nullable();
+            $table->decimal('score', 8, 2)->nullable();
+            $table->timestamp('completed_at')->nullable();
+            $table->timestamp('graded_at')->nullable();
+            $table->timestamp('result_released_at')->nullable();
             $table->timestamps();
         });
         Schema::create('attendance_columns', function (Blueprint $table) {

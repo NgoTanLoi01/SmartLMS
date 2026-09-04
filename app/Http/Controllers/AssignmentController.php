@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AssignmentGradesExport;
+use App\Imports\AssignmentGradesImport;
 use App\Jobs\AnalyzeAssignmentSubmission;
 use App\Models\AiOperation;
 use App\Models\Assignments;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Models\GradingFeedbackTemplate;
 use App\Models\Lesson;
 use App\Models\User;
+use App\Rules\SafeSpreadsheet;
 use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
 use App\Services\SubmissionArchiveService;
@@ -19,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AssignmentController extends Controller
 {
@@ -192,43 +197,60 @@ class AssignmentController extends Controller
         $submission = AssignmentSubmission::with('assignment.course')->findOrFail($submissionId);
         Gate::authorize('grade', $submission);
         $scale = $submission->assignment?->grading_scale ?? 10;
-        $oldValues = AuditLogger::snapshot($submission, ['grade', 'feedback']);
+        $oldValues = AuditLogger::snapshot($submission, ['grade', 'feedback', 'grading_status', 'rubric_scores', 'grade_published_at']);
 
-        $request->validate([
+        $validated = $request->validate([
             'grade' => 'required|numeric|min:0|max:'.$scale,
-            'feedback' => 'nullable|string',
-            'action' => 'nullable|in:save,save_next',
+            'feedback' => 'nullable|string|max:5000',
+            'action' => 'nullable|in:save_draft,publish,publish_next,save,save_next',
+            'rubric_scores' => 'nullable|array|max:20',
+            'rubric_scores.*.score' => 'nullable|numeric|min:0',
         ]);
+        $action = $validated['action'] ?? 'publish';
+        $publish = in_array($action, ['publish', 'publish_next', 'save', 'save_next'], true);
+        $shouldNotify = $publish && (
+            ! $submission->isGradePublished()
+            || abs((float) $submission->grade - (float) $validated['grade']) > 0.00001
+            || (string) $submission->feedback !== (string) ($validated['feedback'] ?? '')
+        );
+        $rubricScores = $this->normalizeRubricScores(
+            $submission->assignment,
+            $validated['rubric_scores'] ?? [],
+            (float) $validated['grade']
+        );
 
         $submission->update([
-            'grade' => $request->grade,
-            'feedback' => $request->feedback,
+            'grade' => $validated['grade'],
+            'feedback' => $validated['feedback'] ?? null,
+            'rubric_scores' => $rubricScores,
+            'grading_status' => $publish
+                ? AssignmentSubmission::GRADING_PUBLISHED
+                : AssignmentSubmission::GRADING_DRAFT,
+            'grade_published_at' => $publish
+                ? ($shouldNotify ? now() : ($submission->grade_published_at ?? now()))
+                : null,
         ]);
 
-        app(NotificationCenter::class)->notifyUser(
-            $submission->user_id,
-            'grade',
-            'Bài tập đã được chấm',
-            "Bài \"{$submission->assignment->title}\" đã có điểm {$submission->grade}/{$scale}".($submission->feedback ? ' và nhận xét mới.' : '.'),
-            route('students.grades'),
-            ['assignment_id' => $submission->assignment_id, 'submission_id' => $submission->id],
-            "grade:submission:{$submission->id}:".md5($submission->updated_at.'|'.$submission->grade.'|'.$submission->feedback)
-        );
+        if ($shouldNotify) {
+            $this->notifyPublishedGrade($submission, $scale);
+        }
 
         AuditLogger::log(
             AuditLogger::GRADE_UPDATED,
             $submission,
             $oldValues,
-            AuditLogger::snapshot($submission->fresh(), ['grade', 'feedback']),
+            AuditLogger::snapshot($submission->fresh(), ['grade', 'feedback', 'grading_status', 'rubric_scores', 'grade_published_at']),
             [
                 'assignment_id' => $submission->assignment_id,
                 'assignment_title' => $submission->assignment?->title,
                 'student_id' => $submission->user_id,
             ],
-            'Giáo viên cập nhật điểm và nhận xét bài nộp.'
+            $publish
+                ? 'Giáo viên chấm và công bố điểm bài nộp.'
+                : 'Giáo viên lưu nháp điểm bài nộp.'
         );
 
-        if ($request->input('action') === 'save_next') {
+        if (in_array($action, ['publish_next', 'save_next'], true)) {
             $nextSubmission = AssignmentSubmission::query()
                 ->where('assignment_id', $submission->assignment_id)
                 ->whereNull('grade')
@@ -241,15 +263,17 @@ class AssignmentController extends Controller
             if ($nextSubmission) {
                 return redirect()
                     ->route('assignments.submissions.review', $nextSubmission)
-                    ->with('success', 'Đã lưu. Đang chuyển sang bài chưa chấm tiếp theo.');
+                    ->with('success', 'Đã công bố điểm. Đang chuyển sang bài chưa chấm tiếp theo.');
             }
 
             return redirect()
                 ->route('assignments.submissions.review', $submission)
-                ->with('success', 'Đã lưu điểm. Không còn bài nộp nào chờ chấm.');
+                ->with('success', 'Đã công bố điểm. Không còn bài nộp nào chờ chấm.');
         }
 
-        return back()->with('success', 'Đã lưu điểm và nhận xét!');
+        return back()->with('success', $publish
+            ? 'Đã công bố điểm và nhận xét cho học viên.'
+            : 'Đã lưu nháp điểm. Học viên chưa nhìn thấy kết quả.');
     }
 
     public function analyzeSubmissionWithAi($submissionId)
@@ -304,13 +328,19 @@ class AssignmentController extends Controller
         $fileName = $submission->original_filename ?: ($submission->file_path ? basename($submission->file_path) : null);
 
         $canGrade = Gate::allows('grade', $submission);
+        $gradeVisible = $canGrade || $submission->isGradePublished();
         $gradingQueue = collect();
         $queueStats = [
             'total' => 0,
             'submitted' => 0,
             'pending' => 0,
-            'graded' => 0,
+            'draft' => 0,
+            'published' => 0,
         ];
+        $previousSubmissionId = null;
+        $nextSubmissionId = null;
+        $feedbackTemplates = collect();
+        $rubricCriteria = [];
 
         // Dữ liệu lớp và hàng đợi chấm là dữ liệu riêng của giáo viên/admin.
         // Học viên xem bài của mình không được tải dữ liệu của các bạn cùng lớp.
@@ -337,16 +367,36 @@ class AssignmentController extends Controller
                     'submission_id' => $studentSubmission?->id,
                     'submitted_at' => $studentSubmission?->submitted_at,
                     'grade' => $studentSubmission?->grade,
+                    'grading_status' => $studentSubmission?->grading_status,
                     'is_current' => $studentSubmission?->id === $submission->id,
-                    'status' => ! $studentSubmission ? 'missing' : ($studentSubmission->grade === null ? 'pending' : 'graded'),
+                    'status' => ! $studentSubmission
+                        ? 'missing'
+                        : ($studentSubmission->grade === null
+                            ? 'pending'
+                            : ($studentSubmission->isGradePublished() ? 'published' : 'draft')),
                 ];
             });
             $queueStats = [
                 'total' => $gradingQueue->count(),
                 'submitted' => $gradingQueue->whereNotNull('submission_id')->count(),
                 'pending' => $gradingQueue->where('status', 'pending')->count(),
-                'graded' => $gradingQueue->where('status', 'graded')->count(),
+                'draft' => $gradingQueue->where('status', 'draft')->count(),
+                'published' => $gradingQueue->where('status', 'published')->count(),
             ];
+
+            $submittedIds = $gradingQueue->pluck('submission_id')->filter()->values();
+            $currentPosition = $submittedIds->search($submission->id);
+            if ($currentPosition !== false) {
+                $previousSubmissionId = $submittedIds->get($currentPosition - 1);
+                $nextSubmissionId = $submittedIds->get($currentPosition + 1);
+            }
+
+            $feedbackTemplates = GradingFeedbackTemplate::query()
+                ->where('user_id', auth()->id())
+                ->latest('updated_at')
+                ->orderBy('title')
+                ->get();
+            $rubricCriteria = $this->rubricCriteria($assignment);
         }
 
         return view('assignments.submission_review', compact(
@@ -359,8 +409,13 @@ class AssignmentController extends Controller
             'filePreviewType',
             'fileName',
             'canGrade',
+            'gradeVisible',
             'gradingQueue',
             'queueStats',
+            'previousSubmissionId',
+            'nextSubmissionId',
+            'feedbackTemplates',
+            'rubricCriteria',
         ));
     }
 
@@ -451,6 +506,117 @@ class AssignmentController extends Controller
         }
 
         return $this->submissionArchives->download($assignment, $submissions);
+    }
+
+    public function exportGrades($id)
+    {
+        $assignment = Assignments::with('course')->notArchived()->findOrFail($id);
+        Gate::authorize('update', $assignment);
+        $filename = 'diem-'.str($assignment->title)->slug()->limit(80, '')->toString().'.xlsx';
+
+        return Excel::download(new AssignmentGradesExport($assignment), $filename);
+    }
+
+    public function importGrades(Request $request, $id)
+    {
+        $assignment = Assignments::with('course')->notArchived()->findOrFail($id);
+        Gate::authorize('update', $assignment);
+        $request->validate([
+            'file' => ['required', 'file', 'max:5120', new SafeSpreadsheet],
+        ]);
+
+        $import = new AssignmentGradesImport($assignment);
+        try {
+            Excel::import($import, $request->file('file'));
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'file' => 'Không thể đọc file điểm. Hãy dùng đúng file được xuất từ bài tập này.',
+            ]);
+        }
+
+        foreach ($import->publishedSubmissions as $publishedSubmission) {
+            $this->notifyPublishedGrade($publishedSubmission, $assignment->grading_scale ?? 10);
+        }
+
+        AuditLogger::log(
+            AuditLogger::GRADES_IMPORTED,
+            $assignment,
+            null,
+            ['updated_count' => $import->updatedCount],
+            ['published_count' => count($import->publishedSubmissions)],
+            'Giáo viên nhập điểm cho một bài tập từ bảng tính.'
+        );
+
+        return back()->with('success', "Đã nhập và cập nhật {$import->updatedCount} bài nộp.");
+    }
+
+    public function bulkGradeStatus(Request $request, $id)
+    {
+        $assignment = Assignments::with('course')->notArchived()->findOrFail($id);
+        Gate::authorize('update', $assignment);
+        $validated = $request->validate([
+            'action' => 'required|in:publish,draft',
+            'submission_ids' => 'required|array|min:1|max:500',
+            'submission_ids.*' => 'required|integer|distinct',
+        ]);
+
+        $submissions = AssignmentSubmission::query()
+            ->with('assignment.course')
+            ->where('assignment_id', $assignment->id)
+            ->whereIn('id', $validated['submission_ids'])
+            ->get();
+
+        if ($submissions->count() !== count($validated['submission_ids'])) {
+            throw ValidationException::withMessages([
+                'submission_ids' => 'Danh sách chứa bài nộp không thuộc bài tập hiện tại.',
+            ]);
+        }
+        if ($submissions->contains(fn ($submission) => $submission->grade === null)) {
+            throw ValidationException::withMessages([
+                'submission_ids' => 'Chỉ có thể công bố hoặc thu hồi những bài đã có điểm.',
+            ]);
+        }
+
+        $targetStatus = $validated['action'] === 'publish'
+            ? AssignmentSubmission::GRADING_PUBLISHED
+            : AssignmentSubmission::GRADING_DRAFT;
+        $changed = $submissions->filter(fn ($submission) => $submission->grading_status !== $targetStatus);
+
+        DB::transaction(function () use ($changed, $targetStatus): void {
+            foreach ($changed as $submission) {
+                $submission->update([
+                    'grading_status' => $targetStatus,
+                    'grade_published_at' => $targetStatus === AssignmentSubmission::GRADING_PUBLISHED ? now() : null,
+                ]);
+            }
+        });
+
+        if ($targetStatus === AssignmentSubmission::GRADING_PUBLISHED) {
+            foreach ($changed as $submission) {
+                $this->notifyPublishedGrade($submission, $assignment->grading_scale ?? 10);
+            }
+        }
+
+        AuditLogger::log(
+            AuditLogger::GRADES_BULK_STATUS_UPDATED,
+            $assignment,
+            null,
+            ['grading_status' => $targetStatus],
+            ['submission_ids' => $changed->pluck('id')->all(), 'count' => $changed->count()],
+            $targetStatus === AssignmentSubmission::GRADING_PUBLISHED
+                ? 'Giáo viên công bố điểm hàng loạt.'
+                : 'Giáo viên thu hồi điểm hàng loạt về bản nháp.'
+        );
+
+        $message = $targetStatus === AssignmentSubmission::GRADING_PUBLISHED
+            ? 'Đã công bố điểm cho '
+            : 'Đã chuyển về nháp ';
+
+        return back()->with('success', $message.$changed->count().' bài nộp.');
     }
 
     public function submit(Request $request, $id)
@@ -715,6 +881,103 @@ class AssignmentController extends Controller
         Gate::authorize('view', $submission);
 
         return $this->submissionFiles->preview($submission);
+    }
+
+    private function notifyPublishedGrade(AssignmentSubmission $submission, int|float $scale): void
+    {
+        $submission->loadMissing('assignment');
+        $assignment = $submission->assignment;
+        $score = rtrim(rtrim(number_format((float) $submission->grade, 2, '.', ''), '0'), '.');
+        $maxScore = rtrim(rtrim(number_format((float) $scale, 2, '.', ''), '0'), '.');
+        $message = "Bài \"{$assignment->title}\" đã được chấm {$score}/{$maxScore}.";
+
+        if (filled($submission->feedback)) {
+            $message .= ' Nhận xét: '.str($submission->feedback)->limit(180);
+        }
+
+        app(NotificationCenter::class)->notifyUser(
+            $submission->user_id,
+            'grade',
+            'Điểm bài tập đã được công bố',
+            $message,
+            route('students.grades'),
+            [
+                'assignment_id' => $submission->assignment_id,
+                'submission_id' => $submission->id,
+                'grade' => (float) $submission->grade,
+            ],
+            'assignment-grade:'.$submission->id.':'.($submission->grade_published_at?->timestamp ?? now()->timestamp)
+        );
+    }
+
+    /** @return array<int, array{key: int, label: string, max_score: float|null}> */
+    private function rubricCriteria(Assignments $assignment): array
+    {
+        return collect(preg_split('/\R/u', (string) $assignment->grading_rubric) ?: [])
+            ->map(fn (string $line) => trim(preg_replace('/^[\s\-*•\d.)]+/u', '', $line) ?? $line))
+            ->filter()
+            ->take(20)
+            ->values()
+            ->map(function (string $line, int $index): array {
+                $maxScore = null;
+                if (preg_match('/(?:[:\-(]|\/)\s*(\d+(?:[.,]\d+)?)\s*(?:điểm|pts?|\))?\s*$/iu', $line, $matches)) {
+                    $maxScore = (float) str_replace(',', '.', $matches[1]);
+                }
+
+                return [
+                    'key' => $index,
+                    'label' => $line,
+                    'max_score' => $maxScore !== null && $maxScore > 0 ? $maxScore : null,
+                ];
+            })
+            ->all();
+    }
+
+    /** @return array<int, array{criterion: string, score: float, max_score: float|null}> */
+    private function normalizeRubricScores(Assignments $assignment, array $submittedScores, float $grade): array
+    {
+        $criteria = $this->rubricCriteria($assignment);
+        if ($criteria === [] || $submittedScores === []) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($criteria as $index => $criterion) {
+            $rawScore = data_get($submittedScores, "{$index}.score");
+            if ($rawScore === null || $rawScore === '') {
+                continue;
+            }
+
+            $score = (float) $rawScore;
+            if ($criterion['max_score'] !== null && $score > $criterion['max_score']) {
+                throw ValidationException::withMessages([
+                    "rubric_scores.{$index}.score" => "Điểm tiêu chí không được vượt quá {$criterion['max_score']}.",
+                ]);
+            }
+
+            $normalized[] = [
+                'criterion' => $criterion['label'],
+                'score' => $score,
+                'max_score' => $criterion['max_score'],
+            ];
+        }
+
+        if ($normalized !== []) {
+            $total = collect($normalized)->sum('score');
+            $scale = (float) ($assignment->grading_scale ?: 10);
+            if ($total > $scale + 0.00001) {
+                throw ValidationException::withMessages([
+                    'rubric_scores' => "Tổng điểm rubric không được vượt quá thang điểm {$scale}.",
+                ]);
+            }
+            if (abs($total - $grade) > 0.009) {
+                throw ValidationException::withMessages([
+                    'rubric_scores' => 'Tổng điểm rubric phải bằng điểm cuối cùng.',
+                ]);
+            }
+        }
+
+        return $normalized;
     }
 
     private function normalizeAllowedExtensions(string|array|null $extensions): string

@@ -438,6 +438,7 @@ class DashboardMetricsTest extends TestCase
             $table->unsignedBigInteger('user_id');
             $table->decimal('grade', 8, 2)->nullable();
             $table->text('feedback')->nullable();
+            $table->string('grading_status')->default('pending');
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
         });

@@ -11,6 +11,10 @@ class AuditLogger
 {
     public const GRADE_UPDATED = 'grade_updated';
 
+    public const GRADES_IMPORTED = 'grades_imported';
+
+    public const GRADES_BULK_STATUS_UPDATED = 'grades_bulk_status_updated';
+
     public const AI_ASSIGNMENT_ANALYZED = 'ai_assignment_analyzed';
 
     public const AI_LEARNING_ANALYZED = 'ai_learning_analyzed';

@@ -56,7 +56,7 @@ class StudentGradesController extends Controller
             ->get();
 
         $assignmentGrades = $assignmentSubmissions
-            ->filter(fn ($submission) => $submission->grade !== null)
+            ->filter(fn ($submission) => $submission->isGradePublished())
             ->map(fn ($submission) => [
                 'score' => (float) $submission->grade,
                 'scale' => (float) ($submission->assignment?->grading_scale ?: 10),
@@ -80,7 +80,7 @@ class StudentGradesController extends Controller
         $allScores = $normalizedAssignmentScores->concat($quizScores);
 
         $assignmentFeedback = $assignmentSubmissions
-            ->filter(fn ($submission) => trim((string) $submission->feedback) !== '')
+            ->filter(fn ($submission) => $submission->isGradePublished() && trim((string) $submission->feedback) !== '')
             ->map(function ($submission) {
                 $assignment = $submission->assignment;
 
@@ -126,7 +126,9 @@ class StudentGradesController extends Controller
             'assignment_average' => $normalizedAssignmentScores->isNotEmpty() ? round($normalizedAssignmentScores->avg(), 1) : null,
             'quiz_average' => $quizScores->isNotEmpty() ? round($quizScores->avg(), 1) : null,
             'graded_assignments' => $assignmentGrades->count(),
-            'pending_assignments' => $assignmentSubmissions->whereNull('grade')->count(),
+            'pending_assignments' => $assignmentSubmissions
+                ->reject(fn ($submission) => $submission->isGradePublished())
+                ->count(),
             'completed_quizzes' => $quizAttempts->pluck('quiz_id')->unique()->count(),
             'feedback_count' => $feedbackItems->count(),
         ];

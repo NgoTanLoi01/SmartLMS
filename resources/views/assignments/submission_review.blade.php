@@ -20,8 +20,10 @@
                 <div>
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         <span class="bdg bdg--primary">{{ $assignmentTypeLabel }}</span>
-                        @if ($submission->grade !== null)
-                            <span class="bdg bdg--success"><i class="fa-solid fa-circle-check"></i> Đã chấm</span>
+                        @if ($submission->isGradePublished())
+                            <span class="bdg bdg--success"><i class="fa-solid fa-circle-check"></i> Đã công bố</span>
+                        @elseif ($canGrade && $submission->grade !== null)
+                            <span class="bdg bdg--warning"><i class="fa-solid fa-pen"></i> Điểm nháp</span>
                         @else
                             <span class="bdg bdg--warning"><i class="fa-solid fa-hourglass-half"></i> Chưa chấm</span>
                         @endif
@@ -37,20 +39,45 @@
                         <span><i class="fa-solid fa-calendar-days me-1"></i>Hạn:
                             {{ $assignment->due_date?->format('d/m/Y H:i') ?? '---' }}</span>
                     </div>
+                    @if ($canGrade)
+                        <nav class="submission-nav" aria-label="Chuyển bài nộp">
+                            @if ($previousSubmissionId)
+                                <a href="{{ route('assignments.submissions.review', $previousSubmissionId) }}">
+                                    <i class="fa-solid fa-chevron-left"></i> Bài trước
+                                </a>
+                            @else
+                                <span class="disabled"><i class="fa-solid fa-chevron-left"></i> Bài trước</span>
+                            @endif
+                            @if ($nextSubmissionId)
+                                <a href="{{ route('assignments.submissions.review', $nextSubmissionId) }}">
+                                    Bài tiếp <i class="fa-solid fa-chevron-right"></i>
+                                </a>
+                            @else
+                                <span class="disabled">Bài tiếp <i class="fa-solid fa-chevron-right"></i></span>
+                            @endif
+                        </nav>
+                    @endif
                 </div>
                 @if ($canGrade)
-                    <form method="POST" action="{{ route('assignments.submissions.download', $assignment->id) }}"
-                        class="review-download-form">
-                        @csrf
-                        <select name="mode" aria-label="Phạm vi tải bài nộp">
-                            <option value="all">Tất cả bài đã nộp</option>
-                            <option value="ungraded">Chỉ bài chưa chấm</option>
-                        </select>
-                        <button type="submit" class="btn-download-zip">
-                            <i class="fa-solid fa-file-zipper"></i>
-                            Tải bài nộp (.zip)
+                    <div class="review-tools">
+                        <a href="{{ route('assignments.grades.export', $assignment->id) }}" class="review-tool-btn">
+                            <i class="fa-solid fa-file-excel"></i> Xuất điểm
+                        </a>
+                        <button type="button" class="review-tool-btn" data-bs-toggle="modal" data-bs-target="#importGradesModal">
+                            <i class="fa-solid fa-file-import"></i> Nhập điểm
                         </button>
-                    </form>
+                        <form method="POST" action="{{ route('assignments.submissions.download', $assignment->id) }}"
+                            class="review-download-form">
+                            @csrf
+                            <select name="mode" aria-label="Phạm vi tải bài nộp">
+                                <option value="all">Tất cả bài đã nộp</option>
+                                <option value="ungraded">Chỉ bài chưa chấm</option>
+                            </select>
+                            <button type="submit" class="btn-download-zip">
+                                <i class="fa-solid fa-file-zipper"></i> Tải bài (.zip)
+                            </button>
+                        </form>
+                    </div>
                 @endif
             </div>
 
@@ -62,7 +89,9 @@
                     <aside class="grading-queue">
                     <div class="grading-queue__head">
                         <h2 class="grading-queue__title">Danh sách học viên</h2>
-                        <div class="grading-queue__stats">{{ $queueStats['pending'] }} chờ chấm · {{ $queueStats['graded'] }} đã chấm</div>
+                        <div class="grading-queue__stats">
+                            {{ $queueStats['pending'] }} chờ chấm · {{ $queueStats['draft'] }} nháp · {{ $queueStats['published'] }} công bố
+                        </div>
                         <div class="grading-queue__search">
                             <i class="fa-solid fa-search"></i>
                             <input type="search" id="queueSearch" placeholder="Tìm học viên...">
@@ -70,31 +99,49 @@
                         <div class="grading-queue__filters" role="group" aria-label="Lọc trạng thái">
                             <button type="button" class="queue-filter active" data-queue-filter="all">Tất cả</button>
                             <button type="button" class="queue-filter" data-queue-filter="pending">Chờ chấm</button>
-                            <button type="button" class="queue-filter" data-queue-filter="graded">Đã chấm</button>
+                            <button type="button" class="queue-filter" data-queue-filter="draft">Nháp</button>
+                            <button type="button" class="queue-filter" data-queue-filter="published">Công bố</button>
                         </div>
+                        <form id="bulkGradeStatusForm" method="POST" action="{{ route('assignments.grades.bulk-status', $assignment->id) }}"
+                            class="grading-bulk-form">
+                            @csrf
+                            <input type="hidden" name="action" id="bulkGradeAction" value="publish">
+                            <label><input type="checkbox" id="selectAllGraded"> Chọn bài có điểm</label>
+                            <div class="grading-bulk-actions">
+                                <button type="button" data-bulk-action="publish">Trả bài / công bố</button>
+                                <button type="button" data-bulk-action="draft">Về nháp</button>
+                            </div>
+                        </form>
                     </div>
                     <div class="grading-queue__list" id="gradingQueueList">
                         @foreach ($gradingQueue as $item)
                             @php
                                 $statusLabel = match ($item['status']) {
                                     'pending' => 'Chờ chấm',
-                                    'graded' => 'Đã chấm: ' . $item['grade'],
+                                    'draft' => 'Điểm nháp: ' . $item['grade'],
+                                    'published' => 'Đã công bố: ' . $item['grade'],
                                     default => 'Chưa nộp',
                                 };
                             @endphp
-                            @if ($item['submission_id'])
-                                <a href="{{ route('assignments.submissions.review', $item['submission_id']) }}"
-                                    class="queue-student {{ $item['is_current'] ? 'current' : '' }}"
-                                    data-status="{{ $item['status'] }}" data-name="{{ Str::lower($item['student_name']) }}">
-                            @else
-                                <div class="queue-student disabled" data-status="missing" data-name="{{ Str::lower($item['student_name']) }}">
-                            @endif
-                                <span class="queue-student__avatar">{{ mb_strtoupper(mb_substr($item['student_name'], 0, 1)) }}</span>
-                                <span class="queue-student__body">
-                                    <span class="queue-student__name">{{ $item['student_name'] }}</span>
-                                    <span class="queue-student__status {{ $item['status'] }}">{{ $statusLabel }}</span>
-                                </span>
-                            @if ($item['submission_id']) </a> @else </div> @endif
+                            <div class="queue-student-row" data-status="{{ $item['status'] }}" data-name="{{ Str::lower($item['student_name']) }}">
+                                @if ($item['submission_id'] && $item['grade'] !== null)
+                                    <input type="checkbox" class="bulk-grade-checkbox" form="bulkGradeStatusForm"
+                                        name="submission_ids[]" value="{{ $item['submission_id'] }}"
+                                        aria-label="Chọn bài của {{ $item['student_name'] }}">
+                                @endif
+                                @if ($item['submission_id'])
+                                    <a href="{{ route('assignments.submissions.review', $item['submission_id']) }}"
+                                        class="queue-student {{ $item['is_current'] ? 'current' : '' }}">
+                                @else
+                                    <div class="queue-student disabled">
+                                @endif
+                                    <span class="queue-student__avatar">{{ mb_strtoupper(mb_substr($item['student_name'], 0, 1)) }}</span>
+                                    <span class="queue-student__body">
+                                        <span class="queue-student__name">{{ $item['student_name'] }}</span>
+                                        <span class="queue-student__status {{ $item['status'] }}">{{ $statusLabel }}</span>
+                                    </span>
+                                @if ($item['submission_id']) </a> @else </div> @endif
+                            </div>
                         @endforeach
                     </div>
                     </aside>
@@ -350,9 +397,60 @@
                             </div>
 
                             {{-- GRADING FORM --}}
+                            <div class="feedback-template-tools">
+                                <label class="form-lbl" for="feedbackTemplateSelect">Mẫu nhận xét thường dùng</label>
+                                <div class="feedback-template-row">
+                                    <select id="feedbackTemplateSelect" class="form-ctrl">
+                                        <option value="">Chọn mẫu nhận xét...</option>
+                                        @foreach ($feedbackTemplates as $template)
+                                            <option value="{{ $template->id }}" data-content="{{ $template->content }}"
+                                                data-delete-url="{{ route('grading-feedback-templates.destroy', $template) }}">
+                                                {{ $template->title }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <button type="button" id="applyFeedbackTemplate" class="template-btn">Áp dụng</button>
+                                </div>
+                                <div class="feedback-template-links">
+                                    <button type="button" data-bs-toggle="modal" data-bs-target="#feedbackTemplateModal">
+                                        <i class="fa-solid fa-plus"></i> Lưu mẫu mới
+                                    </button>
+                                    <button type="button" id="deleteFeedbackTemplate">
+                                        <i class="fa-regular fa-trash-can"></i> Xóa mẫu đã chọn
+                                    </button>
+                                </div>
+                            </div>
+
                             <form method="POST" action="{{ route('assignments.grade', $submission->id) }}"
                                 class="grading-form">
                                 @csrf
+
+                                @if ($rubricCriteria)
+                                    <div class="quick-rubric">
+                                        <div class="quick-rubric__head">
+                                            <span class="form-lbl mb-0">Chấm nhanh theo rubric</span>
+                                            <span id="rubricTotal">0/{{ $assignment->grading_scale ?? 10 }}</span>
+                                        </div>
+                                        @foreach ($rubricCriteria as $criterion)
+                                            @php
+                                                $savedRubricScore = data_get($submission->rubric_scores, $loop->index.'.score');
+                                            @endphp
+                                            <label class="quick-rubric__row">
+                                                <span>{{ $criterion['label'] }}</span>
+                                                <span class="quick-rubric__score">
+                                                    <input type="number" name="rubric_scores[{{ $loop->index }}][score]"
+                                                        class="rubric-score-input" min="0" step="0.1"
+                                                        @if ($criterion['max_score']) max="{{ $criterion['max_score'] }}" @endif
+                                                        value="{{ $savedRubricScore }}" aria-label="Điểm {{ $criterion['label'] }}">
+                                                    @if ($criterion['max_score'])
+                                                        <small>/{{ $criterion['max_score'] }}</small>
+                                                    @endif
+                                                </span>
+                                            </label>
+                                        @endforeach
+                                        <div class="quick-rubric__hint">Nhập các tiêu chí để hệ thống tự cộng vào điểm cuối cùng.</div>
+                                    </div>
+                                @endif
 
                                 <div class="form-group">
                                     <label class="form-lbl">Điểm số</label>
@@ -369,14 +467,21 @@
                                 </div>
 
                                 <div class="grading-actions">
-                                    <button type="submit" name="action" value="save_next" class="btn-save btn-save-next">
+                                    <button type="submit" name="action" value="save_draft" class="btn-save btn-save-draft">
+                                        <i class="fa-regular fa-floppy-disk"></i>
+                                        Lưu nháp
+                                    </button>
+                                    <button type="submit" name="action" value="publish_next" class="btn-save btn-save-next">
                                         <i class="fa-solid fa-forward"></i>
-                                        Lưu & bài tiếp theo
+                                        Công bố & bài tiếp
                                     </button>
-                                    <button type="submit" name="action" value="save" class="btn-save">
+                                    <button type="submit" name="action" value="publish" class="btn-save">
                                         <i class="fa-solid fa-circle-check"></i>
-                                        Chỉ lưu bài này
+                                        Công bố điểm
                                     </button>
+                                </div>
+                                <div class="grading-visibility-note">
+                                    <i class="fa-solid fa-eye-slash"></i> Điểm nháp chỉ giáo viên/admin nhìn thấy.
                                 </div>
                             </form>
 
@@ -388,7 +493,7 @@
                                     </div>
                                 </div>
                                 <div class="panel__body">
-                                    @if ($submission->grade !== null)
+                                    @if ($gradeVisible)
                                         <div class="score-input-wrap mb-3">
                                             <strong>{{ $submission->grade }}</strong>
                                             <span class="score-max">/ {{ $assignment->grading_scale ?? 10 }}</span>
@@ -400,7 +505,7 @@
                                     @else
                                         <div class="ai-notice">
                                             <i class="fa-solid fa-hourglass-half"></i>
-                                            <span>Bài nộp của bạn đang chờ giáo viên chấm điểm.</span>
+                                            <span>{{ $submission->grade !== null ? 'Điểm đang được giáo viên hoàn thiện và chưa công bố.' : 'Bài nộp của bạn đang chờ giáo viên chấm điểm.' }}</span>
                                         </div>
                                     @endif
                                 </div>
@@ -413,6 +518,68 @@
             </div>
         </div>
     </div>
+
+    @if ($canGrade)
+        <div class="modal fade" id="importGradesModal" tabindex="-1" aria-labelledby="importGradesModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="{{ route('assignments.grades.import', $assignment->id) }}" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="importGradesModalLabel">Nhập điểm từ bảng tính</h2>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small">
+                                Hãy xuất file điểm của bài tập này, cập nhật cột <strong>Điểm</strong>,
+                                <strong>Trạng thái</strong> và <strong>Nhận xét</strong>, rồi nhập lại. Không thay đổi ID bài nộp.
+                            </p>
+                            <label for="gradesImportFile" class="form-label fw-semibold">File XLSX, XLS hoặc CSV</label>
+                            <input id="gradesImportFile" type="file" name="file" class="form-control"
+                                accept=".xlsx,.xls,.csv" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary">Kiểm tra và nhập điểm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="feedbackTemplateModal" tabindex="-1" aria-labelledby="feedbackTemplateModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="{{ route('grading-feedback-templates.store') }}">
+                        @csrf
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="feedbackTemplateModalLabel">Lưu mẫu nhận xét</h2>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="feedbackTemplateTitle" class="form-label fw-semibold">Tên mẫu</label>
+                                <input id="feedbackTemplateTitle" name="title" class="form-control" maxlength="100" required>
+                            </div>
+                            <div>
+                                <label for="feedbackTemplateContent" class="form-label fw-semibold">Nội dung nhận xét</label>
+                                <textarea id="feedbackTemplateContent" name="content" class="form-control" rows="5" maxlength="5000" required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary">Lưu mẫu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" id="deleteFeedbackTemplateForm" class="d-none">
+            @csrf
+            @method('DELETE')
+        </form>
+    @endif
 @endsection
 
 @push('scripts')
@@ -444,9 +611,68 @@
             document.addEventListener('keydown', function(event) {
                 if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
                     event.preventDefault();
-                    document.querySelector('button[name="action"][value="save_next"]')?.click();
+                    document.querySelector('button[name="action"][value="publish_next"]')?.click();
                 }
             });
+
+            const bulkForm = document.getElementById('bulkGradeStatusForm');
+            const bulkCheckboxes = Array.from(document.querySelectorAll('.bulk-grade-checkbox'));
+            const selectAll = document.getElementById('selectAllGraded');
+            selectAll?.addEventListener('change', () => {
+                bulkCheckboxes.forEach(checkbox => {
+                    const row = checkbox.closest('.queue-student-row');
+                    if (row?.style.display !== 'none') checkbox.checked = selectAll.checked;
+                });
+            });
+            document.querySelectorAll('[data-bulk-action]').forEach(button => button.addEventListener('click', function() {
+                const selectedCount = bulkCheckboxes.filter(checkbox => checkbox.checked).length;
+                if (!selectedCount) {
+                    window.alert('Vui lòng chọn ít nhất một bài đã có điểm.');
+                    return;
+                }
+                const publish = this.dataset.bulkAction === 'publish';
+                const message = publish
+                    ? `Trả bài và công bố điểm cho ${selectedCount} học viên đã chọn?`
+                    : `Chuyển ${selectedCount} kết quả đã chọn về nháp? Học viên sẽ không còn thấy điểm.`;
+                if (!window.confirm(message)) return;
+                document.getElementById('bulkGradeAction').value = this.dataset.bulkAction;
+                bulkForm.submit();
+            }));
+
+            const templateSelect = document.getElementById('feedbackTemplateSelect');
+            const feedbackInput = document.getElementById('feedbackInput');
+            document.getElementById('applyFeedbackTemplate')?.addEventListener('click', () => {
+                const option = templateSelect?.selectedOptions?.[0];
+                if (!option?.value) return;
+                feedbackInput.value = option.dataset.content || '';
+                feedbackInput.focus();
+            });
+            document.querySelector('[data-bs-target="#feedbackTemplateModal"]')?.addEventListener('click', () => {
+                document.getElementById('feedbackTemplateContent').value = feedbackInput?.value || '';
+            });
+            document.getElementById('deleteFeedbackTemplate')?.addEventListener('click', () => {
+                const option = templateSelect?.selectedOptions?.[0];
+                if (!option?.value || !option.dataset.deleteUrl) {
+                    window.alert('Vui lòng chọn mẫu cần xóa.');
+                    return;
+                }
+                if (!window.confirm(`Xóa mẫu "${option.textContent.trim()}"?`)) return;
+                const form = document.getElementById('deleteFeedbackTemplateForm');
+                form.action = option.dataset.deleteUrl;
+                form.submit();
+            });
+
+            const gradeInput = document.getElementById('gradeInput');
+            const rubricInputs = Array.from(document.querySelectorAll('.rubric-score-input'));
+            const rubricTotal = document.getElementById('rubricTotal');
+            const updateRubricTotal = () => {
+                const hasScores = rubricInputs.some(input => input.value !== '');
+                const total = rubricInputs.reduce((sum, input) => sum + (Number.parseFloat(input.value) || 0), 0);
+                if (rubricTotal) rubricTotal.textContent = `${Number(total.toFixed(2))}/{{ $assignment->grading_scale ?? 10 }}`;
+                if (hasScores && gradeInput) gradeInput.value = Number(total.toFixed(2));
+            };
+            rubricInputs.forEach(input => input.addEventListener('input', updateRubricTotal));
+            updateRubricTotal();
         });
 
         document.addEventListener('DOMContentLoaded', function() {

@@ -217,6 +217,7 @@
                                     $assignmentFormats = \App\Support\AssignmentUploadTypes::safeExtensions(
                                         $assignment->allowed_extensions,
                                     );
+                                    $publishedGradeVisible = $submission?->isGradePublished() ?? false;
                                 @endphp
 
                                 <div class="list-group-item border-0 px-0 py-0 assignment-item-wrapper {{ $submission ? 'submitted' : '' }} d-flex align-items-center justify-content-between shadow-none"
@@ -233,8 +234,8 @@
                                         data-extensions="{{ implode(',', $assignmentFormats) }}"
                                         data-max-file-size="{{ $assignment->max_file_size ?? 20480 }}"
                                         data-status="{{ $submission ? 'submitted' : 'pending' }}"
-                                        data-grade="{{ $submission->grade ?? '' }}"
-                                        data-feedback="{{ $submission->feedback ?? '' }}"
+                                        data-grade="{{ $publishedGradeVisible ? $submission->grade : '' }}"
+                                        data-feedback="{{ $publishedGradeVisible ? $submission->feedback : '' }}"
                                         data-sub-id="{{ $submission ? $submission->id : '' }}"
                                         data-sub-time="{{ $submission ? $submission->formatSubmittedAt('H:i:s - d/m/Y') : '' }}"
                                         data-sub-file="{{ $submission && $submission->file_path ? route('assignments.submissions.file', $submission->id) : '' }}"
