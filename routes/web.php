@@ -87,6 +87,8 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::get('/system/backups', [SystemBackupController::class, 'index'])->name('system.backups.index');
         Route::post('/system/backups', [SystemBackupController::class, 'store'])->name('system.backups.store');
         Route::get('/system/backups/{backup}/download', [SystemBackupController::class, 'download'])->name('system.backups.download');
+        Route::post('/system/backups/{backup}/verify', [SystemBackupController::class, 'verify'])->name('system.backups.verify');
+        Route::post('/system/backups/{backup}/restore', [SystemBackupController::class, 'restore'])->name('system.backups.restore');
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
         Route::get('/system/ai-operations', [AiOperationController::class, 'index'])->name('system.ai-operations.index');
         Route::delete('/audit-logs', [AuditLogController::class, 'bulkDestroy'])->name('audit-logs.bulk-destroy');

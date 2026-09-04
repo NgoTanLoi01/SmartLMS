@@ -4,21 +4,33 @@ namespace App\Console\Commands;
 
 use App\Services\BackupService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class SmartLmsBackupCommand extends Command
 {
     protected $signature = 'smartlms:backup {--upload-r2 : Upload bản backup lên Cloudflare R2 sau khi tạo file local}';
 
-    protected $description = 'Tạo backup database SmartLMS dạng .sql.gz';
+    protected $description = 'Tạo gói backup toàn hệ thống SmartLMS gồm database và file quan trọng';
 
     public function handle(BackupService $backupService): int
     {
-        $this->info('Đang tạo backup database SmartLMS...');
+        $lock = Cache::lock(BackupService::LOCK_NAME, max(60, (int) config('backup.restore_lock_seconds', 3600)));
+        if (! $lock->get()) {
+            $this->warn('Một tiến trình backup/khôi phục khác đang chạy.');
 
-        $backup = $backupService->runDatabaseBackup([
-            'triggered_by' => 'command',
-            'upload_r2' => (bool) $this->option('upload-r2'),
-        ]);
+            return self::FAILURE;
+        }
+
+        $this->info('Đang tạo gói backup toàn hệ thống SmartLMS...');
+
+        try {
+            $backup = $backupService->runFullBackup([
+                'triggered_by' => 'command',
+                'upload_r2' => (bool) $this->option('upload-r2'),
+            ]);
+        } finally {
+            $lock->release();
+        }
 
         if ($backup->isSuccessful()) {
             $this->info('Backup thành công.');

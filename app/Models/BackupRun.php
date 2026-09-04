@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\BackupService;
 use Illuminate\Database\Eloquent\Model;
 
 class BackupRun extends Model
@@ -42,6 +43,19 @@ class BackupRun extends Model
     public function localFileExists(): bool
     {
         return filled($this->local_path) && is_file($this->local_path);
+    }
+
+    public function isRestorable(): bool
+    {
+        return $this->isSuccessful()
+            && ($this->metadata['format'] ?? null) === BackupService::FORMAT
+            && (int) ($this->metadata['format_version'] ?? 0) === BackupService::FORMAT_VERSION
+            && str_ends_with(strtolower((string) $this->filename), '.zip');
+    }
+
+    public function integrityStatus(): string
+    {
+        return (string) ($this->metadata['integrity_status'] ?? 'not_verified');
     }
 
     public function formattedSize(): string

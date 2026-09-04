@@ -62,6 +62,39 @@
             border: 1px solid #e2e8f0;
         }
 
+        .backup-btn.warning {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #fed7aa;
+        }
+
+        .backup-btn.danger {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .backup-btn.small {
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .backup-btn:disabled {
+            cursor: not-allowed;
+            opacity: .55;
+        }
+
+        .backup-row-actions {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+            min-width: 235px;
+        }
+
+        .backup-row-actions form {
+            margin: 0;
+        }
+
         .backup-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -133,6 +166,26 @@
         .backup-badge.neutral {
             color: #475569;
             background: #f1f5f9;
+        }
+
+        .backup-badge.warning {
+            color: #b45309;
+            background: #fffbeb;
+        }
+
+        .backup-badge.invalid {
+            color: #b91c1c;
+            background: #fef2f2;
+        }
+
+        .restore-warning {
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            color: #991b1b;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 13px;
+            line-height: 1.6;
         }
 
         .backup-panel {
@@ -224,14 +277,14 @@
         <div class="backup-header">
             <div>
                 <h1 class="backup-title">Sao lưu dữ liệu</h1>
-                <p class="backup-subtitle">Theo dõi các bản sao lưu cơ sở dữ liệu và cấu hình lưu trữ dự phòng.</p>
+                <p class="backup-subtitle">Sao lưu database, bài nộp, học liệu và các file quan trọng trong một gói có checksum.</p>
             </div>
 
             <div class="backup-actions">
                 <form method="POST" action="{{ route('system.backups.store') }}">
                     @csrf
                     <button type="submit" class="backup-btn">
-                        <i class="fa-solid fa-database"></i> Sao lưu ngay
+                        <i class="fa-solid fa-box-archive"></i> Sao lưu toàn hệ thống
                     </button>
                 </form>
 
@@ -239,23 +292,11 @@
                     @csrf
                     <input type="hidden" name="upload_r2" value="1">
                     <button type="submit" class="backup-btn secondary">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Sao lưu và tải lên R2
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Sao lưu toàn bộ lên R2
                     </button>
                 </form>
             </div>
         </div>
-
-        @if (session('success'))
-            <div class="alert-success">
-                <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="alert-error">
-                <i class="fa-solid fa-triangle-exclamation"></i> {{ session('error') }}
-            </div>
-        @endif
 
         <div class="backup-grid">
             <div class="backup-card">
@@ -269,7 +310,7 @@
             <div class="backup-card">
                 <div class="backup-label">Dung lượng gần nhất</div>
                 <div class="backup-value">{{ $latestSuccessful?->formattedSize() ?? '---' }}</div>
-                <div class="backup-muted">Local giữ {{ $summary['keep_local_copies'] }} bản mới nhất.</div>
+                <div class="backup-muted">Local giữ {{ $summary['keep_local_copies'] }} bản mới nhất · disk: {{ implode(', ', $summary['file_disks']) }}.</div>
             </div>
 
             <div class="backup-card">
@@ -322,7 +363,8 @@
                             <th>File</th>
                             <th>Dung lượng</th>
                             <th>Nguồn chạy</th>
-                            <th>R2</th>
+                            <th>Toàn vẹn</th>
+                            <th>Lưu trữ</th>
                             <th>Thao tác</th>
                         </tr>
                     </thead>
@@ -350,11 +392,40 @@
                                 <td>
                                     <strong>{{ $backup->filename ?? '---' }}</strong>
                                     <div class="backup-muted">{{ $backup->localFileExists() ? 'Có tệp nội bộ' : 'Không thấy tệp nội bộ' }}</div>
+                                    @if ($backup->isRestorable())
+                                        <div class="backup-muted">
+                                            {{ (int) ($backup->metadata['included_files'] ?? 0) }} file trong gói
+                                            · {{ (int) ($backup->metadata['vector_database_rows'] ?? 0) }} đoạn dữ liệu AI
+                                            @if ((int) ($backup->metadata['missing_files'] ?? 0) > 0)
+                                                · thiếu {{ (int) $backup->metadata['missing_files'] }} file nguồn
+                                            @endif
+                                        </div>
+                                    @else
+                                        <div class="backup-muted">Backup database định dạng cũ</div>
+                                    @endif
                                 </td>
                                 <td>{{ $backup->formattedSize() }}</td>
                                 <td>
-                                    {{ $backup->triggered_by === 'manual' ? 'Quản trị viên' : 'Tác vụ tự động' }}
+                                    {{ match ($backup->triggered_by) {
+                                        'manual' => 'Quản trị viên',
+                                        'pre_restore' => 'Trước phục hồi',
+                                        default => 'Tác vụ tự động',
+                                    } }}
                                     <div class="backup-muted">{{ $backup->user?->name }}</div>
+                                </td>
+                                <td>
+                                    @if (!$backup->isRestorable())
+                                        <span class="backup-badge neutral"><i class="fa-solid fa-ban"></i> Không hỗ trợ</span>
+                                    @elseif ($backup->integrityStatus() === 'valid')
+                                        <span class="backup-badge success"><i class="fa-solid fa-circle-check"></i> Hợp lệ</span>
+                                    @elseif ($backup->integrityStatus() === 'invalid')
+                                        <span class="backup-badge invalid"><i class="fa-solid fa-circle-xmark"></i> Không hợp lệ</span>
+                                    @else
+                                        <span class="backup-badge warning"><i class="fa-solid fa-shield-halved"></i> Chưa kiểm tra</span>
+                                    @endif
+                                    @if ($backup->metadata['last_verified_at'] ?? null)
+                                        <div class="backup-muted">{{ \Illuminate\Support\Carbon::parse($backup->metadata['last_verified_at'])->timezone(config('backup.timezone'))->format('H:i d/m/Y') }}</div>
+                                    @endif
                                 </td>
                                 <td>
                                     @if ($backup->remote_path)
@@ -368,9 +439,28 @@
                                 </td>
                                 <td>
                                     @if ($backup->isSuccessful())
-                                        <a class="backup-btn secondary" href="{{ route('system.backups.download', $backup) }}">
-                                            <i class="fa-solid fa-download"></i> Tải
-                                        </a>
+                                        <div class="backup-row-actions">
+                                            <a class="backup-btn secondary small" data-file-download href="{{ route('system.backups.download', $backup) }}">
+                                                <i class="fa-solid fa-download"></i> Tải
+                                            </a>
+                                            @if ($backup->isRestorable())
+                                                <form method="POST" action="{{ route('system.backups.verify', $backup) }}">
+                                                    @csrf
+                                                    <button class="backup-btn warning small" type="submit">
+                                                        <i class="fa-solid fa-shield"></i> Kiểm tra
+                                                    </button>
+                                                </form>
+                                                @if ($backup->integrityStatus() === 'valid')
+                                                    <button class="backup-btn danger small js-open-restore" type="button"
+                                                        data-bs-toggle="modal" data-bs-target="#restoreBackupModal"
+                                                        data-restore-url="{{ route('system.backups.restore', $backup) }}"
+                                                        data-backup-id="{{ $backup->id }}"
+                                                        data-filename="{{ $backup->filename }}">
+                                                        <i class="fa-solid fa-clock-rotate-left"></i> Phục hồi
+                                                    </button>
+                                                @endif
+                                            @endif
+                                        </div>
                                     @else
                                         <span class="backup-muted">---</span>
                                     @endif
@@ -378,7 +468,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center backup-muted py-4">Chưa có lịch sử backup.</td>
+                                <td colspan="8" class="text-center backup-muted py-4">Chưa có lịch sử backup.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -392,18 +482,84 @@
 
         <div class="backup-panel">
             <div class="backup-panel-header">
-                <h2 class="backup-panel-title">Hướng dẫn khôi phục khi có sự cố</h2>
+                <h2 class="backup-panel-title">Cơ chế khôi phục an toàn</h2>
             </div>
             <div class="p-3 backup-note">
-                <p class="mb-2">
-                    Giai đoạn hiện tại hệ thống chỉ hỗ trợ tạo và tải backup. Việc khôi phục nên chạy bằng lệnh server để tránh bấm nhầm làm ghi đè dữ liệu thật.
-                </p>
-                <pre class="backup-code"><code>gunzip -c smartlms-db-YYYYMMDD-HHMMSS.sql.gz |
-docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u"$MYSQL_USER" "$MYSQL_DATABASE"'</code></pre>
-                <p class="mb-0 mt-3">
-                    Lệnh sử dụng credential nội bộ của container và không đưa mật khẩu lên command line. Trước khi restore nên tạo thêm một bản backup mới của dữ liệu hiện tại.
-                </p>
+                <p class="mb-2">Chỉ gói backup mới đã vượt qua kiểm tra checksum mới hiển thị nút phục hồi. Khi thực hiện, hệ thống sẽ:</p>
+                <ol class="mb-0 ps-3">
+                    <li>Kiểm tra lại toàn bộ manifest, checksum database và từng file.</li>
+                    <li>Tự tạo một gói dự phòng của trạng thái hiện tại.</li>
+                    <li>Bật chế độ bảo trì, phục hồi database và ghi đè các file có trong backup.</li>
+                    <li>Nếu có lỗi, tự động dùng gói dự phòng để quay lại trạng thái trước thao tác.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="modal fade" id="restoreBackupModal" tabindex="-1" aria-labelledby="restoreBackupTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="POST" class="modal-content border-0 shadow-lg" id="restoreBackupForm">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="restoreBackupTitle">
+                            <i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Phục hồi hệ thống
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="restore-warning mb-3">
+                            Database hiện tại sẽ được thay bằng dữ liệu trong <strong id="restoreBackupFilename"></strong>.
+                            Hệ thống có thể tạm thời không truy cập được trong quá trình phục hồi.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="restoreConfirmation">Nhập <code>KHOI PHUC</code> để xác nhận</label>
+                            <input class="form-control @error('confirmation', 'restoreBackup') is-invalid @enderror"
+                                id="restoreConfirmation" name="confirmation" autocomplete="off" required>
+                            @error('confirmation', 'restoreBackup')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div>
+                            <label class="form-label fw-semibold" for="restoreCurrentPassword">Mật khẩu hiện tại của quản trị viên</label>
+                            <input type="password" class="form-control @error('current_password', 'restoreBackup') is-invalid @enderror"
+                                id="restoreCurrentPassword" name="current_password" autocomplete="current-password" required>
+                            @error('current_password', 'restoreBackup')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="backup-btn secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="backup-btn danger">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Tạo dự phòng và phục hồi
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalElement = document.getElementById('restoreBackupModal');
+            const form = document.getElementById('restoreBackupForm');
+            const filename = document.getElementById('restoreBackupFilename');
+            if (!modalElement || !form || !filename) return;
+
+            document.querySelectorAll('.js-open-restore').forEach(button => {
+                button.addEventListener('click', () => {
+                    form.action = button.dataset.restoreUrl;
+                    filename.textContent = button.dataset.filename;
+                    document.getElementById('restoreConfirmation').value = '';
+                    document.getElementById('restoreCurrentPassword').value = '';
+                });
+            });
+
+            @if ($errors->restoreBackup->isNotEmpty() && session('restore_backup_id'))
+                const failedButton = document.querySelector(`[data-backup-id="{{ (int) session('restore_backup_id') }}"]`);
+                if (failedButton) {
+                    form.action = failedButton.dataset.restoreUrl;
+                    filename.textContent = failedButton.dataset.filename;
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            @endif
+        });
+    </script>
+@endpush
