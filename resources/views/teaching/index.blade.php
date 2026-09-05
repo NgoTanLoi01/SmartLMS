@@ -437,12 +437,6 @@
             </div>
         </div>
 
-        {{-- Alerts --}}
-        @if (session('success'))
-            <div class="alert alert-success border-0 rounded-3 mb-4 d-flex align-items-center gap-2">
-                <i class="fa-solid fa-circle-check"></i><span>{{ session('success') }}</span>
-            </div>
-        @endif
         @if ($errors->any())
             <div class="alert alert-danger border-0 rounded-3 mb-4 d-flex align-items-center gap-2">
                 <i class="fa-solid fa-circle-exclamation"></i><span>{{ $errors->first() }}</span>

@@ -286,7 +286,7 @@
 
     <div class="col-12 col-md-6">
         <label class="form-label">Tổng tiền <span style="color:#e53e3e">*</span></label>
-        <input type="number" name="total_amount" min="0" step="1000" class="form-control"
+        <input type="number" name="total_amount" min="0" step="1" class="form-control"
             value="{{ old('total_amount', $contract?->total_amount ?? 0) }}" required>
     </div>
 
@@ -306,8 +306,17 @@
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label">Số tiền đã nhận</label>
-                <input type="number" name="received_amount" min="0" step="1000" class="form-control"
-                    value="{{ old('received_amount', $contract?->received_amount ?? 0) }}">
+                <input type="number" name="received_amount" min="0" step="1"
+                    max="{{ old('total_amount', $contract?->total_amount ?? 0) }}"
+                    class="form-control @error('received_amount') is-invalid @enderror"
+                    value="{{ old('received_amount', $contract?->received_amount ?? 0) }}"
+                    aria-describedby="receivedAmountHelp_{{ $contract?->id ?? 'new' }}">
+                @error('received_amount')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <div class="form-text" id="receivedAmountHelp_{{ $contract?->id ?? 'new' }}">
+                    Không vượt quá tổng tiền; trạng thái sẽ tự cập nhật.
+                </div>
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label">Ngày nhận</label>

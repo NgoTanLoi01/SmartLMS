@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Xử lý tài liệu AI')
+
 @push('styles')
     <style>
         :root {

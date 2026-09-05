@@ -13,7 +13,9 @@
     @endphp
 
     <div class="lms-page assignments-page">
-        <x-ui.page-header title="Bài tập">
+        <section class="assignment-hero">
+            <span class="assignment-hero__accent" aria-hidden="true"></span>
+            <x-ui.page-header title="Bài tập">
             <x-slot:meta>
                 <span><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i>
                     {{ $isStudent ? 'Theo dõi hạn nộp và bài làm của bạn' : 'Quản lý yêu cầu, hạn nộp và tiến độ chấm bài' }}
@@ -28,9 +30,9 @@
                     </x-ui.button>
                 @endif
             </x-slot:actions>
-        </x-ui.page-header>
+            </x-ui.page-header>
 
-        <section class="assignment-stats" aria-label="Tổng quan bài tập">
+            <div class="assignment-stats" aria-label="Tổng quan bài tập">
             <article class="assignment-stat">
                 <span class="assignment-stat__icon"><i class="fa-solid fa-list-check" aria-hidden="true"></i></span>
                 <div><strong>{{ $assignmentStats['total'] }}</strong><span>Tổng bài tập</span></div>
@@ -58,6 +60,7 @@
                 <span class="assignment-stat__icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
                 <div><strong>{{ $assignmentStats['overdue'] }}</strong><span>{{ $isStudent ? 'Đã quá hạn' : 'Qua hạn nộp' }}</span></div>
             </article>
+            </div>
         </section>
 
         <form action="{{ route('assignments.index') }}" method="GET" class="assignment-filter-panel" role="search">
@@ -108,6 +111,14 @@
                 {{ $assignments->total() }} bài tập phù hợp
             </div>
         </form>
+
+        <header class="assignment-results-header">
+            <div>
+                <h2>Danh sách bài tập</h2>
+                <p>{{ $hasAssignmentFilters ? 'Kết quả theo bộ lọc hiện tại' : ($isStudent ? 'Các bài tập trong khóa học bạn đang tham gia' : 'Các bài tập bạn có quyền quản lý') }}</p>
+            </div>
+            <span>{{ $assignments->total() }} bài tập</span>
+        </header>
 
         <section class="assignment-grid" aria-label="Danh sách bài tập">
             @forelse($assignments as $assignment)

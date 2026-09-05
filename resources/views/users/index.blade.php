@@ -4,55 +4,72 @@
 
 @section('content')
     @push('styles')
-        @vite('resources/css/pages/users-index.css')
+        @vite(['resources/css/pages/system-operations.css', 'resources/css/pages/users-index.css'])
     @endpush
 
-    <div class="lms-page user-management-page">
-        <x-ui.page-header title="Tài khoản người dùng">
-            <x-slot:meta>
-                <span><i class="fa-solid fa-shield-halved"></i> Quản lý quyền truy cập và vòng đời tài khoản</span>
-            </x-slot:meta>
+    <div class="lms-page system-operations-page user-management-page">
+        <section class="system-hero user-hero" aria-label="Tổng quan tài khoản người dùng">
+            <div class="system-hero__accent" aria-hidden="true"></div>
+            <x-ui.page-header title="Tài khoản người dùng">
+                <x-slot:meta>
+                    <span><i class="fa-solid fa-shield-halved"></i> Quản lý quyền truy cập và vòng đời tài khoản</span>
+                    <span><i class="fa-solid fa-user-check"></i> {{ number_format((int) $userStats->active) }} tài khoản đang hoạt động</span>
+                </x-slot:meta>
 
-            <x-slot:actions>
-                <x-ui.button class="user-create-btn" icon="fa-user-plus" data-bs-toggle="modal"
-                    data-bs-target="#addUserModal">
-                    Cấp tài khoản mới
-                </x-ui.button>
-            </x-slot:actions>
-        </x-ui.page-header>
+                <x-slot:actions>
+                    <x-ui.button class="user-create-btn" icon="fa-user-plus" data-bs-toggle="modal"
+                        data-bs-target="#addUserModal">
+                        Cấp tài khoản mới
+                    </x-ui.button>
+                </x-slot:actions>
+            </x-ui.page-header>
 
-        <section class="user-stats" aria-label="Tổng quan tài khoản">
-            <article class="user-stat">
+            <div class="system-stats user-stats">
+            <article class="system-stat user-stat stat-blue">
                 <span class="user-stat__icon" aria-hidden="true"><i class="fa-solid fa-users"></i></span>
                 <div>
                     <div class="user-stat__value">{{ (int) $userStats->total }}</div>
                     <div class="user-stat__label">Tổng tài khoản</div>
                 </div>
             </article>
-            <article class="user-stat user-stat--success">
+            <article class="system-stat user-stat user-stat--success stat-green">
                 <span class="user-stat__icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></span>
                 <div>
                     <div class="user-stat__value">{{ (int) $userStats->active }}</div>
                     <div class="user-stat__label">Đang hoạt động</div>
                 </div>
             </article>
-            <article class="user-stat user-stat--student">
+            <article class="system-stat user-stat user-stat--student stat-cyan">
                 <span class="user-stat__icon" aria-hidden="true"><i class="fa-solid fa-user-graduate"></i></span>
                 <div>
                     <div class="user-stat__value">{{ (int) $userStats->students }}</div>
                     <div class="user-stat__label">Học viên</div>
                 </div>
             </article>
-            <article class="user-stat user-stat--attention">
+            <article class="system-stat user-stat user-stat--attention {{ (int) $userStats->attention > 0 ? 'stat-amber' : 'stat-slate' }}">
                 <span class="user-stat__icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>
                 <div>
                     <div class="user-stat__value">{{ (int) $userStats->attention }}</div>
                     <div class="user-stat__label">Cần xử lý</div>
                 </div>
             </article>
+            </div>
         </section>
 
-        <form action="{{ route('users.index') }}" method="GET" class="user-filter-panel" role="search">
+        <section class="system-filter-card user-filter-card" aria-labelledby="user-filter-title">
+            <header class="system-section-header">
+                <div>
+                    <span class="system-section-icon"><i class="fa-solid fa-sliders"></i></span>
+                    <div>
+                        <h2 id="user-filter-title">Bộ lọc tài khoản</h2>
+                        <p>Tìm nhanh theo thông tin đăng nhập, vai trò và trạng thái sử dụng.</p>
+                    </div>
+                </div>
+                @if (request()->filled('search') || request()->filled('role') || request()->filled('status'))
+                    <a href="{{ route('users.index') }}" class="system-reset-link"><i class="fa-solid fa-xmark"></i> Xóa bộ lọc</a>
+                @endif
+            </header>
+            <form action="{{ route('users.index') }}" method="GET" class="user-filter-panel" role="search">
             <div class="user-filter-field user-filter-field--search">
                 <label class="user-filter-label" for="userSearch">Tìm tài khoản</label>
                 <div class="user-filter-control">
@@ -102,10 +119,22 @@
                     Không có tài khoản phù hợp với bộ lọc hiện tại
                 @endif
             </div>
-        </form>
+            </form>
+        </section>
 
-        <section class="user-list-card" aria-label="Danh sách tài khoản">
-            <table class="user-table">
+        <section class="system-list-card user-list-card" aria-labelledby="user-list-title">
+            <header class="system-section-header user-list-header">
+                <div>
+                    <span class="system-section-icon icon-violet"><i class="fa-solid fa-address-book"></i></span>
+                    <div>
+                        <h2 id="user-list-title">Danh sách tài khoản</h2>
+                        <p>Quản lý hồ sơ, quyền truy cập và thời hạn của từng người dùng.</p>
+                    </div>
+                </div>
+                <span class="system-result-count">{{ $users->firstItem() ?? 0 }}–{{ $users->lastItem() ?? 0 }} / {{ $users->total() }}</span>
+            </header>
+            <div class="user-table-wrap">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th class="user-table__account">Tài khoản</th>
@@ -248,7 +277,8 @@
                         </tr>
                     @endforelse
                 </tbody>
-            </table>
+                </table>
+            </div>
             <x-ui.pagination :paginator="$users" item-label="tài khoản" />
         </section>
     </div>

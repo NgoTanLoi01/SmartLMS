@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Tạo câu hỏi bằng AI')
+
 @section('content')
     <style>
         /* --- CUSTOM CSS FOR AI GENERATOR PAGE --- */

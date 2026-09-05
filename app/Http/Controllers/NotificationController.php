@@ -9,14 +9,16 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $query = SmartNotification::forUser(auth()->id())->latest();
+        $userId = auth()->id();
+        $query = SmartNotification::forUser($userId)->latest();
         if ($request->input('status') === 'unread') {
             $query->unread();
         }
 
         return view('notifications.index', [
             'notifications' => $query->paginate(20)->withQueryString(),
-            'unreadCount' => SmartNotification::forUser(auth()->id())->unread()->count(),
+            'totalCount' => SmartNotification::forUser($userId)->count(),
+            'unreadCount' => SmartNotification::forUser($userId)->unread()->count(),
             'filter' => $request->input('status'),
         ]);
     }

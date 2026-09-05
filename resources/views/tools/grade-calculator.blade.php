@@ -139,18 +139,100 @@
         .flash-animation {
             animation: flashResult 0.3s ease-out;
         }
+
+        /* Unified SmartLMS vocational grade tool */
+        .grade-tool-page {
+            display: grid;
+            gap: 16px;
+            max-width: 1320px;
+            padding-top: 32px !important;
+        }
+
+        .grade-tool-hero,
+        .grade-tool-workspace {
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid #dbe5f2 !important;
+            border-radius: 16px;
+            box-shadow: 0 8px 28px rgba(15, 23, 42, .055) !important;
+        }
+
+        .grade-tool-hero { position: relative; }
+        .grade-tool-hero__accent { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #2563eb, #7c3aed 48%, #06b6d4); }
+        .grade-tool-hero .lms-page-header { margin: 0; padding: 22px 20px 17px; background: radial-gradient(circle at 92% -25%, rgba(37, 99, 235, .14), transparent 36%), linear-gradient(135deg, #fff 22%, #f8fbff); }
+        .grade-tool-hero .lms-page-title { color: #172033; font-size: 22px; letter-spacing: -.025em; }
+        .grade-tool-hero .lms-page-meta span { display: inline-flex; align-items: center; gap: 7px; }
+        .grade-tool-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; padding: 10px; background: #edf2f8; border-top: 1px solid #e1e8f1; }
+        .grade-tool-summary__item { display: flex; align-items: center; gap: 11px; min-height: 68px; padding: 11px 14px; background: rgba(255, 255, 255, .95); }
+        .grade-tool-summary__item:first-child { border-radius: 10px 0 0 10px; }
+        .grade-tool-summary__item:last-child { border-radius: 0 10px 10px 0; }
+        .grade-tool-summary__item > i { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; color: #1d4ed8; background: #dbeafe; border-radius: 11px; font-size: 14px; }
+        .grade-tool-summary__item:nth-child(2) > i { color: #6d28d9; background: #ede9fe; }
+        .grade-tool-summary__item:nth-child(3) > i { color: #047857; background: #d1fae5; }
+        .grade-tool-summary strong,
+        .grade-tool-summary small { display: block; }
+        .grade-tool-summary strong { color: #172033; font-size: 17px; line-height: 1.15; }
+        .grade-tool-summary small { margin-top: 4px; color: #64748b; font-size: 10px; }
+        .grade-tool-workspace { border-radius: 15px; }
+        .grade-tool-workspace > .card-body { padding: 0 !important; }
+        .grade-workspace-head { padding: 15px 18px; background: #fbfdff; border-bottom: 1px solid #e1e8f1; }
+        .grade-workspace-head h2 { margin: 0; color: #172033; font-size: 14px; font-weight: 800; }
+        .grade-workspace-head p { margin: 4px 0 0; color: #64748b; font-size: 10.5px; }
+        .grade-workspace-body { padding: 18px; }
+        .grade-table { min-width: 720px; }
+        .grade-table thead th { padding: 10px 8px; background: #f8fafc; border-bottom: 1px solid #e1e8f1; color: #64748b; font-size: 10px; }
+        .grade-table .form-control { min-height: 38px; border: 1px solid #e1e8f1; background: #f8fafc; font-size: 12px; }
+        .result-panel { top: 88px; padding: 17px !important; border-color: #e1e8f1 !important; border-radius: 14px; box-shadow: 0 6px 22px rgba(15, 23, 42, .045) !important; }
+        .btn-calculate { min-height: 42px; background: #2563eb; border-radius: 9px; box-shadow: none !important; font-size: 12px; text-transform: none; }
+        .btn-calculate:hover:not(:disabled) { background: #1d4ed8; box-shadow: 0 8px 20px rgba(37, 99, 235, .24) !important; }
+        .ref-table th { background: #f8fafc; color: #64748b; font-size: 9.5px; }
+        .ref-table td { font-size: 10.5px; }
+        .grade-clear-modal .modal-content { border: 1px solid #e1e8f1 !important; border-radius: 16px !important; }
+
+        @media (max-width: 767.98px) {
+            .grade-tool-page { gap: 13px; padding: 10px 0 0 !important; }
+            .grade-tool-hero .lms-page-header { padding: 18px 15px 14px; }
+            .grade-tool-summary { grid-template-columns: 1fr; }
+            .grade-tool-summary__item,
+            .grade-tool-summary__item:first-child,
+            .grade-tool-summary__item:last-child { min-height: 62px; border-radius: 9px; }
+            .grade-workspace-body { padding: 14px; }
+            .result-panel { position: static; }
+        }
     </style>
 
-    <div class="container-fluid py-4">
-        <div class="card card-main shadow-sm">
-            <div class="card-header py-4 px-4 border-0">
-                <h4 class="fw-bold mb-1 d-flex align-items-center">
-                    <i class="fa-solid fa-graduation-cap me-3"></i> Công cụ tính điểm Trung cấp nghề
-                </h4>
-                <p class="mb-0 opacity-75 small">Hỗ trợ tính điểm nhanh theo quy chế đào tạo nghề</p>
+    <div class="container-fluid legacy-tool-page grade-tool-page">
+        <section class="grade-tool-hero">
+            <span class="grade-tool-hero__accent" aria-hidden="true"></span>
+            <x-ui.page-header title="Tính điểm Trung cấp nghề">
+                <x-slot:meta>
+                    <span><i class="fa-solid fa-calculator" aria-hidden="true"></i>Nhập điểm thành phần để tính trung bình hệ 10 và hệ 4</span>
+                </x-slot:meta>
+            </x-ui.page-header>
+            <div class="grade-tool-summary" aria-label="Công thức tính điểm">
+                <div class="grade-tool-summary__item">
+                    <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                    <span><strong>40%</strong><small>Điểm quá trình</small></span>
+                </div>
+                <div class="grade-tool-summary__item">
+                    <i class="fa-solid fa-file-pen" aria-hidden="true"></i>
+                    <span><strong>60%</strong><small>Điểm thi kết thúc</small></span>
+                </div>
+                <div class="grade-tool-summary__item">
+                    <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+                    <span><strong>Hệ 10 & hệ 4</strong><small>Kết quả quy đổi tức thời</small></span>
+                </div>
             </div>
+        </section>
+
+        <div class="card card-main grade-tool-workspace">
             <div class="card-body p-4">
-                <div class="row g-4">
+                <header class="grade-workspace-head">
+                    <h2>Bảng điểm học kỳ</h2>
+                    <p>Thêm môn học, nhập hệ số và xem kết quả tổng hợp ở khung bên phải.</p>
+                </header>
+                <div class="grade-workspace-body">
+                    <div class="row g-4">
                     <!-- Cột Bảng Điểm -->
                     <div class="col-xl-8">
                         <div class="table-responsive">
@@ -175,13 +257,13 @@
                                         <td><input type="text" class="form-control hs2" placeholder="7, 8"></td>
                                         <td><input type="number" class="form-control thi" step="0.1" min="0"
                                                 max="10" placeholder="8.5"></td>
-                                        <td><button class="btn-remove-row text-danger" onclick="removeRow(this)"><i
+                                        <td><button type="button" class="btn-remove-row text-danger" onclick="removeRow(this)"><i
                                                     class="fa-solid fa-circle-xmark"></i></button></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <button class="btn btn-outline-primary btn-sm rounded-pill px-4 py-2 shadow-sm" onclick="addRow()">
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-4 py-2 shadow-sm" onclick="addRow()">
                             <i class="fa-solid fa-plus me-2"></i> Thêm môn học
                         </button>
                     </div>
@@ -207,13 +289,13 @@
                             </div>
 
                             <div class="text-center mb-4">
-                                <button class="btn btn-primary btn-calculate w-100 mb-2 py-3 fw-bold shadow-sm"
+                                <button type="button" class="btn btn-primary btn-calculate w-100 mb-2 py-3 fw-bold shadow-sm"
                                     onclick="calculateGrades()">
-                                    <i class="fa-solid fa-bolt me-2"></i> TÍNH ĐIỂM NGAY
+                                    <i class="fa-solid fa-bolt me-2"></i> Tính điểm ngay
                                 </button>
-                                <button class="btn btn-outline-secondary w-100 py-2 rounded-pill small border-0"
+                                <button type="button" class="btn btn-outline-secondary w-100 py-2 rounded-pill small border-0"
                                     onclick="showClearConfirm()">
-                                    <i class="fa-solid fa-eraser me-2"></i> XÓA TRẮNG
+                                    <i class="fa-solid fa-eraser me-2"></i> Xóa dữ liệu
                                 </button>
                             </div>
 
@@ -273,8 +355,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td>
-                                                    < 4.0</td>
+                                                <td>&lt; 4.0</td>
                                                 <td class="text-center fw-bold">0.0</td>
                                                 <td class="text-end"><span class="badge-grade bg-dark-subtle text-dark">F
                                                         (Hỏng)</span></td>
@@ -289,13 +370,14 @@
                             </div>
                         </div>
                     </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Modal Xác nhận xóa (Thay thế cho confirm rập khuôn của trình duyệt) -->
-    <div class="modal fade" id="clearConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade grade-clear-modal" id="clearConfirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content border-0 shadow" style="border-radius: 16px;">
                 <div class="modal-body text-center p-4">
@@ -305,8 +387,8 @@
                     <h5 class="fw-bold">Xóa toàn bộ dữ liệu?</h5>
                     <p class="text-muted small mb-4">Hành động này không thể hoàn tác. Toàn bộ môn học sẽ bị làm mới.</p>
                     <div class="d-grid gap-2">
-                        <button class="btn btn-danger py-2 fw-bold rounded-pill" onclick="clearData()">Đồng ý xóa</button>
-                        <button class="btn btn-light py-2 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="button" class="btn btn-danger py-2 fw-bold rounded-pill" onclick="clearData()">Đồng ý xóa</button>
+                        <button type="button" class="btn btn-light py-2 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
                     </div>
                 </div>
             </div>
@@ -323,7 +405,7 @@
                 <td><input type="text" class="form-control hs1" placeholder="9, 8"></td>
                 <td><input type="text" class="form-control hs2" placeholder="7, 8"></td>
                 <td><input type="number" class="form-control thi" step="0.1" min="0" max="10" placeholder="8.5"></td>
-                <td><button class="btn-remove-row text-danger" onclick="removeRow(this)"><i class="fa-solid fa-circle-xmark"></i></button></td>
+                <td><button type="button" class="btn-remove-row text-danger" onclick="removeRow(this)"><i class="fa-solid fa-circle-xmark"></i></button></td>
             </tr>`;
             document.querySelector('#subjectTable tbody').insertAdjacentHTML('beforeend', row);
         }

@@ -131,11 +131,57 @@ class AccountLifecycleTest extends TestCase
             ->assertDontSee('Audit log')
             ->assertSee('Tổng tài khoản')
             ->assertSee('Cần xử lý')
+            ->assertSee('Bộ lọc tài khoản')
+            ->assertSee('Danh sách tài khoản')
             ->assertSee('Cấp tài khoản mới')
             ->assertSee('Cấp lại mật khẩu')
             ->assertSee('Quản lý vòng đời tài khoản')
             ->assertSee('Đang hoạt động')
             ->assertSee('Không giới hạn thời gian');
+    }
+
+    public function test_storage_health_experience_matches_system_operations_and_hides_secret(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'storage-ui-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $student = $this->createUser([
+            'email' => 'storage-ui-student@example.com',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        config()->set('filesystems.submission_disk', 'r2');
+        config()->set('filesystems.disks.r2', [
+            'key' => 'smartlms-access-key',
+            'secret' => 'r2-secret-never-render',
+            'bucket' => 'smartlms-private-files',
+            'endpoint' => 'https://storage.example.test',
+            'region' => 'auto',
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession([
+                'storage_test_result' => [
+                    'ok' => true,
+                    'disk' => 'r2',
+                    'message' => 'Kết nối lưu trữ thành công.',
+                    'path' => 'health-checks/storage-test.txt',
+                    'checked_at' => '09:30 05/09/2026',
+                ],
+            ])
+            ->get(route('system.storage.index'))
+            ->assertOk()
+            ->assertSee('Tình trạng lưu trữ')
+            ->assertSee('Cấu hình Cloudflare R2')
+            ->assertSee('Kiểm tra kết nối')
+            ->assertSee('Kết nối lưu trữ thành công.')
+            ->assertSee('File bài nộp mới được xử lý thế nào?')
+            ->assertDontSee('r2-secret-never-render');
+
+        $this->actingAs($student)
+            ->get(route('system.storage.index'))
+            ->assertForbidden();
     }
 
     public function test_audit_log_experience_is_filterable_and_restricted_to_admin(): void

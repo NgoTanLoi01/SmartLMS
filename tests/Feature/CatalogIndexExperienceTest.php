@@ -13,6 +13,7 @@ class CatalogIndexExperienceTest extends TestCase
 
         foreach ([$courses, $classes] as $view) {
             $this->assertStringContainsString("@vite('resources/css/pages/catalog-index.css')", $view);
+            $this->assertStringContainsString('catalog-hero', $view);
             $this->assertStringContainsString('catalog-summary', $view);
             $this->assertStringContainsString('catalog-filter-panel', $view);
             $this->assertStringContainsString('catalog-grid', $view);
@@ -44,5 +45,37 @@ class CatalogIndexExperienceTest extends TestCase
         $this->assertStringContainsString('<x-ui.pagination', $view);
         $this->assertStringContainsString("'search' => trim(request('search', ''))", $controller);
         $this->assertStringContainsString('paginate(12)->withQueryString()', $controller);
+    }
+
+    public function test_core_content_management_indexes_use_the_unified_workspace_pattern(): void
+    {
+        $interfaces = [
+            resource_path('views/courses/index.blade.php') => 'catalog-hero',
+            resource_path('views/classes/index.blade.php') => 'catalog-hero',
+            resource_path('views/assignments/index.blade.php') => 'assignment-hero',
+            resource_path('views/shared-documents/index.blade.php') => 'document-hero',
+            resource_path('views/quizzes/question_bank.blade.php') => 'question-overview',
+        ];
+
+        foreach ($interfaces as $path => $heroClass) {
+            $view = file_get_contents($path);
+
+            $this->assertStringContainsString('lms-page', $view);
+            $this->assertStringContainsString('<x-ui.page-header', $view);
+            $this->assertStringContainsString($heroClass, $view);
+        }
+    }
+
+    public function test_material_library_and_vocational_grade_tool_use_the_unified_workspace_pattern(): void
+    {
+        $materials = file_get_contents(resource_path('views/courses/materials_index.blade.php'));
+        $gradeTool = file_get_contents(resource_path('views/tools/grade-calculator.blade.php'));
+
+        $this->assertStringContainsString('materials-index-hero__accent', $materials);
+        $this->assertStringContainsString('materials-stat-shelf', $materials);
+        $this->assertStringContainsString('grade-tool-hero__accent', $gradeTool);
+        $this->assertStringContainsString('grade-tool-summary', $gradeTool);
+        $this->assertStringContainsString('<x-ui.page-header', $gradeTool);
+        $this->assertStringContainsString('grade-workspace-head', $gradeTool);
     }
 }

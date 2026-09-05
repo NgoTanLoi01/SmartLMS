@@ -16,7 +16,9 @@
     @endphp
 
     <div class="lms-page shared-documents-page">
-        <x-ui.page-header title="Tài liệu dùng chung">
+        <section class="document-hero">
+            <span class="document-hero__accent" aria-hidden="true"></span>
+            <x-ui.page-header title="Tài liệu dùng chung">
             <x-slot:meta>
                 <span><i class="fa-solid fa-folder-open" aria-hidden="true"></i>Kho giáo án và biểu mẫu dành cho giáo viên</span>
                 <span><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>Lưu trữ riêng tư trên Cloudflare R2</span>
@@ -26,7 +28,7 @@
                     Tải tài liệu lên
                 </x-ui.button>
             </x-slot:actions>
-        </x-ui.page-header>
+            </x-ui.page-header>
 
         @if ($errors->any())
             <div class="document-alert" role="alert">
@@ -35,7 +37,7 @@
             </div>
         @endif
 
-        <nav class="document-summary" aria-label="Phạm vi tài liệu">
+            <nav class="document-summary" aria-label="Phạm vi tài liệu">
             <a href="{{ route('shared-documents.index', request()->except(['page', 'scope'])) }}"
                 class="document-summary-item {{ ! $scope ? 'is-active' : '' }}" @if (! $scope) aria-current="page" @endif>
                 <span class="document-summary-icon tone-blue"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span>
@@ -55,7 +57,8 @@
                 <span class="document-summary-icon tone-amber"><i class="fa-solid fa-hard-drive" aria-hidden="true"></i></span>
                 <span><strong>{{ $totalStorage }}</strong><small>Dung lượng có thể truy cập</small></span>
             </div>
-        </nav>
+            </nav>
+        </section>
 
         <section class="document-workspace" aria-labelledby="document-list-heading">
             <div class="document-mobile-toolbar">

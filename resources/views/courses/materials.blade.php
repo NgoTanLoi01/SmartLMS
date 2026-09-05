@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Học liệu - ' . $course->title)
+
 @section('content')
     <style>
         .materials-page {
@@ -275,9 +277,6 @@
                 </a>
             </div>
 
-            @if (session('success'))
-                <div class="alert alert-success rounded-4 border-0 shadow-sm">{{ session('success') }}</div>
-            @endif
             @if ($errors->any())
                 <div class="alert alert-danger rounded-4 border-0 shadow-sm">
                     {{ $errors->first() }}

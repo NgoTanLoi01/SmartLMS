@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('title', 'Phòng Cờ Vua ' . $roomId)
 <style>
     .highlight-square {
         position: relative;

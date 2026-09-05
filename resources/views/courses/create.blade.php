@@ -3,7 +3,7 @@
 @section('title', 'Tạo khóa học mới')
 
 @section('content')
-    <div class="container py-4">
+    <div class="container py-4 legacy-form-page">
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <nav aria-label="breadcrumb" class="mb-4">
@@ -14,8 +14,8 @@
                     </ol>
                 </nav>
 
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white py-3 border-0">
+                <div class="card border-0 shadow-sm legacy-form-card">
+                    <div class="card-header bg-white py-3 border-0 legacy-form-card__head">
                         <h4 class="fw-bold mb-0 text-primary">
                             <i class="fa-solid fa-plus-circle me-2"></i>Tạo khóa học mới
                         </h4>

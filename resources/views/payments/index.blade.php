@@ -474,12 +474,6 @@
             </div>
         </div>
 
-        {{-- Alerts --}}
-        @if (session('success'))
-            <div class="alert alert-success border-0 rounded-3 mb-4 d-flex align-items-center gap-2">
-                <i class="fa-solid fa-circle-check"></i><span>{{ session('success') }}</span>
-            </div>
-        @endif
         @if ($errors->any())
             <div class="alert alert-danger border-0 rounded-3 mb-4 d-flex align-items-center gap-2">
                 <i class="fa-solid fa-circle-exclamation"></i><span>{{ $errors->first() }}</span>
@@ -750,23 +744,55 @@
                 const receivedInput = form.querySelector('[name="received_amount"]');
                 const receivedDateInput = form.querySelector('[name="received_date"]');
 
-                const syncStatus = () => {
+                const paymentStateIsLocked = () => ['cancelled', 'archived'].includes(statusSelect?.value);
+                const numberValue = (input) => {
+                    const value = Number.parseFloat(input?.value ?? '0');
+
+                    return Number.isFinite(value) ? value : 0;
+                };
+
+                const syncStatusFromAmounts = () => {
                     if (!statusSelect || !receivedInput || !totalInput) return;
-                    if (statusSelect.value === 'received') {
-                        receivedInput.value = totalInput.value || 0;
-                    }
-                    if (statusSelect.value === 'unpaid') {
-                        receivedInput.value = 0;
+
+                    receivedInput.max = totalInput.value || '';
+                    if (paymentStateIsLocked()) return;
+
+                    const total = numberValue(totalInput);
+                    const received = numberValue(receivedInput);
+
+                    receivedInput.setCustomValidity(
+                        received > total ? 'Số tiền đã nhận không được lớn hơn tổng tiền hợp đồng.' : ''
+                    );
+
+                    if (received <= 0) {
+                        statusSelect.value = 'unpaid';
                         if (receivedDateInput) receivedDateInput.value = '';
+                    } else if (total > 0 && received >= total) {
+                        statusSelect.value = 'received';
+                    } else {
+                        statusSelect.value = 'partial';
                     }
                 };
 
-                statusSelect?.addEventListener('change', syncStatus);
-                totalInput?.addEventListener('input', () => {
-                    if (statusSelect?.value === 'received') {
+                const syncAmountFromSelectedStatus = () => {
+                    if (!statusSelect || !receivedInput || !totalInput) return;
+
+                    if (statusSelect.value === 'received') {
                         receivedInput.value = totalInput.value || 0;
+                        receivedInput.setCustomValidity('');
                     }
-                });
+                    if (statusSelect.value === 'unpaid') {
+                        receivedInput.value = 0;
+                        receivedInput.setCustomValidity('');
+                        if (receivedDateInput) receivedDateInput.value = '';
+                    }
+
+                    receivedInput.max = totalInput.value || '';
+                };
+
+                statusSelect?.addEventListener('change', syncAmountFromSelectedStatus);
+                totalInput?.addEventListener('input', syncStatusFromAmounts);
+                receivedInput?.addEventListener('input', syncStatusFromAmounts);
             });
         });
     </script>

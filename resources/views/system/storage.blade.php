@@ -1,228 +1,188 @@
 @extends('layouts.app')
 
-@section('title', 'Kiểm tra lưu trữ')
+@section('title', 'Tình trạng lưu trữ')
+
+@push('styles')
+    @vite('resources/css/pages/system-operations.css')
+@endpush
 
 @section('content')
-    <style>
-        .storage-page {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
+    @php
+        $submissionDisk = strtoupper((string) $summary['submission_disk']);
+        $r2Ready = (bool) $summary['r2_ready'];
+        $r2IsActive = $summary['submission_disk'] === 'r2';
+        $configurationItems = [
+            ['ready' => filled($summary['r2_bucket']), 'label' => 'Bucket'],
+            ['ready' => filled($summary['r2_endpoint']), 'label' => 'Endpoint'],
+            ['ready' => $summary['r2_key'] !== 'Chưa cấu hình', 'label' => 'Access key'],
+            ['ready' => $summary['r2_secret_configured'], 'label' => 'Secret key'],
+        ];
+        $configuredCount = collect($configurationItems)->where('ready', true)->count();
+    @endphp
 
-        .storage-header {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            align-items: flex-start;
-            margin-bottom: 22px;
-            flex-wrap: wrap;
-        }
+    <div class="lms-page system-operations-page storage-health-page">
+        <section class="system-hero storage-hero" aria-label="Tổng quan tình trạng lưu trữ">
+            <div class="system-hero__accent" aria-hidden="true"></div>
+            <x-ui.page-header title="Tình trạng lưu trữ">
+                <x-slot:meta>
+                    <span><i class="fa-solid fa-shield-halved"></i> Theo dõi nơi lưu bài nộp và học liệu</span>
+                    <span><i class="fa-solid fa-hard-drive"></i> Disk đang dùng: {{ $submissionDisk }}</span>
+                </x-slot:meta>
+                <x-slot:actions>
+                    <form method="POST" action="{{ route('system.storage.test') }}">
+                        @csrf
+                        <input type="hidden" name="disk" value="public">
+                        <button type="submit" class="system-button system-button--neutral">
+                            <i class="fa-solid fa-folder-open"></i> Kiểm tra nội bộ
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ route('system.storage.test') }}">
+                        @csrf
+                        <input type="hidden" name="disk" value="r2">
+                        <button type="submit" class="system-button system-button--cloud">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Kiểm tra R2
+                        </button>
+                    </form>
+                </x-slot:actions>
+            </x-ui.page-header>
 
-        .storage-title {
-            margin: 0 0 4px;
-            font-size: 24px;
-            font-weight: 800;
-            color: #0f172a;
-        }
-
-        .storage-subtitle {
-            margin: 0;
-            color: #64748b;
-            font-size: 13.5px;
-        }
-
-        .storage-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 14px;
-            margin-bottom: 18px;
-        }
-
-        .storage-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 18px;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
-        }
-
-        .storage-label {
-            color: #64748b;
-            font-size: 11.5px;
-            font-weight: 700;
-            letter-spacing: .04em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-
-        .storage-value {
-            color: #0f172a;
-            font-size: 18px;
-            font-weight: 800;
-            word-break: break-word;
-        }
-
-        .storage-muted {
-            color: #64748b;
-            font-size: 13px;
-            margin-top: 6px;
-            word-break: break-word;
-        }
-
-        .storage-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            border-radius: 999px;
-            padding: 7px 12px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .storage-badge.ok {
-            color: #047857;
-            background: #ecfdf5;
-        }
-
-        .storage-badge.warn {
-            color: #b45309;
-            background: #fffbeb;
-        }
-
-        .storage-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .storage-btn {
-            border: 0;
-            border-radius: 10px;
-            padding: 10px 16px;
-            font-size: 14px;
-            font-weight: 700;
-            background: #2563eb;
-            color: #fff;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .storage-btn.secondary {
-            background: #f1f5f9;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-        }
-
-        .storage-result {
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 18px;
-            border: 1px solid;
-            background: #fff;
-        }
-
-        .storage-result.ok {
-            border-color: #bbf7d0;
-            background: #f0fdf4;
-            color: #166534;
-        }
-
-        .storage-result.fail {
-            border-color: #fecaca;
-            background: #fef2f2;
-            color: #991b1b;
-        }
-
-        @media (max-width: 767.98px) {
-            .storage-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .storage-btn {
-                justify-content: center;
-                width: 100%;
-            }
-        }
-    </style>
-
-    <div class="storage-page">
-        <div class="storage-header">
-            <div>
-                <h1 class="storage-title">Kiểm tra lưu trữ</h1>
-                <p class="storage-subtitle">Theo dõi cấu hình Cloudflare R2 và kiểm tra việc tải tệp bài nộp lên.</p>
+            <div class="system-stats">
+                <article class="system-stat stat-blue">
+                    <span><i class="fa-solid fa-box-archive"></i></span>
+                    <div><strong>{{ $submissionDisk }}</strong><small>Vùng lưu bài nộp hiện tại</small></div>
+                </article>
+                <article class="system-stat {{ $r2Ready ? 'stat-green' : 'stat-red' }}">
+                    <span><i class="fa-solid {{ $r2Ready ? 'fa-circle-check' : 'fa-triangle-exclamation' }}"></i></span>
+                    <div><strong>{{ $r2Ready ? 'Sẵn sàng' : 'Thiếu cấu hình' }}</strong><small>Trạng thái Cloudflare R2</small></div>
+                </article>
+                <article class="system-stat stat-cyan">
+                    <span><i class="fa-solid fa-list-check"></i></span>
+                    <div><strong>{{ $configuredCount }}/{{ count($configurationItems) }}</strong><small>Thành phần R2 đã cấu hình</small></div>
+                </article>
+                <article class="system-stat {{ $r2IsActive ? 'stat-violet' : 'stat-slate' }}">
+                    <span><i class="fa-solid fa-route"></i></span>
+                    <div><strong>{{ $r2IsActive ? 'Đang dùng R2' : 'Đang dùng nội bộ' }}</strong><small>Đích lưu file tải lên mới</small></div>
+                </article>
             </div>
-
-            <div class="storage-actions">
-                <form method="POST" action="{{ route('system.storage.test') }}">
-                    @csrf
-                    <input type="hidden" name="disk" value="r2">
-                    <button type="submit" class="storage-btn">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Test R2
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('system.storage.test') }}">
-                    @csrf
-                    <input type="hidden" name="disk" value="public">
-                    <button type="submit" class="storage-btn secondary">
-                        <i class="fa-solid fa-folder-open"></i> Kiểm tra lưu trữ nội bộ
-                    </button>
-                </form>
-            </div>
-        </div>
+        </section>
 
         @if ($lastResult)
-            <div class="storage-result {{ $lastResult['ok'] ? 'ok' : 'fail' }}">
-                <div class="fw-bold mb-1">
-                    {{ strtoupper($lastResult['disk']) }} · {{ $lastResult['checked_at'] }}
+            <section class="storage-check-result {{ $lastResult['ok'] ? 'is-success' : 'is-failed' }}" role="status"
+                aria-label="Kết quả kiểm tra lưu trữ gần nhất">
+                <span class="storage-check-result__icon">
+                    <i class="fa-solid {{ $lastResult['ok'] ? 'fa-circle-check' : 'fa-circle-xmark' }}"></i>
+                </span>
+                <div class="storage-check-result__body">
+                    <span class="system-eyebrow">KẾT QUẢ KIỂM TRA GẦN NHẤT</span>
+                    <div class="storage-check-result__heading">
+                        <strong>{{ strtoupper((string) $lastResult['disk']) }}</strong>
+                        <time>{{ $lastResult['checked_at'] }}</time>
+                    </div>
+                    <p>{{ $lastResult['message'] }}</p>
+                    <code>{{ $lastResult['path'] }}</code>
                 </div>
-                <div>{{ $lastResult['message'] }}</div>
-                <div class="small mt-1">File test: {{ $lastResult['path'] }}</div>
-            </div>
+            </section>
         @endif
 
-        <div class="storage-grid">
-            <div class="storage-card">
-                <div class="storage-label">Vùng lưu bài nộp hiện tại</div>
-                <div class="storage-value">{{ $summary['submission_disk'] }}</div>
-                <div class="storage-muted">
-                    File học viên nộp mới sẽ lưu vào disk này.
-                </div>
-            </div>
+        <div class="storage-health-layout">
+            <section class="system-list-card storage-config-card" aria-labelledby="storage-config-title">
+                <header class="system-section-header">
+                    <div>
+                        <span class="system-section-icon icon-cyan"><i class="fa-solid fa-cloud"></i></span>
+                        <div>
+                            <h2 id="storage-config-title">Cấu hình Cloudflare R2</h2>
+                            <p>Thông tin nhạy cảm được che trước khi hiển thị.</p>
+                        </div>
+                    </div>
+                    <span class="system-status {{ $r2Ready ? 'status-success' : 'status-failed' }}">
+                        {{ $r2Ready ? 'Đủ cấu hình' : 'Cần bổ sung' }}
+                    </span>
+                </header>
 
-            <div class="storage-card">
-                <div class="storage-label">Trạng thái R2</div>
-                <span class="storage-badge {{ $summary['r2_ready'] ? 'ok' : 'warn' }}">
-                    <i class="fa-solid {{ $summary['r2_ready'] ? 'fa-circle-check' : 'fa-triangle-exclamation' }}"></i>
-                    {{ $summary['r2_ready'] ? 'Đã cấu hình đủ' : 'Thiếu cấu hình' }}
-                </span>
-                <div class="storage-muted">
-                    Secret key: {{ $summary['r2_secret_configured'] ? 'Đã cấu hình' : 'Chưa cấu hình' }}
-                </div>
-            </div>
+                <dl class="storage-config-list">
+                    <div>
+                        <dt><span><i class="fa-solid fa-database"></i></span> Kho lưu trữ</dt>
+                        <dd>{{ $summary['r2_bucket'] ?: 'Chưa cấu hình' }}</dd>
+                    </div>
+                    <div>
+                        <dt><span><i class="fa-solid fa-earth-asia"></i></span> Vùng máy chủ</dt>
+                        <dd>{{ $summary['r2_region'] ?: 'Tự động' }}</dd>
+                    </div>
+                    <div>
+                        <dt><span><i class="fa-solid fa-key"></i></span> Khóa truy cập</dt>
+                        <dd><code>{{ $summary['r2_key'] }}</code></dd>
+                    </div>
+                    <div>
+                        <dt><span><i class="fa-solid fa-lock"></i></span> Khóa bí mật</dt>
+                        <dd>
+                            <span class="storage-config-state {{ $summary['r2_secret_configured'] ? 'is-ready' : 'is-missing' }}">
+                                <i class="fa-solid {{ $summary['r2_secret_configured'] ? 'fa-check' : 'fa-xmark' }}"></i>
+                                {{ $summary['r2_secret_configured'] ? 'Đã cấu hình' : 'Chưa cấu hình' }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div class="storage-config-endpoint">
+                        <dt><span><i class="fa-solid fa-link"></i></span> Điểm kết nối</dt>
+                        <dd title="{{ $summary['r2_endpoint'] }}">{{ $summary['r2_endpoint'] ?: 'Chưa cấu hình' }}</dd>
+                    </div>
+                </dl>
+            </section>
 
-            <div class="storage-card">
-                <div class="storage-label">Khóa truy cập</div>
-                <div class="storage-value">{{ $summary['r2_key'] }}</div>
-                <div class="storage-muted">Khóa bí mật không được hiển thị trên giao diện.</div>
-            </div>
+            <aside class="system-list-card storage-test-card" aria-labelledby="storage-test-title">
+                <header class="system-section-header">
+                    <div>
+                        <span class="system-section-icon icon-violet"><i class="fa-solid fa-stethoscope"></i></span>
+                        <div>
+                            <h2 id="storage-test-title">Kiểm tra kết nối</h2>
+                            <p>Tạo rồi tự động xóa một file thử nghiệm.</p>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="storage-test-targets">
+                    <article>
+                        <span class="storage-target-icon is-local"><i class="fa-solid fa-folder-tree"></i></span>
+                        <div><strong>Lưu trữ nội bộ</strong><small>Xác minh quyền ghi, đọc và xóa file trên máy chủ.</small></div>
+                        <form method="POST" action="{{ route('system.storage.test') }}">
+                            @csrf
+                            <input type="hidden" name="disk" value="public">
+                            <button class="system-button system-button--small system-button--neutral" type="submit">
+                                <i class="fa-solid fa-play"></i> Chạy thử
+                            </button>
+                        </form>
+                    </article>
+                    <article>
+                        <span class="storage-target-icon is-cloud"><i class="fa-solid fa-cloud"></i></span>
+                        <div><strong>Cloudflare R2</strong><small>Xác minh thông tin xác thực, bucket và endpoint.</small></div>
+                        <form method="POST" action="{{ route('system.storage.test') }}">
+                            @csrf
+                            <input type="hidden" name="disk" value="r2">
+                            <button class="system-button system-button--small system-button--cloud" type="submit">
+                                <i class="fa-solid fa-play"></i> Chạy thử
+                            </button>
+                        </form>
+                    </article>
+                </div>
+
+                <div class="storage-security-note">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>File kiểm tra không chứa dữ liệu người dùng và được xóa ngay sau khi xác minh.</span>
+                </div>
+            </aside>
         </div>
 
-        <div class="storage-grid">
-            <div class="storage-card">
-                <div class="storage-label">Kho lưu trữ</div>
-                <div class="storage-value">{{ $summary['r2_bucket'] ?: 'Chưa cấu hình' }}</div>
+        <section class="storage-flow-card" aria-labelledby="storage-flow-title">
+            <header>
+                <span><i class="fa-solid fa-file-shield"></i></span>
+                <div><span class="system-eyebrow">LUỒNG LƯU FILE</span><h2 id="storage-flow-title">File bài nộp mới được xử lý thế nào?</h2></div>
+            </header>
+            <div class="storage-flow-steps">
+                <div><b>1</b><span><strong>Nhận file</strong><small>Kiểm tra định dạng và dung lượng tải lên.</small></span></div>
+                <i class="fa-solid fa-arrow-right"></i>
+                <div><b>2</b><span><strong>Lưu vào {{ $submissionDisk }}</strong><small>Dùng disk được cấu hình cho bài nộp.</small></span></div>
+                <i class="fa-solid fa-arrow-right"></i>
+                <div><b>3</b><span><strong>Xác minh</strong><small>Kiểm tra file tồn tại trước khi ghi nhận hoàn tất.</small></span></div>
             </div>
-
-            <div class="storage-card">
-                <div class="storage-label">Vùng máy chủ</div>
-                <div class="storage-value">{{ $summary['r2_region'] ?: 'Tự động' }}</div>
-            </div>
-
-            <div class="storage-card">
-                <div class="storage-label">Điểm kết nối</div>
-                <div class="storage-muted">{{ $summary['r2_endpoint'] ?: 'Chưa cấu hình' }}</div>
-            </div>
-        </div>
+        </section>
     </div>
 @endsection

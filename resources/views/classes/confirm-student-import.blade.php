@@ -3,8 +3,8 @@
 @section('title', 'Xác nhận thay thế sĩ số - '.$classroom->name)
 
 @section('content')
-    <div class="container py-4" style="max-width:760px;">
-        <div class="card border-danger shadow-sm">
+    <div class="container py-4 legacy-form-page legacy-form-page--narrow">
+        <div class="card border-danger shadow-sm legacy-confirm-card">
             <div class="card-body p-4">
                 <h1 class="h4 mb-3">Xác nhận thay thế toàn bộ sĩ số</h1>
                 <p class="mb-3">Lớp <strong>{{ $classroom->name }}</strong> sẽ được đồng bộ chính xác theo file vừa tải lên.</p>

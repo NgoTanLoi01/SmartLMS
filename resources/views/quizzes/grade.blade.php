@@ -68,9 +68,6 @@
         </div>
     </section>
 
-    @if(session('success'))
-        <div class="alert alert-success border-0 rounded-4 shadow-sm"><i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}</div>
-    @endif
     @if($errors->any())
         <div class="alert alert-danger border-0 rounded-4 shadow-sm"><div class="fw-bold mb-1"><i class="fa-solid fa-circle-exclamation me-2"></i>Chưa thể lưu kết quả</div><ul class="mb-0 ps-4">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif

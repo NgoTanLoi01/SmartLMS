@@ -97,4 +97,31 @@ class NotificationCenterTest extends TestCase
         $this->assertNotNull($mine->fresh()->read_at);
         $this->assertNull($theirs->fresh()->read_at);
     }
+
+    public function test_notification_center_renders_only_current_users_feed_and_summary(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $other = User::factory()->create(['role' => User::ROLE_STUDENT]);
+
+        SmartNotification::create([
+            'user_id' => $user->id,
+            'type' => 'assignment',
+            'title' => 'Bài tập của tôi',
+            'message' => 'Bạn có một bài tập mới.',
+        ]);
+        SmartNotification::create([
+            'user_id' => $other->id,
+            'type' => 'grade',
+            'title' => 'Thông báo của người khác',
+            'message' => 'Không được hiển thị.',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertSee('Trung tâm thông báo')
+            ->assertSee('Bài tập của tôi')
+            ->assertSee('Tổng thông báo')
+            ->assertDontSee('Thông báo của người khác');
+    }
 }

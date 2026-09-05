@@ -3,7 +3,7 @@
 @section('title', 'Cập nhật cấu hình: '.$quiz->title)
 
 @section('content')
-    <div class="container py-4" style="max-width: 1100px;">
+    <div class="container py-4 legacy-form-page">
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('courses.show', $quiz->course_id) }}">{{ $quiz->course->title }}</a></li>
@@ -12,11 +12,11 @@
             </ol>
         </nav>
 
-        <form action="{{ route('quizzes.update', $quiz) }}" method="POST" class="card border-0 shadow-sm">
+        <form action="{{ route('quizzes.update', $quiz) }}" method="POST" class="card border-0 shadow-sm legacy-form-card">
             @csrf
             @method('PUT')
 
-            <div class="card-header bg-white border-0 px-4 pt-4">
+            <div class="card-header bg-white border-0 px-4 pt-4 legacy-form-card__head">
                 <h1 class="h4 fw-bold mb-1"><i class="fa-solid fa-sliders me-2 text-primary"></i>Cập nhật cấu hình bài kiểm tra</h1>
                 <p class="text-muted mb-0">Bài đang làm giữ nguyên snapshot câu hỏi và thời hạn cũ. Cấu hình mới áp dụng từ lượt bắt đầu tiếp theo.</p>
             </div>

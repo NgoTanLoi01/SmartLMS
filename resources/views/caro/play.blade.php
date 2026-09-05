@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Phòng Caro ' . $roomId)
+
 @section('content')
     <div class="container py-4 text-center">
         <div class="caro-play-card card border-0 shadow-sm rounded-4 p-4 mx-auto" style="max-width: 700px;">

@@ -13,16 +13,18 @@
     @endphp
 
     <div class="lms-page catalog-page classes-catalog-page">
-        <x-ui.page-header title="Quản lý lớp học">
+        <section class="catalog-hero">
+            <span class="catalog-hero__accent" aria-hidden="true"></span>
+            <x-ui.page-header title="Quản lý lớp học">
             <x-slot:meta>
                 <span><i class="fa-solid fa-school" aria-hidden="true"></i>Quản lý lớp, học viên và khóa học được phân bổ</span>
             </x-slot:meta>
             <x-slot:actions>
                 <x-ui.button icon="fa-plus" data-bs-toggle="modal" data-bs-target="#addClassModal">Tạo lớp học</x-ui.button>
             </x-slot:actions>
-        </x-ui.page-header>
+            </x-ui.page-header>
 
-        <section class="catalog-summary" aria-label="Tổng quan lớp học">
+            <div class="catalog-summary" aria-label="Tổng quan lớp học">
             <article class="catalog-summary-item">
                 <span class="catalog-summary-icon tone-blue"><i class="fa-solid fa-school" aria-hidden="true"></i></span>
                 <span><strong>{{ $classStats['total'] }}</strong><small>Tổng lớp học</small></span>
@@ -39,6 +41,7 @@
                 <span class="catalog-summary-icon tone-amber"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>
                 <span><strong>{{ $classStats['courses'] }}</strong><small>Lượt phân bổ khóa</small></span>
             </article>
+            </div>
         </section>
 
         <form action="{{ route('classes.index') }}" method="GET" class="catalog-filter-panel class-filter-panel"

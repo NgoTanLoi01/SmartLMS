@@ -685,11 +685,57 @@
                 border-top: 0;
             }
         }
+
+        /* Unified SmartLMS material library experience */
+        .materials-index-shell { display: grid; gap: 16px; }
+        .materials-index-hero { position: relative; margin: 0; overflow: hidden; border-color: #dbe5f2; border-radius: 16px; box-shadow: 0 10px 32px rgba(30, 64, 175, .06); }
+        .materials-index-hero__accent { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #2563eb, #7c3aed 48%, #06b6d4); }
+        .materials-index-hero .lms-page-header { margin: 0; padding: 22px 20px 17px; background: radial-gradient(circle at 92% -25%, rgba(37, 99, 235, .14), transparent 36%), linear-gradient(135deg, #fff 22%, #f8fbff); }
+        .materials-index-hero .lms-page-title { color: #172033; font-size: 22px; letter-spacing: -.025em; }
+        .materials-index-hero .lms-page-meta { gap: 14px; margin-top: 5px; }
+        .materials-stat-shelf { gap: 1px; padding: 10px; background: #edf2f8; border-top-color: #e1e8f1; }
+        .materials-stat { min-height: 68px; padding: 11px 14px; background: rgba(255, 255, 255, .95); border: 0; transition: transform .16s ease, box-shadow .16s ease; }
+        .materials-stat:first-child { border-radius: 10px 0 0 10px; }
+        .materials-stat:last-child { border-radius: 0 10px 10px 0; }
+        .materials-stat:hover { z-index: 1; box-shadow: 0 7px 18px rgba(15, 23, 42, .07); transform: translateY(-1px); }
+        .materials-stat-num { font-size: 18px; }
+        .materials-stat-label { font-size: 10px; }
+        .materials-library-panel,
+        .materials-sync-panel { margin: 0; padding: 16px; border-color: #e1e8f1; border-radius: 15px; box-shadow: 0 6px 24px rgba(15, 23, 42, .045); }
+        .materials-section-head { align-items: center; margin-bottom: 14px; }
+        .materials-section-title { color: #172033; font-size: 14px; font-weight: 800; }
+        .materials-section-note { font-size: 10.5px; }
+        .materials-action { min-height: 38px; padding: 8px 12px; border-radius: 9px; font-size: 11px; }
+        .materials-filter { margin-bottom: 14px; padding: 13px; background: #f8fafc; border: 1px solid #e1e8f1; border-radius: 11px; }
+        .materials-filter .form-control,
+        .materials-filter .form-select { min-height: 39px; background: #fff; font-size: 12px; }
+        .materials-asset-grid,
+        .materials-course-grid { gap: 14px; }
+        .materials-asset { gap: 10px; padding: 14px; border-color: #e1e8f1; border-radius: 14px; }
+        .materials-asset-title { font-size: 13px; }
+        .materials-course-card { gap: 13px; min-height: 150px; padding: 16px; border-color: #e1e8f1; border-radius: 14px; }
+        .materials-course-title { font-size: 14px; }
+        .materials-course-meta { font-size: 10.5px; }
+        .materials-count { font-size: 10.5px; }
+        .materials-pagination { margin: 16px -16px -16px; }
+
+        @media (max-width: 575.98px) {
+            .materials-index-shell { gap: 13px; padding-inline: 0; }
+            .materials-index-hero .lms-page-header { padding: 18px 15px 14px; }
+            .materials-stat-shelf { gap: 1px; padding: 10px; }
+            .materials-stat,
+            .materials-stat:first-child,
+            .materials-stat:last-child { min-height: 62px; border: 0; border-radius: 9px; }
+            .materials-library-panel,
+            .materials-sync-panel { padding: 14px; }
+            .materials-pagination { margin: 14px -14px -14px; }
+        }
     </style>
 
     <div class="materials-index">
         <div class="lms-page materials-index-shell">
             <div class="materials-index-hero">
+                <span class="materials-index-hero__accent" aria-hidden="true"></span>
                 <div class="materials-index-hero-top">
                     <x-ui.page-header title="Kho học liệu">
                         <x-slot:meta>
@@ -731,13 +777,6 @@
                     </div>
                 @endif
             </div>
-
-            @if (session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-            @if (session('error'))
-                <div class="alert alert-danger">{{ session('error') }}</div>
-            @endif
 
             @if ($materials)
                 <section class="materials-sync-panel">

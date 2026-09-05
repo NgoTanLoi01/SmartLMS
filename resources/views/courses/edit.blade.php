@@ -3,7 +3,7 @@
 @section('title', 'Chỉnh sửa khóa học')
 
 @section('content')
-    <div class="container py-4">
+    <div class="container py-4 legacy-form-page">
         <div class="row justify-content-center">
             <div class="col-lg-12">
                 <nav aria-label="breadcrumb" class="mb-4">
@@ -14,8 +14,8 @@
                     </ol>
                 </nav>
 
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white py-3 border-0">
+                <div class="card border-0 shadow-sm legacy-form-card">
+                    <div class="card-header bg-white py-3 border-0 legacy-form-card__head">
                         <h4 class="fw-bold mb-0">
                             <i class="fa-solid fa-edit me-2"></i>Chỉnh sửa khóa học
                         </h4>
@@ -109,7 +109,7 @@
                         $sourceVersion = (int) ($course->sourceTemplate->template_version ?? 1);
                         $sourceSectionVersions = $course->sourceTemplate->template_section_versions ?? [];
                     @endphp
-                    <div class="card border-0 shadow-sm mt-4">
+                    <div class="card border-0 shadow-sm mt-4 legacy-form-card">
                         <div class="card-header bg-white border-0 px-4 pt-4">
                             <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                 <div>

@@ -13,7 +13,9 @@
     @endphp
 
     <div class="lms-page catalog-page courses-catalog-page">
-        <x-ui.page-header :title="$isStudent ? 'Khóa học của bạn' : 'Quản lý khóa học'">
+        <section class="catalog-hero">
+            <span class="catalog-hero__accent" aria-hidden="true"></span>
+            <x-ui.page-header :title="$isStudent ? 'Khóa học của bạn' : 'Quản lý khóa học'">
             <x-slot:meta>
                 <span>
                     <i class="fa-solid {{ $isStudent ? 'fa-book-open-reader' : 'fa-graduation-cap' }}" aria-hidden="true"></i>
@@ -28,9 +30,9 @@
                     <x-ui.button :href="route('courses.create')" icon="fa-plus">Tạo khóa học</x-ui.button>
                 </x-slot:actions>
             @endunless
-        </x-ui.page-header>
+            </x-ui.page-header>
 
-        <section class="catalog-summary {{ $isStudent ? 'catalog-summary-three' : '' }}" aria-label="Tổng quan khóa học">
+            <div class="catalog-summary {{ $isStudent ? 'catalog-summary-three' : '' }}" aria-label="Tổng quan khóa học">
             <article class="catalog-summary-item">
                 <span class="catalog-summary-icon tone-blue"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>
                 <span><strong>{{ $courseStats['total'] }}</strong><small>Tổng khóa học</small></span>
@@ -49,6 +51,7 @@
                 <span class="catalog-summary-icon tone-amber"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
                 <span><strong>{{ $courseStats['lessons'] }}</strong><small>Bài học để xem lại</small></span>
             </article>
+            </div>
         </section>
 
         @unless ($isStudent)

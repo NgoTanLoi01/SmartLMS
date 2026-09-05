@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Điểm danh & điểm số - ' . $course->title)
+
 @section('content')
     @push('styles')
         @vite('resources/css/pages/attendance-show.css')

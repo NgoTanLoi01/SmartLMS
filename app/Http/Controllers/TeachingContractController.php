@@ -229,6 +229,11 @@ class TeachingContractController extends Controller
             'teaching_record_ids' => 'nullable|array',
             'teaching_record_ids.*' => 'exists:teaching_records,id',
             'note' => 'nullable|string|max:2000',
+        ], [
+            'received_amount.numeric' => 'Số tiền đã nhận phải là một số hợp lệ.',
+            'received_amount.min' => 'Số tiền đã nhận không được nhỏ hơn 0.',
+            'received_amount.max' => 'Số tiền đã nhận vượt quá giới hạn cho phép.',
+            'received_amount.lte' => 'Số tiền đã nhận không được lớn hơn tổng tiền hợp đồng.',
         ]);
     }
 
@@ -237,17 +242,21 @@ class TeachingContractController extends Controller
         $data['total_amount'] = (float) $data['total_amount'];
         $data['received_amount'] = (float) ($data['received_amount'] ?? 0);
 
-        if ($data['status'] === TeachingContract::STATUS_RECEIVED) {
-            $data['received_amount'] = $data['total_amount'];
+        // Số tiền thực nhận là dữ liệu gốc. Trạng thái thanh toán phải được suy ra
+        // từ số tiền này để request trực tiếp cũng không thể tạo dữ liệu mâu thuẫn.
+        if (! in_array($data['status'], [
+            TeachingContract::STATUS_CANCELLED,
+            TeachingContract::STATUS_ARCHIVED,
+        ], true)) {
+            $data['status'] = match (true) {
+                $data['received_amount'] <= 0 => TeachingContract::STATUS_UNPAID,
+                $data['total_amount'] > 0 && $data['received_amount'] >= $data['total_amount'] => TeachingContract::STATUS_RECEIVED,
+                default => TeachingContract::STATUS_PARTIAL,
+            };
         }
 
-        if ($data['status'] === TeachingContract::STATUS_UNPAID) {
-            $data['received_amount'] = 0;
+        if ($data['received_amount'] <= 0) {
             $data['received_date'] = null;
-        }
-
-        if ($data['status'] === TeachingContract::STATUS_CANCELLED) {
-            $data['received_amount'] = 0;
         }
 
         return $data;

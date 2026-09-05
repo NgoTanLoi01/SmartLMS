@@ -880,6 +880,340 @@ body.sidebar-collapsed .sidebar-item__badge {
     color: #991b1b;
 }
 
+/* ── Compatibility layer for legacy workspaces ──
+ * Các màn hình nghiệp vụ cũ vẫn giữ nguyên markup và hành vi, nhưng cùng dùng
+ * một nhịp bố cục, header, filter và card với các màn hình SmartLMS mới.
+ */
+.main-content :is(
+    .pp,
+    .tp,
+    .sch-page,
+    .trash-page,
+    .grades-page,
+    .student-schedule,
+    .materials-page,
+    .page-wrapper
+) {
+    width: 100%;
+    max-width: 1500px;
+    margin-inline: auto;
+}
+
+.main-content :is(
+    .ops-header,
+    .pp-header,
+    .program-header,
+    .program-detail-header,
+    .report-header,
+    .sch-header,
+    .tp-header,
+    .trash-head,
+    .grades-header,
+    .ss-header,
+    .materials-hero,
+    .page-wrapper > .page-header
+) {
+    position: relative;
+    overflow: hidden;
+    align-items: center;
+    min-height: 92px;
+    margin-bottom: 16px;
+    padding: 20px;
+    background: radial-gradient(circle at 92% -25%, rgba(37, 99, 235, .13), transparent 36%), linear-gradient(135deg, #fff 22%, #f8fbff);
+    border: 1px solid #dbe5f2;
+    border-radius: 16px;
+    box-shadow: 0 10px 32px rgba(30, 64, 175, .06);
+}
+
+.main-content :is(
+    .ops-header,
+    .pp-header,
+    .program-header,
+    .program-detail-header,
+    .report-header,
+    .sch-header,
+    .tp-header,
+    .trash-head,
+    .grades-header,
+    .ss-header,
+    .materials-hero,
+    .page-wrapper > .page-header
+)::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    content: '';
+    background: linear-gradient(90deg, #2563eb, #7c3aed 48%, #06b6d4);
+}
+
+.main-content :is(
+    .ops-title,
+    .pp-title,
+    .program-title,
+    .program-detail-title,
+    .report-title,
+    .tp-title,
+    .grades-title,
+    .ss-title,
+    .materials-title,
+    .sch-header h1,
+    .trash-head h1,
+    .page-wrapper > .page-header h3
+) {
+    margin-top: 0;
+    color: #172033;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -.025em;
+    line-height: 1.25;
+}
+
+.main-content :is(
+    .ops-subtitle,
+    .pp-sub,
+    .program-subtitle,
+    .program-detail-subtitle,
+    .report-subtitle,
+    .tp-sub,
+    .grades-subtitle,
+    .ss-subtitle,
+    .materials-subtitle,
+    .sch-header p,
+    .trash-head p,
+    .page-wrapper > .page-header p
+) {
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.main-content :is(
+    .ops-filter,
+    .ops-card,
+    .ops-stat,
+    .pp-filter,
+    .pp-card,
+    .pp-stat,
+    .program-card,
+    .program-list,
+    .program-stat,
+    .report-filter,
+    .report-card,
+    .report-stat,
+    .sch-panel,
+    .sch-cal-card,
+    .tp-filter,
+    .tp-card,
+    .tp-stat,
+    .trash-card,
+    .grades-filter,
+    .grades-panel,
+    .grades-stat,
+    .ss-filter,
+    .ss-panel,
+    .ss-stat,
+    .materials-panel,
+    .material-card,
+    .page-wrapper .card-panel,
+    .card-main
+) {
+    border-color: #e1e8f1;
+    border-radius: 15px;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, .045);
+}
+
+.main-content :is(
+    .ops-filter,
+    .pp-filter,
+    .report-filter,
+    .tp-filter,
+    .grades-filter,
+    .ss-filter
+) {
+    margin-bottom: 16px;
+    padding: 15px 16px;
+    background: #fff;
+}
+
+.main-content :is(
+    .ops-card__head,
+    .report-card__head,
+    .sch-panel-head,
+    .grades-panel-head,
+    .ss-panel-head,
+    .trash-toolbar,
+    .program-section-head,
+    .page-wrapper .table-header
+) {
+    padding: 14px 17px;
+    background: #fbfdff;
+    border-bottom-color: #e1e8f1;
+}
+
+.main-content :is(
+    .ops-card__title,
+    .report-card__title,
+    .sch-panel-title,
+    .grades-panel-title,
+    .ss-panel-title,
+    .program-section-title,
+    .materials-panel-title,
+    .page-wrapper .table-title
+) {
+    color: #172033;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+}
+
+.main-content :is(.ops-stat, .pp-stat, .program-stat, .report-stat, .tp-stat, .grades-stat, .ss-stat) {
+    transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.main-content :is(.ops-stat, .pp-stat, .program-stat, .report-stat, .tp-stat, .grades-stat, .ss-stat):hover {
+    box-shadow: 0 10px 26px rgba(15, 23, 42, .075);
+    transform: translateY(-2px);
+}
+
+.main-content :is(.ops-card, .pp-card, .program-card, .report-card, .tp-card, .trash-card, .grades-panel, .ss-panel, .sch-cal-card) {
+    overflow: hidden;
+    background: #fff;
+}
+
+.main-content :is(.ops-filter, .pp-filter, .report-filter, .tp-filter, .grades-filter, .ss-filter) :is(.form-label, label) {
+    color: #64748b;
+    font-size: 10.5px;
+    font-weight: 750;
+}
+
+.main-content :is(.ops-filter, .pp-filter, .report-filter, .tp-filter, .grades-filter, .ss-filter) :is(.form-control, .form-select) {
+    min-height: 39px;
+    font-size: 12px;
+}
+
+.legacy-form-page,
+.legacy-tool-page,
+.game-lobby-page {
+    width: 100%;
+    max-width: 1180px;
+    margin-inline: auto;
+}
+
+.legacy-form-page--narrow,
+.game-lobby-card {
+    max-width: 760px;
+}
+
+.game-lobby-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #e1e8f1 !important;
+    box-shadow: 0 10px 32px rgba(30, 64, 175, .07) !important;
+}
+
+.game-lobby-card::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    content: '';
+    background: linear-gradient(90deg, #2563eb, #7c3aed 48%, #06b6d4);
+}
+
+.legacy-form-card,
+.legacy-confirm-card {
+    overflow: hidden;
+    border: 1px solid #e1e8f1 !important;
+    border-radius: 16px;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, .055) !important;
+}
+
+.legacy-confirm-card {
+    border-top: 3px solid #ef4444 !important;
+}
+
+.legacy-form-card__head {
+    position: relative;
+    padding: 20px 24px 15px !important;
+    background: radial-gradient(circle at 92% -25%, rgba(37, 99, 235, .13), transparent 36%), linear-gradient(135deg, #fff 22%, #f8fbff) !important;
+    border-bottom: 1px solid #eef2f7 !important;
+}
+
+.legacy-form-card__head::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    content: '';
+    background: linear-gradient(90deg, #2563eb, #7c3aed 48%, #06b6d4);
+}
+
+.legacy-form-card__head :is(h1, h2, h3, h4) {
+    color: #172033 !important;
+    font-size: 19px;
+    letter-spacing: -.02em;
+}
+
+.legacy-form-page .breadcrumb {
+    margin-bottom: 0;
+    padding: 9px 12px;
+    background: rgba(255, 255, 255, .76);
+    border: 1px solid #e1e8f1;
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+.legacy-form-page .form-text {
+    color: #718096;
+    font-size: 10.5px;
+    line-height: 1.55;
+}
+
+.legacy-tool-page .card-main {
+    border: 1px solid #e1e8f1;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, .055) !important;
+}
+
+@media (max-width: 767.98px) {
+    .main-content :is(
+        .ops-header,
+        .pp-header,
+        .program-header,
+        .program-detail-header,
+        .report-header,
+        .sch-header,
+        .tp-header,
+        .trash-head,
+        .grades-header,
+        .ss-header,
+        .materials-hero,
+        .page-wrapper > .page-header
+    ) {
+        align-items: stretch;
+        flex-direction: column;
+        min-height: 0;
+        padding: 17px 15px;
+    }
+
+    .main-content :is(.pp-header-actions, .tp-header-actions, .program-header > .btn, .report-header > .btn) {
+        width: 100%;
+    }
+
+    .main-content :is(.pp-header-actions, .tp-header-actions) > :is(a, button, form) {
+        flex: 1 1 auto;
+    }
+
+    .legacy-form-page,
+    .legacy-tool-page,
+    .game-lobby-page {
+        padding-block: 10px !important;
+    }
+
+    .legacy-form-card__head,
+    .legacy-form-card > .card-body,
+    .legacy-confirm-card > .card-body {
+        padding-inline: 16px !important;
+    }
+}
+
 /* ── Mobile ── */
 @media (max-width: 768px) {
     .navbar {
