@@ -33,6 +33,7 @@ class SystemBackupRecoveryTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
+            Schema::dropIfExists('smart_notifications');
             Schema::dropIfExists('audit_logs');
             Schema::dropIfExists('backup_runs');
             Schema::dropIfExists('users');
@@ -54,6 +55,40 @@ class SystemBackupRecoveryTest extends TestCase
                 'confirmation' => 'KHOI PHUC',
                 'current_password' => 'password',
             ])
+            ->assertForbidden();
+    }
+
+    public function test_backup_management_page_exposes_operational_status_and_safe_restore_flow(): void
+    {
+        $backup = $this->backup([
+            'metadata' => [
+                'format' => BackupService::FORMAT,
+                'format_version' => BackupService::FORMAT_VERSION,
+                'integrity_status' => 'valid',
+                'included_files' => 12,
+                'vector_database_rows' => 35,
+                'missing_files' => 0,
+            ],
+        ]);
+        $this->backup([
+            'status' => 'failed',
+            'filename' => null,
+            'error_message' => 'Không thể kết nối kho lưu trữ.',
+            'metadata' => [],
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('system.backups.index'))
+            ->assertOk()
+            ->assertSee('Lịch sử sao lưu')
+            ->assertSee('Nội dung gói sao lưu')
+            ->assertSee('12')
+            ->assertSee('35')
+            ->assertSee('Tạo dự phòng và phục hồi')
+            ->assertSee('Không thể kết nối kho lưu trữ.');
+
+        $this->actingAs($this->teacher)
+            ->get(route('system.backups.index'))
             ->assertForbidden();
     }
 
@@ -362,6 +397,18 @@ class SystemBackupRecoveryTest extends TestCase
             $table->json('metadata')->nullable();
             $table->string('ip_address')->nullable();
             $table->text('user_agent')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('smart_notifications', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type')->nullable();
+            $table->string('title');
+            $table->text('message');
+            $table->string('action_url')->nullable();
+            $table->json('data')->nullable();
+            $table->string('dedupe_key')->nullable();
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }

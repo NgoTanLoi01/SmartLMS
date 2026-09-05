@@ -70,7 +70,7 @@ class AuthorizationIsolationTest extends TestCase
             foreach ([
                 'smart_notifications',
                 'grading_feedback_templates',
-                'quiz_attempts', 'quiz_sessions', 'assignment_submissions', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
+                'quiz_attempts', 'quiz_sessions', 'assignment_submissions', 'question_versions', 'options', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
                 'quizzes', 'assignments', 'lessons', 'modules', 'class_course', 'class_user', 'classes', 'courses', 'users',
             ] as $table) {
                 Schema::dropIfExists($table);
@@ -1311,6 +1311,145 @@ class AuthorizationIsolationTest extends TestCase
         ]);
     }
 
+    public function test_question_import_requires_preview_and_only_imports_confirmed_rows(): void
+    {
+        $csv = implode("\n", [
+            'Câu hỏi,Độ khó,A,B,C,D,Đáp án đúng,Tags',
+            'Câu hỏi của A,easy,Đáp án 1,Đáp án 2,Đáp án 3,Đáp án 4,A,cũ',
+            'Nội dung hoàn toàn mới để kiểm tra import,hard,Lựa chọn A,Lựa chọn B,Lựa chọn C,Lựa chọn D,C,"chương 1, ôn tập"',
+        ]);
+
+        $response = $this->actingAs($this->owner)
+            ->post(route('questions.importBank'), [
+                'course_id' => $this->course->id,
+                'question_bank_id' => $this->questionBank->id,
+                'file' => UploadedFile::fake()->createWithContent('questions.csv', $csv),
+            ]);
+
+        $response->assertOk()
+            ->assertViewIs('quizzes.question_import_preview')
+            ->assertSee('100%')
+            ->assertSee('Theo đề xuất')
+            ->assertSee('câu sẽ được nhập');
+        $this->assertDatabaseCount('questions', 1);
+
+        $token = $response->viewData('token');
+        $this->actingAs($this->owner)
+            ->post(route('questions.importBank.confirm'), [
+                'preview_token' => $token,
+                'actions' => ['skip', 'import'],
+            ])
+            ->assertRedirect(route('questions.index', ['question_bank_id' => $this->questionBank->id]))
+            ->assertSessionHas('success');
+
+        $imported = Question::query()->where('question_text', 'Nội dung hoàn toàn mới để kiểm tra import')->sole();
+        $this->assertSame(['chương 1', 'ôn tập'], $imported->tags);
+        $this->assertDatabaseCount('questions', 2);
+        $this->assertDatabaseHas('options', ['question_id' => $imported->id, 'option_text' => 'Lựa chọn C', 'is_correct' => true]);
+        $this->assertDatabaseHas('question_versions', ['question_id' => $imported->id, 'version_number' => 1]);
+
+        $this->actingAs($this->owner)
+            ->post(route('questions.importBank.confirm'), [
+                'preview_token' => $token,
+                'actions' => ['skip', 'import'],
+            ])
+            ->assertNotFound();
+        $this->assertDatabaseCount('questions', 2);
+    }
+
+    public function test_question_import_preview_enforces_course_and_bank_scope(): void
+    {
+        $csv = implode("\n", [
+            'Câu hỏi,Độ khó,A,B,C,D,Đáp án đúng',
+            'Câu hỏi không được phép,easy,A,B,C,D,A',
+        ]);
+
+        $this->actingAs($this->otherTeacher)
+            ->post(route('questions.importBank'), [
+                'course_id' => $this->course->id,
+                'question_bank_id' => $this->questionBank->id,
+                'file' => UploadedFile::fake()->createWithContent('questions.csv', $csv),
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('questions', 1);
+    }
+
+    public function test_question_bulk_classification_is_versioned_and_cross_scope_request_is_atomic(): void
+    {
+        $foreignCourse = Course::create([
+            'title' => 'Khóa của B',
+            'description' => 'Test',
+            'teacher_id' => $this->otherTeacher->id,
+            'course_type' => 'delivery',
+            'status' => Course::STATUS_PUBLISHED,
+        ]);
+        $foreignBank = QuestionBank::create(['name' => 'Ngân hàng của B', 'teacher_id' => $this->otherTeacher->id]);
+        $foreignQuestion = Question::create([
+            'course_id' => $foreignCourse->id,
+            'question_bank_id' => $foreignBank->id,
+            'question_text' => 'Câu hỏi của B',
+            'difficulty' => 'easy',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->patch(route('questions.bulkUpdateBank'), [
+                'question_ids' => [$this->question->id, $foreignQuestion->id],
+                'difficulty' => 'hard',
+                'tag_action' => 'replace',
+                'tags' => 'bảo mật',
+            ])
+            ->assertForbidden();
+        $this->assertSame('easy', $this->question->fresh()->difficulty);
+        $this->assertSame('easy', $foreignQuestion->fresh()->difficulty);
+
+        $this->actingAs($this->owner)
+            ->patch(route('questions.bulkUpdateBank'), [
+                'question_ids' => [$this->question->id],
+                'difficulty' => 'hard',
+                'tag_action' => 'replace',
+                'tags' => 'Chương 2; Ôn tập',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->question->refresh();
+        $this->assertSame('hard', $this->question->difficulty);
+        $this->assertSame(['Chương 2', 'Ôn tập'], $this->question->tags);
+        $this->assertSame(2, $this->question->current_version);
+        $this->assertDatabaseHas('question_versions', [
+            'question_id' => $this->question->id,
+            'version_number' => 2,
+            'change_type' => 'bulk_updated',
+        ]);
+
+        $this->actingAs($this->owner)
+            ->get(route('questions.versions', $this->question))
+            ->assertOk()
+            ->assertSee('DÒNG THỜI GIAN')
+            ->assertSee('v2')
+            ->assertSee('Chương 2')
+            ->assertSee('Độ khó');
+        $this->actingAs($this->otherTeacher)
+            ->get(route('questions.versions', $this->question))
+            ->assertForbidden();
+    }
+
+    public function test_question_export_uses_filters_and_enforces_bank_scope(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('questions.exportBank', [
+                'question_bank_id' => $this->questionBank->id,
+                'status' => 'active',
+            ]))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $this->actingAs($this->otherTeacher)
+            ->get(route('questions.exportBank', ['question_bank_id' => $this->questionBank->id]))
+            ->assertForbidden();
+    }
+
     public function test_assignment_index_is_filterable_and_limited_to_accessible_courses(): void
     {
         $this->actingAs($this->owner)
@@ -1547,10 +1686,33 @@ class AuthorizationIsolationTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('course_id')->nullable();
             $table->unsignedBigInteger('question_bank_id')->nullable();
+            $table->unsignedBigInteger('quiz_passage_id')->nullable();
+            $table->string('question_type')->default(Question::TYPE_SINGLE_CHOICE);
             $table->text('question_text');
+            $table->json('answer_config')->nullable();
             $table->string('difficulty')->default('easy');
+            $table->json('tags')->nullable();
+            $table->unsignedInteger('current_version')->default(1);
             $table->string('status')->default(Question::STATUS_PUBLISHED);
             $table->timestamps();
+        });
+        Schema::create('options', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('question_id');
+            $table->text('option_text');
+            $table->boolean('is_correct')->default(false);
+            $table->timestamps();
+        });
+        Schema::create('question_versions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('question_id');
+            $table->unsignedInteger('version_number');
+            $table->json('snapshot');
+            $table->unsignedBigInteger('changed_by')->nullable();
+            $table->string('change_type', 40);
+            $table->string('change_summary', 500)->nullable();
+            $table->timestamps();
+            $table->unique(['question_id', 'version_number']);
         });
         Schema::create('course_question_bank', function (Blueprint $table) {
             $table->id();
@@ -1615,11 +1777,18 @@ class AuthorizationIsolationTest extends TestCase
             'end_time' => '10:00:00',
         ]);
         $this->questionBank = QuestionBank::create(['name' => 'Ngân hàng của A', 'teacher_id' => $this->owner->id]);
+        $this->questionBank->courses()->attach($this->course);
         $this->question = Question::create([
             'course_id' => $this->course->id,
             'question_bank_id' => $this->questionBank->id,
             'question_text' => 'Câu hỏi của A',
             'difficulty' => 'easy',
+        ]);
+        DB::table('options')->insert([
+            ['question_id' => $this->question->id, 'option_text' => 'Đáp án 1', 'is_correct' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['question_id' => $this->question->id, 'option_text' => 'Đáp án 2', 'is_correct' => false, 'created_at' => now(), 'updated_at' => now()],
+            ['question_id' => $this->question->id, 'option_text' => 'Đáp án 3', 'is_correct' => false, 'created_at' => now(), 'updated_at' => now()],
+            ['question_id' => $this->question->id, 'option_text' => 'Đáp án 4', 'is_correct' => false, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 

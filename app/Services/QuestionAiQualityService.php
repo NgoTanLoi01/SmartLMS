@@ -8,10 +8,15 @@ use Illuminate\Support\Str;
 
 class QuestionAiQualityService
 {
-    public function reviewBatch(Course|int $course, array $questions): array
+    public function reviewBatch(Course|int $course, array $questions, array $additionalBankIds = []): array
     {
         $course = $course instanceof Course ? $course : Course::findOrFail($course);
-        $bankIds = $course->questionBanks()->pluck('question_banks.id');
+        $bankIds = $course->questionBanks()->pluck('question_banks.id')
+            ->concat($additionalBankIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
         $existing = Question::query()
             ->select(['id', 'question_text'])
             ->notArchived()

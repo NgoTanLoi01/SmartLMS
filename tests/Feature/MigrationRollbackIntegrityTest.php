@@ -29,7 +29,7 @@ class MigrationRollbackIntegrityTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['grading_feedback_templates', 'assignment_submissions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
+            foreach (['grading_feedback_templates', 'assignment_submissions', 'question_versions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -315,5 +315,64 @@ class MigrationRollbackIntegrityTest extends TestCase
 
         $this->assertFalse(Schema::hasColumn('schedules', 'series_id'));
         $this->assertFalse(Schema::hasColumn('schedules', 'series_position'));
+    }
+
+    public function test_question_version_migration_backfills_and_is_reversible(): void
+    {
+        Schema::create('questions', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('course_id')->nullable();
+            $table->unsignedBigInteger('question_bank_id')->nullable();
+            $table->unsignedBigInteger('quiz_passage_id')->nullable();
+            $table->string('question_type')->default('single_choice');
+            $table->text('question_text');
+            $table->json('answer_config')->nullable();
+            $table->string('difficulty')->default('medium');
+            $table->string('status')->default('published');
+            $table->timestamps();
+        });
+        Schema::create('options', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('question_id');
+            $table->text('option_text');
+            $table->boolean('is_correct')->default(false);
+            $table->timestamps();
+        });
+        $questionId = DB::table('questions')->insertGetId([
+            'course_id' => 1,
+            'question_type' => 'single_choice',
+            'question_text' => 'Câu hỏi cần lưu phiên bản',
+            'difficulty' => 'medium',
+            'status' => 'published',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('options')->insert([
+            'question_id' => $questionId,
+            'option_text' => 'Đáp án đúng',
+            'is_correct' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $migration = require database_path('migrations/2026_09_04_000003_add_question_bank_management_fields.php');
+        $migration->up();
+
+        $this->assertTrue(Schema::hasColumn('questions', 'tags'));
+        $this->assertTrue(Schema::hasColumn('questions', 'current_version'));
+        $this->assertDatabaseHas('question_versions', [
+            'question_id' => $questionId,
+            'version_number' => 1,
+            'change_type' => 'baseline',
+        ]);
+        $snapshot = json_decode(DB::table('question_versions')->value('snapshot'), true);
+        $this->assertSame('Câu hỏi cần lưu phiên bản', $snapshot['question_text']);
+        $this->assertTrue($snapshot['options'][0]['is_correct']);
+
+        $migration->down();
+
+        $this->assertFalse(Schema::hasTable('question_versions'));
+        $this->assertFalse(Schema::hasColumn('questions', 'tags'));
+        $this->assertFalse(Schema::hasColumn('questions', 'current_version'));
     }
 }

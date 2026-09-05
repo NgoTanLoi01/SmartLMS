@@ -51,6 +51,10 @@ class AuditLogger
 
     public const CONTENT_CLONED = 'content_cloned';
 
+    public const QUESTIONS_IMPORTED = 'questions_imported';
+
+    public const QUESTIONS_BULK_UPDATED = 'questions_bulk_updated';
+
     public const TRASH_RESTORED = 'trash_restored';
 
     public const TRASH_PERMANENTLY_DELETED = 'trash_permanently_deleted';

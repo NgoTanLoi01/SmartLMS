@@ -13,8 +13,16 @@ class AuditLogController extends Controller
         abort_unless($request->user()?->isAdmin(), 403);
 
         $filters = $this->filters($request);
+        $filteredLogs = $this->filteredQuery($filters);
 
-        $logs = $this->filteredQuery($filters)
+        $stats = (clone $filteredLogs)
+            ->selectRaw(
+                'COUNT(*) as total, COUNT(DISTINCT action) as action_count, COUNT(DISTINCT user_id) as actor_count, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as today_count',
+                [now()->startOfDay()]
+            )
+            ->first();
+
+        $logs = (clone $filteredLogs)
             ->with('user')
             ->latest()
             ->paginate(20)
@@ -31,7 +39,7 @@ class AuditLogController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        return view('audit_logs.index', compact('logs', 'actions', 'users', 'filters'));
+        return view('audit_logs.index', compact('logs', 'actions', 'users', 'filters', 'stats'));
     }
 
     public function destroy(Request $request, AuditLog $auditLog)

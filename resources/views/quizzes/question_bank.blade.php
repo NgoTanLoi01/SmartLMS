@@ -11,13 +11,23 @@
         $hasActiveFilters =
             request()->hasAny(['course_id', 'question_type', 'question_bank_id']) ||
             (request('status') && request('status') !== 'active');
+        $selectedCourse = $courses->firstWhere('id', (int) request('course_id'));
+        $selectedBank = $questionBanks->firstWhere('id', (int) request('question_bank_id'));
+        $activeFilterLabels = collect([
+            $selectedCourse?->title,
+            $selectedBank?->name,
+            $questionTypeLabels[request('question_type')] ?? null,
+            request('status') === 'archived' ? 'Đã lưu trữ' : (request('status') === 'all' ? 'Tất cả trạng thái' : null),
+        ])->filter();
     @endphp
 
     <div class="lms-page question-bank-page">
         <section class="question-overview" aria-label="Tổng quan ngân hàng câu hỏi">
+            <div class="question-overview__accent" aria-hidden="true"></div>
             <x-ui.page-header title="Ngân hàng câu hỏi">
                 <x-slot:meta>
                     <span><i class="fa-solid fa-circle-question"></i> Soạn, phân loại và tái sử dụng câu hỏi kiểm tra</span>
+                    <span><i class="fa-solid fa-shield-halved"></i> Lưu vết mọi thay đổi</span>
                 </x-slot:meta>
 
                 <x-slot:actions>
@@ -50,6 +60,10 @@
                                 data-bs-target="#importQuestionModal">
                                 <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Nhập câu hỏi từ Excel
                             </button>
+                            <a class="dropdown-item text-primary"
+                                href="{{ route('questions.exportBank', request()->only(['course_id', 'question_bank_id', 'question_type', 'status'])) }}">
+                                <i class="fa-solid fa-file-export" aria-hidden="true"></i> Xuất Excel theo bộ lọc
+                            </a>
                         </div>
                     </div>
                 </x-slot:actions>
@@ -77,6 +91,15 @@
 
         <form action="{{ route('questions.index') }}" method="GET" class="question-filter-panel"
             id="question-filter-form">
+            <div class="question-filter-heading">
+                <div class="question-filter-heading__title">
+                    <span><i class="fa-solid fa-sliders" aria-hidden="true"></i></span>
+                    <div><strong>Bộ lọc câu hỏi</strong><small>Thu hẹp danh sách theo phạm vi và hình thức</small></div>
+                </div>
+                @if ($hasActiveFilters)
+                    <a href="{{ route('questions.index') }}" class="question-filter-reset"><i class="fa-solid fa-xmark"></i> Xóa bộ lọc</a>
+                @endif
+            </div>
             <div class="question-filter-field">
                 <label for="filter-course">Khóa học</label>
                 <select name="course_id" id="filter-course" class="form-select">
@@ -119,12 +142,30 @@
                 @endif
             </div>
             <div class="question-filter-summary">
-                Hiển thị {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} trong
-                {{ $questions->total() }} câu hỏi phù hợp
+                <span><i class="fa-solid fa-list" aria-hidden="true"></i> Hiển thị {{ $questions->firstItem() ?? 0 }}–{{ $questions->lastItem() ?? 0 }} trong
+                    <strong>{{ $questions->total() }}</strong> câu hỏi phù hợp</span>
+                @if ($activeFilterLabels->isNotEmpty())
+                    <div class="active-filter-chips" aria-label="Bộ lọc đang áp dụng">
+                        @foreach ($activeFilterLabels as $label)<span>{{ Str::limit($label, 35) }}</span>@endforeach
+                    </div>
+                @endif
             </div>
         </form>
 
         <section class="table-card question-list-card" aria-label="Danh sách câu hỏi">
+        <header class="question-list-header">
+            <div class="question-list-header__title">
+                <span><i class="fa-solid fa-rectangle-list" aria-hidden="true"></i></span>
+                <div>
+                    <h2>Danh sách câu hỏi</h2>
+                    <p>Chọn câu hỏi để cập nhật phân loại hoặc lưu trữ hàng loạt.</p>
+                </div>
+            </div>
+            <span class="question-list-status status-{{ request('status', 'active') }}">
+                <i class="fa-solid {{ request('status') === 'archived' ? 'fa-box-archive' : (request('status') === 'all' ? 'fa-layer-group' : 'fa-circle-check') }}"></i>
+                {{ request('status') === 'archived' ? 'Đã lưu trữ' : (request('status') === 'all' ? 'Tất cả' : 'Đang sử dụng') }}
+            </span>
+        </header>
         @if ($questions->contains(fn($question) => $question->status !== \App\Models\Question::STATUS_ARCHIVED))
             <div class="bulk-toolbar" id="question-bulk-toolbar">
                 <div class="bulk-selection-info">
@@ -134,13 +175,19 @@
                         <small>Chọn từng câu hoặc chọn tất cả câu trên trang hiện tại.</small>
                     </div>
                 </div>
-                <form id="bulk-question-form" action="{{ route('questions.bulkDestroyBank') }}" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="bulk-delete-button" id="bulk-delete-button" disabled>
-                        <i class="fa-solid fa-box-archive" aria-hidden="true"></i> Lưu trữ đã chọn
+                <div class="bulk-action-group">
+                    <button type="button" class="bulk-edit-button" id="bulk-edit-button" data-bs-toggle="modal"
+                        data-bs-target="#bulkEditQuestionsModal" disabled>
+                        <i class="fa-solid fa-tags" aria-hidden="true"></i> Sửa phân loại
                     </button>
-                </form>
+                    <form id="bulk-question-form" action="{{ route('questions.bulkDestroyBank') }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="bulk-delete-button" id="bulk-delete-button" disabled>
+                            <i class="fa-solid fa-box-archive" aria-hidden="true"></i> Lưu trữ đã chọn
+                        </button>
+                    </form>
+                </div>
             </div>
         @endif
 
@@ -185,6 +232,7 @@
                             <td data-label="Nội dung câu hỏi">
                                 <div class="question-heading-line">
                                     <span class="q-id">#{{ $question->id }}</span>
+                                    <span class="question-version-pill"><i class="fa-solid fa-code-branch" aria-hidden="true"></i> v{{ $question->current_version ?: 1 }}</span>
                                     @if ($isArchived)
                                         <span class="question-status-badge"><i class="fa-solid fa-box-archive"
                                                 aria-hidden="true"></i> Đã lưu trữ</span>
@@ -197,7 +245,7 @@
                                 @endif
                                 <div class="q-answer">
                                     <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
-                                    {{ Str::limit($question->answerSummary(), 95) }}
+                                    <span><strong>Đáp án:</strong> {{ Str::limit($question->answerSummary(), 95) }}</span>
                                 </div>
                             </td>
                             <td data-label="Phân loại">
@@ -219,6 +267,13 @@
                                     </div>
                                 @elseif ($sampleSize > 0)
                                     <div class="question-observed">Cần {{ max(0, 5 - $sampleSize) }} lượt nữa để đánh giá</div>
+                                @endif
+                                @if (!empty($question->tags))
+                                    <div class="question-tags" aria-label="Tags">
+                                        @foreach ($question->tags as $tag)
+                                            <span><i class="fa-solid fa-tag" aria-hidden="true"></i>{{ $tag }}</span>
+                                        @endforeach
+                                    </div>
                                 @endif
                             </td>
                             <td data-label="Phạm vi sử dụng">
@@ -258,6 +313,10 @@
                                     );
                                 @endphp
                                 <div class="question-row-actions">
+                                    <a href="{{ route('questions.versions', $question->id) }}" class="action-btn"
+                                        title="Lịch sử phiên bản" aria-label="Xem lịch sử câu hỏi #{{ $question->id }}">
+                                        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span>Lịch sử</span>
+                                    </a>
                                     @if (!$isArchived)
                                         <button type="button" class="action-btn" data-bs-toggle="modal"
                                             data-bs-target="#editQuestionModal" data-id="{{ $question->id }}"
@@ -479,6 +538,64 @@
     </div>
 
     {{-- ══════════════════════════════
+     MODAL: Chỉnh sửa phân loại hàng loạt
+══════════════════════════════ --}}
+    <div class="modal fade" id="bulkEditQuestionsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ route('questions.bulkUpdateBank') }}" method="POST" id="bulk-edit-question-form">
+                    @csrf
+                    @method('PATCH')
+                    <div class="modal-header">
+                        <div>
+                            <span class="modal-eyebrow">THAO TÁC HÀNG LOẠT</span>
+                            <h5 class="modal-title"><i class="fa-solid fa-tags" aria-hidden="true"></i> Sửa phân loại</h5>
+                            <small class="text-muted">Cập nhật đồng thời mà không thay đổi nội dung hay đáp án.</small>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="bulk-edit-question-ids"></div>
+                        <div class="bulk-edit-summary">
+                            <span><i class="fa-solid fa-check-double"></i></span>
+                            <div><strong><b id="bulk-edit-selected-count">0</b> câu hỏi đã chọn</strong><small>Mỗi câu hỏi sẽ được tạo một phiên bản lịch sử mới.</small></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bulk-difficulty" class="form-label-sm">Độ khó</label>
+                            <select name="difficulty" id="bulk-difficulty" class="form-ctrl">
+                                <option value="">Giữ nguyên</option>
+                                <option value="easy">Dễ</option>
+                                <option value="medium">Trung bình</option>
+                                <option value="hard">Khó</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bulk-tag-action" class="form-label-sm">Thao tác với tag</label>
+                            <select name="tag_action" id="bulk-tag-action" class="form-ctrl" required>
+                                <option value="keep">Giữ nguyên</option>
+                                <option value="replace">Thay toàn bộ tag</option>
+                                <option value="append">Thêm tag</option>
+                                <option value="remove">Gỡ tag</option>
+                                <option value="clear">Xóa toàn bộ tag</option>
+                            </select>
+                        </div>
+                        <div id="bulk-tags-field">
+                            <label for="bulk-tags" class="form-label-sm">Tags</label>
+                            <input type="text" name="tags" id="bulk-tags" class="form-ctrl" maxlength="1000"
+                                placeholder="Ví dụ: chương 1, đại số, ôn tập">
+                            <small class="text-muted">Ngăn cách bằng dấu phẩy, chấm phẩy hoặc xuống dòng; tối đa 20 tag.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn-modal-submit">Cập nhật câu hỏi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- ══════════════════════════════
      MODAL: Nhập từ Excel
 ══════════════════════════════ --}}
     <div class="modal fade" id="importQuestionModal" tabindex="-1">
@@ -487,15 +604,23 @@
                 <form action="{{ route('questions.importBank') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-header">
-                        <h5 class="modal-title" style="color:#16a34a;">
-                            <i class="fa-solid fa-file-arrow-up" style="color:#16a34a;" aria-hidden="true"></i> Nhập câu
-                            hỏi từ file
-                        </h5>
+                        <div>
+                            <span class="modal-eyebrow modal-eyebrow--success">IMPORT CÓ KIỂM TRA</span>
+                            <h5 class="modal-title modal-title--success">
+                                <i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i> Nhập câu hỏi từ file
+                            </h5>
+                            <small class="text-muted">Xem trước và xử lý câu trùng trước khi lưu.</small>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
-                        <div style="margin-bottom:14px;">
-                            <label class="form-label-sm">1. Chọn khóa học</label>
+                        <div class="import-steps" aria-label="Quy trình import">
+                            <span class="is-current"><b>1</b> Chọn dữ liệu</span><i class="fa-solid fa-chevron-right"></i>
+                            <span><b>2</b> Kiểm tra trùng</span><i class="fa-solid fa-chevron-right"></i>
+                            <span><b>3</b> Xác nhận</span>
+                        </div>
+                        <div class="modal-field-group">
+                            <label class="form-label-sm"><span class="field-number">1</span> Khóa học đích</label>
                             <select name="course_id" class="form-ctrl" required>
                                 <option value="">-- Vui lòng chọn khóa học --</option>
                                 @foreach ($courses as $course)
@@ -503,8 +628,8 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div style="margin-bottom:14px;">
-                            <label class="form-label-sm">2. Chọn ngân hàng câu hỏi</label>
+                        <div class="modal-field-group">
+                            <label class="form-label-sm"><span class="field-number">2</span> Ngân hàng câu hỏi</label>
                             <select name="question_bank_id" class="form-ctrl">
                                 <option value="">Tự chọn/tạo theo khóa học</option>
                                 @foreach ($questionBanks as $bank)
@@ -512,12 +637,17 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div style="margin-bottom:16px;">
-                            <label class="form-label-sm">3. Tải lên file .xlsx, .xls hoặc .csv (tối đa 5 MB)</label>
-                            <input type="file" name="file" class="form-ctrl" accept=".xlsx,.xls,.csv" required>
+                        <div class="modal-field-group">
+                            <label class="form-label-sm"><span class="field-number">3</span> File dữ liệu</label>
+                            <label class="spreadsheet-dropzone" for="question-import-file">
+                                <span class="spreadsheet-dropzone__icon"><i class="fa-solid fa-file-excel"></i></span>
+                                <span><strong id="question-import-filename">Chọn file Excel hoặc CSV</strong><small>.xlsx, .xls, .csv · tối đa 5 MB</small></span>
+                                <em>Duyệt file</em>
+                            </label>
+                            <input type="file" name="file" id="question-import-file" class="visually-hidden" accept=".xlsx,.xls,.csv" required>
                         </div>
                         <div class="warn-note">
-                            <strong>Định dạng bắt buộc (đúng 7 cột A → G, không để trống):</strong>
+                            <strong>7 cột A → G là bắt buộc; cột H là tag tùy chọn:</strong>
                             <ol>
                                 <li>Nội dung câu hỏi</li>
                                 <li>Độ khó (<em>easy, medium, hard</em>)</li>
@@ -526,12 +656,14 @@
                                 <li>Đáp án C</li>
                                 <li>Đáp án D</li>
                                 <li>Đáp án đúng (<em>A, B, C hoặc D</em>)</li>
+                                <li>Tags, ngăn cách bằng dấu phẩy (tùy chọn)</li>
                             </ol>
+                            <p class="mb-0">Hệ thống sẽ xem trước và đánh dấu câu trùng trước khi ghi dữ liệu.</p>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn-modal-submit green">Bắt đầu nhập</button>
+                        <button type="submit" class="btn-modal-submit green">Xem trước dữ liệu</button>
                     </div>
                 </form>
             </div>
@@ -811,11 +943,25 @@
             const selectedCount = document.getElementById('selected-question-count');
             const bulkToolbar = document.getElementById('question-bulk-toolbar');
             const bulkDeleteButton = document.getElementById('bulk-delete-button');
+            const bulkEditButton = document.getElementById('bulk-edit-button');
+            const bulkEditIds = document.getElementById('bulk-edit-question-ids');
+            const bulkEditSelectedCount = document.getElementById('bulk-edit-selected-count');
 
             const updateBulkSelection = () => {
                 const checked = rowCheckboxes.filter(checkbox => checkbox.checked);
                 if (selectedCount) selectedCount.textContent = checked.length;
                 if (bulkDeleteButton) bulkDeleteButton.disabled = checked.length === 0;
+                if (bulkEditButton) bulkEditButton.disabled = checked.length === 0;
+                if (bulkEditSelectedCount) bulkEditSelectedCount.textContent = checked.length;
+                if (bulkEditIds) {
+                    bulkEditIds.replaceChildren(...checked.map(checkbox => {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'question_ids[]';
+                        hidden.value = checkbox.value;
+                        return hidden;
+                    }));
+                }
                 if (bulkToolbar) bulkToolbar.classList.toggle('has-selection', checked.length > 0);
                 if (selectAll) {
                     selectAll.checked = rowCheckboxes.length > 0 && checked.length === rowCheckboxes.length;
@@ -835,6 +981,29 @@
             });
             rowCheckboxes.forEach(checkbox => checkbox.addEventListener('change', updateBulkSelection));
             updateBulkSelection();
+
+            const tagAction = document.getElementById('bulk-tag-action');
+            const tagsField = document.getElementById('bulk-tags-field');
+            const tagsInput = document.getElementById('bulk-tags');
+            const updateTagField = () => {
+                const needsTags = ['replace', 'append', 'remove'].includes(tagAction?.value);
+                tagsField?.classList.toggle('is-disabled', !needsTags);
+                if (tagsInput) {
+                    tagsInput.disabled = !needsTags;
+                    tagsInput.required = needsTags;
+                }
+            };
+            tagAction?.addEventListener('change', updateTagField);
+            updateTagField();
+
+            const importFile = document.getElementById('question-import-file');
+            const importFilename = document.getElementById('question-import-filename');
+            importFile?.addEventListener('change', () => {
+                if (importFilename) {
+                    importFilename.textContent = importFile.files?.[0]?.name || 'Chọn file Excel hoặc CSV';
+                }
+            });
+
             document.addEventListener('submit', event => {
                 const form = event.target;
                 const submitter = event.submitter;

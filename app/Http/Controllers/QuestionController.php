@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Imports\QuestionImport;
+use App\Exports\QuestionBankExport;
+use App\Imports\QuestionImportPreview;
 use App\Jobs\GenerateQuizQuestions;
 use App\Models\AiOperation;
 use App\Models\Course;
@@ -12,10 +13,14 @@ use App\Models\QuestionBank;
 use App\Models\QuizPassage;
 use App\Rules\SafeSpreadsheet;
 use App\Services\AiResponseValidator;
+use App\Services\AuditLogger;
 use App\Services\GeminiEmbeddingService;
 use App\Services\QuestionAiQualityService;
 use App\Services\QuestionDefinitionService;
+use App\Services\QuestionVersionService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -31,6 +36,7 @@ class QuestionController extends Controller
         private AiResponseValidator $responseValidator,
         private QuestionDefinitionService $questionDefinitionService,
         private QuestionAiQualityService $questionAiQualityService,
+        private QuestionVersionService $questionVersions,
     ) {}
 
     // ==========================================
@@ -217,6 +223,7 @@ class QuestionController extends Controller
                 'status' => Question::STATUS_PUBLISHED,
             ]);
             $this->questionDefinitionService->syncOptions($question, $definition);
+            $this->questionVersions->recordCreated($question, 'Tạo câu hỏi trong ngân hàng.');
         });
 
         return back()->with('success', 'Đã thêm câu hỏi vào Ngân hàng thành công!');
@@ -239,6 +246,7 @@ class QuestionController extends Controller
         $question = Question::findOrFail($id);
 
         $this->authorizeQuestionAccess($question);
+        $previousSnapshot = $this->questionVersions->snapshot($question);
 
         $bank = $request->filled('question_bank_id')
             ? QuestionBank::findOrFail($request->question_bank_id)
@@ -248,7 +256,7 @@ class QuestionController extends Controller
         $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
         $passageId = $this->validatedPassageId($request);
 
-        DB::transaction(function () use ($question, $request, $bank, $passageId, $definition) {
+        DB::transaction(function () use ($question, $request, $bank, $passageId, $definition, $previousSnapshot) {
             $question->update([
                 'course_id' => $request->course_id,
                 'question_bank_id' => $bank->id,
@@ -259,6 +267,7 @@ class QuestionController extends Controller
                 'answer_config' => $definition['answer_config'],
             ]);
             $this->questionDefinitionService->syncOptions($question, $definition);
+            $this->questionVersions->recordChange($question, $previousSnapshot, 'updated', 'Cập nhật nội dung hoặc đáp án câu hỏi.');
         });
 
         return back()->with('success', 'Đã cập nhật câu hỏi thành công!');
@@ -272,8 +281,12 @@ class QuestionController extends Controller
         $question = Question::findOrFail($id);
 
         $this->authorizeQuestionAccess($question);
+        $previousSnapshot = $this->questionVersions->snapshot($question);
 
-        $question->update(['status' => Question::STATUS_ARCHIVED]);
+        DB::transaction(function () use ($question, $previousSnapshot): void {
+            $question->update(['status' => Question::STATUS_ARCHIVED]);
+            $this->questionVersions->recordChange($question, $previousSnapshot, 'archived', 'Lưu trữ câu hỏi.');
+        });
 
         return back()->with('success', 'Đã lưu trữ câu hỏi. Đáp án và dữ liệu liên quan vẫn được giữ lại!');
     }
@@ -292,9 +305,11 @@ class QuestionController extends Controller
         $questions->each(fn (Question $question) => $this->authorizeQuestionAccess($question));
 
         DB::transaction(function () use ($questions) {
-            Question::query()
-                ->whereKey($questions->modelKeys())
-                ->update(['status' => Question::STATUS_ARCHIVED, 'updated_at' => now()]);
+            foreach ($questions as $question) {
+                $previousSnapshot = $this->questionVersions->snapshot($question);
+                $question->update(['status' => Question::STATUS_ARCHIVED]);
+                $this->questionVersions->recordChange($question, $previousSnapshot, 'archived', 'Lưu trữ câu hỏi theo thao tác hàng loạt.');
+            }
         });
 
         return back()->with('success', 'Đã lưu trữ '.$questions->count().' câu hỏi. Các đề đã phát và dữ liệu bài làm không bị thay đổi.');
@@ -310,7 +325,11 @@ class QuestionController extends Controller
             return back()->with('info', 'Câu hỏi này đang được sử dụng, không cần khôi phục.');
         }
 
-        $question->update(['status' => Question::STATUS_PUBLISHED]);
+        $previousSnapshot = $this->questionVersions->snapshot($question);
+        DB::transaction(function () use ($question, $previousSnapshot): void {
+            $question->update(['status' => Question::STATUS_PUBLISHED]);
+            $this->questionVersions->recordChange($question, $previousSnapshot, 'restored', 'Khôi phục câu hỏi.');
+        });
 
         return back()->with('success', 'Đã khôi phục câu hỏi vào Ngân hàng câu hỏi.');
     }
@@ -320,34 +339,233 @@ class QuestionController extends Controller
     // ==========================================
     public function importBank(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'question_bank_id' => 'nullable|exists:question_banks,id',
             'file' => ['required', 'file', 'max:5120', new SafeSpreadsheet],
         ]);
 
+        $course = Course::findOrFail($request->course_id);
+        $this->authorizeCourse($course);
+        $bank = $request->filled('question_bank_id')
+            ? QuestionBank::findOrFail($request->question_bank_id)
+            : $this->defaultQuestionBankForCourse((int) $request->course_id);
+        $this->authorizeQuestionBank($bank);
+
         try {
-            // Khởi tạo Import Class
-            $bank = $request->filled('question_bank_id')
-                ? QuestionBank::findOrFail($request->question_bank_id)
-                : $this->defaultQuestionBankForCourse((int) $request->course_id);
-            $this->authorizeCourse(Course::findOrFail($request->course_id));
-            $this->authorizeQuestionBank($bank);
-            $bank->courses()->syncWithoutDetaching([(int) $request->course_id]);
+            $preview = new QuestionImportPreview;
+            Excel::import($preview, $data['file']);
 
-            $import = new QuestionImport($request->course_id, $bank->id);
+            $qualityRows = collect($preview->rows)->map(fn ($row) => [
+                'question' => $row['question_text'],
+                'question_type' => Question::TYPE_SINGLE_CHOICE,
+                'options' => $row['options'],
+                'correct_indexes' => [ord($row['correct_letter']) - ord('A')],
+                'explanation' => 'Nhập từ bảng tính.',
+                'quality_review' => [],
+            ])->all();
+            $reviewed = $this->questionAiQualityService->reviewBatch($course, $qualityRows, [$bank->id]);
+            $rows = collect($preview->rows)->values()->map(function ($row, $index) use ($reviewed): array {
+                $row['duplicate'] = data_get($reviewed, "{$index}.quality.duplicate");
 
-            // Import nguyên tử: file lỗi giữa chừng sẽ không để lại bộ câu hỏi dở dang.
-            DB::transaction(fn () => Excel::import($import, $request->file('file')));
+                return $row;
+            })->all();
 
-            return back()->with('success', "Thành công! Đã thêm {$import->importedCount} câu hỏi vào Ngân hàng.");
+            $token = (string) Str::uuid();
+            Cache::put($this->questionImportPreviewKey($token), [
+                'user_id' => $request->user()->id,
+                'course_id' => $course->id,
+                'question_bank_id' => $bank->id,
+                'rows' => $rows,
+            ], now()->addMinutes(30));
+
+            return view('quizzes.question_import_preview', compact('course', 'bank', 'rows', 'token'));
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (Throwable $exception) {
             report($exception);
 
-            return back()->with('error', 'Không thể đọc file bảng tính. Vui lòng kiểm tra đúng mẫu 7 cột, định dạng .xlsx/.xls/.csv rồi thử lại.');
+            return back()->with('error', 'Không thể đọc file bảng tính. Vui lòng kiểm tra mẫu 7–8 cột, định dạng .xlsx/.xls/.csv rồi thử lại.');
         }
+    }
+
+    public function confirmImportBank(Request $request)
+    {
+        $data = $request->validate([
+            'preview_token' => ['required', 'uuid'],
+            'actions' => ['required', 'array', 'min:1', 'max:500'],
+            'actions.*' => ['required', 'in:import,skip'],
+        ]);
+        $cacheKey = $this->questionImportPreviewKey($data['preview_token']);
+        $metadata = Cache::get($cacheKey);
+        abort_unless($metadata && (int) $metadata['user_id'] === (int) $request->user()->id, 404);
+
+        $course = Course::findOrFail($metadata['course_id']);
+        $bank = QuestionBank::findOrFail($metadata['question_bank_id']);
+        $this->authorizeCourse($course);
+        $this->authorizeQuestionBank($bank);
+
+        $selectedRows = collect($metadata['rows'])->filter(
+            fn ($row, $index) => data_get($data, "actions.{$index}") === 'import'
+        )->values();
+        if ($selectedRows->isEmpty()) {
+            throw ValidationException::withMessages([
+                'actions' => 'Hãy chọn nhập ít nhất một câu hỏi.',
+            ]);
+        }
+
+        $lock = Cache::lock('question_import_confirmation_'.$data['preview_token'], 30);
+        abort_unless($lock->get(), 409, 'Phiên nhập đang được xử lý.');
+        try {
+            DB::transaction(function () use ($selectedRows, $course, $bank): void {
+                $bank->courses()->syncWithoutDetaching([$course->id]);
+                foreach ($selectedRows as $row) {
+                    $question = Question::create([
+                        'course_id' => $course->id,
+                        'question_bank_id' => $bank->id,
+                        'question_type' => Question::TYPE_SINGLE_CHOICE,
+                        'difficulty' => $row['difficulty'],
+                        'tags' => $row['tags'],
+                        'question_text' => $row['question_text'],
+                        'status' => Question::STATUS_PUBLISHED,
+                    ]);
+                    foreach ($row['options'] as $index => $optionText) {
+                        Option::create([
+                            'question_id' => $question->id,
+                            'option_text' => $optionText,
+                            'is_correct' => $index === ord($row['correct_letter']) - ord('A'),
+                        ]);
+                    }
+                    $this->questionVersions->recordCreated($question, 'Nhập câu hỏi từ bảng tính.');
+                }
+            });
+            Cache::forget($cacheKey);
+
+            AuditLogger::log(
+                AuditLogger::QUESTIONS_IMPORTED,
+                $bank,
+                null,
+                ['imported_count' => $selectedRows->count()],
+                ['course_id' => $course->id],
+                'Giáo viên xác nhận nhập câu hỏi từ bảng tính.'
+            );
+
+            return redirect()->route('questions.index', ['question_bank_id' => $bank->id])
+                ->with('success', 'Đã nhập '.$selectedRows->count().' câu hỏi.');
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public function exportBank(Request $request)
+    {
+        $data = $request->validate([
+            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
+            'question_bank_id' => ['nullable', 'integer', 'exists:question_banks,id'],
+            'question_type' => ['nullable', 'in:'.implode(',', array_keys(Question::typeLabels()))],
+            'status' => ['nullable', 'in:active,archived,all'],
+        ]);
+        if (filled($data['course_id'] ?? null)) {
+            $this->authorizeCourse(Course::findOrFail($data['course_id']));
+        }
+        if (filled($data['question_bank_id'] ?? null)) {
+            $this->authorizeQuestionBank(QuestionBank::findOrFail($data['question_bank_id']));
+        }
+        $query = $this->accessibleQuestionQuery($request)
+            ->with(['questionBank:id,name', 'course:id,title', 'options']);
+        $this->applyQuestionFilters($query, $request);
+
+        return Excel::download(
+            new QuestionBankExport($query->orderBy('questions.id')),
+            'ngan-hang-cau-hoi-'.now()->format('Ymd-His').'.xlsx'
+        );
+    }
+
+    public function bulkUpdateBank(Request $request)
+    {
+        $data = $request->validate([
+            'question_ids' => ['required', 'array', 'min:1', 'max:200'],
+            'question_ids.*' => ['required', 'integer', 'distinct', 'exists:questions,id'],
+            'difficulty' => ['nullable', 'in:easy,medium,hard'],
+            'tag_action' => ['required', 'in:keep,replace,append,remove,clear'],
+            'tags' => ['nullable', 'string', 'max:1000'],
+        ]);
+        if (! filled($data['difficulty'] ?? null) && $data['tag_action'] === 'keep') {
+            throw ValidationException::withMessages([
+                'difficulty' => 'Hãy chọn độ khó mới hoặc một thao tác cập nhật tag.',
+            ]);
+        }
+        $tags = $this->normalizeTags($data['tags'] ?? '');
+        if (in_array($data['tag_action'], ['replace', 'append', 'remove'], true) && $tags === []) {
+            throw ValidationException::withMessages(['tags' => 'Hãy nhập ít nhất một tag.']);
+        }
+
+        $ids = collect($data['question_ids'])->map(fn ($id) => (int) $id)->values();
+        $questions = Question::query()->with('options')->whereKey($ids)->get();
+        abort_unless($questions->count() === $ids->count(), 422, 'Danh sách câu hỏi không hợp lệ.');
+        $questions->each(fn (Question $question) => $this->authorizeQuestionAccess($question));
+
+        $updatedCount = 0;
+        DB::transaction(function () use ($questions, $data, $tags, &$updatedCount): void {
+            foreach ($questions as $question) {
+                $changes = [];
+                if (filled($data['difficulty'] ?? null) && $question->difficulty !== $data['difficulty']) {
+                    $changes['difficulty'] = $data['difficulty'];
+                }
+                $currentTags = collect($question->tags ?? []);
+                $nextTags = (match ($data['tag_action']) {
+                    'replace' => collect($tags),
+                    'append' => $currentTags->concat($tags),
+                    'remove' => $currentTags->reject(fn ($tag) => collect($tags)->contains(fn ($remove) => Str::lower($remove) === Str::lower($tag))),
+                    'clear' => collect(),
+                    default => $currentTags,
+                })->map(fn ($tag) => trim((string) $tag))->filter()->unique(fn ($tag) => Str::lower($tag))->values();
+                if ($nextTags->count() > 20 || $nextTags->contains(fn ($tag) => mb_strlen($tag) > 50)) {
+                    throw ValidationException::withMessages([
+                        'tags' => "Câu hỏi #{$question->id} vượt quá giới hạn 20 tag hoặc 50 ký tự mỗi tag.",
+                    ]);
+                }
+                if ($nextTags->all() !== $currentTags->values()->all()) {
+                    $changes['tags'] = $nextTags->all();
+                }
+                if ($changes === []) {
+                    continue;
+                }
+
+                $previousSnapshot = $this->questionVersions->snapshot($question);
+                $question->update($changes);
+                $this->questionVersions->recordChange($question, $previousSnapshot, 'bulk_updated', 'Cập nhật tag hoặc độ khó hàng loạt.');
+                $updatedCount++;
+            }
+        });
+
+        AuditLogger::log(
+            AuditLogger::QUESTIONS_BULK_UPDATED,
+            null,
+            null,
+            ['updated_count' => $updatedCount],
+            ['question_ids' => $ids->all()],
+            'Giáo viên cập nhật phân loại câu hỏi hàng loạt.'
+        );
+
+        return back()->with('success', 'Đã cập nhật '.$updatedCount.' câu hỏi.');
+    }
+
+    public function versions($id)
+    {
+        $question = Question::query()
+            ->with(['questionBank', 'course', 'options', 'versions.changedBy'])
+            ->findOrFail($id);
+        $this->authorizeQuestionAccess($question);
+        if ($question->versions->isEmpty()) {
+            $this->questionVersions->recordCreated($question, 'Khởi tạo lịch sử câu hỏi.');
+            $question->load(['versions.changedBy']);
+        }
+
+        return view('quizzes.question_versions', [
+            'question' => $question,
+            'versions' => $question->versions,
+        ]);
     }
 
     // ==========================================
@@ -629,6 +847,7 @@ class QuestionController extends Controller
                         'is_correct' => $option['is_correct'],
                     ]);
                 }
+                $this->questionVersions->recordCreated($question, 'Tạo câu hỏi bằng AI.');
             }
         });
 
@@ -749,6 +968,73 @@ class QuestionController extends Controller
         $bank->courses()->syncWithoutDetaching([$course->id]);
 
         return $bank;
+    }
+
+    private function questionImportPreviewKey(string $token): string
+    {
+        return 'question_import_preview_'.$token;
+    }
+
+    private function normalizeTags(string $tags): array
+    {
+        $normalized = collect(preg_split('/[,;\r\n]+/u', $tags) ?: [])
+            ->map(fn ($tag) => trim((string) $tag))
+            ->filter()
+            ->unique(fn ($tag) => Str::lower($tag))
+            ->values();
+
+        if ($normalized->count() > 20 || $normalized->contains(fn ($tag) => mb_strlen($tag) > 50)) {
+            throw ValidationException::withMessages([
+                'tags' => 'Chỉ nhận tối đa 20 tag, mỗi tag không quá 50 ký tự.',
+            ]);
+        }
+
+        return $normalized->all();
+    }
+
+    private function accessibleQuestionQuery(Request $request): Builder
+    {
+        $user = $request->user();
+        if ($user->isAdmin()) {
+            return Question::query();
+        }
+
+        $courseIds = Course::query()->where('teacher_id', $user->id)->pluck('id');
+        $bankIds = QuestionBank::query()
+            ->where(function (Builder $query) use ($user, $courseIds): void {
+                $query->where('teacher_id', $user->id)
+                    ->orWhereHas('courses', fn (Builder $courses) => $courses->whereIn('courses.id', $courseIds));
+            })
+            ->pluck('id');
+
+        return Question::query()->where(function (Builder $query) use ($courseIds, $bankIds): void {
+            $query->whereIn('question_bank_id', $bankIds)
+                ->orWhereIn('course_id', $courseIds);
+        });
+    }
+
+    private function applyQuestionFilters(Builder $query, Request $request): void
+    {
+        $status = $request->input('status', 'active');
+        if ($status === 'archived') {
+            $query->where('status', Question::STATUS_ARCHIVED);
+        } elseif ($status === 'active') {
+            $query->notArchived();
+        }
+
+        if ($request->filled('question_bank_id')) {
+            $query->where('question_bank_id', $request->integer('question_bank_id'));
+        }
+        if ($request->filled('course_id')) {
+            $courseId = $request->integer('course_id');
+            $query->where(function (Builder $scope) use ($courseId): void {
+                $scope->where('course_id', $courseId)
+                    ->orWhereHas('questionBank.courses', fn (Builder $courses) => $courses->where('courses.id', $courseId));
+            });
+        }
+        if ($request->filled('question_type')) {
+            $query->where('question_type', $request->string('question_type')->toString());
+        }
     }
 
     private function authorizeQuestionBank(QuestionBank $bank): void

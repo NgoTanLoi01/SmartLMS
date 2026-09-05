@@ -16,6 +16,53 @@ use Tests\TestCase;
 
 class CoursePlannerAiExperienceTest extends TestCase
 {
+    public function test_admin_can_filter_ai_operations_and_non_admin_is_forbidden(): void
+    {
+        $this->requireIsolatedSqliteDatabase();
+        $this->createCoursePlannerSchema();
+
+        try {
+            $admin = User::factory()->create(['role' => User::ROLE_ADMIN, 'is_active' => true]);
+            $teacher = User::factory()->create(['role' => User::ROLE_TEACHER, 'is_active' => true]);
+            AiOperation::create([
+                'user_id' => $admin->id,
+                'feature' => 'course_plan',
+                'provider' => 'deepseek',
+                'model' => 'deepseek-test',
+                'status' => AiOperation::STATUS_FAILED,
+                'error_message' => 'Provider tạm thời không phản hồi.',
+                'attempts' => 2,
+                'total_tokens' => 120,
+                'estimated_cost_usd' => 0.000012,
+            ]);
+            AiOperation::create([
+                'user_id' => $admin->id,
+                'feature' => 'quiz_generation',
+                'provider' => 'provider-khong-duoc-hien-thi',
+                'status' => AiOperation::STATUS_COMPLETED,
+            ]);
+
+            $this->actingAs($admin)
+                ->get(route('system.ai-operations.index', [
+                    'status' => AiOperation::STATUS_FAILED,
+                    'feature' => 'course_plan',
+                ]))
+                ->assertOk()
+                ->assertSee('Sức khỏe hàng đợi AI', escape: false)
+                ->assertSee('Lập kế hoạch khóa học')
+                ->assertSee('Provider tạm thời không phản hồi.')
+                ->assertDontSee('provider-khong-duoc-hien-thi');
+
+            $this->actingAs($teacher)
+                ->get(route('system.ai-operations.index'))
+                ->assertForbidden();
+        } finally {
+            foreach (['smart_notifications', 'ai_operations', 'lessons', 'modules', 'courses', 'users'] as $table) {
+                Schema::dropIfExists($table);
+            }
+        }
+    }
+
     public function test_course_plan_is_queued_instead_of_blocking_the_web_request(): void
     {
         $this->requireIsolatedSqliteDatabase();
@@ -55,7 +102,7 @@ class CoursePlannerAiExperienceTest extends TestCase
                 && $job->timeout > config('ai.course_plan.timeout_seconds')
             );
         } finally {
-            foreach (['ai_operations', 'lessons', 'modules', 'courses', 'users'] as $table) {
+            foreach (['smart_notifications', 'ai_operations', 'lessons', 'modules', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -404,6 +451,18 @@ class CoursePlannerAiExperienceTest extends TestCase
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamp('failed_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('smart_notifications', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type')->nullable();
+            $table->string('title');
+            $table->text('message');
+            $table->string('action_url')->nullable();
+            $table->json('data')->nullable();
+            $table->string('dedupe_key')->nullable();
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }

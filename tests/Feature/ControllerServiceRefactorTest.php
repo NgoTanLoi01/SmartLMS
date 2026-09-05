@@ -189,6 +189,8 @@ class ControllerServiceRefactorTest extends TestCase
             $table->text('question_text');
             $table->json('answer_config')->nullable();
             $table->string('difficulty')->nullable();
+            $table->json('tags')->nullable();
+            $table->unsignedInteger('current_version')->default(1);
             $table->string('status')->nullable();
             $table->timestamps();
         });
@@ -474,6 +476,7 @@ class ControllerServiceRefactorTest extends TestCase
             'quiz_passage_id' => $passage->id,
             'question_text' => 'PHP là viết tắt của gì?',
             'difficulty' => 'easy',
+            'tags' => ['PHP', 'nền tảng'],
             'status' => Question::STATUS_PUBLISHED,
         ]);
         $sourceQuestion->options()->create(['option_text' => 'PHP Hypertext Preprocessor', 'is_correct' => true]);
@@ -492,6 +495,7 @@ class ControllerServiceRefactorTest extends TestCase
         $this->assertTrue($targetCourse->questionBanks()->whereKey($bank->id)->exists());
         $copiedQuestion = Question::query()->where('course_id', $targetCourse->id)->firstOrFail();
         $this->assertSame($sourceQuestion->question_text, $copiedQuestion->question_text);
+        $this->assertSame(['PHP', 'nền tảng'], $copiedQuestion->tags);
         $this->assertSame(1, $copiedQuestion->options()->count());
         $this->assertSame('Đoạn văn PHP', $copiedQuestion->passage?->title);
         $this->assertSame($targetCourse->id, $copiedQuestion->passage?->course_id);

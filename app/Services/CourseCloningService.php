@@ -479,6 +479,7 @@ class CourseCloningService
                     'question_text' => $sourceQuestion->question_text,
                     'answer_config' => $sourceQuestion->answer_config,
                     'difficulty' => $sourceQuestion->difficulty,
+                    'tags' => $sourceQuestion->tags,
                     'status' => $sourceQuestion->status ?? Question::STATUS_PUBLISHED,
                 ]);
 
@@ -514,6 +515,7 @@ class CourseCloningService
                 'question_text' => $source->question_text,
                 'answer_config' => $source->answer_config,
                 'difficulty' => $source->difficulty,
+                'tags' => $source->tags,
                 'status' => $source->status ?? Question::STATUS_PUBLISHED,
             ];
             $targetQuestion = $targets->get($source->id);
@@ -662,6 +664,7 @@ class CourseCloningService
                 'question_text' => $sourceQuestion->question_text,
                 'answer_config' => $sourceQuestion->answer_config,
                 'difficulty' => $sourceQuestion->difficulty,
+                'tags' => $sourceQuestion->tags,
                 'status' => $sourceQuestion->status ?? Question::STATUS_PUBLISHED,
             ]);
 

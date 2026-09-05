@@ -3,26 +3,49 @@
 namespace App\Http\Controllers;
 
 use App\Models\AiOperation;
+use Illuminate\Http\Request;
 
 class AiOperationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        abort_unless(auth()->user()->role === 'admin', 403);
+        abort_unless($request->user()?->isAdmin(), 403);
+
+        $filters = [
+            'status' => in_array($request->input('status'), [
+                AiOperation::STATUS_QUEUED,
+                AiOperation::STATUS_PROCESSING,
+                AiOperation::STATUS_COMPLETED,
+                AiOperation::STATUS_FAILED,
+            ], true) ? $request->input('status') : null,
+            'feature' => $request->filled('feature') ? (string) $request->input('feature') : null,
+        ];
 
         $operations = AiOperation::with('subject')
+            ->when($filters['status'], fn ($query, $status) => $query->where('status', $status))
+            ->when($filters['feature'], fn ($query, $feature) => $query->where('feature', $feature))
             ->latest()
-            ->paginate(30);
+            ->paginate(20)
+            ->withQueryString();
+
+        $features = AiOperation::query()
+            ->select('feature')
+            ->distinct()
+            ->orderBy('feature')
+            ->pluck('feature');
+
         $since = now()->subDays(30);
         $summary = AiOperation::where('created_at', '>=', $since)
             ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed")
             ->selectRaw("SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed")
             ->selectRaw("SUM(CASE WHEN status IN ('queued', 'processing') THEN 1 ELSE 0 END) as active")
             ->selectRaw('COALESCE(SUM(total_tokens), 0) as total_tokens')
             ->selectRaw('COALESCE(SUM(estimated_cost_usd), 0) as estimated_cost_usd')
+            ->selectRaw("COALESCE(AVG(CASE WHEN status = 'completed' THEN duration_ms END), 0) as average_duration_ms")
             ->first();
 
-        return view('system.ai-operations', compact('operations', 'summary'));
+        return view('system.ai-operations', compact('operations', 'summary', 'features', 'filters'));
     }
 
     public function show(string $uuid)

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Database\Schema\Blueprint;
@@ -135,6 +136,49 @@ class AccountLifecycleTest extends TestCase
             ->assertSee('Quản lý vòng đời tài khoản')
             ->assertSee('Đang hoạt động')
             ->assertSee('Không giới hạn thời gian');
+    }
+
+    public function test_audit_log_experience_is_filterable_and_restricted_to_admin(): void
+    {
+        $admin = $this->createUser([
+            'email' => 'audit-ui-admin@example.com',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $student = $this->createUser([
+            'email' => 'audit-ui-student@example.com',
+            'role' => User::ROLE_STUDENT,
+        ]);
+
+        AuditLog::create([
+            'user_id' => $admin->id,
+            'action' => AuditLogger::ACCOUNT_PROFILE_UPDATED,
+            'auditable_type' => User::class,
+            'auditable_id' => $student->id,
+            'description' => 'Quản trị viên cập nhật hồ sơ học viên.',
+            'old_values' => ['name' => 'Tên cũ'],
+            'new_values' => ['name' => 'Tên mới'],
+            'metadata' => ['source' => 'admin'],
+            'ip_address' => '127.0.0.1',
+        ]);
+        AuditLog::create([
+            'user_id' => $admin->id,
+            'action' => AuditLogger::SCHEDULE_CREATED,
+            'description' => 'Tạo lịch học.',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('audit-logs.index', ['action' => AuditLogger::ACCOUNT_PROFILE_UPDATED]))
+            ->assertOk()
+            ->assertSee('Bộ lọc nhật ký')
+            ->assertSee('Dòng hoạt động')
+            ->assertSee('Cập nhật hồ sơ tài khoản')
+            ->assertSee('Quản trị viên cập nhật hồ sơ học viên.')
+            ->assertSee('Xem dữ liệu thay đổi')
+            ->assertDontSee('Tạo lịch học.');
+
+        $this->actingAs($student)
+            ->get(route('audit-logs.index'))
+            ->assertForbidden();
     }
 
     public function test_student_sidebar_shows_flat_learning_navigation(): void
