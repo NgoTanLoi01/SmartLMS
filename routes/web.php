@@ -92,9 +92,8 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::post('/system/backups/{backup}/verify', [SystemBackupController::class, 'verify'])->name('system.backups.verify');
         Route::post('/system/backups/{backup}/restore', [SystemBackupController::class, 'restore'])->name('system.backups.restore');
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::post('/audit-logs/verify', [AuditLogController::class, 'verify'])->name('audit-logs.verify');
         Route::get('/system/ai-operations', [AiOperationController::class, 'index'])->name('system.ai-operations.index');
-        Route::delete('/audit-logs', [AuditLogController::class, 'bulkDestroy'])->name('audit-logs.bulk-destroy');
-        Route::delete('/audit-logs/{auditLog}', [AuditLogController::class, 'destroy'])->name('audit-logs.destroy');
     });
     Route::middleware('role:student')->group(function () {
         Route::get('/my-grades', [StudentGradesController::class, 'index'])->name('students.grades');

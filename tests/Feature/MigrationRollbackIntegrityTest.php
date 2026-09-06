@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\AuditIntegrityService;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,7 @@ class MigrationRollbackIntegrityTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['grading_feedback_templates', 'assignment_submissions', 'question_versions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
+            foreach (['audit_log_chain_states', 'audit_logs', 'grading_feedback_templates', 'assignment_submissions', 'question_versions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -374,5 +375,56 @@ class MigrationRollbackIntegrityTest extends TestCase
         $this->assertFalse(Schema::hasTable('question_versions'));
         $this->assertFalse(Schema::hasColumn('questions', 'tags'));
         $this->assertFalse(Schema::hasColumn('questions', 'current_version'));
+    }
+
+    public function test_audit_integrity_migration_backfills_chain_and_is_reversible(): void
+    {
+        Schema::table('users', function (Blueprint $table): void {
+            $table->string('name')->nullable();
+            $table->string('email')->nullable();
+        });
+        DB::table('users')->insert(['id' => 1, 'name' => 'Admin cũ', 'email' => 'old-admin@example.com']);
+        Schema::create('audit_logs', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('action', 100);
+            $table->string('auditable_type')->nullable();
+            $table->unsignedBigInteger('auditable_id')->nullable();
+            $table->string('description')->nullable();
+            $table->json('old_values')->nullable();
+            $table->json('new_values')->nullable();
+            $table->json('metadata')->nullable();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->timestamps();
+        });
+        DB::table('audit_logs')->insert([
+            'user_id' => 1,
+            'action' => 'legacy_event',
+            'description' => 'Bản ghi trước migration',
+            'metadata' => json_encode(['source' => 'legacy']),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $migration = require database_path('migrations/2026_09_06_000001_harden_audit_log_integrity.php');
+        $migration->up();
+
+        $this->assertTrue(Schema::hasTable('audit_log_chain_states'));
+        $this->assertTrue(Schema::hasColumn('audit_logs', 'entry_hash'));
+        $this->assertDatabaseHas('audit_logs', [
+            'id' => 1,
+            'actor_id' => 1,
+            'actor_name' => 'Admin cũ',
+            'chain_position' => 1,
+        ]);
+        $this->assertSame(64, strlen((string) DB::table('audit_logs')->value('entry_hash')));
+        $this->assertTrue(app(AuditIntegrityService::class)->verify()['valid']);
+
+        $migration->down();
+
+        $this->assertFalse(Schema::hasTable('audit_log_chain_states'));
+        $this->assertFalse(Schema::hasColumn('audit_logs', 'entry_hash'));
+        $this->assertDatabaseHas('audit_logs', ['id' => 1, 'action' => 'legacy_event']);
     }
 }

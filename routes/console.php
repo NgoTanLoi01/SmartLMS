@@ -13,3 +13,17 @@ if (config('backup.schedule.enabled')) {
         ->dailyAt(config('backup.schedule.time', '02:00'))
         ->timezone(config('backup.timezone', 'Asia/Ho_Chi_Minh'));
 }
+
+if (config('audit.archive.enabled')) {
+    Schedule::command('smartlms:audit-archive')
+        ->dailyAt(config('audit.archive.time', '03:30'))
+        ->timezone(config('app.timezone', 'Asia/Ho_Chi_Minh'))
+        ->withoutOverlapping();
+}
+
+if (config('audit.verification.enabled')) {
+    Schedule::command('smartlms:audit-verify')
+        ->dailyAt(config('audit.verification.time', '04:00'))
+        ->timezone(config('app.timezone', 'Asia/Ho_Chi_Minh'))
+        ->withoutOverlapping();
+}

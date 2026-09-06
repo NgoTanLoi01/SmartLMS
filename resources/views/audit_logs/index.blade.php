@@ -8,7 +8,10 @@
 
 @section('content')
     @php
-        $hasActiveFilters = collect($filters)->filter(fn ($value) => filled($value))->isNotEmpty();
+        $hasActiveFilters = collect($filters)
+            ->except('storage')
+            ->filter(fn ($value) => filled($value))
+            ->isNotEmpty() || $filters['storage'] !== 'active';
         $selectedUser = $users->firstWhere('id', (int) $filters['user_id']);
         $actionLabels = [
             'grade_updated' => 'Cập nhật điểm',
@@ -36,6 +39,9 @@
             'questions_bulk_updated' => 'Cập nhật câu hỏi hàng loạt',
             'trash_restored' => 'Khôi phục từ thùng rác',
             'trash_permanently_deleted' => 'Xóa vĩnh viễn dữ liệu',
+            'audit_logs_archived' => 'Lưu trữ nhật ký theo chính sách',
+            'audit_integrity_verified' => 'Xác minh toàn vẹn nhật ký',
+            'audit_integrity_failed' => 'Phát hiện sai lệch nhật ký',
             'backup.created' => 'Tạo bản sao lưu',
             'backup.failed' => 'Tạo bản sao lưu thất bại',
             'backup.verified' => 'Kiểm tra bản sao lưu',
@@ -62,14 +68,16 @@
             <div class="audit-overview__accent" aria-hidden="true"></div>
             <x-ui.page-header title="Nhật ký hệ thống">
                 <x-slot:meta>
-                    <span><i class="fa-solid fa-shield-halved"></i> Theo dõi các thao tác quản trị quan trọng</span>
-                    <span><i class="fa-solid fa-lock"></i> Chỉ quản trị viên được truy cập</span>
+                    <span><i class="fa-solid fa-shield-halved"></i> Nhật ký append-only có chuỗi chữ ký HMAC</span>
+                    <span><i class="fa-solid fa-box-archive"></i> Lưu trữ sau {{ number_format($archiveStats['retention_days']) }} ngày, không xóa dữ liệu</span>
                 </x-slot:meta>
                 <x-slot:actions>
-                    <x-ui.button tone="danger" icon="fa-trash-can" data-bs-toggle="modal"
-                        data-bs-target="#auditCleanupModal" :disabled="(int) $stats->total === 0">
-                        Dọn nhật ký
-                    </x-ui.button>
+                    <form method="POST" action="{{ route('audit-logs.verify') }}">
+                        @csrf
+                        <x-ui.button type="submit" tone="outline" icon="fa-shield-circle-check">
+                            Kiểm tra toàn vẹn
+                        </x-ui.button>
+                    </form>
                 </x-slot:actions>
             </x-ui.page-header>
 
@@ -78,6 +86,10 @@
                 <article class="audit-stat audit-stat--today"><span><i class="fa-solid fa-clock"></i></span><div><strong>{{ number_format((int) $stats->today_count) }}</strong><small>Phát sinh hôm nay</small></div></article>
                 <article class="audit-stat audit-stat--actors"><span><i class="fa-solid fa-users"></i></span><div><strong>{{ number_format((int) $stats->actor_count) }}</strong><small>Người thao tác</small></div></article>
                 <article class="audit-stat audit-stat--actions"><span><i class="fa-solid fa-bolt"></i></span><div><strong>{{ number_format((int) $stats->action_count) }}</strong><small>Loại hành động</small></div></article>
+            </div>
+            <div class="audit-integrity-note">
+                <span><i class="fa-solid fa-lock"></i></span>
+                <p><strong>Bằng chứng không thể sửa hoặc xóa qua ứng dụng.</strong> {{ number_format($archiveStats['active']) }} bản ghi đang hoạt động và {{ number_format($archiveStats['archived']) }} bản ghi đã lưu trữ vẫn cùng nằm trong chuỗi kiểm tra toàn vẹn.</p>
             </div>
         </section>
 
@@ -126,6 +138,14 @@
                     <label for="audit-to-date">Đến ngày</label>
                     <input type="date" name="to_date" id="audit-to-date" class="form-control" value="{{ $filters['to_date'] }}">
                 </div>
+                <div class="audit-field">
+                    <label for="audit-storage-filter">Tình trạng lưu trữ</label>
+                    <select name="storage" id="audit-storage-filter" class="form-select">
+                        <option value="active" @selected($filters['storage'] === 'active')>Đang hoạt động</option>
+                        <option value="archived" @selected($filters['storage'] === 'archived')>Đã lưu trữ</option>
+                        <option value="all" @selected($filters['storage'] === 'all')>Tất cả bản ghi</option>
+                    </select>
+                </div>
                 <div class="audit-filter-actions">
                     <x-ui.button type="submit" icon="fa-filter">Áp dụng</x-ui.button>
                     <x-ui.button :href="route('audit-logs.index')" tone="outline" icon="fa-rotate-left" title="Đặt lại bộ lọc">Đặt lại</x-ui.button>
@@ -139,6 +159,7 @@
                     @if ($selectedUser)<b>{{ $selectedUser->name }}</b>@endif
                     @if ($filters['from_date'])<b>Từ {{ \Illuminate\Support\Carbon::parse($filters['from_date'])->format('d/m/Y') }}</b>@endif
                     @if ($filters['to_date'])<b>Đến {{ \Illuminate\Support\Carbon::parse($filters['to_date'])->format('d/m/Y') }}</b>@endif
+                    @if ($filters['storage'] !== 'active')<b>{{ $filters['storage'] === 'archived' ? 'Đã lưu trữ' : 'Tất cả tình trạng' }}</b>@endif
                 </div>
             @endif
         </section>
@@ -190,10 +211,18 @@
                             <p class="audit-description">{{ $log->description ?: 'Không có mô tả bổ sung cho thao tác này.' }}</p>
 
                             <div class="audit-identity-row">
-                                <span class="audit-avatar {{ $log->user ? '' : 'is-system' }}">@if ($log->user){{ Str::upper(Str::substr($log->user->name, 0, 1)) }}@else<i class="fa-solid fa-gear"></i>@endif</span>
-                                <div class="audit-actor"><strong>{{ $log->user?->name ?? 'Hệ thống' }}</strong><span>{{ $log->user?->email ?? 'Tác vụ tự động' }}</span></div>
+                                @php($actorName = $log->user?->name ?? $log->actor_name)
+                                @php($actorEmail = $log->user?->email ?? $log->actor_email)
+                                <span class="audit-avatar {{ $actorName ? '' : 'is-system' }}">@if ($actorName){{ Str::upper(Str::substr($actorName, 0, 1)) }}@else<i class="fa-solid fa-gear"></i>@endif</span>
+                                <div class="audit-actor"><strong>{{ $actorName ?? 'Hệ thống' }}</strong><span>{{ $actorEmail ?? 'Tác vụ tự động' }}</span></div>
                                 @if ($log->ip_address)<span class="audit-context-pill"><i class="fa-solid fa-network-wired"></i> {{ $log->ip_address }}</span>@endif
                                 <span class="audit-context-pill audit-code"><i class="fa-solid fa-code"></i> {{ $log->action }}</span>
+                                @if ($log->entry_hash)
+                                    <span class="audit-context-pill audit-signature" title="{{ $log->entry_hash }}"><i class="fa-solid fa-fingerprint"></i> #{{ $log->chain_position }} · {{ Str::substr($log->entry_hash, 0, 10) }}</span>
+                                @endif
+                                @if ($log->archived_at)
+                                    <span class="audit-context-pill audit-archived"><i class="fa-solid fa-box-archive"></i> Đã lưu trữ {{ $log->archived_at->format('d/m/Y') }}</span>
+                                @endif
                             </div>
 
                             <div class="audit-entry-footer">
@@ -219,11 +248,6 @@
                                     <span class="audit-no-payload"><i class="fa-solid fa-minus"></i> Không có dữ liệu chi tiết</span>
                                 @endif
 
-                                <form method="POST" action="{{ route('audit-logs.destroy', $log) }}" onsubmit="return confirm('Xóa vĩnh viễn bản ghi nhật ký này?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="audit-delete-button" title="Xóa bản ghi" aria-label="Xóa bản ghi {{ $log->id }}"><i class="fa-solid fa-trash"></i></button>
-                                </form>
                             </div>
                         </div>
                     </article>
@@ -241,29 +265,4 @@
         </section>
     </div>
 
-    <div class="modal fade" id="auditCleanupModal" tabindex="-1" aria-labelledby="auditCleanupModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content audit-cleanup-modal">
-                <div class="modal-body">
-                    <span class="audit-cleanup-icon"><i class="fa-solid fa-trash-can"></i></span>
-                    <span class="audit-cleanup-eyebrow">THAO TÁC KHÔNG THỂ HOÀN TÁC</span>
-                    <h2 id="auditCleanupModalLabel">Xóa {{ number_format((int) $stats->total) }} bản ghi nhật ký?</h2>
-                    <p>@if ($hasActiveFilters) Chỉ các bản ghi khớp với bộ lọc hiện tại sẽ bị xóa vĩnh viễn. @else Bạn chưa áp dụng bộ lọc. Thao tác này sẽ xóa toàn bộ nhật ký hệ thống. @endif</p>
-                    <div class="audit-cleanup-scope"><i class="fa-solid fa-circle-info"></i><span>Việc xóa nhật ký không thay đổi dữ liệu nghiệp vụ, nhưng sẽ làm mất thông tin truy vết.</span></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="lms-btn lms-btn-outline" data-bs-dismiss="modal">Hủy</button>
-                    <form method="POST" action="{{ route('audit-logs.bulk-destroy') }}" onsubmit="return confirm('Xác nhận xóa vĩnh viễn các bản ghi nhật ký trong phạm vi này?');">
-                        @csrf
-                        @method('DELETE')
-                        <input type="hidden" name="action" value="{{ $filters['action'] }}">
-                        <input type="hidden" name="user_id" value="{{ $filters['user_id'] }}">
-                        <input type="hidden" name="from_date" value="{{ $filters['from_date'] }}">
-                        <input type="hidden" name="to_date" value="{{ $filters['to_date'] }}">
-                        <button type="submit" class="lms-btn lms-btn-danger"><i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection

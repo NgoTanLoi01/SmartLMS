@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AuditLog;
 use App\Models\BackupRun;
 use App\Models\User;
+use App\Services\AuditLogger;
 use App\Services\BackupRestoreService;
 use App\Services\BackupService;
 use Illuminate\Http\Request;
@@ -297,26 +297,19 @@ class SystemBackupController extends Controller
         array $metadata = []
     ): void {
         try {
-            $userId = $request->user()?->id;
-            if ($userId && ! User::whereKey($userId)->exists()) {
-                $userId = null;
-            }
-
-            AuditLog::create([
-                'user_id' => $userId,
-                'action' => $action,
-                'auditable_type' => BackupRun::class,
-                'auditable_id' => $backup?->id,
-                'description' => $description,
-                'metadata' => array_merge([
+            AuditLogger::log(
+                $action,
+                $backup,
+                null,
+                null,
+                array_merge([
                     'filename' => $backup?->filename,
                     'size_bytes' => $backup?->size_bytes,
                     'remote_disk' => $backup?->remote_disk,
                     'remote_path' => $backup?->remote_path,
                 ], $metadata),
-                'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 1000),
-            ]);
+                $description
+            );
         } catch (Throwable $e) {
             report($e);
         }

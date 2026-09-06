@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\AuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Enumerable;
+use Throwable;
 
 class AuditLogger
 {
@@ -59,6 +59,12 @@ class AuditLogger
 
     public const TRASH_PERMANENTLY_DELETED = 'trash_permanently_deleted';
 
+    public const AUDIT_LOGS_ARCHIVED = 'audit_logs_archived';
+
+    public const AUDIT_INTEGRITY_VERIFIED = 'audit_integrity_verified';
+
+    public const AUDIT_INTEGRITY_FAILED = 'audit_integrity_failed';
+
     public static function log(
         string $action,
         ?Model $auditable = null,
@@ -68,10 +74,14 @@ class AuditLogger
         ?string $description = null
     ): void {
         try {
-            $request = request();
+            $request = app()->bound('request') ? request() : null;
+            $actor = $request?->user() ?? auth()->user();
 
-            AuditLog::create([
-                'user_id' => optional($request->user())->id,
+            app(AuditIntegrityService::class)->append([
+                'user_id' => $actor?->id,
+                'actor_id' => $actor?->id,
+                'actor_name' => $actor?->name,
+                'actor_email' => $actor?->email,
                 'action' => $action,
                 'auditable_type' => $auditable ? $auditable::class : null,
                 'auditable_id' => $auditable?->getKey(),
@@ -79,14 +89,11 @@ class AuditLogger
                 'old_values' => self::clean($oldValues),
                 'new_values' => self::clean($newValues),
                 'metadata' => self::clean($metadata),
-                'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 1000),
+                'ip_address' => $request?->ip(),
+                'user_agent' => substr((string) $request?->userAgent(), 0, 1000),
             ]);
-        } catch (\Throwable $e) {
-            Log::warning('Không thể ghi audit log', [
-                'action' => $action,
-                'error' => $e->getMessage(),
-            ]);
+        } catch (Throwable $e) {
+            app(AuditFailureReporter::class)->report($action, $e);
         }
     }
 
@@ -97,25 +104,67 @@ class AuditLogger
         return self::clean($only ? Arr::only($attributes, $only) : $attributes) ?? [];
     }
 
+    public static function sanitize(mixed $value, string|int|null $key = null): mixed
+    {
+        if ($key !== null && self::isSensitiveKey((string) $key)) {
+            return '[REDACTED]';
+        }
+
+        if ($value === null || is_scalar($value)) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        if ($value instanceof \BackedEnum) {
+            return $value->value;
+        }
+
+        if ($value instanceof Enumerable) {
+            $value = $value->all();
+        } elseif (is_object($value) && method_exists($value, 'toArray')) {
+            $value = $value->toArray();
+        }
+
+        if (is_array($value)) {
+            $cleaned = [];
+            foreach ($value as $nestedKey => $nestedValue) {
+                $cleaned[$nestedKey] = self::sanitize($nestedValue, $nestedKey);
+            }
+
+            return $cleaned;
+        }
+
+        return (string) $value;
+    }
+
     private static function clean(?array $values): ?array
     {
         if ($values === null) {
             return null;
         }
 
-        return collect($values)
-            ->reject(fn ($value, $key) => in_array($key, ['password', 'remember_token'], true))
-            ->map(function ($value) {
-                if ($value instanceof \DateTimeInterface) {
-                    return $value->format('Y-m-d H:i:s');
-                }
+        return self::sanitize($values);
+    }
 
-                if ($value instanceof \BackedEnum) {
-                    return $value->value;
-                }
+    private static function isSensitiveKey(string $key): bool
+    {
+        $normalized = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $key) ?? $key);
 
-                return $value;
-            })
-            ->all();
+        foreach ([
+            'password', 'passwd', 'pwd', 'token', 'remember_token', 'access_token', 'refresh_token',
+            'api_token', 'api_key', 'authorization', 'cookie', 'secret', 'client_secret',
+            'csrf_token', 'xsrf_token',
+        ] as $sensitive) {
+            if ($normalized === $sensitive
+                || str_ends_with($normalized, '_'.$sensitive)
+                || str_starts_with($normalized, $sensitive.'_')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

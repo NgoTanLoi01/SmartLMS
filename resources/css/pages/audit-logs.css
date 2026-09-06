@@ -73,6 +73,28 @@
     border-top: 1px solid var(--audit-line);
 }
 
+.audit-integrity-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px 13px;
+    color: #166534;
+    background: #f0fdf4;
+    border-top: 1px solid #bbf7d0;
+}
+
+.audit-integrity-note > span {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    background: #dcfce7;
+    border-radius: 9px;
+}
+
+.audit-integrity-note p { margin: 0; font-size: 10.5px; line-height: 1.5; }
+
 .audit-stat {
     display: flex;
     align-items: center;
@@ -220,7 +242,7 @@
 
 .audit-filter-grid {
     display: grid;
-    grid-template-columns: minmax(170px, .9fr) minmax(220px, 1.25fr) minmax(145px, .7fr) minmax(145px, .7fr) auto;
+    grid-template-columns: minmax(160px, .85fr) minmax(200px, 1.15fr) minmax(135px, .65fr) minmax(135px, .65fr) minmax(145px, .7fr) auto;
     gap: 12px;
     align-items: end;
     padding: 13px 17px 16px;
@@ -442,6 +464,8 @@
 }
 
 .audit-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.audit-signature { color: #166534; background: #f0fdf4; border-color: #bbf7d0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.audit-archived { color: #92400e; background: #fffbeb; border-color: #fde68a; }
 
 .audit-entry-footer {
     display: flex;
@@ -450,8 +474,6 @@
     border-top: 1px solid #edf2f7;
     background: #fbfdff;
 }
-
-.audit-entry-footer > form { flex: 0 0 auto; padding: 9px 11px 9px 0; }
 
 .audit-payload { min-width: 0; flex: 1; }
 
@@ -538,21 +560,6 @@
     font-size: 9.5px;
 }
 
-.audit-delete-button {
-    display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    color: #94a3b8;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 10px;
-    transition: color .15s ease, background .15s ease, border-color .15s ease;
-}
-
-.audit-delete-button:hover { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
-
 .audit-empty-state {
     display: grid;
     justify-items: center;
@@ -566,25 +573,6 @@
 
 .audit-pagination { padding: 12px 16px; border-top: 1px solid var(--audit-line); }
 .audit-pagination nav { margin: 0; }
-
-.audit-cleanup-modal {
-    overflow: hidden;
-    border: 0;
-    border-radius: 16px;
-    box-shadow: 0 25px 70px rgba(15, 23, 42, .24);
-}
-
-.audit-cleanup-modal .modal-body { padding: 25px 25px 18px; text-align: center; }
-.audit-cleanup-icon { display: grid; place-items: center; width: 54px; height: 54px; margin: 0 auto 12px; color: #b91c1c; background: #fee2e2; border-radius: 15px; font-size: 20px; }
-.audit-cleanup-eyebrow { color: #dc2626; font-size: 9px; font-weight: 850; letter-spacing: .08em; }
-.audit-cleanup-modal h2 { margin: 6px 0 7px; color: var(--audit-ink); font-size: 19px; }
-.audit-cleanup-modal p { margin: 0; color: var(--audit-muted); font-size: 11px; line-height: 1.55; }
-.audit-cleanup-scope { display: flex; align-items: flex-start; gap: 8px; margin-top: 15px; padding: 10px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 9px; text-align: left; font-size: 9.5px; line-height: 1.5; }
-.audit-cleanup-scope i { margin-top: 2px; }
-.audit-cleanup-modal .modal-footer { padding: 12px 16px; background: #f8fafc; border-top-color: #e2e8f0; }
-.audit-cleanup-modal .modal-footer form { margin: 0; }
-.audit-cleanup-modal .modal-footer .lms-btn-danger { color: #fff; background: #dc2626; border-color: #dc2626; }
-.audit-cleanup-modal .modal-footer .lms-btn-danger:hover { background: #b91c1c; border-color: #b91c1c; }
 
 @media (max-width: 1199px) {
     .audit-filter-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -648,8 +636,5 @@
     .audit-payload > summary { padding-left: 10px; }
     .audit-payload-grid { padding-left: 10px; }
     .audit-payload-summary b { display: none; }
-    .audit-cleanup-modal .modal-footer { display: grid; grid-template-columns: 1fr; }
-    .audit-cleanup-modal .modal-footer form,
-    .audit-cleanup-modal .modal-footer .lms-btn { width: 100%; }
-    .audit-cleanup-modal .modal-footer .lms-btn { justify-content: center; }
+    .audit-integrity-note { align-items: flex-start; padding-right: 12px; padding-left: 12px; }
 }
