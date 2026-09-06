@@ -12,6 +12,7 @@ export default defineConfig({
                 'resources/css/pages/attendance-show.css',
                 'resources/css/pages/audit-logs.css',
                 'resources/css/pages/chatbot.css',
+                'resources/css/pages/coastal-theme.css',
                 'resources/css/pages/class-progress.css',
                 'resources/css/pages/class-students.css',
                 'resources/css/pages/catalog-index.css',

@@ -98,15 +98,15 @@
         }
 
         .pp-stat--blue::before {
-            background: #2563eb;
+            background: #54726E;
         }
 
         .pp-stat--slate::before {
-            background: #475569;
+            background: #61736F;
         }
 
         .pp-stat--green::before {
-            background: #16a34a;
+            background: #547565;
         }
 
         .pp-stat--red::before {
@@ -131,15 +131,15 @@
         }
 
         .pp-stat--blue .pp-stat__val {
-            color: #2563eb;
+            color: #54726E;
         }
 
         .pp-stat--slate .pp-stat__val {
-            color: #334155;
+            color: #263A37;
         }
 
         .pp-stat--green .pp-stat__val {
-            color: #16a34a;
+            color: #547565;
         }
 
         .pp-stat--red .pp-stat__val {
@@ -161,14 +161,14 @@
             font-size: 13px;
             border-color: var(--p-border);
             border-radius: 8px;
-            background: #f8fafc;
+            background: #F7F7F2;
             transition: border-color .15s, box-shadow .15s;
         }
 
         .pp-filter .form-control:focus,
         .pp-filter .form-select:focus {
             border-color: var(--p-accent);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+            box-shadow: 0 0 0 3px rgba(84, 114, 110, .1);
             background: #fff;
         }
 
@@ -195,7 +195,7 @@
         }
 
         .pp-table thead th {
-            background: #f8fafc;
+            background: #F7F7F2;
             border-bottom: 1px solid var(--p-border);
             color: var(--p-muted);
             font-size: 11px;
@@ -207,7 +207,7 @@
         }
 
         .pp-table tbody tr {
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #EFEDDE;
             transition: background .12s;
         }
 
@@ -216,7 +216,7 @@
         }
 
         .pp-table tbody tr:hover {
-            background: #f8fafc;
+            background: #F7F7F2;
         }
 
         .pp-table td {
@@ -267,23 +267,23 @@
         }
 
         .pp-badge--warning {
-            background: #fffbeb;
-            color: #b45309;
+            background: #FFF8DF;
+            color: #705817;
         }
 
         .pp-badge--info {
-            background: #f0f9ff;
-            color: #0369a1;
+            background: #EDF5F3;
+            color: #54726E;
         }
 
         .pp-badge--success {
-            background: #f0fdf4;
-            color: #15803d;
+            background: #EDF5EF;
+            color: #547565;
         }
 
         .pp-badge--secondary {
-            background: #f1f5f9;
-            color: #475569;
+            background: #EFEDDE;
+            color: #61736F;
         }
 
         /* ── Teaching record chips ── */
@@ -293,16 +293,16 @@
             gap: 4px;
             padding: 3px 9px;
             border-radius: 999px;
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #EEF5F2;
+            color: #385652;
             font-size: 11.5px;
             font-weight: 600;
             margin: 2px;
         }
 
         .record-chip--more {
-            background: #f1f5f9;
-            color: #475569;
+            background: #EFEDDE;
+            color: #61736F;
         }
 
         /* ── Action buttons ── */
@@ -328,13 +328,13 @@
         }
 
         .pp-btn-edit {
-            border-color: #bfdbfe;
-            color: #2563eb;
+            border-color: #B0DAD2;
+            color: #54726E;
         }
 
         .pp-btn-edit:hover {
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #EEF5F2;
+            color: #385652;
         }
 
         .pp-btn-del {
@@ -354,7 +354,7 @@
             gap: 5px;
             font-size: 12.5px;
             font-weight: 600;
-            color: #475569;
+            color: #61736F;
             border: 1px solid var(--p-border);
             border-radius: 7px;
             padding: 4px 10px;
@@ -363,7 +363,7 @@
         }
 
         .evidence-link:hover {
-            border-color: #93c5fd;
+            border-color: #B0DAD2;
             color: var(--p-accent);
         }
 
@@ -377,13 +377,13 @@
         .pp-empty-icon {
             width: 56px;
             height: 56px;
-            background: #f1f5f9;
+            background: #EFEDDE;
             border-radius: 16px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             font-size: 22px;
-            color: #94a3b8;
+            color: #7C8986;
             margin-bottom: 16px;
         }
 
@@ -409,8 +409,8 @@
         }
 
         .btn-pp-import:hover {
-            border-color: #93c5fd;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .07);
+            border-color: #B0DAD2;
+            box-shadow: 0 0 0 3px rgba(84, 114, 110, .07);
         }
 
         .btn-pp-add {
@@ -429,8 +429,8 @@
         }
 
         .btn-pp-add:hover {
-            background: #1d4ed8;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, .3);
+            background: #385652;
+            box-shadow: 0 4px 12px rgba(84, 114, 110, .3);
         }
 
         .pp-pagination {
@@ -578,7 +578,7 @@
                                     <span class="amount-main">{{ $money($contract->total_amount) }}</span>
                                 </td>
                                 <td>
-                                    <div class="amount-main" style="color:#16a34a">{{ $money($contract->received_amount) }}
+                                    <div class="amount-main" style="color:#547565">{{ $money($contract->received_amount) }}
                                     </div>
                                     @if ($contract->remaining_amount > 0)
                                         <div class="amount-remain">Còn {{ $money($contract->remaining_amount) }}</div>
@@ -598,7 +598,7 @@
                                             <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px"></i>Xem
                                         </a>
                                     @else
-                                        <span style="font-size:12px;color:#94a3b8">Chưa có</span>
+                                        <span style="font-size:12px;color:#7C8986">Chưa có</span>
                                     @endif
                                 </td>
                                 <td style="min-width:220px">
@@ -608,7 +608,7 @@
                                                 style="font-size:9px"></i>{{ $record->subject_name }}
                                         </span>
                                     @empty
-                                        <span style="font-size:12px;color:#94a3b8">Chưa gắn</span>
+                                        <span style="font-size:12px;color:#7C8986">Chưa gắn</span>
                                     @endforelse
                                     @if ($contract->teachingRecords->count() > 3)
                                         <span
@@ -698,7 +698,7 @@
                         <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv,.txt"
                             required>
                     </div>
-                    <div class="alert border-0 rounded-3 small mb-0" style="background:#eff6ff;color:#1e40af">
+                    <div class="alert border-0 rounded-3 small mb-0" style="background:#EEF5F2;color:#385652">
                         <i class="fa-solid fa-circle-info me-2"></i>File cần có các cột:
                         <strong>Số hợp đồng, Ngày ký, Tổng tiền VND, Trạng thái, Ngày nhận, Hợp đồng, Ghi chú</strong>.
                         Cột <strong>Hợp đồng</strong> sẽ lưu vào link minh chứng nếu là URL, nếu không sẽ lưu vào ghi chú.

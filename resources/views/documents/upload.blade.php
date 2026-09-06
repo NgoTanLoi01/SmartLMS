@@ -33,7 +33,7 @@
 
         body {
             font-family: var(--sl-font-sans);
-            background: #F8FAFC;
+            background: #F7F7F2;
             color: var(--text-primary);
         }
 
@@ -85,7 +85,7 @@
         /* === NOTICE CARD === */
         .notice-card {
             background: var(--warning-light);
-            border: 1px solid #FDE68A;
+            border: 1px solid #FBCE5A;
             border-radius: var(--radius);
             padding: 1.25rem 1.5rem;
             margin-bottom: 1.5rem;
@@ -105,20 +105,20 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            color: #92400E;
+            color: #705817;
             margin: 0 0 0.5rem;
         }
 
         .notice-card p {
             font-size: 0.85rem;
-            color: #78350F;
+            color: #705817;
             margin: 0 0 0.6rem;
             line-height: 1.6;
         }
 
         .notice-card ul {
             font-size: 0.82rem;
-            color: #92400E;
+            color: #705817;
             margin: 0;
             padding-left: 1.2rem;
             line-height: 1.8;
@@ -130,7 +130,7 @@
         }
 
         .notice-card ul li strong {
-            color: #78350F;
+            color: #705817;
         }
 
         /* === CARD BASE === */
@@ -287,11 +287,11 @@
         /* === ALERTS === */
         .alert-success-custom {
             background: var(--success-light);
-            border: 1px solid #A7F3D0;
+            border: 1px solid #AEC6A6;
             border-radius: var(--radius-sm);
             padding: 0.9rem 1.1rem;
             font-size: 0.875rem;
-            color: #065F46;
+            color: #405F52;
             margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
@@ -383,11 +383,11 @@
         .progress-note {
             margin-top: 0.75rem;
             background: var(--accent-light);
-            border: 1px solid #A5F3FC;
+            border: 1px solid #B0DAD2;
             border-radius: var(--radius-sm);
             padding: 0.7rem 0.9rem;
             font-size: 0.8rem;
-            color: #164E63;
+            color: #385652;
             display: flex;
             align-items: flex-start;
             gap: 0.5rem;
@@ -540,9 +540,9 @@
 
         /* Badges */
         .badge-system {
-            background: #F1F5F9;
-            color: #475569;
-            border: 1px solid #CBD5E1;
+            background: #EFEDDE;
+            color: #61736F;
+            border: 1px solid #BCC8BF;
             font-size: 0.72rem;
             font-weight: 600;
             padding: 0.3rem 0.65rem;
@@ -551,9 +551,9 @@
         }
 
         .badge-course {
-            background: #EFF6FF;
-            color: #1D4ED8;
-            border: 1px solid #BFDBFE;
+            background: #EEF5F2;
+            color: #385652;
+            border: 1px solid #B0DAD2;
             font-size: 0.72rem;
             font-weight: 600;
             padding: 0.3rem 0.65rem;
@@ -575,7 +575,7 @@
         .badge-vectors {
             background: var(--primary-light);
             color: var(--primary);
-            border: 1px solid #C7D2FE;
+            border: 1px solid #AEC6A6;
             font-size: 0.75rem;
             font-weight: 700;
             padding: 0.25rem 0.7rem;

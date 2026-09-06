@@ -680,7 +680,7 @@
         .btn-modal-cancel:focus-visible,
         select:focus-visible,
         input:focus-visible {
-            outline: 2px solid #2563eb;
+            outline: 2px solid #54726E;
             outline-offset: 2px;
         }
 

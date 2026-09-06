@@ -15,9 +15,11 @@
     <meta property="og:title" content="SmartLMS - Hệ thống học tập tích hợp AI">
     <meta property="og:description"
         content="Nền tảng quản lý giáo dục trực tuyến hỗ trợ huấn luyện AI dựa trên tài liệu học tập.">
-    <meta property="og:image" content="{{ asset('favicon-v2.png') }}">
-    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('favicon-48.png') }}">
-    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96.png') }}">
+    <meta property="og:image" content="{{ asset('assets/images/branding/smartlms-logo.webp') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,11 +31,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     @stack('styles')
+    @vite('resources/css/pages/coastal-theme.css')
 </head>
 
 <body>
     <a class="skip-link" href="#main-content">Bỏ qua menu, đến nội dung chính</a>
     @auth
+        @php
+            $headerLogoPath = 'assets/images/branding/smartlms-logo-header.webp';
+            $headerLogoUrl = asset($headerLogoPath).'?v='.filemtime(public_path($headerLogoPath));
+            $preloaderUrl = asset('preloader.gif').'?v='.filemtime(public_path('preloader.gif'));
+        @endphp
         {{-- ── Navbar ── --}}
         <nav class="navbar">
             <button class="hamburger me-3" id="sidebarToggle" type="button" aria-label="Mở menu"
@@ -47,8 +55,15 @@
             </button>
 
             <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <img src="{{ asset('smartlms-logo-sharpened.webp') }}" alt="SmartLMS" width="800" height="200">
+                <img src="{{ $headerLogoUrl }}" alt="SmartLMS" width="600" height="200">
             </a>
+
+            <form class="topbar-search" action="{{ route('courses.index') }}" method="GET" role="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" name="search"
+                    value="{{ request()->routeIs('courses.index') ? request('search') : '' }}"
+                    placeholder="Tìm khóa học..." aria-label="Tìm kiếm khóa học">
+            </form>
 
             <div class="dropdown ms-auto">
                 <button class="topbar-icon-btn {{ ($topbarUnreadCount ?? 0) === 0 ? 'no-unread' : 'has-unread' }}" type="button"
@@ -96,7 +111,7 @@
                 </li>
                 <li>
                     <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                        <i class="fa-solid fa-key" style="color:#f59e0b;"></i> Đổi mật khẩu
+                        <i class="fa-solid fa-key" style="color:#CEAF6B;"></i> Đổi mật khẩu
                     </a>
                 </li>
                 <li>
@@ -196,7 +211,7 @@
 
         <div class="page-transition" id="pageTransition" aria-hidden="true">
             <div class="page-transition__card">
-                <img class="page-transition__image" src="{{ asset('preloader.gif') }}" alt="" aria-hidden="true">
+                <img class="page-transition__image" src="{{ $preloaderUrl }}" alt="" aria-hidden="true">
             </div>
         </div>
     @endauth

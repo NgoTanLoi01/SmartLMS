@@ -35,17 +35,17 @@
 
         const lessonEditorContentStyle = `
             body {
-                color: #202634;
+                color: #2F403C;
                 font-family: "Be Vietnam Pro", sans-serif;
                 font-size: 15px;
                 line-height: 1.75;
                 padding: 10px 14px;
             }
-            h2, h3, h4 { color: #111827; line-height: 1.35; }
+            h2, h3, h4 { color: #263A37; line-height: 1.35; }
             table { border-collapse: collapse; width: 100%; }
             table td, table th { border: 1px solid #dbe3ef; padding: 10px; }
             pre {
-                background: #111827;
+                background: #263A37;
                 border-radius: 12px;
                 color: #e5e7eb;
                 overflow-x: auto;
@@ -53,7 +53,7 @@
             }
             .lesson-callout,
             .lesson-self-check {
-                border: 1px solid #dbeafe;
+                border: 1px solid #DCE9E5;
                 border-radius: 16px;
                 margin: 16px 0;
                 padding: 14px 16px;
@@ -66,13 +66,13 @@
             }
             .lesson-callout p:last-child,
             .lesson-self-check ol:last-child { margin-bottom: 0; }
-            .lesson-callout--note { background: #eff6ff; border-color: #bfdbfe; }
-            .lesson-callout--example { background: #ecfdf5; border-color: #bbf7d0; }
-            .lesson-callout--warning { background: #fff7ed; border-color: #fed7aa; }
-            .lesson-callout--practice { background: #f5f3ff; border-color: #ddd6fe; }
+            .lesson-callout--note { background: #EEF5F2; border-color: #B0DAD2; }
+            .lesson-callout--example { background: #EDF5EF; border-color: #AEC6A6; }
+            .lesson-callout--warning { background: #FFF8DF; border-color: #fed7aa; }
+            .lesson-callout--practice { background: #F2F2E9; border-color: #AEC6A6; }
             .lesson-checklist {
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
+                background: #F7F7F2;
+                border: 1px solid #D9DDD3;
                 border-radius: 16px;
                 list-style: none;
                 margin: 16px 0;
@@ -84,7 +84,7 @@
                 position: relative;
             }
             .lesson-checklist li::before {
-                background: #16a34a;
+                background: #547565;
                 border-radius: 50%;
                 content: "";
                 height: 7px;
@@ -93,7 +93,7 @@
                 top: .7em;
                 width: 7px;
             }
-            .lesson-self-check { background: #f8fafc; border-color: #c7d2fe; }
+            .lesson-self-check { background: #F7F7F2; border-color: #AEC6A6; }
         `;
 
         document.addEventListener('DOMContentLoaded', () => {

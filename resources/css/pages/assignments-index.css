@@ -134,7 +134,7 @@
 .assignment-filter-control .form-control:focus,
 .assignment-filter-field .form-select:focus {
     border-color: var(--sl-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+    box-shadow: 0 0 0 3px rgba(84, 114, 110, .1);
 }
 
 .assignment-filter-actions {
@@ -457,12 +457,12 @@
 
 /* Unified SmartLMS assignment experience */
 .assignments-page { display: grid; gap: 16px; max-width: 1500px; }
-.assignment-hero { position: relative; overflow: hidden; background: #fff; border: 1px solid #dbe5f2; border-radius: 16px; box-shadow: 0 10px 32px rgba(30, 64, 175, .06); }
-.assignment-hero__accent { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #2563eb, #7c3aed 48%, #06b6d4); }
-.assignment-hero .lms-page-header { margin: 0; padding: 22px 20px 17px; background: radial-gradient(circle at 92% -25%, rgba(37, 99, 235, .14), transparent 36%), linear-gradient(135deg, #fff 22%, #f8fbff); }
-.assignment-hero .lms-page-title { color: #172033; font-size: 22px; letter-spacing: -.025em; }
+.assignment-hero { position: relative; overflow: hidden; background: #fff; border: 1px solid #D6DED6; border-radius: 16px; box-shadow: 0 10px 32px rgba(56, 86, 82, .06); }
+.assignment-hero__accent { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #54726E, #939875 48%, #6E928D); }
+.assignment-hero .lms-page-header { margin: 0; padding: 22px 20px 17px; background: radial-gradient(circle at 92% -25%, rgba(84, 114, 110, .14), transparent 36%), linear-gradient(135deg, #fff 22%, #F8F7EF); }
+.assignment-hero .lms-page-title { color: #263A37; font-size: 22px; letter-spacing: -.025em; }
 .assignment-hero .lms-page-meta { gap: 14px; margin-top: 5px; }
-.assignment-stats { gap: 1px; margin: 0; padding: 10px; background: #edf2f8; border-top: 1px solid #e1e8f1; }
+.assignment-stats { gap: 1px; margin: 0; padding: 10px; background: #EEF5F2; border-top: 1px solid #D9DDD3; }
 .assignment-stat { min-height: 68px; padding: 11px 14px; border: 0; border-radius: 0; box-shadow: none; transition: transform .16s ease, box-shadow .16s ease; }
 .assignment-stat:first-child { border-radius: 10px 0 0 10px; }
 .assignment-stat:last-child { border-radius: 0 10px 10px 0; }
@@ -470,17 +470,17 @@
 .assignment-stat__icon { width: 40px; height: 40px; flex-basis: 40px; border-radius: 11px; font-size: 14px; }
 .assignment-stat strong { font-size: 18px; }
 .assignment-stat div > span { font-size: 10px; }
-.assignment-filter-panel { margin: 0; padding: 15px 16px; border-color: #e1e8f1; border-radius: 15px; box-shadow: 0 6px 24px rgba(15, 23, 42, .045); }
+.assignment-filter-panel { margin: 0; padding: 15px 16px; border-color: #D9DDD3; border-radius: 15px; box-shadow: 0 6px 24px rgba(15, 23, 42, .045); }
 .assignment-filter-control .form-control,
 .assignment-filter-field .form-select { min-height: 39px; font-size: 12px; }
 .assignment-filter-actions .lms-btn { min-height: 39px; }
 .assignment-filter-summary { font-size: 10.5px; }
 .assignment-results-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 2px; }
-.assignment-results-header h2 { margin: 0; color: #172033; font-size: 15px; font-weight: 800; }
-.assignment-results-header p { margin: 4px 0 0; color: #64748b; font-size: 11px; }
-.assignment-results-header > span { display: inline-flex; align-items: center; min-height: 30px; padding: 5px 11px; color: #64748b; background: #fff; border: 1px solid #e1e8f1; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.assignment-results-header h2 { margin: 0; color: #263A37; font-size: 15px; font-weight: 800; }
+.assignment-results-header p { margin: 4px 0 0; color: #61736F; font-size: 11px; }
+.assignment-results-header > span { display: inline-flex; align-items: center; min-height: 30px; padding: 5px 11px; color: #61736F; background: #fff; border: 1px solid #D9DDD3; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .assignment-grid { gap: 14px; }
-.assignment-card { min-height: 300px; padding: 15px 16px; border-color: #e1e8f1; border-radius: 15px; box-shadow: 0 6px 22px rgba(15, 23, 42, .04); }
+.assignment-card { min-height: 300px; padding: 15px 16px; border-color: #D9DDD3; border-radius: 15px; box-shadow: 0 6px 22px rgba(15, 23, 42, .04); }
 .assignment-card__title { font-size: 14px; }
 .assignment-card__description { font-size: 10.5px; }
 .assignment-card__details { padding: 9px; }

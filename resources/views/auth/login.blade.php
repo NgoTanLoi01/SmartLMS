@@ -56,7 +56,7 @@
         }
 
         .login-card-custom .logo-brand {
-            height: 70px;
+            height: 100px;
             max-width: 100%;
             margin-bottom: 30px;
             width: auto;
@@ -182,7 +182,7 @@
             margin-top: 30px;
             text-align: center;
             font-size: 0.9rem;
-            color: #64748b;
+            color: #61736F;
         }
 
         .footer-links a {
@@ -203,7 +203,7 @@
         <div class="login-form-area">
             <div class="login-card-custom">
                 <div class="text-center">
-                    <img src="{{ asset('smartlms-logo-sharpened.webp') }}" class="logo-brand" alt="SmartLMS" width="800" height="200">
+                    <img src="{{ asset('assets/images/branding/smartlms-logo.webp') }}" class="logo-brand" alt="SmartLMS" width="2172" height="724">
                     <h1 class="welcome-msg">Chào mừng! <x-ui.icon name="sparkles" class="text-primary" /></h1>
                     <p class="sub-msg">Vui lòng nhập thông tin để truy cập hệ thống.</p>
                 </div>
@@ -276,7 +276,7 @@
                 </script>
 
                 <div class="footer-links">
-                    &copy; {{ date('Y') }} SmartLMS v2.1.2<br>
+                    &copy; {{ date('Y') }} SmartLMS v2.2.1<br>
                     Phát triển bởi
                     <a href="mailto:ngotanloi2424@gmail.com">
                         <strong>NgoTanLoi</strong>

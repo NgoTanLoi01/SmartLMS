@@ -3,7 +3,7 @@
 /* ── AI Panel ── */
 .lms-ai-panel {
     background: #fff;
-    border: 1px solid #BFDBFE;
+    border: 1px solid #B0DAD2;
     border-left: 4px solid var(--lms-blue);
     border-radius: var(--lms-radius);
     overflow: hidden;
@@ -95,7 +95,7 @@
 .lms-ai-item {
     padding-bottom: 12px;
     margin-bottom: 12px;
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid #EFEDDE;
 }
 
 .lms-ai-item:last-child {
@@ -129,17 +129,17 @@
 }
 
 .lms-alert-msg {
-    background: #FFFBEB;
-    border: 1px solid #FDE68A;
+    background: #FFF8DF;
+    border: 1px solid #FBCE5A;
     border-radius: var(--lms-radius-sm);
     padding: 12px 14px;
     font-size: 13px;
-    color: #92400E;
+    color: #705817;
 }
 
 .lms-prog-bar {
     height: 5px;
-    background: #E2E8F0;
+    background: #D9DDD3;
     border-radius: 3px;
     margin: 10px 0 6px;
     overflow: hidden;
@@ -300,7 +300,7 @@
 .lms-select:focus {
     outline: none;
     border-color: var(--lms-blue);
-    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    box-shadow: 0 0 0 3px rgba(56, 86, 82, 0.1);
 }
 
 .lms-checkbox-wrap {
@@ -357,7 +357,7 @@
 }
 
 .lms-table tbody tr {
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid #EFEDDE;
     transition: background 0.12s;
 }
 
@@ -366,7 +366,7 @@
 }
 
 .lms-table tbody tr:hover {
-    background: #F8FAFC;
+    background: #F7F7F2;
 }
 
 .lms-table td {
@@ -398,7 +398,7 @@
 
 .lms-micro-bar {
     height: 4px;
-    background: #E2E8F0;
+    background: #D9DDD3;
     border-radius: 2px;
     margin: 5px 0 3px;
     overflow: hidden;
@@ -495,7 +495,7 @@
 }
 
 .lms-btn-ai:hover {
-    background: #1e40af;
+    background: #385652;
 }
 
 .lms-btn-detail {
@@ -595,7 +595,7 @@
 .lms-modal-item {
     padding-bottom: 10px;
     margin-bottom: 10px;
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid #EFEDDE;
 }
 
 .lms-modal-item:last-child {

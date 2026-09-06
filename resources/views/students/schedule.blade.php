@@ -5,7 +5,7 @@
 @section('content')
     <style>
         .student-schedule {
-            color: #0f172a;
+            color: #263A37;
         }
 
         .ss-header {
@@ -26,13 +26,13 @@
 
         .ss-subtitle {
             margin: 0;
-            color: #64748b;
+            color: #61736F;
             font-size: 14px;
         }
 
         .ss-filter {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 10px;
             padding: 12px;
             display: flex;
@@ -46,7 +46,7 @@
             display: block;
             font-size: 12px;
             font-weight: 700;
-            color: #64748b;
+            color: #61736F;
             margin-bottom: 6px;
         }
 
@@ -59,7 +59,7 @@
 
         .ss-stat {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 10px;
             padding: 16px;
         }
@@ -67,7 +67,7 @@
         .ss-stat-label {
             font-size: 12px;
             font-weight: 700;
-            color: #64748b;
+            color: #61736F;
             margin-bottom: 8px;
         }
 
@@ -79,7 +79,7 @@
 
         .ss-stat-note {
             margin-top: 8px;
-            color: #94a3b8;
+            color: #7C8986;
             font-size: 12px;
         }
 
@@ -92,14 +92,14 @@
 
         .ss-panel {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 10px;
             overflow: hidden;
         }
 
         .ss-panel-head {
             padding: 14px 16px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #D9DDD3;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -131,8 +131,8 @@
 
         .fc .fc-button {
             background: #fff !important;
-            border: 1px solid #e2e8f0 !important;
-            color: #334155 !important;
+            border: 1px solid #D9DDD3 !important;
+            color: #263A37 !important;
             border-radius: 8px !important;
             font-size: 13px !important;
             box-shadow: none !important;
@@ -140,8 +140,8 @@
 
         .fc .fc-button-primary:not(:disabled).fc-button-active,
         .fc .fc-button-primary:not(:disabled):active {
-            background: #2563eb !important;
-            border-color: #2563eb !important;
+            background: #54726E !important;
+            border-color: #54726E !important;
             color: #fff !important;
         }
 
@@ -153,10 +153,14 @@
             cursor: pointer;
         }
 
+        .fc .fc-day-today {
+            background: rgba(176, 218, 210, .22) !important;
+        }
+
         .fc td,
         .fc th,
         .fc .fc-scrollgrid {
-            border-color: #eef2f7 !important;
+            border-color: #D9DDD3 !important;
         }
 
         .ss-list {
@@ -167,7 +171,7 @@
 
         .ss-item {
             padding: 14px 16px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #D9DDD3;
             display: flex;
             gap: 10px;
         }
@@ -180,8 +184,8 @@
             width: 58px;
             min-width: 58px;
             border-radius: 10px;
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #EEF5F2;
+            color: #385652;
             text-align: center;
             padding: 7px 4px;
             font-weight: 800;
@@ -191,7 +195,7 @@
         .ss-date span {
             display: block;
             font-size: 11px;
-            color: #64748b;
+            color: #61736F;
             font-weight: 700;
             margin-top: 2px;
         }
@@ -207,7 +211,7 @@
         }
 
         .ss-item-meta {
-            color: #64748b;
+            color: #61736F;
             font-size: 13px;
             line-height: 1.55;
         }
@@ -223,7 +227,7 @@
         .ss-empty {
             padding: 28px 16px;
             text-align: center;
-            color: #64748b;
+            color: #61736F;
         }
 
         .ss-empty i {

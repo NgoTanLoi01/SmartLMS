@@ -36,13 +36,13 @@
             margin: 0 0 4px;
             font-size: 24px;
             font-weight: 800;
-            color: #0f172a;
+            color: #263A37;
             letter-spacing: -0.02em;
         }
 
         .report-subtitle {
             margin: 0;
-            color: #64748b;
+            color: #61736F;
             font-size: 13.5px;
         }
 
@@ -50,7 +50,7 @@
         .report-filter,
         .report-stat {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 14px;
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
         }
@@ -70,7 +70,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            color: #64748b;
+            color: #61736F;
             font-size: 11.5px;
             font-weight: 800;
             text-transform: uppercase;
@@ -97,7 +97,7 @@
 
         .report-card__head {
             padding: 16px 18px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #D9DDD3;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -125,14 +125,14 @@
         .report-table thead th {
             position: sticky;
             top: 0;
-            background: #f8fafc;
-            color: #64748b;
+            background: #F7F7F2;
+            color: #61736F;
             font-size: 11px;
             font-weight: 800;
             letter-spacing: .04em;
             text-transform: uppercase;
             white-space: nowrap;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #D9DDD3;
             z-index: 1;
         }
 
@@ -146,7 +146,7 @@
         }
 
         .report-table tbody tr:hover {
-            background-color: #f8fafc;
+            background-color: #F7F7F2;
         }
 
         .report-table-scroll {
@@ -160,7 +160,7 @@
             align-items: center;
             gap: 6px;
             padding: 48px 16px;
-            color: #94a3b8;
+            color: #7C8986;
         }
 
         .empty-state i {
@@ -174,9 +174,9 @@
             gap: 10px;
             padding: 12px 14px;
             margin: 0 0 16px;
-            border: 1px solid #fde68a;
-            background: #fffbeb;
-            color: #92400e;
+            border: 1px solid #FBCE5A;
+            background: #FFF8DF;
+            color: #705817;
             border-radius: 12px;
             font-size: 13px;
             line-height: 1.55;

@@ -72,7 +72,7 @@
 .lms-input:focus {
     outline: none;
     border-color: var(--lms-blue);
-    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    box-shadow: 0 0 0 3px rgba(56, 86, 82, 0.1);
 }
 
 .lms-input-icon {
@@ -84,7 +84,7 @@
     left: 10px;
     top: 50%;
     transform: translateY(-50%);
-    color: #94A3B8;
+    color: #7C8986;
     font-size: 14px;
 }
 
@@ -108,7 +108,7 @@
 .lms-select:focus {
     outline: none;
     border-color: var(--lms-blue);
-    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    box-shadow: 0 0 0 3px rgba(56, 86, 82, 0.1);
 }
 
 .lms-filter-actions {
@@ -134,7 +134,7 @@
 
 .lms-btn-reset:hover {
     background: var(--lms-surface);
-    border-color: #94A3B8;
+    border-color: #7C8986;
     color: var(--lms-text);
 }
 
@@ -162,7 +162,7 @@
 }
 
 .lms-table tbody tr {
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid #EFEDDE;
     transition: background 0.12s;
 }
 
@@ -171,7 +171,7 @@
 }
 
 .lms-table tbody tr:hover {
-    background: #F8FAFC;
+    background: #F7F7F2;
 }
 
 .lms-table td {
@@ -209,7 +209,7 @@
 
 .lms-student-id {
     font-size: 11px;
-    color: #94A3B8;
+    color: #7C8986;
 }
 
 /* ── Badges ── */
@@ -239,8 +239,8 @@
 }
 
 .lms-badge-info {
-    background: #F0F9FF;
-    color: #0369A1;
+    background: #EDF5F3;
+    color: #54726E;
 }
 
 .lms-badge-gray {
@@ -298,7 +298,7 @@
 /* ── Progress micro ── */
 .lms-micro-bar {
     height: 4px;
-    background: #E2E8F0;
+    background: #D9DDD3;
     border-radius: 2px;
     margin-top: 6px;
     overflow: hidden;
@@ -357,7 +357,7 @@
 
 .lms-empty-icon {
     font-size: 40px;
-    color: #CBD5E1;
+    color: #BCC8BF;
     margin-bottom: 14px;
     display: block;
 }
@@ -365,7 +365,7 @@
 .lms-empty h6 {
     font-size: 15px;
     font-weight: 700;
-    color: #475569;
+    color: #61736F;
     margin-bottom: 6px;
 }
 
@@ -387,8 +387,8 @@
 
 .lms-flash.success {
     background: var(--lms-success-light);
-    border-color: #A7F3D0;
-    color: #065F46;
+    border-color: #AEC6A6;
+    color: #405F52;
 }
 
 .lms-flash.error {
@@ -477,29 +477,29 @@
 .lms-form-control:focus {
     outline: none;
     border-color: var(--lms-blue);
-    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    box-shadow: 0 0 0 3px rgba(56, 86, 82, 0.1);
     background: #fff;
 }
 
 .lms-info-box {
-    background: #EFF6FF;
-    border: 1px solid #BFDBFE;
+    background: #EEF5F2;
+    border: 1px solid #B0DAD2;
     border-radius: var(--lms-radius-sm);
     padding: 12px 14px;
     font-size: 13px;
-    color: #1E40AF;
+    color: #385652;
     margin-bottom: 18px;
     display: flex;
     gap: 8px;
 }
 
 .lms-warning-box {
-    background: #FFFBEB;
-    border: 1px solid #FDE68A;
+    background: #FFF8DF;
+    border: 1px solid #FBCE5A;
     border-radius: var(--lms-radius-sm);
     padding: 14px 16px;
     font-size: 13px;
-    color: #92400E;
+    color: #705817;
 }
 
 .lms-warning-box ul {
@@ -512,7 +512,7 @@
 }
 
 .lms-warning-box a {
-    color: #065F46;
+    color: #405F52;
     font-weight: 600;
 }
 

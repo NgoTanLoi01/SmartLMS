@@ -118,7 +118,7 @@
 
         .explanation-box {
             background: linear-gradient(to right, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-            border-left: 4px solid #764ba2;
+            border-left: 4px solid #7D876D;
             border-radius: 0 8px 8px 0;
             padding: 12px 15px;
         }
@@ -201,7 +201,7 @@
         }
 
         .source-option strong {
-            color: #202634;
+            color: #2F403C;
             display: block;
             font-size: 13px;
             line-height: 1.35;
@@ -217,19 +217,19 @@
 
         .source-option:has(input:checked) {
             background: linear-gradient(135deg, rgba(102, 126, 234, .08), rgba(33, 150, 243, .06));
-            border-color: #667eea;
+            border-color: #6E928D;
             box-shadow: 0 10px 24px rgba(102, 126, 234, .15);
         }
 
         .ai-context-box {
-            background: #f8fafc;
+            background: #F7F7F2;
             border: 1px solid #e8edf5;
             border-radius: 14px;
             padding: 14px;
         }
 
         .ai-editor-label {
-            color: #64748b;
+            color: #61736F;
             font-size: 11px;
             font-weight: 800;
             letter-spacing: .04em;
@@ -246,7 +246,7 @@
 
         .ai-answer-row {
             align-items: center;
-            background: #f8fafc;
+            background: #F7F7F2;
             border: 1px solid #e5e7eb;
             border-radius: 10px;
             display: flex;
@@ -256,8 +256,8 @@
         }
 
         .ai-answer-row.is-correct {
-            background: #f0fdf4;
-            border-color: #86efac;
+            background: #EDF5EF;
+            border-color: #AEC6A6;
         }
 
         .ai-answer-row input[type="text"] {
@@ -276,12 +276,12 @@
         }
 
         .ai-quality.good {
-            background: #f0fdf4;
-            color: #166534;
+            background: #EDF5EF;
+            color: #405F52;
         }
 
         .ai-quality.needs_review {
-            background: #fff7ed;
+            background: #FFF8DF;
             color: #9a3412;
         }
 
@@ -298,7 +298,7 @@
         }
 
         .ai-manual-panel {
-            background: #f8fafc;
+            background: #F7F7F2;
             border: 1px solid #dbe3ef;
             border-radius: 12px;
             padding: 14px;
@@ -326,10 +326,10 @@
         }
 
         .question-type-help {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
+            background: #EEF5F2;
+            border: 1px solid #B0DAD2;
             border-radius: 9px;
-            color: #1e40af;
+            color: #385652;
             font-size: 11.5px;
             line-height: 1.5;
             margin-top: 8px;

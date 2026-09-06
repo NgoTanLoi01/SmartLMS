@@ -17,18 +17,18 @@
             margin: 0 0 4px;
             font-size: 22px;
             font-weight: 700;
-            color: #0f172a;
+            color: #263A37;
         }
 
         .program-subtitle {
             margin: 0;
-            color: #64748b;
+            color: #61736F;
             font-size: 13.5px;
         }
 
         .program-card {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
@@ -40,15 +40,15 @@
             gap: 6px;
             padding: 4px 10px;
             border-radius: 999px;
-            background: #eff6ff;
-            color: #2563eb;
+            background: #EEF5F2;
+            color: #54726E;
             font-size: 12px;
             font-weight: 700;
         }
 
         .program-desc {
             max-width: 460px;
-            color: #64748b;
+            color: #61736F;
             font-size: 13px;
             line-height: 1.5;
         }

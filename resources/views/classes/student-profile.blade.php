@@ -22,7 +22,7 @@
         }
 
         body {
-            background: #F1F5F9;
+            background: #EFEDDE;
         }
 
         .lms-page {
@@ -52,7 +52,7 @@
 
         .lms-breadcrumb-sep {
             font-size: 10px;
-            color: #CBD5E1;
+            color: #BCC8BF;
         }
 
         /* ── Profile header ── */
@@ -131,7 +131,7 @@
         .lms-btn-outline:hover {
             background: var(--lms-surface);
             color: var(--lms-text);
-            border-color: #94A3B8;
+            border-color: #7C8986;
         }
 
         .lms-btn-primary {
@@ -141,14 +141,14 @@
         }
 
         .lms-btn-primary:hover {
-            background: #1e40af;
+            background: #385652;
             color: #fff;
         }
 
         /* ── Alert banner ── */
         .lms-alert-banner {
-            background: #FFFBEB;
-            border: 1px solid #FDE68A;
+            background: #FFF8DF;
+            border: 1px solid #FBCE5A;
             border-radius: var(--lms-radius);
             padding: 14px 18px;
             margin-bottom: 1.5rem;
@@ -157,7 +157,7 @@
         .lms-alert-banner-title {
             font-size: 13.5px;
             font-weight: 700;
-            color: #92400E;
+            color: #705817;
             display: flex;
             align-items: center;
             gap: 7px;
@@ -236,7 +236,7 @@
 
         .lms-prog-bar {
             height: 6px;
-            background: #E2E8F0;
+            background: #D9DDD3;
             border-radius: 3px;
             margin: 10px 0 6px;
             overflow: hidden;
@@ -319,7 +319,7 @@
         .lms-select:focus {
             outline: none;
             border-color: var(--lms-blue);
-            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+            box-shadow: 0 0 0 3px rgba(56, 86, 82, 0.1);
         }
 
         .lms-btn-reset {
@@ -340,7 +340,7 @@
         .lms-btn-reset:hover {
             background: var(--lms-surface);
             color: var(--lms-text);
-            border-color: #94A3B8;
+            border-color: #7C8986;
         }
 
         /* ── Table ── */
@@ -367,7 +367,7 @@
         }
 
         .lms-table tbody tr {
-            border-bottom: 1px solid #F1F5F9;
+            border-bottom: 1px solid #EFEDDE;
             transition: background 0.12s;
         }
 
@@ -376,7 +376,7 @@
         }
 
         .lms-table tbody tr:hover {
-            background: #F8FAFC;
+            background: #F7F7F2;
         }
 
         .lms-table td {
@@ -476,7 +476,7 @@
 
         .lms-note-date {
             font-size: 11.5px;
-            color: #94A3B8;
+            color: #7C8986;
             white-space: nowrap;
         }
 

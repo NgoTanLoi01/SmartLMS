@@ -227,8 +227,19 @@ document.addEventListener('DOMContentLoaded', () => {
             url: calendarEl.dataset.eventsUrl,
             failure: () => showPageFeedback('Không tải được dữ liệu lịch. Vui lòng thử lại.'),
         },
+        eventDataTransform(event) {
+            const hasImportantNote = Boolean(String(event.extendedProps?.note || '').trim());
+            const eventColor = hasImportantNote ? '#dc2626' : '#54726E';
+
+            return {
+                ...event,
+                backgroundColor: eventColor,
+                borderColor: eventColor,
+                textColor: '#ffffff',
+            };
+        },
         selectable: true,
-        eventColor: '#2563eb',
+        eventColor: '#54726E',
         select(info) {
             resetForm();
             setModalMode(false);

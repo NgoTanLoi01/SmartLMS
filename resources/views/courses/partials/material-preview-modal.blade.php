@@ -3,18 +3,18 @@
         .material-preview-dialog { max-width: min(1180px, calc(100vw - 28px)); }
         .material-preview-shell { border: 0; border-radius: 18px; overflow: hidden; }
         .material-preview-head { align-items: flex-start; border-bottom: 1px solid #e5e7eb; display: flex; gap: 14px; padding: 16px 20px; }
-        .material-preview-head__icon { align-items: center; background: #eef4ff; border-radius: 11px; color: #2f6fed; display: inline-flex; flex: 0 0 40px; height: 40px; justify-content: center; }
-        .material-preview-title { color: #111827; font-size: 17px; font-weight: 800; margin: 0; overflow-wrap: anywhere; }
-        .material-preview-note { color: #64748b; font-size: 12px; margin: 3px 0 0; }
-        .material-preview-body { align-items: center; background: #f1f5f9; display: flex; justify-content: center; min-height: 68vh; padding: 16px; position: relative; }
+        .material-preview-head__icon { align-items: center; background: #EEF5F2; border-radius: 11px; color: #54726E; display: inline-flex; flex: 0 0 40px; height: 40px; justify-content: center; }
+        .material-preview-title { color: #263A37; font-size: 17px; font-weight: 800; margin: 0; overflow-wrap: anywhere; }
+        .material-preview-note { color: #61736F; font-size: 12px; margin: 3px 0 0; }
+        .material-preview-body { align-items: center; background: #EFEDDE; display: flex; justify-content: center; min-height: 68vh; padding: 16px; position: relative; }
         .material-preview-loading,
-        .material-preview-error { align-items: center; color: #64748b; display: flex; flex-direction: column; gap: 10px; justify-content: center; min-height: 240px; text-align: center; }
+        .material-preview-error { align-items: center; color: #61736F; display: flex; flex-direction: column; gap: 10px; justify-content: center; min-height: 240px; text-align: center; }
         .material-preview-error { color: #b91c1c; }
         .material-preview-error i { font-size: 28px; }
         .material-preview-media { background: #fff; border: 0; border-radius: 10px; box-shadow: 0 8px 24px rgba(15, 23, 42, .1); max-height: calc(100vh - 190px); max-width: 100%; }
         .material-preview-frame { height: 68vh; width: 100%; }
         .material-preview-image { object-fit: contain; }
-        .material-preview-video { background: #0f172a; width: min(100%, 980px); }
+        .material-preview-video { background: #263A37; width: min(100%, 980px); }
         .material-preview-media[hidden],
         .material-preview-loading[hidden],
         .material-preview-error[hidden] { display: none !important; }

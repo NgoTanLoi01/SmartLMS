@@ -168,7 +168,7 @@
                 @empty
                     <div style="grid-column:1/-1;">
                         <div
-                            style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--lms-radius); padding:14px 16px; font-size:13.5px; color:#1E40AF;">
+                            style="background:#EEF5F2; border:1px solid #B0DAD2; border-radius:var(--lms-radius); padding:14px 16px; font-size:13.5px; color:#385652;">
                             Lớp chưa được gán khóa học.
                         </div>
                     </div>

@@ -68,7 +68,7 @@
         }
 
         .cell-x {
-            color: #0d6efd;
+            color: #54726E;
         }
 
         /* Màu Xanh cho X */

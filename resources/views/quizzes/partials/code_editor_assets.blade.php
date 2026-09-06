@@ -1,27 +1,27 @@
 <style>
-    .sl-code-editor { overflow:hidden; color:#dbeafe; background:#0f172a; border:1px solid #26344d; border-radius:12px; box-shadow:inset 0 1px 0 rgba(255,255,255,.03); }
+    .sl-code-editor { overflow:hidden; color:#DCE9E5; background:#263A37; border:1px solid #26344d; border-radius:12px; box-shadow:inset 0 1px 0 rgba(255,255,255,.03); }
     .sl-code-editor__toolbar { min-height:42px; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 12px; color:#a9bad3; background:#162238; border-bottom:1px solid #293750; font-size:.72rem; font-weight:750; }
     .sl-code-editor__meta { display:flex; align-items:center; gap:8px; }
-    .sl-code-editor__language { padding:3px 8px; color:#93c5fd; background:#1e3a63; border-radius:999px; font-size:.65rem; letter-spacing:.04em; }
+    .sl-code-editor__language { padding:3px 8px; color:#B0DAD2; background:#385652; border-radius:999px; font-size:.65rem; letter-spacing:.04em; }
     .sl-code-editor__format { border:1px solid #40516e; border-radius:7px; padding:5px 9px; color:#c9d8ec; background:#202e46; font:inherit; cursor:pointer; transition:.15s; }
     .sl-code-editor__format:hover { color:#fff; background:#2c4265; border-color:#6584b5; }
     .sl-code-editor__stage { position:relative; height:400px; min-height:240px; resize:vertical; overflow:hidden; background:#0b1220; }
     .sl-code-editor--compact .sl-code-editor__stage { height:290px; }
     .sl-code-editor__highlight, .sl-code-editor__source { position:absolute; inset:0; width:100%; height:100%; margin:0; border:0; border-radius:0; padding:14px 16px 14px 0; overflow:auto; white-space:pre; tab-size:2; font:500 .84rem/1.68 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .sl-code-editor__highlight { z-index:1; pointer-events:none; color:#dbeafe; background:transparent; }
+    .sl-code-editor__highlight { z-index:1; pointer-events:none; color:#DCE9E5; background:transparent; }
     .sl-code-editor__highlight code { display:block; min-width:max-content; counter-reset:sl-code-line; }
     .sl-code-line { display:block; min-height:1.68em; padding-left:58px; padding-right:16px; counter-increment:sl-code-line; }
     .sl-code-line::before { content:counter(sl-code-line); display:inline-block; width:38px; margin-left:-50px; margin-right:12px; color:#52647f; text-align:right; user-select:none; }
-    .sl-code-editor__source { z-index:2; padding-left:58px; color:transparent; caret-color:#f8fafc; background:transparent; outline:0; resize:none; -webkit-text-fill-color:transparent; }
+    .sl-code-editor__source { z-index:2; padding-left:58px; color:transparent; caret-color:#F7F7F2; background:transparent; outline:0; resize:none; -webkit-text-fill-color:transparent; }
     .sl-code-editor__source::selection { background:rgba(59,130,246,.42); }
     .sl-code-editor:focus-within { border-color:#4c8df6; box-shadow:0 0 0 3px rgba(59,130,246,.16); }
     .sl-token-comment { color:#6f859f; font-style:italic; }
     .sl-token-punctuation { color:#7dd3fc; }
     .sl-token-tag { color:#fb7185; }
-    .sl-token-attr { color:#fbbf24; }
-    .sl-token-string { color:#86efac; }
-    .sl-token-selector { color:#c4b5fd; }
-    .sl-token-property { color:#67e8f9; }
+    .sl-token-attr { color:#FBCE5A; }
+    .sl-token-string { color:#AEC6A6; }
+    .sl-token-selector { color:#AEC6A6; }
+    .sl-token-property { color:#B0DAD2; }
     @media (forced-colors:active) { .sl-code-editor__highlight { display:none; } .sl-code-editor__source { color:CanvasText; -webkit-text-fill-color:CanvasText; background:Canvas; } }
     @media (max-width:767.98px) { .sl-code-editor__stage { height:330px; } .sl-code-editor--compact .sl-code-editor__stage { height:260px; } }
 </style>

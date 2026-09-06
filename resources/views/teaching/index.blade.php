@@ -99,19 +99,19 @@
         }
 
         .tp-stat--blue::before {
-            background: #2563eb;
+            background: #54726E;
         }
 
         .tp-stat--green::before {
-            background: #16a34a;
+            background: #547565;
         }
 
         .tp-stat--amber::before {
-            background: #d97706;
+            background: #705817;
         }
 
         .tp-stat--sky::before {
-            background: #0284c7;
+            background: #54726E;
         }
 
         .tp-stat__lbl {
@@ -131,19 +131,19 @@
         }
 
         .tp-stat--blue .tp-stat__val {
-            color: #2563eb;
+            color: #54726E;
         }
 
         .tp-stat--green .tp-stat__val {
-            color: #16a34a;
+            color: #547565;
         }
 
         .tp-stat--amber .tp-stat__val {
-            color: #d97706;
+            color: #705817;
         }
 
         .tp-stat--sky .tp-stat__val {
-            color: #0284c7;
+            color: #54726E;
         }
 
         /* ── Filter bar ── */
@@ -161,14 +161,14 @@
             font-size: 13px;
             border-color: var(--t-border);
             border-radius: 8px;
-            background: #f8fafc;
+            background: #F7F7F2;
             transition: border-color .15s, box-shadow .15s;
         }
 
         .tp-filter .form-control:focus,
         .tp-filter .form-select:focus {
             border-color: var(--t-accent);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+            box-shadow: 0 0 0 3px rgba(84, 114, 110, .1);
             background: #fff;
         }
 
@@ -195,7 +195,7 @@
         }
 
         .tp-table thead th {
-            background: #f8fafc;
+            background: #F7F7F2;
             border-bottom: 1px solid var(--t-border);
             color: var(--t-muted);
             font-size: 11px;
@@ -207,7 +207,7 @@
         }
 
         .tp-table tbody tr {
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #EFEDDE;
             transition: background .12s;
         }
 
@@ -216,7 +216,7 @@
         }
 
         .tp-table tbody tr:hover {
-            background: #f8fafc;
+            background: #F7F7F2;
         }
 
         .tp-table td {
@@ -251,39 +251,39 @@
         }
 
         .tp-badge--term {
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #EEF5F2;
+            color: #385652;
         }
 
         .tp-badge--success {
-            background: #f0fdf4;
-            color: #15803d;
+            background: #EDF5EF;
+            color: #547565;
         }
 
         .tp-badge--primary {
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #EEF5F2;
+            color: #385652;
         }
 
         .tp-badge--warning {
-            background: #fffbeb;
-            color: #b45309;
+            background: #FFF8DF;
+            color: #705817;
         }
 
         .tp-badge--secondary {
-            background: #f1f5f9;
-            color: #475569;
+            background: #EFEDDE;
+            color: #61736F;
         }
 
         .tp-badge--linked {
-            background: #ecfdf5;
-            color: #047857;
+            background: #EDF5EF;
+            color: #547565;
         }
 
         .tp-badge--unlinked {
-            background: #f8fafc;
-            color: #94a3b8;
-            border: 1px dashed #cbd5e1;
+            background: #F7F7F2;
+            color: #7C8986;
+            border: 1px dashed #BCC8BF;
         }
 
         /* ── Action buttons ── */
@@ -310,13 +310,13 @@
         }
 
         .tp-btn-edit {
-            border-color: #bfdbfe;
-            color: #2563eb;
+            border-color: #B0DAD2;
+            color: #54726E;
         }
 
         .tp-btn-edit:hover {
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #EEF5F2;
+            color: #385652;
         }
 
         .tp-btn-del {
@@ -339,13 +339,13 @@
         .tp-empty-icon {
             width: 56px;
             height: 56px;
-            background: #f1f5f9;
+            background: #EFEDDE;
             border-radius: 16px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             font-size: 22px;
-            color: #94a3b8;
+            color: #7C8986;
             margin-bottom: 16px;
         }
 
@@ -371,8 +371,8 @@
         }
 
         .btn-tp-import:hover {
-            border-color: #93c5fd;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .07);
+            border-color: #B0DAD2;
+            box-shadow: 0 0 0 3px rgba(84, 114, 110, .07);
         }
 
         .btn-tp-add {
@@ -391,8 +391,8 @@
         }
 
         .btn-tp-add:hover {
-            background: #1d4ed8;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, .3);
+            background: #385652;
+            box-shadow: 0 4px 12px rgba(84, 114, 110, .3);
         }
 
         /* ── Pagination spacing ── */
@@ -666,7 +666,7 @@
                         <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv,.txt"
                             required>
                     </div>
-                    <div class="alert alert-info border-0 rounded-3 small mb-0" style="background:#eff6ff;color:#1e40af">
+                    <div class="alert alert-info border-0 rounded-3 small mb-0" style="background:#EEF5F2;color:#385652">
                         <i class="fa-solid fa-circle-info me-2"></i>File cần có các cột:
                         <strong>Tên môn học, Lớp, Trung tâm, Khóa, Số buổi, Ngày bắt đầu, Ngày kết thúc, Trạng thái, Ghi
                             chú</strong>.

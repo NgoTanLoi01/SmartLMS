@@ -16,7 +16,7 @@
 
         body {
             font-family: DejaVu Sans, Arial, sans-serif;
-            color: #111827;
+            color: #263A37;
             margin: 0;
             font-size: 11px;
             background: #f3f6fb;
@@ -37,18 +37,18 @@
             padding: 9px 16px;
             border-radius: 999px;
             border: none;
-            background: #2563eb;
+            background: #54726E;
             color: #fff;
             font-weight: 800;
             cursor: pointer;
-            box-shadow: 0 10px 24px rgba(37, 99, 235, .25);
+            box-shadow: 0 10px 24px rgba(84, 114, 110, .25);
             z-index: 10;
         }
 
         .report-header {
             display: table;
             width: 100%;
-            border-bottom: 3px solid #2563eb;
+            border-bottom: 3px solid #54726E;
             padding-bottom: 12px;
             margin-bottom: 14px;
         }
@@ -66,7 +66,7 @@
         .report-meta {
             width: 42%;
             text-align: right;
-            color: #64748b;
+            color: #61736F;
             line-height: 1.7;
         }
 
@@ -92,7 +92,7 @@
         }
 
         .eyebrow {
-            color: #2563eb;
+            color: #54726E;
             font-size: 10px;
             font-weight: 800;
             text-transform: uppercase;
@@ -104,12 +104,12 @@
             font-size: 22px;
             margin: 0;
             letter-spacing: -0.02em;
-            color: #0f172a;
+            color: #263A37;
         }
 
         .subtitle {
             margin-top: 5px;
-            color: #64748b;
+            color: #61736F;
             font-size: 11px;
         }
 
@@ -117,15 +117,15 @@
             display: table;
             width: 100%;
             margin: 12px 0 14px;
-            border: 1px solid #dbeafe;
-            background: #eff6ff;
+            border: 1px solid #DCE9E5;
+            background: #EEF5F2;
             border-radius: 10px;
         }
 
         .filter-item {
             display: table-cell;
             padding: 10px 12px;
-            border-right: 1px solid #dbeafe;
+            border-right: 1px solid #DCE9E5;
         }
 
         .filter-item:last-child {
@@ -133,7 +133,7 @@
         }
 
         .filter-label {
-            color: #64748b;
+            color: #61736F;
             font-size: 9px;
             font-weight: 800;
             text-transform: uppercase;
@@ -142,17 +142,17 @@
         }
 
         .filter-value {
-            color: #0f172a;
+            color: #263A37;
             font-weight: 800;
         }
 
         .note {
             margin: 0 0 14px;
             padding: 9px 12px;
-            border: 1px solid #fde68a;
+            border: 1px solid #FBCE5A;
             border-radius: 10px;
-            color: #92400e;
-            background: #fffbeb;
+            color: #705817;
+            background: #FFF8DF;
             font-size: 10.5px;
         }
 
@@ -164,15 +164,15 @@
         }
 
         .stat {
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 10px;
             padding: 10px;
-            background: #f8fafc;
+            background: #F7F7F2;
             min-height: 62px;
         }
 
         .stat .label {
-            color: #64748b;
+            color: #61736F;
             font-size: 9px;
             text-transform: uppercase;
             font-weight: 800;
@@ -188,7 +188,7 @@
         }
 
         .positive {
-            color: #15803d;
+            color: #547565;
         }
 
         .negative {
@@ -202,9 +202,9 @@
         h2 {
             font-size: 13px;
             margin: 0 0 8px;
-            color: #0f172a;
+            color: #263A37;
             display: inline-block;
-            border-bottom: 2px solid #2563eb;
+            border-bottom: 2px solid #54726E;
             padding-bottom: 3px;
             break-after: avoid;
             page-break-after: avoid;
@@ -239,8 +239,8 @@
         }
 
         th {
-            background: #eaf2ff;
-            color: #334155;
+            background: #EEF5F2;
+            color: #263A37;
             font-weight: 900;
             font-size: 9px;
             text-transform: uppercase;
@@ -248,7 +248,7 @@
         }
 
         tbody tr:nth-child(even) {
-            background: #f8fafc;
+            background: #F7F7F2;
         }
 
         thead {
@@ -266,14 +266,14 @@
         }
 
         .muted {
-            color: #64748b;
+            color: #61736F;
         }
 
         .footer {
             margin-top: 14px;
             padding-top: 8px;
             border-top: 1px solid #e5e7eb;
-            color: #64748b;
+            color: #61736F;
             font-size: 9.5px;
             display: flex;
             justify-content: space-between;

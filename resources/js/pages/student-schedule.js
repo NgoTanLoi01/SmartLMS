@@ -31,6 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
             url: calendarEl.dataset.eventsUrl,
             failure: showError,
         },
+        eventDataTransform(event) {
+            const hasImportantNote = Boolean(String(event.extendedProps?.note || '').trim());
+            const eventColor = hasImportantNote ? '#dc2626' : '#54726E';
+
+            return {
+                ...event,
+                backgroundColor: eventColor,
+                borderColor: eventColor,
+                textColor: '#ffffff',
+            };
+        },
         eventClick(info) {
             const event = info.event;
             const props = event.extendedProps || {};

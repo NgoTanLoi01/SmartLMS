@@ -15,7 +15,7 @@
 
         .program-detail-title {
             margin: 0 0 8px;
-            color: #0f172a;
+            color: #263A37;
             font-size: 24px;
             font-weight: 800;
         }
@@ -33,14 +33,14 @@
             gap: 6px;
             border-radius: 999px;
             padding: 5px 11px;
-            background: #eff6ff;
-            color: #2563eb;
+            background: #EEF5F2;
+            color: #54726E;
             font-size: 12px;
             font-weight: 700;
         }
 
         .program-detail-desc {
-            color: #64748b;
+            color: #61736F;
             max-width: 780px;
             margin: 0;
             line-height: 1.6;
@@ -62,14 +62,14 @@
 
         .program-stat {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 12px;
             padding: 16px;
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
         }
 
         .program-stat-label {
-            color: #64748b;
+            color: #61736F;
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
@@ -77,7 +77,7 @@
         }
 
         .program-stat-value {
-            color: #0f172a;
+            color: #263A37;
             font-size: 26px;
             font-weight: 800;
             margin-top: 6px;
@@ -97,20 +97,20 @@
 
         .program-section-title {
             margin: 0;
-            color: #0f172a;
+            color: #263A37;
             font-size: 17px;
             font-weight: 800;
         }
 
         .program-section-sub {
             margin: 3px 0 0;
-            color: #64748b;
+            color: #61736F;
             font-size: 13px;
         }
 
         .program-list {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
@@ -121,7 +121,7 @@
             grid-template-columns: minmax(0, 1fr) auto;
             gap: 14px;
             padding: 16px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #EFEDDE;
             align-items: center;
         }
 
@@ -131,7 +131,7 @@
 
         .program-row-title {
             margin: 0 0 6px;
-            color: #0f172a;
+            color: #263A37;
             font-size: 15px;
             font-weight: 750;
         }
@@ -140,14 +140,14 @@
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            color: #64748b;
+            color: #61736F;
             font-size: 12.5px;
         }
 
         .program-empty {
             padding: 24px;
             text-align: center;
-            color: #64748b;
+            color: #61736F;
         }
 
         @media (max-width: 767.98px) {
@@ -175,10 +175,10 @@
             <h1 class="program-detail-title">{{ $program->name }}</h1>
             <div class="program-detail-meta">
                 <span class="program-chip"><i class="fa-solid fa-hashtag"></i>{{ $program->code }}</span>
-                <span class="program-chip" style="background:#f0fdf4;color:#15803d;">
+                <span class="program-chip" style="background:#EDF5EF;color:#547565;">
                     <i class="fa-solid fa-user-tie"></i>{{ $program->teacher?->name ?? 'Chưa có' }}
                 </span>
-                <span class="program-chip" style="background:#f8fafc;color:#475569;">
+                <span class="program-chip" style="background:#F7F7F2;color:#61736F;">
                     <i class="fa-solid fa-circle"></i>{{ strtoupper($program->status) }}
                 </span>
             </div>

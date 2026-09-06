@@ -420,7 +420,7 @@
                     text: text,
                     icon: icon,
                     confirmButtonText: 'Xem lại bàn cờ',
-                    confirmButtonColor: '#198754',
+                    confirmButtonColor: '#547565',
                     allowOutsideClick: true,
                     allowEscapeKey: true
                 });

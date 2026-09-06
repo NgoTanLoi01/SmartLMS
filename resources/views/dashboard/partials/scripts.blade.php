@@ -35,7 +35,7 @@
                             type: 'donut',
                             height: 280
                         },
-                        colors: ['#4f7fff', '#06b6d4', '#6b7280'],
+                        colors: ['#54726E', '#6E928D', '#6b7280'],
                         plotOptions: {
                             pie: {
                                 donut: {
@@ -66,7 +66,7 @@
                             type: 'donut',
                             height: 280
                         },
-                        colors: ['#10b981', '#f59e0b', '#8b5cf6'],
+                        colors: ['#10b981', '#CEAF6B', '#939875'],
                         plotOptions: {
                             pie: {
                                 donut: {
@@ -109,14 +109,14 @@
                                     }
                                 }
                             },
-                            colors: ['#8b5cf6'],
+                            colors: ['#939875'],
                             fill: {
                                 type: 'gradient',
                                 gradient: {
                                     shade: 'light',
                                     type: 'vertical',
                                     shadeIntensity: .2,
-                                    gradientToColors: ['#4f7fff'],
+                                    gradientToColors: ['#54726E'],
                                     opacityFrom: 1,
                                     opacityTo: .85
                                 }

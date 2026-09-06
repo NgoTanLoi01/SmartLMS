@@ -411,19 +411,19 @@
         }
 
         .submission-status.done {
-            background: #dcfce7;
-            color: #166534;
+            background: #EDF5EF;
+            color: #405F52;
         }
 
         .submission-status.pending {
-            background: #fef3c7;
-            color: #92400e;
+            background: #FFF8DF;
+            color: #705817;
         }
 
         .bulk-download-toolbar {
             align-items: center;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: #F7F7F2;
+            border: 1px solid #D9DDD3;
             border-radius: 14px;
             display: flex;
             flex-wrap: wrap;
@@ -433,7 +433,7 @@
             padding: 11px 13px;
         }
 
-        .bulk-download-toolbar__hint { color: #64748b; font-size: 12px; }
+        .bulk-download-toolbar__hint { color: #61736F; font-size: 12px; }
         .bulk-download-toolbar__actions { display: flex; flex-wrap: wrap; gap: 8px; }
         .bulk-download-toolbar select { border: 1px solid #dbe2ea; border-radius: 999px; font-size: 12px; font-weight: 700; padding: 7px 32px 7px 12px; }
         .submission-select { height: 17px; width: 17px; }

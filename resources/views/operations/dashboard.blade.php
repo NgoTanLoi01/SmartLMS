@@ -22,12 +22,12 @@
             margin: 0 0 4px;
             font-size: 22px;
             font-weight: 800;
-            color: #0f172a;
+            color: #263A37;
         }
 
         .ops-subtitle {
             margin: 0;
-            color: #64748b;
+            color: #61736F;
             font-size: 13.5px;
         }
 
@@ -35,7 +35,7 @@
         .ops-card,
         .ops-stat {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 14px;
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
         }
@@ -57,7 +57,7 @@
             position: absolute;
             inset: 0 auto 0 0;
             width: 4px;
-            background: var(--ops-accent, #2563eb);
+            background: var(--ops-accent, #54726E);
         }
 
         .ops-stat__icon {
@@ -67,13 +67,13 @@
             align-items: center;
             justify-content: center;
             border-radius: 12px;
-            background: color-mix(in srgb, var(--ops-accent, #2563eb) 12%, white);
-            color: var(--ops-accent, #2563eb);
+            background: color-mix(in srgb, var(--ops-accent, #54726E) 12%, white);
+            color: var(--ops-accent, #54726E);
             margin-bottom: 14px;
         }
 
         .ops-stat__label {
-            color: #64748b;
+            color: #61736F;
             font-size: 12px;
             font-weight: 800;
             text-transform: uppercase;
@@ -85,13 +85,13 @@
             font-size: 26px;
             line-height: 1.15;
             font-weight: 850;
-            color: #0f172a;
+            color: #263A37;
             word-break: break-word;
         }
 
         .ops-stat__note {
             margin-top: 8px;
-            color: #64748b;
+            color: #61736F;
             font-size: 12.5px;
         }
 
@@ -102,7 +102,7 @@
 
         .ops-card__head {
             padding: 16px 18px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #D9DDD3;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -114,11 +114,11 @@
             margin: 0;
             font-size: 15px;
             font-weight: 800;
-            color: #0f172a;
+            color: #263A37;
         }
 
         .ops-table th {
-            color: #64748b;
+            color: #61736F;
             font-size: 11.5px;
             letter-spacing: .04em;
             text-transform: uppercase;
@@ -137,8 +137,8 @@
             align-items: center;
             justify-content: center;
             border-radius: 999px;
-            background: #eff6ff;
-            color: #2563eb;
+            background: #EEF5F2;
+            color: #54726E;
             font-weight: 800;
             font-size: 12px;
         }
@@ -214,7 +214,7 @@
 
     <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="ops-stat" style="--ops-accent: #2563eb;">
+            <div class="ops-stat" style="--ops-accent: #54726E;">
                 <div class="ops-stat__icon"><i class="fa-solid fa-chalkboard-teacher"></i></div>
                 <div class="ops-stat__label">Buổi dạy trong tháng</div>
                 <div class="ops-stat__value">{{ $stats['month_sessions'] }}</div>
@@ -222,7 +222,7 @@
             </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="ops-stat" style="--ops-accent: #16a34a;">
+            <div class="ops-stat" style="--ops-accent: #547565;">
                 <div class="ops-stat__icon"><i class="fa-solid fa-circle-check"></i></div>
                 <div class="ops-stat__label">Hợp đồng đã nhận</div>
                 <div class="ops-stat__value">{{ $stats['received_contracts'] }}</div>
@@ -238,7 +238,7 @@
             </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
-            <div class="ops-stat" style="--ops-accent: #f59e0b;">
+            <div class="ops-stat" style="--ops-accent: #CEAF6B;">
                 <div class="ops-stat__icon"><i class="fa-solid fa-building"></i></div>
                 <div class="ops-stat__label">Trung tâm nhiều lớp nhất</div>
                 <div class="ops-stat__value">{{ $stats['top_center_name'] ?: '--' }}</div>

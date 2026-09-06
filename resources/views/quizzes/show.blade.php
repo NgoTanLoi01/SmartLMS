@@ -91,7 +91,7 @@
             align-items: center;
             gap: 8px;
             padding: 10px 22px;
-            background: #16a34a;
+            background: #547565;
             color: #fff;
             border: none;
             border-radius: 99px;
@@ -105,7 +105,7 @@
         }
 
         .qp-reload-btn:hover {
-            background: #15803d;
+            background: #547565;
             box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);
         }
 
@@ -153,12 +153,12 @@
 
         /* Alert info */
         .qp-alert {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
+            background: #EEF5F2;
+            border: 1px solid #B0DAD2;
             border-radius: 10px;
             padding: 12px 14px;
             font-size: 0.8rem;
-            color: #1e40af;
+            color: #385652;
             line-height: 1.5;
             margin-bottom: 20px;
         }
@@ -501,14 +501,14 @@
             width: 72px;
             height: 72px;
             border-radius: 50%;
-            background: #fffbeb;
-            border: 2px solid #fde68a;
+            background: #FFF8DF;
+            border: 2px solid #FBCE5A;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
             font-size: 2rem;
-            color: #d97706;
+            color: #705817;
         }
 
         .qp-empty h5 {

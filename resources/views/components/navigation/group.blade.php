@@ -20,7 +20,8 @@
         <i class="fa-solid fa-chevron-down sidebar-group__chevron" aria-hidden="true"></i>
     </button>
 
-    <div id="{{ $id }}" class="sidebar-group__items collapse {{ $isActive ? 'show' : '' }}">
+    <div id="{{ $id }}" class="sidebar-group__items collapse {{ $isActive ? 'show' : '' }}"
+        data-bs-parent="#primarySidebarNav">
         @foreach ($items as $item)
             @php
                 $itemActive = $itemIsActive($item);

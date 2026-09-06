@@ -142,7 +142,7 @@
             </section>
         </nav>
     @else
-        <nav class="sidebar-nav">
+        <nav class="sidebar-nav" id="primarySidebarNav">
             <a class="sidebar-item sidebar-item--primary {{ request()->routeIs('dashboard') ? 'active' : '' }}"
                 href="{{ route('dashboard') }}" data-testid="nav-dashboard"
                 @if (request()->routeIs('dashboard')) aria-current="page" @endif>

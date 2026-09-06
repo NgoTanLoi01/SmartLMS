@@ -9,9 +9,13 @@
 @section('content')
     <div class="dashboard-wrap container-fluid py-4">
 
-        @php $role = auth()->user()->role; @endphp
+        @php
+            $role = auth()->user()->role;
+            $dashboardHeroPath = 'assets/images/ui/dashboard-learning.webp';
+            $dashboardHeroUrl = asset($dashboardHeroPath).'?v='.filemtime(public_path($dashboardHeroPath));
+        @endphp
 
-        <section class="lms-hero anim-1">
+        <section class="lms-hero anim-1" style="--dashboard-hero-image: url('{{ $dashboardHeroUrl }}');">
             <div class="lms-hero__content">
                 <div class="lms-hero__pill">
                     <span></span>
@@ -35,18 +39,12 @@
                     @endif
                 </p>
                 <div class="lms-hero__date">
-                    <i class="fa-regular fa-calendar-days"></i>
-                    {{ \Carbon\Carbon::now($data['dashboard_timezone'] ?? config('app.timezone'))->translatedFormat('l, d/m/Y') }}
+                    <span>
+                        <i class="fa-regular fa-calendar-days"></i>
+                        {{ \Carbon\Carbon::now($data['dashboard_timezone'] ?? config('app.timezone'))->translatedFormat('l, d/m/Y') }}
+                    </span>
+                    <span class="lms-hero__wish"><i class="fa-regular fa-sun"></i> Chúc bạn một ngày học tập và làm việc hiệu quả!</span>
                 </div>
-            </div>
-            <div class="lms-hero__side">
-                <div class="hero-motion-icons" aria-hidden="true">
-                    <span class="hero-motion-icon"><i class="fa-solid fa-book-open"></i></span>
-                    <span class="hero-motion-icon"><i class="fa-solid fa-lightbulb"></i></span>
-                    <span class="hero-motion-icon"><i class="fa-solid fa-graduation-cap"></i></span>
-                    <span class="hero-motion-icon"><i class="fa-solid fa-chart-line"></i></span>
-                </div>
-                <img src="{{ asset('gretting-img.webp') }}" alt="" width="368" height="224">
             </div>
         </section>
 

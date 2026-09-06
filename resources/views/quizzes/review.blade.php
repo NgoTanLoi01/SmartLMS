@@ -10,8 +10,8 @@
         }
 
         .radio-correct:checked {
-            background-color: #198754;
-            border-color: #198754;
+            background-color: #547565;
+            border-color: #547565;
         }
 
         .radio-wrong:checked {
@@ -72,7 +72,7 @@
 
         <div class="quiz-review-score card border-0 shadow-sm rounded-4 mb-5 p-4 text-center"
             style="background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);">
-            <h2 class="fw-bold mb-3" style="color: #6f42c1;">{{ $attempt->quiz->title }}</h2>
+            <h2 class="fw-bold mb-3" style="color: #7D876D;">{{ $attempt->quiz->title }}</h2>
             <div class="quiz-review-score-box bg-white d-inline-block px-5 py-3 rounded-4 shadow-sm">
                 <span
                     class="fs-1 fw-bold {{ $attempt->score >= 5 ? 'text-success' : 'text-danger' }}">{{ $attempt->score }}</span>

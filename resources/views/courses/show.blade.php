@@ -60,42 +60,77 @@
 
         {{-- ── HEADER ── --}}
         <div class="header-card course-ref-header">
-            <div class="min-w-0">
-                <div class="course-ref-badges">
-                    <span class="course-ref-badge">
-                        {{ auth()->user()->role === 'student' ? 'Đang học' : 'Khóa học' }}
-                    </span>
-                    <span class="course-ref-badge light">{{ $courseStatusLabel }}</span>
+            <div class="course-ref-copy min-w-0">
+                <span class="course-ref-icon" aria-hidden="true">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </span>
+                <div class="min-w-0">
+                    <div class="course-ref-badges">
+                        <span class="course-ref-badge">
+                            <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+                            {{ auth()->user()->role === 'student' ? 'Đang học' : 'Khóa học' }}
+                        </span>
+                        <span class="course-ref-badge light">
+                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>{{ $courseStatusLabel }}
+                        </span>
+                    </div>
+                    <h1 class="header-course-title">{{ $course->title }}</h1>
+                    <p class="header-teacher">
+                        <span class="header-teacher__icon" aria-hidden="true">
+                            <i class="fa-solid fa-chalkboard-teacher"></i>
+                        </span>
+                        <span class="header-teacher__copy">
+                            <small>Giảng viên phụ trách</small>
+                            <strong>{{ $course->teacher->name }}</strong>
+                        </span>
+                    </p>
                 </div>
-                <h1 class="header-course-title">{{ $course->title }}</h1>
-                <p class="header-teacher">
-                    <i class="fa-solid fa-chalkboard-teacher"></i> {{ $course->teacher->name }}
-                </p>
             </div>
 
             <div class="course-ref-side">
                 @if ($isCourseManager)
                     <div class="course-ref-stats">
-                        <div class="course-ref-stat"><strong>{{ $course->modules->count() }}</strong><span>Chương</span></div>
-                        <div class="course-ref-stat"><strong>{{ $courseLessonCount }}</strong><span>Bài học</span></div>
-                        <div class="course-ref-stat"><strong>{{ $courseAssignmentCount }}</strong><span>Bài tập</span></div>
-                        <div class="course-ref-stat"><strong>{{ $course->quizzes->count() }}</strong><span>Kiểm tra</span></div>
+                        <div class="course-ref-stat">
+                            <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                            <strong>{{ $course->modules->count() }}</strong><span>Chương</span>
+                        </div>
+                        <div class="course-ref-stat">
+                            <i class="fa-solid fa-book-open-reader" aria-hidden="true"></i>
+                            <strong>{{ $courseLessonCount }}</strong><span>Bài học</span>
+                        </div>
+                        <div class="course-ref-stat">
+                            <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i>
+                            <strong>{{ $courseAssignmentCount }}</strong><span>Bài tập</span>
+                        </div>
+                        <div class="course-ref-stat">
+                            <i class="fa-solid fa-file-circle-check" aria-hidden="true"></i>
+                            <strong>{{ $course->quizzes->count() }}</strong><span>Kiểm tra</span>
+                        </div>
                     </div>
                 @else
                     <div class="course-review-panel">
-                        <div class="course-review-panel__copy">
-                            <span class="course-review-panel__eyebrow">Kho nội dung xem lại</span>
-                            <strong>{{ $course->modules->count() }} chương · {{ $courseLessonCount }} bài học</strong>
+                        <div class="course-review-panel__head">
+                            <span class="course-review-panel__icon" aria-hidden="true">
+                                <i class="fa-solid fa-book-open-reader"></i>
+                            </span>
+                            <div class="course-review-panel__copy">
+                                <span class="course-review-panel__eyebrow">Nội dung khóa học</span>
+                                <strong>{{ $course->modules->count() }} chương · {{ $courseLessonCount }} bài học</strong>
+                            </div>
                         </div>
                         @if ($nextLesson)
 
                         @endif
                         <div class="course-review-links">
                             <a href="{{ route('attendance.show', $course->id) }}">
-                                <i class="fa-solid fa-chart-column"></i> Điểm số
+                                <span class="course-review-link__icon"><i class="fa-solid fa-chart-column"></i></span>
+                                <span class="course-review-link__copy"><strong>Điểm số</strong><small>Kết quả học tập</small></span>
+                                <i class="fa-solid fa-chevron-right course-review-link__arrow" aria-hidden="true"></i>
                             </a>
                             <a href="{{ route('courses.materials.index', $course->id) }}">
-                                <i class="fa-solid fa-folder-open"></i> Kho học liệu
+                                <span class="course-review-link__icon"><i class="fa-solid fa-folder-open"></i></span>
+                                <span class="course-review-link__copy"><strong>Kho học liệu</strong><small>Tài nguyên môn học</small></span>
+                                <i class="fa-solid fa-chevron-right course-review-link__arrow" aria-hidden="true"></i>
                             </a>
                         </div>
                     </div>
@@ -744,20 +779,20 @@
     @if ($isCourseManager)
         <style>
             .ai-plan-dialog { max-width: 1080px; }
-            .ai-plan-intro { background: linear-gradient(135deg,#eff6ff,#f5f3ff); border:1px solid #dbeafe; border-radius:14px; color:#334155; padding:14px 16px; }
+            .ai-plan-intro { background: linear-gradient(135deg,#EEF5F2,#F2F2E9); border:1px solid #DCE9E5; border-radius:14px; color:#263A37; padding:14px 16px; }
             .ai-plan-form-grid { display:grid; gap:14px; grid-template-columns:repeat(2,minmax(0,1fr)); }
             .ai-plan-span-2 { grid-column:1/-1; }
             .ai-plan-result { max-height:58vh; overflow:auto; padding-right:4px; }
-            .ai-plan-module { background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; margin-bottom:14px; padding:14px; }
+            .ai-plan-module { background:#F7F7F2; border:1px solid #D9DDD3; border-radius:16px; margin-bottom:14px; padding:14px; }
             .ai-plan-module-head { align-items:center; display:flex; gap:10px; margin-bottom:10px; }
             .ai-plan-module-title { font-weight:800; }
-            .ai-plan-lesson { background:#fff; border:1px solid #e2e8f0; border-radius:12px; margin-top:10px; padding:12px; }
+            .ai-plan-lesson { background:#fff; border:1px solid #D9DDD3; border-radius:12px; margin-top:10px; padding:12px; }
             .ai-plan-lesson-head { align-items:center; display:flex; gap:8px; margin-bottom:8px; }
-            .ai-plan-lesson-content { border:1px solid #dbe2ea; border-radius:10px; color:#334155; line-height:1.55; min-height:120px; padding:12px; }
-            .ai-plan-lesson-content:focus { border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,.12); outline:0; }
+            .ai-plan-lesson-content { border:1px solid #dbe2ea; border-radius:10px; color:#263A37; line-height:1.55; min-height:120px; padding:12px; }
+            .ai-plan-lesson-content:focus { border-color:#939875; box-shadow:0 0 0 3px rgba(147, 152, 117,.12); outline:0; }
             .ai-plan-remove { background:#fff1f2; border:0; border-radius:9px; color:#be123c; height:34px; width:34px; }
             .ai-plan-loading-shell { margin:0 auto; max-width:460px; }
-            .ai-plan-loading-note { background:#eff6ff; border:1px solid #dbeafe; border-radius:12px; color:#475569; margin-top:18px; padding:10px 12px; }
+            .ai-plan-loading-note { background:#EEF5F2; border:1px solid #DCE9E5; border-radius:12px; color:#61736F; margin-top:18px; padding:10px 12px; }
             @media(max-width:767px){ .ai-plan-form-grid{grid-template-columns:1fr}.ai-plan-span-2{grid-column:auto} }
         </style>
         <div class="modal fade" id="aiCoursePlanModal" tabindex="-1" aria-hidden="true">

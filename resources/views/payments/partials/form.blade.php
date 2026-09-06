@@ -22,26 +22,26 @@
         font-size: 13.5px;
         border-color: #e8edf3;
         border-radius: 8px;
-        background: #f8fafc;
+        background: #F7F7F2;
         transition: border-color .15s, box-shadow .15s;
     }
 
     .pf .form-control:focus,
     .pf .form-select:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+        border-color: #54726E;
+        box-shadow: 0 0 0 3px rgba(84, 114, 110, .1);
         background: #fff;
     }
 
     .pf .form-text {
         font-size: 11.5px;
-        color: #94a3b8;
+        color: #7C8986;
         margin-top: 4px;
     }
 
     /* ── Section divider ── */
     .pf-section {
-        border-top: 1px solid #f1f5f9;
+        border-top: 1px solid #EFEDDE;
         padding-top: 18px;
         margin-top: 4px;
     }
@@ -51,7 +51,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .07em;
-        color: #94a3b8;
+        color: #7C8986;
         margin-bottom: 14px;
     }
 
@@ -68,12 +68,12 @@
         align-items: center;
         gap: 8px;
         padding: 10px 12px;
-        border-bottom: 1px solid #f1f5f9;
-        background: #f8fafc;
+        border-bottom: 1px solid #EFEDDE;
+        background: #F7F7F2;
     }
 
     .record-picker-search i {
-        color: #94a3b8;
+        color: #7C8986;
         font-size: 12px;
     }
 
@@ -82,7 +82,7 @@
         background: transparent;
         outline: none;
         font-size: 13px;
-        color: #0f1c2e;
+        color: #263A37;
         width: 100%;
     }
 
@@ -95,19 +95,19 @@
         align-items: center;
         justify-content: space-between;
         padding: 7px 12px;
-        border-bottom: 1px solid #f1f5f9;
-        background: #f8fafc;
+        border-bottom: 1px solid #EFEDDE;
+        background: #F7F7F2;
     }
 
     .record-picker-stats span {
         font-size: 11.5px;
-        color: #94a3b8;
+        color: #7C8986;
     }
 
     .record-picker-stats button {
         font-size: 11.5px;
         font-weight: 600;
-        color: #2563eb;
+        color: #54726E;
         background: none;
         border: none;
         cursor: pointer;
@@ -122,7 +122,7 @@
         max-height: 240px;
         overflow-y: auto;
         scrollbar-width: thin;
-        scrollbar-color: #e2e8f0 transparent;
+        scrollbar-color: #D9DDD3 transparent;
     }
 
     .record-picker-list::-webkit-scrollbar {
@@ -130,7 +130,7 @@
     }
 
     .record-picker-list::-webkit-scrollbar-thumb {
-        background: #e2e8f0;
+        background: #D9DDD3;
         border-radius: 4px;
     }
 
@@ -140,7 +140,7 @@
         gap: 10px;
         padding: 10px 14px;
         cursor: pointer;
-        border-bottom: 1px solid #f8fafc;
+        border-bottom: 1px solid #F7F7F2;
         transition: background .1s;
         user-select: none;
     }
@@ -150,11 +150,11 @@
     }
 
     .record-item:hover {
-        background: #f8fafc;
+        background: #F7F7F2;
     }
 
     .record-item.is-checked {
-        background: #eff6ff;
+        background: #EEF5F2;
     }
 
     .record-item.is-hidden {
@@ -165,7 +165,7 @@
         flex-shrink: 0;
         width: 15px;
         height: 15px;
-        accent-color: #2563eb;
+        accent-color: #54726E;
         cursor: pointer;
     }
 
@@ -177,7 +177,7 @@
     .record-item__name {
         font-size: 13px;
         font-weight: 600;
-        color: #0f1c2e;
+        color: #263A37;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -185,7 +185,7 @@
 
     .record-item__meta {
         font-size: 11.5px;
-        color: #94a3b8;
+        color: #7C8986;
         margin-top: 1px;
         white-space: nowrap;
         overflow: hidden;
@@ -198,15 +198,15 @@
         font-weight: 700;
         padding: 2px 8px;
         border-radius: 999px;
-        background: #eff6ff;
-        color: #1d4ed8;
+        background: #EEF5F2;
+        color: #385652;
     }
 
     .record-picker-empty {
         padding: 28px;
         text-align: center;
         font-size: 13px;
-        color: #94a3b8;
+        color: #7C8986;
         display: none;
     }
 
@@ -233,8 +233,8 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        background: #eff6ff;
-        color: #1d4ed8;
+        background: #EEF5F2;
+        color: #385652;
         border-radius: 999px;
         padding: 3px 10px;
         font-size: 12px;
@@ -243,7 +243,7 @@
 
     .sel-chip__remove {
         cursor: pointer;
-        color: #93c5fd;
+        color: #B0DAD2;
         font-size: 11px;
         line-height: 1;
         background: none;
@@ -252,7 +252,7 @@
     }
 
     .sel-chip__remove:hover {
-        color: #1d4ed8;
+        color: #385652;
     }
 </style>
 

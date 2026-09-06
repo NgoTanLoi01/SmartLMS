@@ -5,7 +5,7 @@
 @section('content')
     <style>
         .grades-page {
-            color: #0f172a;
+            color: #263A37;
         }
 
         .grades-header {
@@ -25,14 +25,14 @@
         }
 
         .grades-subtitle {
-            color: #64748b;
+            color: #61736F;
             margin: 0;
             font-size: 14px;
         }
 
         .grades-filter {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 10px;
             padding: 12px;
             display: flex;
@@ -46,7 +46,7 @@
             display: block;
             font-size: 12px;
             font-weight: 700;
-            color: #64748b;
+            color: #61736F;
             margin-bottom: 6px;
         }
 
@@ -59,14 +59,14 @@
 
         .grades-stat {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 10px;
             padding: 16px;
         }
 
         .grades-stat-label {
             font-size: 12px;
-            color: #64748b;
+            color: #61736F;
             font-weight: 700;
             margin-bottom: 8px;
         }
@@ -78,14 +78,14 @@
         }
 
         .grades-stat-note {
-            color: #94a3b8;
+            color: #7C8986;
             font-size: 12px;
             margin-top: 8px;
         }
 
         .grades-panel {
             background: #fff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 10px;
             overflow: hidden;
             margin-bottom: 18px;
@@ -93,7 +93,7 @@
 
         .grades-panel-head {
             padding: 14px 16px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #D9DDD3;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -117,10 +117,10 @@
 
         .grades-table th {
             font-size: 12px;
-            color: #64748b;
+            color: #61736F;
             text-transform: uppercase;
             letter-spacing: .04em;
-            border-bottom-color: #e2e8f0;
+            border-bottom-color: #D9DDD3;
             white-space: nowrap;
         }
 
@@ -136,14 +136,14 @@
             border-radius: 999px;
             padding: 5px 10px;
             font-weight: 800;
-            background: #eff6ff;
-            color: #1d4ed8;
+            background: #EEF5F2;
+            color: #385652;
             white-space: nowrap;
         }
 
         .score-pill span {
             font-size: 12px;
-            color: #64748b;
+            color: #61736F;
             font-weight: 700;
         }
 
@@ -151,7 +151,7 @@
             display: grid;
             grid-template-columns: 42px minmax(0, 1fr);
             gap: 12px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #D9DDD3;
             padding: 16px;
         }
 
@@ -165,13 +165,13 @@
             display: grid;
             place-items: center;
             border-radius: 12px;
-            background: #eff6ff;
-            color: #2563eb;
+            background: #EEF5F2;
+            color: #54726E;
         }
 
         .feedback-icon.is-quiz {
-            background: #f5f3ff;
-            color: #7c3aed;
+            background: #F2F2E9;
+            color: #939875;
         }
 
         .feedback-head {
@@ -192,22 +192,22 @@
             margin-left: 6px;
             padding: 3px 7px;
             border-radius: 999px;
-            background: #f1f5f9;
-            color: #64748b;
+            background: #EFEDDE;
+            color: #61736F;
             font-size: 10px;
             font-weight: 800;
             vertical-align: middle;
         }
 
         .feedback-meta {
-            color: #64748b;
+            color: #61736F;
             font-size: 12.5px;
             margin-bottom: 8px;
         }
 
         .feedback-context {
             margin-bottom: 9px;
-            color: #475569;
+            color: #61736F;
             font-size: 12.5px;
             line-height: 1.5;
         }
@@ -215,10 +215,10 @@
         .feedback-message {
             position: relative;
             padding: 12px 14px 12px 34px;
-            border: 1px solid #dbeafe;
+            border: 1px solid #DCE9E5;
             border-radius: 10px;
-            background: #f8fbff;
-            color: #1e293b;
+            background: #F8F7EF;
+            color: #344743;
             font-size: 13.5px;
             line-height: 1.65;
             white-space: pre-wrap;
@@ -229,7 +229,7 @@
             position: absolute;
             top: 3px;
             left: 12px;
-            color: #60a5fa;
+            color: #6E928D;
             font-size: 30px;
             font-family: Georgia, serif;
         }
@@ -247,19 +247,19 @@
             display: inline-flex;
             align-items: flex-start;
             gap: 7px;
-            color: #475569;
+            color: #61736F;
             line-height: 1.5;
         }
 
         .feedback-preview i {
             margin-top: 3px;
-            color: #3b82f6;
+            color: #6E928D;
         }
 
         .empty-state {
             padding: 36px 16px;
             text-align: center;
-            color: #64748b;
+            color: #61736F;
         }
 
         .empty-state i {

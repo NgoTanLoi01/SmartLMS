@@ -11,25 +11,25 @@
     .grading-hero__meta { color: rgba(255, 255, 255, .78); }
     .grading-stat { display: block; height: 100%; padding: 18px 20px; color: inherit; text-decoration: none; background: #fff; border: 1px solid #e5eaf3; border-radius: 18px; transition: .18s ease; }
     .grading-stat:hover { color: inherit; border-color: #9bbcf8; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(31, 57, 101, .09); }
-    .grading-stat.active { border-color: #2165e8; box-shadow: 0 0 0 3px rgba(33, 101, 232, .1); }
+    .grading-stat.active { border-color: #54726E; box-shadow: 0 0 0 3px rgba(33, 101, 232, .1); }
     .grading-stat__label { color: #71809a; font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-    .grading-stat__value { color: #17243d; font-size: 1.75rem; font-weight: 800; line-height: 1.1; margin-top: 8px; }
+    .grading-stat__value { color: #263A37; font-size: 1.75rem; font-weight: 800; line-height: 1.1; margin-top: 8px; }
     .grading-filter, .grading-table-card { background: #fff; border: 1px solid #e6ebf3; border-radius: 20px; box-shadow: 0 10px 30px rgba(28, 51, 84, .06); }
     .grading-filter { padding: 18px; }
     .grading-filter .form-control, .grading-filter .form-select { min-height: 44px; border-color: #dce3ee; border-radius: 12px; }
     .grading-table-card { overflow: hidden; }
     .grading-table-card .table > :not(caption) > * > * { padding: 17px 18px; border-color: #edf0f5; }
     .grading-table-card thead th { color: #738198; background: #f8fafd; font-size: .73rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
-    .student-avatar { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px; color: #174ea6; background: #eaf2ff; border-radius: 13px; font-weight: 800; }
+    .student-avatar { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px; color: #385652; background: #EEF5F2; border-radius: 13px; font-weight: 800; }
     .grading-status { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 999px; font-size: .76rem; font-weight: 800; white-space: nowrap; }
-    .grading-status--pending { color: #9a5a00; background: #fff3d6; }
+    .grading-status--pending { color: #705817; background: #fff3d6; }
     .grading-status--graded { color: #095b3b; background: #ddf8eb; }
     .grading-status--released { color: #0c4bb3; background: #e5efff; }
     .grading-status--submitted { color: #5f6673; background: #edf0f5; }
     .rubric-progress { min-width: 128px; }
     .rubric-progress .progress { height: 6px; background: #e9edf4; }
-    .rubric-progress .progress-bar { background: #2165e8; }
-    .score-pill { display: inline-flex; align-items: baseline; gap: 3px; padding: 7px 11px; border-radius: 10px; background: #eef4ff; color: #114eae; font-weight: 800; }
+    .rubric-progress .progress-bar { background: #54726E; }
+    .score-pill { display: inline-flex; align-items: baseline; gap: 3px; padding: 7px 11px; border-radius: 10px; background: #EEF5F2; color: #114eae; font-weight: 800; }
     .empty-grading { padding: 68px 24px; text-align: center; color: #7a879b; }
     @media (max-width: 767.98px) {
         .grading-hero { padding: 22px; border-radius: 18px; }

@@ -167,7 +167,7 @@
                                             </div>
                                         @empty
                                             <div class="lms-alert-item"><span
-                                                    style="font-size:11.5px; color:#94A3B8;">Chưa có cảnh báo</span></div>
+                                                    style="font-size:11.5px; color:#7C8986;">Chưa có cảnh báo</span></div>
                                         @endforelse
                                     </div>
                                 </td>
@@ -219,7 +219,7 @@
                                         <div style="font-size:12px;">{{ $summary['last_activity_at']->format('H:i') }}
                                         </div>
                                     @else
-                                        <span style="font-size:12px; color:#94A3B8;">Chưa có</span>
+                                        <span style="font-size:12px; color:#7C8986;">Chưa có</span>
                                     @endif
                                 </td>
                                 {{-- Actions --}}
@@ -337,7 +337,7 @@
                         </ul>
                         <a href="{{ asset('templates/mau_danh_sach_hoc_sinh.xlsx') }}"
                             style="display:inline-flex; align-items:center; gap:6px; margin-top:4px;">
-                            <i class="fa-solid fa-file-excel" style="color:#059669;"></i> Tải file biểu mẫu chuẩn (.xlsx)
+                            <i class="fa-solid fa-file-excel" style="color:#547565;"></i> Tải file biểu mẫu chuẩn (.xlsx)
                         </a>
                     </div>
                     <div class="lms-form-group" style="margin-top:16px; margin-bottom:0;">
@@ -360,7 +360,7 @@
                 <div class="modal-footer" style="padding-top:16px;">
                     <button type="button" class="lms-btn lms-btn-outline" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="lms-btn lms-btn-success"
-                        style="background:#059669; color:#fff; border-color:#059669;">
+                        style="background:#547565; color:#fff; border-color:#547565;">
                         <i class="fa-solid fa-upload"></i> Bắt đầu nhập
                     </button>
                 </div>

@@ -1,12 +1,17 @@
 @vite('resources/css/pages/chatbot.css')
 
+@php
+    $chatbotMascotPath = 'assets/images/branding/chatbot-mascot.webp';
+    $chatbotMascotUrl = asset($chatbotMascotPath).'?v='.filemtime(public_path($chatbotMascotPath));
+@endphp
+
 {{-- Nút kích hoạt --}}
 <button class="cb-toggler has-pulse" id="cbToggler" aria-label="Mở trợ lý AI" aria-expanded="false">
     <span class="cb-mascot icon-open" aria-hidden="true">
-        <img src="{{ asset('chatbot-mascot-v2.webp') }}" alt="">
+        <img src="{{ $chatbotMascotUrl }}" alt="">
         <span class="cb-mascot__blink"></span>
     </span>
-    <i class="fa-solid fa-times icon-close"></i>
+    {{-- <i class="fa-solid fa-times icon-close"></i> --}}
     <span class="cb-badge" id="cbBadge">1</span>
 </button>
 
@@ -17,7 +22,7 @@
     <div class="cb-header">
         <div class="cb-avatar">
             <span class="cb-mascot" aria-hidden="true">
-                <img src="{{ asset('chatbot-mascot-v2.webp') }}" alt="">
+                <img src="{{ $chatbotMascotUrl }}" alt="">
                 <span class="cb-mascot__blink"></span>
             </span>
         </div>
@@ -47,7 +52,7 @@
     <div class="cb-body" id="cbBody">
         <div class="cb-date-divider" id="cbDateDivider"></div>
         <div class="cb-row ai">
-            <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.webp') }}" alt=""></div>
+            <div class="cb-bot-avatar"><img src="{{ $chatbotMascotUrl }}" alt=""></div>
             <div class="cb-msg-wrap">
                 <div class="cb-msg ai">
                     @if (auth()->user()->isTeacher())
@@ -82,7 +87,7 @@
     {{-- Typing --}}
     <div class="cb-typing" id="cbTyping" aria-live="polite" aria-label="AI đang trả lời">
         <div style="padding: 0 0 12px 16px; display:flex; align-items:flex-end; gap:8px;">
-            <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.webp') }}" alt=""></div>
+            <div class="cb-bot-avatar"><img src="{{ $chatbotMascotUrl }}" alt=""></div>
             <div class="cb-typing-dots">
                 <span></span><span></span><span></span>
             </div>
@@ -283,7 +288,7 @@
 
             if (sender === 'ai') {
                 row.innerHTML = `
-                <div class="cb-bot-avatar"><img src="{{ asset('chatbot-mascot-v2.webp') }}" alt=""></div>
+                <div class="cb-bot-avatar"><img src="{{ $chatbotMascotUrl }}" alt=""></div>
                 <div class="cb-msg-wrap">
                     <div class="cb-msg ai">${html}</div>
                     <span class="cb-msg-time">${timeStr}</span>

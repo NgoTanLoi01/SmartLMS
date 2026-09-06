@@ -4,23 +4,23 @@
 
 @push('styles')
     <style>
-        .manual-grade-panel { margin-top:18px; overflow:hidden; border:1px solid #e2e8f0; border-radius:14px; background:#fff; }
-        .manual-grade-summary { display:flex; align-items:center; gap:12px; padding:14px 16px; background:#fffbeb; color:#92400e; }
-        .manual-grade-panel.is-graded .manual-grade-summary { background:#f0fdf4; color:#166534; }
+        .manual-grade-panel { margin-top:18px; overflow:hidden; border:1px solid #D9DDD3; border-radius:14px; background:#fff; }
+        .manual-grade-summary { display:flex; align-items:center; gap:12px; padding:14px 16px; background:#FFF8DF; color:#705817; }
+        .manual-grade-panel.is-graded .manual-grade-summary { background:#EDF5EF; color:#405F52; }
         .manual-grade-icon { width:38px; height:38px; flex:0 0 38px; display:grid; place-items:center; border-radius:11px; background:rgba(255,255,255,.8); }
         .manual-grade-label { display:block; font-size:.68rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; opacity:.75; }
         .manual-grade-title { margin-top:2px; font-size:.9rem; font-weight:800; }
         .manual-grade-score { margin-left:auto; padding:6px 10px; border-radius:999px; background:#fff; font-size:.85rem; font-weight:850; white-space:nowrap; }
-        .rubric-result-list { display:grid; gap:8px; padding:14px 16px; border-top:1px solid #dcfce7; background:#fbfffc; }
-        .rubric-result-row { display:flex; justify-content:space-between; gap:16px; color:#475569; font-size:.78rem; }
-        .rubric-result-row strong { color:#166534; white-space:nowrap; }
-        .teacher-feedback-box { margin:14px 16px 16px; padding:14px; border:1px solid #dbeafe; border-radius:12px; background:#f8fbff; }
+        .rubric-result-list { display:grid; gap:8px; padding:14px 16px; border-top:1px solid #EDF5EF; background:#fbfffc; }
+        .rubric-result-row { display:flex; justify-content:space-between; gap:16px; color:#61736F; font-size:.78rem; }
+        .rubric-result-row strong { color:#405F52; white-space:nowrap; }
+        .teacher-feedback-box { margin:14px 16px 16px; padding:14px; border:1px solid #DCE9E5; border-radius:12px; background:#F8F7EF; }
         .teacher-feedback-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:9px; }
-        .teacher-feedback-title { color:#1d4ed8; font-size:.78rem; font-weight:850; }
-        .teacher-feedback-meta { color:#64748b; font-size:.7rem; }
-        .teacher-feedback-content { position:relative; padding-left:22px; color:#1e293b; font-size:.88rem; line-height:1.7; white-space:pre-wrap; }
-        .teacher-feedback-content::before { content:'\201C'; position:absolute; top:-8px; left:0; color:#60a5fa; font:28px Georgia,serif; }
-        .feedback-empty { padding:13px 16px; border-top:1px solid #e2e8f0; color:#64748b; background:#f8fafc; font-size:.78rem; }
+        .teacher-feedback-title { color:#385652; font-size:.78rem; font-weight:850; }
+        .teacher-feedback-meta { color:#61736F; font-size:.7rem; }
+        .teacher-feedback-content { position:relative; padding-left:22px; color:#344743; font-size:.88rem; line-height:1.7; white-space:pre-wrap; }
+        .teacher-feedback-content::before { content:'\201C'; position:absolute; top:-8px; left:0; color:#6E928D; font:28px Georgia,serif; }
+        .feedback-empty { padding:13px 16px; border-top:1px solid #D9DDD3; color:#61736F; background:#F7F7F2; font-size:.78rem; }
         @media(max-width:576px) { .manual-grade-summary { align-items:flex-start; flex-wrap:wrap; } .manual-grade-score { margin-left:50px; } }
     </style>
 @endpush

@@ -23,7 +23,7 @@
         .sch-header h1 {
             font-size: 20px;
             font-weight: 600;
-            color: #0f172a;
+            color: #263A37;
             display: flex;
             align-items: center;
             gap: 9px;
@@ -31,20 +31,20 @@
         }
 
         .sch-header h1 i {
-            color: #2563eb;
+            color: #54726E;
             font-size: 19px;
         }
 
         .sch-header p {
             font-size: 13px;
-            color: #64748b;
+            color: #61736F;
             margin: 0;
         }
 
         /* ── Panel ── */
         .sch-panel {
             background: #fff;
-            border: 1px solid #e8edf3;
+            border: 1px solid #D9DDD3;
             border-radius: 14px;
             padding: 16px 20px;
             margin-bottom: 12px;
@@ -62,8 +62,8 @@
             height: 30px;
             min-width: 30px;
             border-radius: 8px;
-            background: #eff6ff;
-            color: #2563eb;
+            background: #EEF5F2;
+            color: #54726E;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -74,13 +74,13 @@
         .sch-panel-title {
             font-size: 13.5px;
             font-weight: 600;
-            color: #0f172a;
+            color: #263A37;
             margin: 0 0 2px;
         }
 
         .sch-panel-sub {
             font-size: 12px;
-            color: #64748b;
+            color: #61736F;
             margin: 0;
         }
 
@@ -102,31 +102,31 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: .055em;
-            color: #94a3b8;
+            color: #7C8986;
         }
 
         .sch-ctrl {
             height: 34px;
             padding: 0 11px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 9px;
             font-size: 13px;
             font-family: 'Be Vietnam Pro', sans-serif;
-            color: #0f172a;
+            color: #263A37;
             background: #fff;
             transition: border-color .15s, box-shadow .15s;
             appearance: auto;
         }
 
         .sch-ctrl:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+            border-color: #54726E;
+            box-shadow: 0 0 0 3px rgba(84, 114, 110, .1);
             outline: none;
         }
 
         .sch-ctrl:disabled {
-            background: #f8fafc;
-            color: #94a3b8;
+            background: #F7F7F2;
+            color: #7C8986;
             cursor: not-allowed;
         }
 
@@ -154,21 +154,21 @@
         }
 
         .sch-btn-primary {
-            background: #2563eb;
+            background: #54726E;
             color: #fff;
         }
 
         .sch-btn-primary:hover {
-            background: #1d4ed8;
+            background: #385652;
         }
 
         .sch-btn-ghost {
-            background: #f1f5f9;
-            color: #334155;
+            background: #EFEDDE;
+            color: #263A37;
         }
 
         .sch-btn-ghost:hover {
-            background: #e2e8f0;
+            background: #D9DDD3;
         }
 
         .sch-btn-danger {
@@ -185,7 +185,7 @@
         /* ── Calendar Card ── */
         .sch-cal-card {
             background: #fff;
-            border: 1px solid #e8edf3;
+            border: 1px solid #D9DDD3;
             border-radius: 14px;
             padding: 18px 20px 16px;
         }
@@ -198,13 +198,13 @@
         .fc .fc-toolbar-title {
             font-size: 16px;
             font-weight: 600;
-            color: #0f172a;
+            color: #263A37;
         }
 
         .fc .fc-button {
             background: #fff !important;
-            border: 1px solid #e2e8f0 !important;
-            color: #334155 !important;
+            border: 1px solid #D9DDD3 !important;
+            color: #263A37 !important;
             border-radius: 9px !important;
             font-size: 13px !important;
             font-weight: 500 !important;
@@ -214,15 +214,15 @@
         }
 
         .fc .fc-button:hover {
-            background: #f1f5f9 !important;
-            border-color: #cbd5e1 !important;
-            color: #0f172a !important;
+            background: #EFEDDE !important;
+            border-color: #BCC8BF !important;
+            color: #263A37 !important;
         }
 
         .fc .fc-button-primary:not(:disabled).fc-button-active,
         .fc .fc-button-primary:not(:disabled):active {
-            background: #2563eb !important;
-            border-color: #2563eb !important;
+            background: #54726E !important;
+            border-color: #54726E !important;
             color: #fff !important;
         }
 
@@ -241,7 +241,7 @@
         .fc .fc-col-header-cell-cushion {
             font-size: 12px;
             font-weight: 600;
-            color: #64748b;
+            color: #61736F;
             text-decoration: none;
             text-transform: uppercase;
             letter-spacing: .04em;
@@ -249,7 +249,7 @@
 
         .fc .fc-timegrid-slot-label-cushion {
             font-size: 11.5px;
-            color: #94a3b8;
+            color: #7C8986;
         }
 
         .fc .fc-event {
@@ -267,16 +267,20 @@
         }
 
         .fc .fc-highlight {
-            background: #eff6ff !important;
+            background: #EEF5F2 !important;
+        }
+
+        .fc .fc-day-today {
+            background: rgba(176, 218, 210, .22) !important;
         }
 
         .fc td,
         .fc th {
-            border-color: #f1f5f9 !important;
+            border-color: #EFEDDE !important;
         }
 
         .fc .fc-scrollgrid {
-            border-color: #e8edf3 !important;
+            border-color: #D9DDD3 !important;
         }
 
         .fc .fc-today-button {
@@ -294,16 +298,16 @@
 
         #scheduleModal .modal-content {
             overflow: hidden;
-            border: 1px solid rgba(148, 163, 184, .22);
+            border: 1px solid rgba(84, 114, 110, .2);
             border-radius: 20px;
-            box-shadow: 0 24px 70px rgba(15, 23, 42, .2);
+            box-shadow: 0 24px 70px rgba(56, 86, 82, .2);
         }
 
         #scheduleModal .modal-header {
             align-items: flex-start;
             padding: 22px 26px 18px;
-            border-bottom: 1px solid #eef2f7;
-            background: linear-gradient(135deg, #f8fbff 0%, #fff 72%);
+            border-bottom: 1px solid #D9DDD3;
+            background: linear-gradient(135deg, #F8F7EF 0%, #fff 72%);
         }
 
         .sch-modal-heading {
@@ -321,14 +325,14 @@
             height: 40px;
             flex: 0 0 40px;
             border-radius: 12px;
-            color: #2563eb;
-            background: #eaf2ff;
+            color: #54726E;
+            background: #EEF5F2;
             font-size: 17px;
         }
 
         #scheduleModal .modal-title {
             margin: 0 0 3px;
-            color: #0f172a;
+            color: #263A37;
             font-size: 18px;
             font-weight: 700;
             line-height: 1.35;
@@ -336,7 +340,7 @@
 
         .sch-modal-subtitle {
             margin: 0;
-            color: #64748b;
+            color: #61736F;
             font-size: 12px;
             line-height: 1.5;
         }
@@ -352,7 +356,7 @@
         }
 
         #scheduleModal .btn-close:hover {
-            background-color: #eef2f7;
+            background-color: #EFEDDE;
             opacity: .85;
         }
 
@@ -366,8 +370,8 @@
             align-items: center;
             gap: 12px;
             padding: 15px 26px;
-            border-top: 1px solid #eef2f7;
-            background: #f8fafc;
+            border-top: 1px solid #D9DDD3;
+            background: #F7F7F2;
         }
 
         .modal-lbl {
@@ -375,7 +379,7 @@
             align-items: center;
             gap: 3px;
             margin-bottom: 7px;
-            color: #475569;
+            color: #61736F;
             font-size: 12.5px;
             font-weight: 600;
             line-height: 1.3;
@@ -387,7 +391,7 @@
 
         #scheduleModal .sch-ctrl {
             height: 42px;
-            border-color: #dbe3ee;
+            border-color: #D9DDD3;
             border-radius: 10px;
             padding: 0 12px;
             font-size: 13.5px;
@@ -395,12 +399,12 @@
         }
 
         #scheduleModal .sch-ctrl:hover:not(:disabled) {
-            border-color: #b8c5d6;
+            border-color: #BCC8BF;
         }
 
         #scheduleModal .sch-ctrl:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .11);
+            border-color: #54726E;
+            box-shadow: 0 0 0 3px rgba(84, 114, 110, .11);
         }
 
         .sch-modal-grid {
@@ -425,22 +429,22 @@
             min-height: 52px;
             margin-top: 1px;
             padding: 10px 12px;
-            border: 1px solid #dbe3ee;
+            border: 1px solid #D9DDD3;
             border-radius: 11px;
-            background: #f8fafc;
+            background: #F7F7F2;
             cursor: pointer;
             transition: border-color .15s, background-color .15s, box-shadow .15s;
         }
 
         .sch-exam-option:hover {
-            border-color: #b9cdf4;
-            background: #f3f7ff;
+            border-color: #B0DAD2;
+            background: #EEF5F2;
         }
 
         .sch-exam-option:has(input:checked) {
-            border-color: #93b4f8;
-            background: #eff6ff;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .07);
+            border-color: #6E928D;
+            background: #EEF5F2;
+            box-shadow: 0 0 0 3px rgba(84, 114, 110, .07);
         }
 
         .sch-exam-option .form-check-input {
@@ -458,8 +462,8 @@
             height: 30px;
             flex: 0 0 30px;
             border-radius: 8px;
-            color: #d97706;
-            background: #fff7ed;
+            color: #705817;
+            background: #FFF8DF;
         }
 
         .sch-exam-option__copy {
@@ -470,22 +474,22 @@
         }
 
         .sch-exam-option__copy strong {
-            color: #334155;
+            color: #263A37;
             font-size: 13px;
             font-weight: 600;
         }
 
         .sch-exam-option__copy small {
-            color: #7c8ba1;
+            color: #7C8986;
             font-size: 11.5px;
         }
 
         .sch-recurrence {
             grid-column: 1 / -1;
             overflow: hidden;
-            border: 1px solid #dbe3ee;
+            border: 1px solid #D9DDD3;
             border-radius: 13px;
-            background: #f8fafc;
+            background: #F7F7F2;
         }
 
         .sch-recurrence-toggle {
@@ -511,19 +515,19 @@
         }
 
         .sch-recurrence-toggle__copy strong {
-            color: #334155;
+            color: #263A37;
             font-size: 13px;
             font-weight: 600;
         }
 
         .sch-recurrence-toggle__copy small {
-            color: #7c8ba1;
+            color: #7C8986;
             font-size: 11.5px;
         }
 
         .sch-recurrence-body {
             padding: 14px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #D9DDD3;
             background: #fff;
         }
 
@@ -545,7 +549,7 @@
             display: flex;
             align-items: center;
             gap: 7px;
-            color: #475569;
+            color: #61736F;
             font-size: 12px;
             cursor: pointer;
         }
@@ -554,7 +558,7 @@
             max-height: 210px;
             overflow: auto;
             margin-top: 13px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #D9DDD3;
             border-radius: 10px;
         }
 
@@ -563,9 +567,9 @@
             top: 0;
             z-index: 1;
             padding: 9px 11px;
-            border-bottom: 1px solid #e2e8f0;
-            color: #475569;
-            background: #f8fafc;
+            border-bottom: 1px solid #D9DDD3;
+            color: #61736F;
+            background: #F7F7F2;
             font-size: 11.5px;
             font-weight: 600;
         }
@@ -576,7 +580,7 @@
             align-items: center;
             gap: 8px;
             padding: 8px 11px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #EFEDDE;
             font-size: 11.5px;
         }
 
@@ -591,40 +595,40 @@
             width: 27px;
             height: 27px;
             border-radius: 8px;
-            color: #2563eb;
-            background: #eff6ff;
+            color: #54726E;
+            background: #EEF5F2;
             font-weight: 700;
         }
 
         .sch-preview-item--conflict .sch-preview-position {
-            color: #b45309;
-            background: #fff7ed;
+            color: #705817;
+            background: #FFF8DF;
         }
 
         .sch-preview-date {
-            color: #334155;
+            color: #263A37;
             font-weight: 600;
         }
 
         .sch-preview-status {
-            color: #15803d;
+            color: #547565;
         }
 
         .sch-preview-item--conflict .sch-preview-status {
-            color: #b45309;
+            color: #705817;
         }
 
         .sch-series-scope {
             grid-column: 1 / -1;
             padding: 13px 14px;
-            border: 1px solid #bfdbfe;
+            border: 1px solid #B0DAD2;
             border-radius: 12px;
-            background: #eff6ff;
+            background: #EEF5F2;
         }
 
         .sch-series-scope__title {
             margin: 0 0 8px;
-            color: #1e3a8a;
+            color: #385652;
             font-size: 12.5px;
             font-weight: 700;
         }
@@ -641,9 +645,9 @@
             gap: 7px;
             margin: 0;
             padding: 7px 11px;
-            border: 1px solid #dbeafe;
+            border: 1px solid #DCE9E5;
             border-radius: 9px;
-            color: #475569;
+            color: #61736F;
             background: #fff;
             font-size: 12px;
             cursor: pointer;
@@ -668,9 +672,9 @@
         }
 
         .sch-alert--success {
-            background: #ecfdf5;
-            border-color: #a7f3d0;
-            color: #047857;
+            background: #EDF5EF;
+            border-color: #AEC6A6;
+            color: #547565;
         }
 
         /* ── Responsive ── */

@@ -22,16 +22,17 @@
     <meta property="og:title" content="SmartLMS – Quản lý toàn bộ vòng đời đào tạo">
     <meta property="og:description"
         content="Từ quản trị tài khoản đến tổ chức đào tạo, đánh giá, vận hành và trợ lý AI có trích dẫn nguồn.">
-    <meta property="og:image" content="{{ asset('favicon-v2.png') }}">
+    <meta property="og:image" content="{{ asset('assets/images/branding/smartlms-logo.webp') }}">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="SmartLMS – Hệ thống quản lý đào tạo tích hợp AI">
     <meta name="twitter:description" content="Một luồng thống nhất cho quản trị viên, giáo viên và học viên.">
-    <meta name="twitter:image" content="{{ asset('favicon-v2.png') }}">
+    <meta name="twitter:image" content="{{ asset('assets/images/branding/smartlms-logo.webp') }}">
 
-    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('favicon-48.png') }}">
-    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('favicon-96.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,14 +63,15 @@
         </script>
     @endverbatim
 
-    @vite('resources/css/pages/landing.css')
+    @vite(['resources/css/pages/landing.css', 'resources/css/pages/coastal-theme.css'])
 </head>
 
 <body>
     <header class="site-header" id="siteHeader">
         <nav class="landing-nav" aria-label="Điều hướng chính">
             <a class="nav-logo" href="{{ route('home') }}" aria-label="SmartLMS - Trang chủ">
-                <img src="{{ asset('smartlms-logo-nobg.webp') }}" alt="SmartLMS" width="800" height="200">
+                <img src="{{ asset('assets/images/branding/smartlms-logo.webp') }}" alt="SmartLMS" width="2172"
+                    height="724">
             </a>
 
             <button class="nav-toggle" id="navToggle" type="button" aria-controls="navMenu" aria-expanded="false"
@@ -192,7 +194,8 @@
                                         <div class="work-icon work-icon--green"><i
                                                 class="fa-solid fa-chart-simple"></i>
                                         </div>
-                                        <div><strong>Theo dõi tiến độ</strong><small>Bài học · bài kiểm tra · điểm số</small>
+                                        <div><strong>Theo dõi tiến độ</strong><small>Bài học · bài kiểm tra · điểm
+                                                số</small>
                                         </div>
                                         <span class="work-status work-status--done">Đang chạy</span>
                                     </div>
@@ -462,7 +465,8 @@
 
                 <div class="ai-demo reveal">
                     <div class="ai-demo__head">
-                        <div class="ai-mascot"><img src="{{ asset('chatbot-mascot-v2.webp') }}"
+                        <div class="ai-mascot"><img
+                                src="{{ asset('assets/images/branding/chatbot-mascot.webp') . '?v=' . filemtime(public_path('assets/images/branding/chatbot-mascot.webp')) }}"
                                 alt="Mascot trợ lý SmartLMS"></div>
                         <div><strong>Trợ lý học tập AI</strong><span><i></i> Đang bám theo khóa học</span></div>
                     </div>
@@ -554,7 +558,8 @@
                                 AI.</span></div>
                     </article>
                     <article><i class="fa-solid fa-cloud"></i>
-                        <div><strong>Sao lưu và lưu trữ</strong><span>Sao lưu cơ sở dữ liệu, lưu nội bộ/R2 và kiểm tra trạng thái
+                        <div><strong>Sao lưu và lưu trữ</strong><span>Sao lưu cơ sở dữ liệu, lưu nội bộ/R2 và kiểm tra
+                                trạng thái
                                 kho.</span></div>
                     </article>
                 </div>
@@ -580,7 +585,8 @@
         <div class="footer-inner">
             <div class="footer-brand">
                 <a href="{{ route('home') }}" class="footer-logo">
-                    <img src="{{ asset('smartlms-logo-nobg.webp') }}" alt="SmartLMS" width="800" height="200">
+                    <img src="{{ asset('assets/images/branding/smartlms-logo.webp') }}" alt="SmartLMS"
+                        width="2172" height="724">
                 </a>
                 <p>Hệ thống quản lý vòng đời đào tạo tích hợp AI dành cho trung tâm, giáo viên và học viên Việt Nam.</p>
             </div>
@@ -597,8 +603,10 @@
                         rel="noopener noreferrer">Báo lỗi</a></div>
             </div>
         </div>
-        <div class="footer-bottom"><span>© 2026 SmartLMS. Xây dựng tại Việt Nam.</span><span>Laravel · pgvector · AI có
-                trích dẫn</span></div>
+        <div class="footer-bottom"><span>© 2026 SmartLMS v2.2.1. Xây dựng tại Việt Nam.</span><span> Phát triển bởi
+                <a href="mailto:ngotanloi2424@gmail.com">
+                    <strong>NgoTanLoi</strong>.
+                </a></span></div>
     </footer>
 
     <script>

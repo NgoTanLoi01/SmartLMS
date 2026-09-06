@@ -243,20 +243,20 @@
 
                                         <div
                                             style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                                            background:{{ $submission ? '#dcfce7' : ($assignmentOverdue ? '#fee2e2' : '#fef3c7') }};">
+                                            background:{{ $submission ? '#EDF5EF' : ($assignmentOverdue ? '#fee2e2' : '#FFF8DF') }};">
                                             @if ($submission)
-                                                <i class="fa-solid fa-check" style="font-size: 11px;color:#16a34a;"></i>
+                                                <i class="fa-solid fa-check" style="font-size: 11px;color:#547565;"></i>
                                             @elseif ($assignmentOverdue)
                                                 <i class="fa-solid fa-lock" style="font-size: 11px;color:#b91c1c;"></i>
                                             @else
                                                 <i class="fa-solid fa-file-signature"
-                                                    style="font-size: 11px;color:#d97706;"></i>
+                                                    style="font-size: 11px;color:#705817;"></i>
                                             @endif
                                         </div>
 
                                         <div style="min-width:0;">
                                             <div class="lesson-name-text fw-semibold"
-                                                style="color:{{ $submission ? '#166534' : ($assignmentOverdue ? '#991b1b' : '#92400e') }};">
+                                                style="color:{{ $submission ? '#405F52' : ($assignmentOverdue ? '#991b1b' : '#705817') }};">
                                                 {{ $assignment->title }}
                                             </div>
                                             @if ($isStudent)
@@ -336,7 +336,7 @@
                                             </form>
                                             <button type="button"
                                                 class="btn-action text-primary view-submissions-btn"
-                                                style="background:#eff6ff;border:1px solid #bfdbfe;"
+                                                style="background:#EEF5F2;border:1px solid #B0DAD2;"
                                                 data-id="{{ $assignment->id }}" data-bs-toggle="modal"
                                                 data-bs-target="#viewSubmissionsModal" title="Chấm điểm"
                                                 aria-label="Chấm bài {{ $assignment->title }}">
@@ -375,17 +375,17 @@
         <div class="accordion-item" style="background:#faf8ff;">
             <div class="module-header-wrapper d-flex align-items-center" style="background:#faf8ff;">
                 <button class="accordion-button collapsed flex-grow-1 shadow-none"
-                    style="background:#faf8ff !important;color:#6f42c1;padding:0;" type="button"
+                    style="background:#faf8ff !important;color:#7D876D;padding:0;" type="button"
                     data-bs-toggle="collapse" data-bs-target="#course-quizzes-collapse">
                     <div class="module-title-block ps-4">
                         <div class="d-flex align-items-center gap-2">
                             <div
-                                style="width:20px;height:20px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <i class="fa-solid fa-stopwatch" style="font-size: 11px;color:#7c3aed;"></i>
+                                style="width:20px;height:20px;border-radius:50%;background:#E7EADF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fa-solid fa-stopwatch" style="font-size: 11px;color:#939875;"></i>
                             </div>
-                            <span class="module-title-text" style="color:#6f42c1;">Bài kiểm tra</span>
+                            <span class="module-title-text" style="color:#7D876D;">Bài kiểm tra</span>
                         </div>
-                        <span class="module-meta" style="padding-left:28px;color:#7c3aed;">
+                        <span class="module-meta" style="padding-left:28px;color:#939875;">
                             {{ $course->quizzes->count() }} bài kiểm tra
                         </span>
                     </div>
@@ -393,10 +393,10 @@
                 @if ($isManager && $course->archivedQuizzes->isNotEmpty())
                     <a href="{{ route('quizzes.archived', $course) }}"
                         class="me-3 d-inline-flex align-items-center gap-1 text-decoration-none"
-                        style="padding:5px 9px;border:1px solid #ddd6fe;border-radius:8px;background:#fff;color:#6b7280;font-size:11px;font-weight:700;white-space:nowrap;"
+                        style="padding:5px 9px;border:1px solid #AEC6A6;border-radius:8px;background:#fff;color:#6b7280;font-size:11px;font-weight:700;white-space:nowrap;"
                         title="Mở kho lưu trữ bài kiểm tra">
                         <i class="fa-solid fa-box-archive"></i>
-                        Kho lưu trữ <span class="badge rounded-pill" style="background:#ede9fe;color:#6d28d9;">{{ $course->archivedQuizzes->count() }}</span>
+                        Kho lưu trữ <span class="badge rounded-pill" style="background:#E7EADF;color:#75806A;">{{ $course->archivedQuizzes->count() }}</span>
                     </a>
                 @endif
             </div>
@@ -438,17 +438,17 @@
 
                                     <div
                                         style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                                        background:{{ $attemptCompleted ? '#dcfce7' : '#ede9fe' }};">
+                                        background:{{ $attemptCompleted ? '#EDF5EF' : '#E7EADF' }};">
                                         @if ($attemptCompleted)
-                                            <i class="fa-solid fa-check" style="font-size:11px;color:#16a34a;"></i>
+                                            <i class="fa-solid fa-check" style="font-size:11px;color:#547565;"></i>
                                         @else
-                                            <i class="fa-solid fa-stopwatch" style="font-size: 11px;color:#7c3aed;"></i>
+                                            <i class="fa-solid fa-stopwatch" style="font-size: 11px;color:#939875;"></i>
                                         @endif
                                     </div>
 
                                     <div style="min-width:0;">
                                         <div class="lesson-name-text fw-semibold"
-                                            style="color:{{ $attemptCompleted ? '#166534' : '#5b21b6' }};">
+                                            style="color:{{ $attemptCompleted ? '#405F52' : '#65766D' }};">
                                             {{ $quiz->title }}
                                         </div>
                                         @if ($isStudent)
@@ -509,18 +509,18 @@
                                         </button>
                                         <a href="{{ route('quizzes.sessions.index', $quiz) }}"
                                             class="btn-action text-white d-flex align-items-center px-2"
-                                            style="background:#0d6efd;width:auto;text-decoration:none;border-radius:6px;font-size:11px;font-weight:700;gap:3px;"
+                                            style="background:#54726E;width:auto;text-decoration:none;border-radius:6px;font-size:11px;font-weight:700;gap:3px;"
                                             title="Quản lý ca thi">
                                             <i class="fa-solid fa-calendar-days"></i> Ca thi
                                         </a>
                                         <a href="{{ route('quizzes.submissions', $quiz->id) }}"
                                             class="btn-action text-white d-flex align-items-center px-2"
-                                            style="background:#198754;width:auto;text-decoration:none;border-radius:6px;font-size: 11px;font-weight:700;gap:3px;"
+                                            style="background:#547565;width:auto;text-decoration:none;border-radius:6px;font-size: 11px;font-weight:700;gap:3px;"
                                             title="Xem điểm">
                                             <i class="fa-solid fa-chart-bar"></i> Điểm
                                         </a>
                                         <a href="{{ route('quizzes.show', $quiz->id) }}"
-                                            class="btn-action text-white" style="background:#7c3aed;"
+                                            class="btn-action text-white" style="background:#939875;"
                                             title="Soạn câu hỏi">
                                             <i class="fa-solid fa-list-ul"></i>
                                         </a>

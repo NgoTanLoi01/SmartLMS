@@ -12,9 +12,9 @@
     .grade-card { border: 1px solid #e4eaf3; border-radius: 20px; box-shadow: 0 10px 30px rgba(28, 51, 84, .06); overflow: hidden; scroll-margin-top: 90px; }
     .grade-card__head { padding: 18px 22px; background: #fff; border-bottom: 1px solid #edf0f5; }
     .grade-card__number { color: #1c62d6; font-size: .75rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-    .grade-card__question { color: #17243d; font-size: 1.03rem; font-weight: 750; line-height: 1.55; margin-top: 6px; }
+    .grade-card__question { color: #263A37; font-size: 1.03rem; font-weight: 750; line-height: 1.55; margin-top: 6px; }
     .grade-card__body { padding: 22px; background: #fff; }
-    .answer-panel { padding: 18px; color: #24324a; background: #f7f9fc; border: 1px solid #e3e8f0; border-radius: 14px; line-height: 1.75; white-space: pre-wrap; }
+    .answer-panel { padding: 18px; color: #263A37; background: #F7F7F2; border: 1px solid #D9DDD3; border-radius: 14px; line-height: 1.75; white-space: pre-wrap; }
     .grade-code { min-height: 260px; max-height: 480px; padding: 18px; overflow: auto; color: #dce7ff; background: #101a2d; border-radius: 14px; font: .86rem/1.65 'DM Mono', monospace; white-space: pre-wrap; }
     .rubric-box { margin-top: 22px; padding: 20px; background: #fbfcfe; border: 1px solid #dfe6f0; border-radius: 16px; }
     .rubric-item { display: grid; grid-template-columns: minmax(0, 1fr) 150px; align-items: center; gap: 16px; padding: 13px 0; border-bottom: 1px solid #e9edf3; }
@@ -22,12 +22,12 @@
     .rubric-score-wrap { display: flex; align-items: center; overflow: hidden; background: #fff; border: 1px solid #cad5e4; border-radius: 11px; }
     .rubric-score-wrap input { width: 100%; min-width: 0; padding: 10px 8px 10px 12px; border: 0; outline: 0; font-weight: 800; }
     .rubric-score-wrap span { padding: 0 11px; color: #748198; border-left: 1px solid #e2e7ef; white-space: nowrap; }
-    .rubric-total { display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; color: #174fa9; background: #eaf2ff; border-radius: 10px; font-weight: 800; }
+    .rubric-total { display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; color: #174fa9; background: #EEF5F2; border-radius: 10px; font-weight: 800; }
     .grade-side { position: sticky; top: 86px; }
     .grade-side-card { padding: 20px; background: #fff; border: 1px solid #e4eaf3; border-radius: 18px; box-shadow: 0 10px 30px rgba(28, 51, 84, .06); }
     .question-jump { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
     .question-jump a { display: grid; place-items: center; height: 40px; color: #68768d; text-decoration: none; background: #f4f6fa; border: 1px solid #e1e6ee; border-radius: 10px; font-weight: 800; }
-    .question-jump a.manual-pending { color: #9a5a00; background: #fff3d6; border-color: #f2cc7a; }
+    .question-jump a.manual-pending { color: #705817; background: #fff3d6; border-color: #f2cc7a; }
     .question-jump a.manual-graded { color: #087047; background: #e0f8ed; border-color: #99dfbf; }
     .grade-status { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px; font-size: .76rem; font-weight: 800; }
     .grade-status.pending { color: #945600; background: #fff1cf; }

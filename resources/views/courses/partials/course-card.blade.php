@@ -91,9 +91,9 @@
                 <a href="{{ route('courses.show', $course) }}">{{ $course->title }}</a>
             @endif
         </h3>
-        <p class="catalog-card-description">
+        {{-- <p class="catalog-card-description">
             {{ $course->description ?: 'Khóa học chưa có mô tả. Bạn có thể mở khóa học để xem nội dung chi tiết.' }}
-        </p>
+        </p> --}}
 
         <div class="catalog-owner">
             <span class="catalog-avatar" aria-hidden="true">{{ $teacherInitial }}</span>

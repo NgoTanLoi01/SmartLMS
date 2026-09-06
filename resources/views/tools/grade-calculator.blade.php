@@ -87,7 +87,7 @@
         }
 
         .result-highlight {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6E928D 0%, #7D876D 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -152,42 +152,42 @@
         .grade-tool-workspace {
             overflow: hidden;
             background: #fff;
-            border: 1px solid #dbe5f2 !important;
+            border: 1px solid #D6DED6 !important;
             border-radius: 16px;
             box-shadow: 0 8px 28px rgba(15, 23, 42, .055) !important;
         }
 
         .grade-tool-hero { position: relative; }
-        .grade-tool-hero__accent { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #2563eb, #7c3aed 48%, #06b6d4); }
-        .grade-tool-hero .lms-page-header { margin: 0; padding: 22px 20px 17px; background: radial-gradient(circle at 92% -25%, rgba(37, 99, 235, .14), transparent 36%), linear-gradient(135deg, #fff 22%, #f8fbff); }
-        .grade-tool-hero .lms-page-title { color: #172033; font-size: 22px; letter-spacing: -.025em; }
+        .grade-tool-hero__accent { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #54726E, #939875 48%, #6E928D); }
+        .grade-tool-hero .lms-page-header { margin: 0; padding: 22px 20px 17px; background: radial-gradient(circle at 92% -25%, rgba(84, 114, 110, .14), transparent 36%), linear-gradient(135deg, #fff 22%, #F8F7EF); }
+        .grade-tool-hero .lms-page-title { color: #263A37; font-size: 22px; letter-spacing: -.025em; }
         .grade-tool-hero .lms-page-meta span { display: inline-flex; align-items: center; gap: 7px; }
-        .grade-tool-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; padding: 10px; background: #edf2f8; border-top: 1px solid #e1e8f1; }
+        .grade-tool-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; padding: 10px; background: #EEF5F2; border-top: 1px solid #D9DDD3; }
         .grade-tool-summary__item { display: flex; align-items: center; gap: 11px; min-height: 68px; padding: 11px 14px; background: rgba(255, 255, 255, .95); }
         .grade-tool-summary__item:first-child { border-radius: 10px 0 0 10px; }
         .grade-tool-summary__item:last-child { border-radius: 0 10px 10px 0; }
-        .grade-tool-summary__item > i { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; color: #1d4ed8; background: #dbeafe; border-radius: 11px; font-size: 14px; }
-        .grade-tool-summary__item:nth-child(2) > i { color: #6d28d9; background: #ede9fe; }
-        .grade-tool-summary__item:nth-child(3) > i { color: #047857; background: #d1fae5; }
+        .grade-tool-summary__item > i { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; color: #385652; background: #DCE9E5; border-radius: 11px; font-size: 14px; }
+        .grade-tool-summary__item:nth-child(2) > i { color: #75806A; background: #E7EADF; }
+        .grade-tool-summary__item:nth-child(3) > i { color: #547565; background: #EDF5EF; }
         .grade-tool-summary strong,
         .grade-tool-summary small { display: block; }
-        .grade-tool-summary strong { color: #172033; font-size: 17px; line-height: 1.15; }
-        .grade-tool-summary small { margin-top: 4px; color: #64748b; font-size: 10px; }
+        .grade-tool-summary strong { color: #263A37; font-size: 17px; line-height: 1.15; }
+        .grade-tool-summary small { margin-top: 4px; color: #61736F; font-size: 10px; }
         .grade-tool-workspace { border-radius: 15px; }
         .grade-tool-workspace > .card-body { padding: 0 !important; }
-        .grade-workspace-head { padding: 15px 18px; background: #fbfdff; border-bottom: 1px solid #e1e8f1; }
-        .grade-workspace-head h2 { margin: 0; color: #172033; font-size: 14px; font-weight: 800; }
-        .grade-workspace-head p { margin: 4px 0 0; color: #64748b; font-size: 10.5px; }
+        .grade-workspace-head { padding: 15px 18px; background: #FAF9F2; border-bottom: 1px solid #D9DDD3; }
+        .grade-workspace-head h2 { margin: 0; color: #263A37; font-size: 14px; font-weight: 800; }
+        .grade-workspace-head p { margin: 4px 0 0; color: #61736F; font-size: 10.5px; }
         .grade-workspace-body { padding: 18px; }
         .grade-table { min-width: 720px; }
-        .grade-table thead th { padding: 10px 8px; background: #f8fafc; border-bottom: 1px solid #e1e8f1; color: #64748b; font-size: 10px; }
-        .grade-table .form-control { min-height: 38px; border: 1px solid #e1e8f1; background: #f8fafc; font-size: 12px; }
-        .result-panel { top: 88px; padding: 17px !important; border-color: #e1e8f1 !important; border-radius: 14px; box-shadow: 0 6px 22px rgba(15, 23, 42, .045) !important; }
-        .btn-calculate { min-height: 42px; background: #2563eb; border-radius: 9px; box-shadow: none !important; font-size: 12px; text-transform: none; }
-        .btn-calculate:hover:not(:disabled) { background: #1d4ed8; box-shadow: 0 8px 20px rgba(37, 99, 235, .24) !important; }
-        .ref-table th { background: #f8fafc; color: #64748b; font-size: 9.5px; }
+        .grade-table thead th { padding: 10px 8px; background: #F7F7F2; border-bottom: 1px solid #D9DDD3; color: #61736F; font-size: 10px; }
+        .grade-table .form-control { min-height: 38px; border: 1px solid #D9DDD3; background: #F7F7F2; font-size: 12px; }
+        .result-panel { top: 88px; padding: 17px !important; border-color: #D9DDD3 !important; border-radius: 14px; box-shadow: 0 6px 22px rgba(15, 23, 42, .045) !important; }
+        .btn-calculate { min-height: 42px; background: #54726E; border-radius: 9px; box-shadow: none !important; font-size: 12px; text-transform: none; }
+        .btn-calculate:hover:not(:disabled) { background: #385652; box-shadow: 0 8px 20px rgba(84, 114, 110, .24) !important; }
+        .ref-table th { background: #F7F7F2; color: #61736F; font-size: 9.5px; }
         .ref-table td { font-size: 10.5px; }
-        .grade-clear-modal .modal-content { border: 1px solid #e1e8f1 !important; border-radius: 16px !important; }
+        .grade-clear-modal .modal-content { border: 1px solid #D9DDD3 !important; border-radius: 16px !important; }
 
         @media (max-width: 767.98px) {
             .grade-tool-page { gap: 13px; padding: 10px 0 0 !important; }

@@ -19,7 +19,7 @@
 }
 
 body {
-    background: #f1f5f9;
+    background: #EFEDDE;
 }
 
 .lms-page {
@@ -47,7 +47,7 @@ body {
 }
 
 .lms-breadcrumb-sep {
-    color: #cbd5e1;
+    color: #BCC8BF;
     font-size: 10px;
 }
 
@@ -109,7 +109,7 @@ body {
 }
 
 .lms-btn-primary:hover {
-    background: #1e40af;
+    background: #385652;
     color: #fff;
 }
 
@@ -120,19 +120,19 @@ body {
 }
 
 .lms-btn-outline:hover {
-    border-color: #94a3b8;
+    border-color: #7C8986;
     background: var(--lms-surface);
     color: var(--lms-text);
 }
 
 .lms-btn-success {
-    border-color: #a7f3d0;
+    border-color: #AEC6A6;
     background: #fff;
     color: var(--lms-success);
 }
 
 .lms-btn-success:hover {
-    border-color: #6ee7b7;
+    border-color: #AEC6A6;
     background: var(--lms-success-light);
     color: var(--lms-success);
 }
@@ -209,8 +209,8 @@ a.lms-pagination__button:focus-visible {
 }
 
 .lms-pagination__button.is-disabled {
-    background: #f8fafc;
-    color: #cbd5e1;
+    background: #F7F7F2;
+    color: #BCC8BF;
     cursor: not-allowed;
 }
 
@@ -277,7 +277,7 @@ a.lms-pagination__button:focus-visible {
 }
 
 .lms-stat.info::before {
-    background: #0ea5e9;
+    background: #6E928D;
 }
 
 .lms-stat-label {
@@ -306,7 +306,7 @@ a.lms-pagination__button:focus-visible {
 }
 
 .lms-stat.info .lms-stat-value {
-    color: #0369a1;
+    color: #54726E;
 }
 
 .lms-stat-sub {

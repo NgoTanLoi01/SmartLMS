@@ -196,7 +196,7 @@
         }
 
         .materials-action--ghost:hover {
-            background: #dde2ff;
+            background: #DCE9E5;
             color: var(--ml-primary-dark);
         }
 
@@ -221,7 +221,7 @@
         }
 
         .materials-action--download:hover {
-            background: #dde2ff;
+            background: #DCE9E5;
             color: var(--ml-primary-dark);
         }
 
@@ -422,7 +422,7 @@
         }
 
         .materials-asset-title {
-            color: #172033;
+            color: #263A37;
             font-size: 14px;
             font-weight: 700;
             line-height: 1.4;
@@ -458,7 +458,7 @@
         .materials-badge {
             background: #f1f4f9;
             border-radius: 999px;
-            color: #475569;
+            color: #61736F;
             display: inline-flex;
             font-size: 11px;
             font-weight: 700;
@@ -477,7 +477,7 @@
         }
 
         .materials-asset[data-type="image"] .materials-asset-icon {
-            background: #f2ecfe;
+            background: #F2F2E9;
             color: #7c3fd8;
         }
 
@@ -503,7 +503,7 @@
 
         .materials-asset[data-type="other"] .materials-asset-icon {
             background: #eef1f6;
-            color: #64748b;
+            color: #61736F;
         }
 
         /* ---------- Course grid ---------- */
@@ -568,10 +568,10 @@
         }
 
         .materials-count {
-            background: #f8fafc;
+            background: #F7F7F2;
             border: 1px solid var(--ml-border);
             border-radius: 999px;
-            color: #475569;
+            color: #61736F;
             font-size: 12px;
             font-weight: 700;
             padding: 6px 11px;
@@ -595,7 +595,7 @@
         .materials-empty {
             align-items: center;
             background: var(--ml-surface);
-            border: 1.5px dashed #cbd5e1;
+            border: 1.5px dashed #BCC8BF;
             border-radius: var(--ml-radius-lg);
             color: var(--ml-muted);
             display: flex;
@@ -688,12 +688,12 @@
 
         /* Unified SmartLMS material library experience */
         .materials-index-shell { display: grid; gap: 16px; }
-        .materials-index-hero { position: relative; margin: 0; overflow: hidden; border-color: #dbe5f2; border-radius: 16px; box-shadow: 0 10px 32px rgba(30, 64, 175, .06); }
-        .materials-index-hero__accent { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #2563eb, #7c3aed 48%, #06b6d4); }
-        .materials-index-hero .lms-page-header { margin: 0; padding: 22px 20px 17px; background: radial-gradient(circle at 92% -25%, rgba(37, 99, 235, .14), transparent 36%), linear-gradient(135deg, #fff 22%, #f8fbff); }
-        .materials-index-hero .lms-page-title { color: #172033; font-size: 22px; letter-spacing: -.025em; }
+        .materials-index-hero { position: relative; margin: 0; overflow: hidden; border-color: #D6DED6; border-radius: 16px; box-shadow: 0 10px 32px rgba(56, 86, 82, .06); }
+        .materials-index-hero__accent { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, #54726E, #939875 48%, #6E928D); }
+        .materials-index-hero .lms-page-header { margin: 0; padding: 22px 20px 17px; background: radial-gradient(circle at 92% -25%, rgba(84, 114, 110, .14), transparent 36%), linear-gradient(135deg, #fff 22%, #F8F7EF); }
+        .materials-index-hero .lms-page-title { color: #263A37; font-size: 22px; letter-spacing: -.025em; }
         .materials-index-hero .lms-page-meta { gap: 14px; margin-top: 5px; }
-        .materials-stat-shelf { gap: 1px; padding: 10px; background: #edf2f8; border-top-color: #e1e8f1; }
+        .materials-stat-shelf { gap: 1px; padding: 10px; background: #EEF5F2; border-top-color: #D9DDD3; }
         .materials-stat { min-height: 68px; padding: 11px 14px; background: rgba(255, 255, 255, .95); border: 0; transition: transform .16s ease, box-shadow .16s ease; }
         .materials-stat:first-child { border-radius: 10px 0 0 10px; }
         .materials-stat:last-child { border-radius: 0 10px 10px 0; }
@@ -701,19 +701,19 @@
         .materials-stat-num { font-size: 18px; }
         .materials-stat-label { font-size: 10px; }
         .materials-library-panel,
-        .materials-sync-panel { margin: 0; padding: 16px; border-color: #e1e8f1; border-radius: 15px; box-shadow: 0 6px 24px rgba(15, 23, 42, .045); }
+        .materials-sync-panel { margin: 0; padding: 16px; border-color: #D9DDD3; border-radius: 15px; box-shadow: 0 6px 24px rgba(15, 23, 42, .045); }
         .materials-section-head { align-items: center; margin-bottom: 14px; }
-        .materials-section-title { color: #172033; font-size: 14px; font-weight: 800; }
+        .materials-section-title { color: #263A37; font-size: 14px; font-weight: 800; }
         .materials-section-note { font-size: 10.5px; }
         .materials-action { min-height: 38px; padding: 8px 12px; border-radius: 9px; font-size: 11px; }
-        .materials-filter { margin-bottom: 14px; padding: 13px; background: #f8fafc; border: 1px solid #e1e8f1; border-radius: 11px; }
+        .materials-filter { margin-bottom: 14px; padding: 13px; background: #F7F7F2; border: 1px solid #D9DDD3; border-radius: 11px; }
         .materials-filter .form-control,
         .materials-filter .form-select { min-height: 39px; background: #fff; font-size: 12px; }
         .materials-asset-grid,
         .materials-course-grid { gap: 14px; }
-        .materials-asset { gap: 10px; padding: 14px; border-color: #e1e8f1; border-radius: 14px; }
+        .materials-asset { gap: 10px; padding: 14px; border-color: #D9DDD3; border-radius: 14px; }
         .materials-asset-title { font-size: 13px; }
-        .materials-course-card { gap: 13px; min-height: 150px; padding: 16px; border-color: #e1e8f1; border-radius: 14px; }
+        .materials-course-card { gap: 13px; min-height: 150px; padding: 16px; border-color: #D9DDD3; border-radius: 14px; }
         .materials-course-title { font-size: 14px; }
         .materials-course-meta { font-size: 10.5px; }
         .materials-count { font-size: 10.5px; }
