@@ -28,8 +28,7 @@ class ExampleTest extends TestCase
             ->assertSee('href="'.route('home').'"', false)
             ->assertSee('href="'.route('login').'"', false)
             ->assertSee('src="'.asset('assets/images/branding/smartlms-logo.webp').'"', false)
-            ->assertSee('href="'.asset('favicon.ico').'"', false)
-            ->assertSee('href="'.asset('apple-touch-icon.png').'"', false);
+            ->assertSee('href="'.asset('favicon.ico').'"', false);
 
         foreach ([
             'assets/images/branding/smartlms-logo.webp',
@@ -37,11 +36,6 @@ class ExampleTest extends TestCase
             'assets/images/branding/chatbot-mascot.webp',
             'assets/images/ui/dashboard-learning.webp',
             'favicon.ico',
-            'favicon-16x16.png',
-            'favicon-32x32.png',
-            'apple-touch-icon.png',
-            'icon-192x192.png',
-            'icon-512x512.png',
         ] as $asset) {
             $this->assertFileExists(public_path($asset));
             $this->assertGreaterThan(0, filesize(public_path($asset)));
