@@ -28,7 +28,7 @@ class LocalCourseContextSearchService
 
     private const CONTEXT_TEXT_LIMIT = 9000;
 
-    public function search(string $query, ?User $user = null): string
+    public function search(string $query, ?User $user = null, ?int $courseId = null): string
     {
         $keywords = $this->keywords($query);
 
@@ -36,7 +36,7 @@ class LocalCourseContextSearchService
             return '';
         }
 
-        $courses = $this->accessibleCourses($user);
+        $courses = $this->accessibleCourses($user, $courseId);
 
         if ($courses->isEmpty()) {
             return '';
@@ -163,16 +163,21 @@ class LocalCourseContextSearchService
         ]), self::CONTEXT_TEXT_LIMIT, '');
     }
 
-    private function accessibleCourses(?User $user): Collection
+    private function accessibleCourses(?User $user, ?int $courseId = null): Collection
     {
         $query = Course::query()
             ->notArchived()
             ->with(['classes:id'])
-            ->orderByDesc('updated_at')
-            ->limit(self::COURSE_LIMIT);
+            ->orderByDesc('updated_at');
 
         if (! $user) {
             return collect();
+        }
+
+        if ($courseId !== null) {
+            $query->whereKey($courseId);
+        } else {
+            $query->limit(self::COURSE_LIMIT);
         }
 
         if ($user->isAdmin()) {

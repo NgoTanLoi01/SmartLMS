@@ -7,12 +7,15 @@ use App\Models\AiOperation;
 use App\Models\Course;
 use App\Models\DocumentChunk;
 use App\Models\User; // Thêm model Course
+use App\Services\RagDocumentAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class DocumentController extends Controller
 {
+    public function __construct(private RagDocumentAccessService $documentAccess) {}
+
     // ==========================================
     // 1. HIỂN THỊ TRANG UPLOAD TÀI LIỆU
     // ==========================================
@@ -20,17 +23,19 @@ class DocumentController extends Controller
     {
         $user = auth()->user();
 
-        // 1. Lấy danh sách khóa học (Admin thấy hết, Giáo viên thấy khóa của mình)
-        if ($user->role === 'admin') {
-            $courses = Course::all();
-        } else {
-            $courses = Course::where('teacher_id', $user->id)->get();
-        }
+        // Danh sách khóa học và tài liệu phải dùng cùng một phạm vi quyền RAG.
+        $accessibleCourseIds = $this->documentAccess->accessibleCourseIds($user);
+        $courses = Course::query()
+            ->whereIn('id', $accessibleCourseIds)
+            ->orderBy('title')
+            ->get();
 
         // 2. Lấy danh sách tài liệu từ PostgreSQL
-        $documents = DocumentChunk::on('pgsql')
+        $documentsQuery = DocumentChunk::on('pgsql')
             ->select('document_name', 'course_id', 'uploaded_by', DB::raw('MAX(created_at) as created_at'), DB::raw('COUNT(*) as total_chunks'))
-            ->where('is_active', true)
+            ->where('is_active', true);
+        $documents = $this->documentAccess
+            ->scopeForManagement($documentsQuery, $user, $accessibleCourseIds)
             ->groupBy('document_name', 'course_id', 'uploaded_by')
             ->orderBy('created_at', 'desc')
             ->paginate(18)
@@ -109,6 +114,7 @@ class DocumentController extends Controller
         $courseId = (int) ($data['course_id'] ?? 0);
         $query = DocumentChunk::on('pgsql')
             ->where('document_name', $name);
+        $this->documentAccess->scopeForManagement($query, $request->user());
         $courseId === 0
             ? $query->where(fn ($scope) => $scope->whereNull('course_id')->orWhere('course_id', 0))
             : $query->where('course_id', $courseId);

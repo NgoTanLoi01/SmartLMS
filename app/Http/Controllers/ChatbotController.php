@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
+use App\Models\Lesson;
 use App\Services\DeepSeekService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
@@ -27,7 +30,8 @@ class ChatbotController extends Controller
             'messages.*.role' => ['required', 'string', 'in:user,assistant'],
             'messages.*.content' => ['required', 'string', 'max:4000'],
             'lesson_context' => ['nullable', 'array'],
-            'lesson_context.lesson_id' => ['nullable', 'integer'],
+            'lesson_context.course_id' => ['nullable', 'integer', 'exists:courses,id'],
+            'lesson_context.lesson_id' => ['nullable', 'integer', 'exists:lessons,id'],
             'lesson_context.assist_mode' => ['nullable', 'string', 'max:100'],
         ]);
 
@@ -37,15 +41,39 @@ class ChatbotController extends Controller
             ]);
         }
 
+        $lessonContext = $validated['lesson_context'] ?? [];
+        $options = [];
+        if (is_array($lessonContext)) {
+            $requestedCourseId = ! empty($lessonContext['course_id'])
+                ? (int) $lessonContext['course_id']
+                : null;
+
+            if (! empty($lessonContext['lesson_id'])) {
+                $lesson = Lesson::query()
+                    ->with('module.course')
+                    ->findOrFail((int) $lessonContext['lesson_id']);
+                $contextCourse = $lesson->module?->course;
+                abort_unless($contextCourse, 404);
+                Gate::authorize('view', $contextCourse);
+
+                if ($requestedCourseId !== null && $requestedCourseId !== (int) $contextCourse->id) {
+                    throw ValidationException::withMessages([
+                        'lesson_context.course_id' => 'Khóa học không khớp với bài học đang chọn.',
+                    ]);
+                }
+
+                $options['course_id'] = (int) $contextCourse->id;
+                $options['lesson_id'] = (int) $lesson->id;
+                $options['assist_mode'] = (string) ($lessonContext['assist_mode'] ?? '');
+            } elseif ($requestedCourseId !== null) {
+                $contextCourse = Course::findOrFail($requestedCourseId);
+                Gate::authorize('view', $contextCourse);
+                $options['course_id'] = (int) $contextCourse->id;
+            }
+        }
+
         try {
             $messages = array_slice($validated['messages'], -12);
-
-            $lessonContext = $validated['lesson_context'] ?? [];
-            $options = [];
-            if (is_array($lessonContext) && ! empty($lessonContext['lesson_id'])) {
-                $options['lesson_id'] = (int) $lessonContext['lesson_id'];
-                $options['assist_mode'] = (string) ($lessonContext['assist_mode'] ?? '');
-            }
 
             // Chatbot tìm ngữ cảnh theo quyền truy cập khóa học của người dùng hiện tại.
             $reply = $this->deepseekService->sendMessage($messages, $request->user(), $options);

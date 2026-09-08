@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Classroom;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -11,34 +10,35 @@ use Illuminate\Support\Str;
 
 class VectorCourseContextSearchService
 {
-    public function __construct(private GeminiEmbeddingService $embeddingService) {}
+    public function __construct(
+        private GeminiEmbeddingService $embeddingService,
+        private RagDocumentAccessService $documentAccess,
+    ) {}
 
-    public function search(string $query, ?User $user): array
+    public function search(string $query, ?User $user, ?int $courseId = null): array
     {
         if (! $user || trim($query) === '') {
             return ['context' => '', 'sources' => []];
         }
 
-        $courseIds = $this->accessibleCourseIds($user);
+        $accessibleCourseIds = $this->documentAccess->accessibleCourseIds($user);
+        if ($courseId !== null && ! in_array($courseId, $accessibleCourseIds, true)) {
+            return ['context' => '', 'sources' => []];
+        }
 
         try {
             $vector = '['.implode(',', $this->embeddingService->embed($query)).']';
             $limit = max(1, min(10, (int) config('ai.rag.result_limit', 5)));
             $maxDistance = max(0.0, min(2.0, (float) config('ai.rag.max_distance', 0.65)));
             $distanceMargin = max(0.0, min(1.0, (float) config('ai.rag.distance_margin', 0.18)));
-            $candidates = DB::connection('pgsql')
+            $candidatesQuery = DB::connection('pgsql')
                 ->table('document_chunks')
                 ->select(['document_name', 'course_id', 'content', 'page_number', 'chunk_index'])
                 ->selectRaw('embedding::halfvec(3072) <=> ?::halfvec(3072) AS distance', [$vector])
-                ->where(function ($scope) use ($courseIds) {
-                    // course_id = 0 là dữ liệu global cũ; migration sẽ chuẩn hóa về NULL.
-                    $scope->whereNull('course_id')->orWhere('course_id', 0);
-                    if ($courseIds !== []) {
-                        $scope->orWhereIn('course_id', $courseIds);
-                    }
-                })
                 ->where('is_active', true)
-                ->whereNotNull('embedding')
+                ->whereNotNull('embedding');
+            $candidates = $this->documentAccess
+                ->scopeForRetrieval($candidatesQuery, $user, $courseId, $accessibleCourseIds)
                 ->orderBy('distance')
                 ->limit($limit)
                 ->get();
@@ -92,32 +92,5 @@ class VectorCourseContextSearchService
 
             return ['context' => '', 'sources' => []];
         }
-    }
-
-    private function accessibleCourseIds(User $user): array
-    {
-        $query = Course::query()->notArchived();
-
-        if ($user->isAdmin()) {
-            return $query->pluck('id')->map(fn ($id) => (int) $id)->all();
-        }
-
-        if ($user->isTeacher()) {
-            return $query->where('teacher_id', $user->id)->pluck('id')->map(fn ($id) => (int) $id)->all();
-        }
-
-        if (! $user->isStudent()) {
-            return [];
-        }
-
-        $classIds = $user->classes()
-            ->where('classes.status', Classroom::STATUS_ACTIVE)
-            ->pluck('classes.id');
-
-        return $query->visibleToStudents()
-            ->whereHas('classes', fn ($classes) => $classes->whereIn('classes.id', $classIds))
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
     }
 }

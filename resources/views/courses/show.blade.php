@@ -80,7 +80,7 @@
                             <i class="fa-solid fa-chalkboard-teacher"></i>
                         </span>
                         <span class="header-teacher__copy">
-                            <small>Giảng viên phụ trách</small>
+                            <small>Giáo viên phụ trách</small>
                             <strong>{{ $course->teacher->name }}</strong>
                         </span>
                     </p>

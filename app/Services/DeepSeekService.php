@@ -33,8 +33,9 @@ class DeepSeekService
                 $lessonContext = $this->contextSearch->lessonContext((int) $options['lesson_id'], $user);
             }
 
-            $searchContext = $this->contextSearch->search($lastUserMessage, $user);
-            $vectorResult = $this->vectorContextSearch->search($lastUserMessage, $user);
+            $courseId = ! empty($options['course_id']) ? (int) $options['course_id'] : null;
+            $searchContext = $this->contextSearch->search($lastUserMessage, $user, $courseId);
+            $vectorResult = $this->vectorContextSearch->search($lastUserMessage, $user, $courseId);
             $context = trim(implode("\n\n---\n\n", array_filter([
                 $lessonContext,
                 $searchContext,
