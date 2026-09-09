@@ -258,7 +258,7 @@
 
             const storageKey = 'smartlms.sidebarCollapsed';
             const applyState = (collapsed, persist = true) => {
-                body.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth > 768);
+                body.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth >= 992);
                 document.documentElement.classList.remove('sidebar-will-collapse');
                 toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
                 toggle.setAttribute('aria-label', collapsed ? 'Mở rộng menu' : 'Thu gọn menu');
@@ -284,7 +284,7 @@
 
             sidebar.querySelectorAll('[data-bs-toggle="collapse"]').forEach((link) => {
                 link.addEventListener('click', (event) => {
-                    if (window.innerWidth > 768 && body.classList.contains('sidebar-collapsed')) {
+                    if (window.innerWidth >= 992 && body.classList.contains('sidebar-collapsed')) {
                         event.preventDefault();
                         event.stopImmediatePropagation();
                         applyState(false);

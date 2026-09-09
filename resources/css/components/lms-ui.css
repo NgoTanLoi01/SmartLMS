@@ -399,7 +399,18 @@ a.lms-pagination__button:focus-visible {
 
 @media (max-width: 768px) {
     .lms-page {
-        padding: 1rem 1rem 2rem;
+        padding: 1rem 0 2rem;
+    }
+
+    .lms-page-header {
+        align-items: stretch;
+        flex-direction: column;
+        margin-bottom: 1.25rem;
+    }
+
+    .lms-page-header > * {
+        min-width: 0;
+        max-width: 100%;
     }
 
     .lms-stats {
@@ -420,5 +431,20 @@ a.lms-pagination__button:focus-visible {
 @media (max-width: 480px) {
     .lms-stats {
         grid-template-columns: 1fr;
+    }
+
+    .lms-page-title {
+        font-size: 19px;
+        line-height: 1.3;
+    }
+
+    .lms-page-meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .lms-pagination__nav {
+        width: 100%;
     }
 }

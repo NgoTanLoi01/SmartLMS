@@ -28,7 +28,8 @@
                 <div class="att-primary-actions">
                     <div class="att-search">
                         <i class="fa-solid fa-search"></i>
-                        <input type="text" id="filterName" placeholder="Tìm tên học viên...">
+                        <input type="text" id="filterName" placeholder="Tìm tên học viên..."
+                            aria-label="Tìm học viên trong bảng điểm danh">
                     </div>
                     <a href="{{ route('attendance.export', $course->id) }}" class="chip-btn chip-green"
                         data-no-page-transition data-file-download>
@@ -42,8 +43,9 @@
                 {{-- Add column --}}
                 <form action="{{ route('attendance.addColumn', $course->id) }}" method="POST" class="add-col-form">
                     @csrf
-                    <input type="text" name="name" placeholder="Tên cột (có thể để trống)">
-                    <select name="type" id="newColumnType">
+                    <input type="text" name="name" placeholder="Tên cột (có thể để trống)"
+                        aria-label="Tên cột mới">
+                    <select name="type" id="newColumnType" aria-label="Loại cột">
                         <option value="attendance">Điểm danh</option>
                         <option value="grade">Điểm số</option>
                         <option value="note">Ghi chú</option>
@@ -71,7 +73,12 @@
         {{-- ── TABLE ── --}}
         <form action="{{ route('attendance.save', $course->id) }}" method="POST" id="att-form">
             @csrf
-            <div class="att-table-wrap">
+            <div class="att-mobile-scroll-hint" id="attendanceScrollHint">
+                <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i>
+                Vuốt ngang để xem các buổi và cột điểm
+            </div>
+            <div class="att-table-wrap" tabindex="0" role="region"
+                aria-label="Bảng điểm danh và điểm số" aria-describedby="attendanceScrollHint">
                 <table class="att-table">
                     <thead>
                         <tr>

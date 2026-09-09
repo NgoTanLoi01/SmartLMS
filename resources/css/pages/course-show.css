@@ -1351,33 +1351,33 @@ body,
 
 @media (min-width: 768px) {
     .desktop-sidebar-wrap.course-sidebar-stack {
-        max-height: none;
-        overflow: visible;
-        padding-right: 4px;
-        position: static;
-        top: auto;
-    }
-}
-
-@media (min-width: 768px) {
-    .course-sidebar-column {
-        align-self: flex-start;
-        max-height: calc(100vh - 104px);
+        --course-sidebar-offset: calc(var(--navbar-height, 72px) + 16px);
+        max-height: calc(100dvh - var(--course-sidebar-offset) - 16px);
+        overscroll-behavior: contain;
         overflow-y: auto;
         padding-right: 6px;
         position: sticky;
-        top: 88px;
+        scrollbar-gutter: stable;
+        top: var(--course-sidebar-offset);
     }
 
-    .course-sidebar-column::-webkit-scrollbar {
+    .course-sidebar-column {
+        align-self: stretch;
+        max-height: none;
+        min-height: 100%;
+        overflow: visible;
+        position: static;
+    }
+
+    .desktop-sidebar-wrap.course-sidebar-stack::-webkit-scrollbar {
         width: 4px;
     }
 
-    .course-sidebar-column::-webkit-scrollbar-track {
+    .desktop-sidebar-wrap.course-sidebar-stack::-webkit-scrollbar-track {
         background: transparent;
     }
 
-    .course-sidebar-column::-webkit-scrollbar-thumb {
+    .desktop-sidebar-wrap.course-sidebar-stack::-webkit-scrollbar-thumb {
         background: #d7e0f0;
         border-radius: 999px;
     }
@@ -1387,6 +1387,13 @@ body,
     .course-outline-card {
         position: static;
         z-index: 3;
+    }
+
+    .course-outline-card .sidebar-head {
+        box-shadow: 0 8px 18px rgba(56, 86, 82, .08);
+        position: sticky;
+        top: 0;
+        z-index: 12;
     }
 }
 
@@ -1422,14 +1429,16 @@ body,
 }
 
 .sidebar-scroll {
-    max-height: calc(100vh - 210px);
+    max-height: calc(100dvh - 210px);
+    overscroll-behavior: contain;
     padding: 0;
     overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
 @media (min-width: 1200px) {
     .sidebar-scroll {
-        max-height: min(62vh, calc(100vh - 280px));
+        max-height: min(62dvh, calc(100dvh - 280px));
     }
 }
 

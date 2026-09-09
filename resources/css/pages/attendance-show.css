@@ -52,11 +52,13 @@ body {
 
 /* ── PAGE WRAPPER ── */
 .att-page {
-    padding: 1.25rem;
-    height: calc(100vh - 64px);
+    height: calc(100dvh - var(--navbar-height, 72px) - 68px);
+    min-height: 540px;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0;
+    min-width: 0;
 }
 
 /* ── TOOLBAR CARD ── */
@@ -289,6 +291,27 @@ body {
     border: 1px solid var(--border);
     border-radius: 0;
     position: relative;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.att-table-wrap:focus-visible {
+    box-shadow: inset 0 0 0 3px rgba(var(--sl-primary-rgb), .2);
+    outline: 0;
+}
+
+.att-mobile-scroll-hint {
+    align-items: center;
+    background: var(--blue-50);
+    border-inline: 1px solid var(--border);
+    color: var(--blue-600);
+    display: none;
+    font-size: 11px;
+    font-weight: 700;
+    gap: 6px;
+    justify-content: center;
+    padding: 7px 10px;
+    text-align: center;
 }
 
 .att-table-wrap::-webkit-scrollbar {
@@ -687,13 +710,23 @@ thead .col-name {
 
 @media (max-width: 1099.98px) {
     .add-col-form { flex-wrap:wrap; }
+
+    .att-page {
+        height: auto;
+        min-height: calc(100dvh - var(--navbar-height, 72px) - 52px);
+    }
+
+    .att-table-wrap {
+        max-height: 62dvh;
+        min-height: 360px;
+    }
 }
 
 @media (max-width: 767.98px) {
     .att-page {
         height: auto;
         min-height: calc(100dvh - 64px);
-        padding: 0.75rem;
+        padding: 0;
     }
 
     .att-toolbar {
@@ -786,9 +819,13 @@ thead .col-name {
     }
 
     .att-table-wrap {
-        max-height: calc(100dvh - 250px);
+        max-height: 62dvh;
         min-height: 320px;
         -webkit-overflow-scrolling: touch;
+    }
+
+    .att-mobile-scroll-hint {
+        display: flex;
     }
 
     .col-stt {
@@ -873,6 +910,37 @@ thead .col-name {
         bottom: 0.75rem;
         left: 0.75rem;
         justify-content: center;
+    }
+}
+
+@media (max-width: 419.98px) {
+    .att-toolbar {
+        padding: .75rem;
+    }
+
+    .att-primary-actions,
+    .add-col-form {
+        grid-template-columns: 1fr;
+    }
+
+    .att-primary-actions > *,
+    .add-col-form > * {
+        grid-column: 1 !important;
+    }
+
+    .col-name {
+        width: 108px !important;
+        min-width: 108px !important;
+        max-width: 108px !important;
+    }
+
+    .att-title-block h5 {
+        font-size: .84rem;
+    }
+
+    .att-footer,
+    .att-mobile-scroll-hint {
+        padding-inline: .75rem;
     }
 }
 
