@@ -25,6 +25,10 @@ class CourseDetailReviewExperienceTest extends TestCase
         $this->assertStringContainsString('module-title-row', $sidebar);
         $this->assertStringContainsString('overflow-x: hidden', $styles);
         $this->assertStringContainsString('overflow-wrap: anywhere', $styles);
+        $this->assertStringContainsString('.accordion-body .lesson-item-wrapper', $styles);
+        $this->assertStringContainsString('padding-left: 18px !important', $styles);
+        $this->assertStringNotContainsString('.accordion-body::before', $styles);
+        $this->assertStringContainsString('$lessonStatus !== \\App\\Models\\Lesson::STATUS_PUBLISHED', $sidebar);
     }
 
     public function test_course_content_supports_direct_links_and_safe_video_embedding(): void

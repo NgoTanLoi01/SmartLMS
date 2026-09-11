@@ -1924,6 +1924,18 @@ body,
     border-left-color: #54726E !important;
 }
 
+/* Phân cấp nội dung con giống menu: giữ nguyên hàng và chỉ thụt nội dung. */
+.course-outline-card .accordion-collapse > .accordion-body {
+    position: relative;
+    padding-left: 0 !important;
+}
+
+.course-outline-card .accordion-collapse > .accordion-body .lesson-item-wrapper,
+.course-outline-card .accordion-collapse > .accordion-body .assignment-item-wrapper,
+.course-outline-card .accordion-collapse > .accordion-body .quiz-item-wrapper {
+    padding-left: 18px !important;
+}
+
 .assignment-item-wrapper {
     background: #fff !important;
     border-left-color: transparent !important;
@@ -3325,6 +3337,12 @@ body.course-presentation-mode .btn-footer-nav { font-size: 16px; min-height: 48p
     .lesson-error-state .btn {
         grid-column: 1 / -1;
         width: 100%;
+    }
+
+    .course-outline-card .accordion-collapse > .accordion-body .lesson-item-wrapper,
+    .course-outline-card .accordion-collapse > .accordion-body .assignment-item-wrapper,
+    .course-outline-card .accordion-collapse > .accordion-body .quiz-item-wrapper {
+        padding-left: 14px !important;
     }
 }
 

@@ -101,6 +101,8 @@
                                             )
                                             : sprintf('%d:%02d', floor($durSec / 60), $durSec % 60))
                                         : null;
+                                $lessonStatus = $lesson->status ?? \App\Models\Lesson::STATUS_PUBLISHED;
+                                $lessonOpensLater = $lesson->available_from && $lesson->available_from->gt($currentTime);
                             @endphp
 
                             {{-- ── LESSON ROW ── --}}
@@ -146,15 +148,17 @@
                                             </div>
                                         @endif
 
-                                        @if ($isManager)
+                                        @if ($isManager && ($lessonStatus !== \App\Models\Lesson::STATUS_PUBLISHED || $lessonOpensLater || $durLabel))
                                             <div
                                                 class="lesson-dur-text d-flex align-items-center gap-1 flex-wrap mt-1">
-                                                <span
-                                                    class="badge bg-{{ $lesson->status === 'published' ? 'success' : ($lesson->status === 'hidden' ? 'secondary' : 'warning text-dark') }}"
-                                                    style="font-size: 11px;">
-                                                    {{ match ($lesson->status ?? 'published') { 'draft' => 'Bản nháp', 'hidden' => 'Đang ẩn', 'archived' => 'Đã lưu trữ', default => 'Đã xuất bản' } }}
-                                                </span>
-                                                @if ($lesson->available_from && $lesson->available_from->gt($currentTime))
+                                                @if ($lessonStatus !== \App\Models\Lesson::STATUS_PUBLISHED)
+                                                    <span
+                                                        class="badge bg-{{ $lessonStatus === \App\Models\Lesson::STATUS_HIDDEN ? 'secondary' : 'warning text-dark' }}"
+                                                        style="font-size: 11px;">
+                                                        {{ match ($lessonStatus) { 'draft' => 'Bản nháp', 'hidden' => 'Đang ẩn', 'archived' => 'Đã lưu trữ', default => $lessonStatus } }}
+                                                    </span>
+                                                @endif
+                                                @if ($lessonOpensLater)
                                                     <span style="font-size: 11px;color:#6b7280;">Mở:
                                                         {{ $lesson->available_from->format('d/m H:i') }}</span>
                                                 @endif
