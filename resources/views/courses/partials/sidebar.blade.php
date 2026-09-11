@@ -33,7 +33,7 @@
                     aria-expanded="{{ $moduleIndex === 0 ? 'true' : 'false' }}"
                     aria-controls="module-{{ $module->id }}">
                     <div class="module-title-block" style="padding-left:{{ $isManager ? '8px' : '16px' }};">
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="module-title-row d-flex align-items-center gap-2">
                             <span class="module-number-badge">Chương {{ str_pad((string) ($moduleIndex + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="module-title-text">{{ $module->title }}</span>
                             @if ($isManager && ($module->status ?? \App\Models\Module::STATUS_PUBLISHED) !== \App\Models\Module::STATUS_PUBLISHED)

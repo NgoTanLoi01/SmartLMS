@@ -11,6 +11,7 @@ class CourseDetailReviewExperienceTest extends TestCase
         $view = file_get_contents(resource_path('views/courses/show.blade.php'));
         $sidebar = file_get_contents(resource_path('views/courses/partials/sidebar.blade.php'));
         $interactions = file_get_contents(resource_path('views/courses/partials/scripts/interactions.blade.php'));
+        $styles = file_get_contents(resource_path('css/pages/course-show.css'));
 
         $this->assertStringNotContainsString('id="progress-bar"', $view);
         $this->assertStringNotContainsString('id="sidebar-progress-bar"', $view);
@@ -21,6 +22,9 @@ class CourseDetailReviewExperienceTest extends TestCase
         $this->assertStringContainsString('lesson-order-badge', $sidebar);
         $this->assertStringContainsString('Chương {{ str_pad', $sidebar);
         $this->assertStringContainsString('course-outline-search', $view);
+        $this->assertStringContainsString('module-title-row', $sidebar);
+        $this->assertStringContainsString('overflow-x: hidden', $styles);
+        $this->assertStringContainsString('overflow-wrap: anywhere', $styles);
     }
 
     public function test_course_content_supports_direct_links_and_safe_video_embedding(): void

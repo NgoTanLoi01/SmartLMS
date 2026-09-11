@@ -1431,9 +1431,93 @@ body,
 .sidebar-scroll {
     max-height: calc(100dvh - 210px);
     overscroll-behavior: contain;
+    overflow-x: hidden;
     padding: 0;
     overflow-y: auto;
     scrollbar-gutter: stable;
+}
+
+.course-outline-card,
+.course-outline-card .accordion,
+.course-outline-card .accordion-item,
+.course-outline-card .module-header-wrapper,
+.course-outline-card .lesson-item-wrapper,
+.course-outline-card .assignment-item-wrapper,
+.course-outline-card .quiz-item-wrapper {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.course-outline-card .lesson-item-wrapper,
+.course-outline-card .assignment-item-wrapper,
+.course-outline-card .quiz-item-wrapper {
+    position: relative;
+}
+
+.course-outline-card .module-header-wrapper > .accordion-button,
+.course-outline-card .lesson-item-wrapper > .course-outline-trigger,
+.course-outline-card .assignment-item-wrapper > .course-outline-trigger,
+.course-outline-card .quiz-item-wrapper > .course-outline-trigger {
+    flex: 1 1 0 !important;
+    min-width: 0;
+    width: auto;
+}
+
+.course-outline-card .drag-handle,
+.course-outline-card .action-buttons {
+    flex: 0 0 auto;
+}
+
+.course-outline-card .module-title-row {
+    min-width: 0;
+    width: 100%;
+}
+
+.course-outline-card .module-title-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.course-outline-card .lesson-name-text {
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .course-outline-card .module-header-wrapper > .action-buttons,
+    .course-outline-card .lesson-item-wrapper > .action-buttons,
+    .course-outline-card .assignment-item-wrapper > .action-buttons,
+    .course-outline-card .quiz-item-wrapper > .action-buttons {
+        position: absolute;
+        z-index: 3;
+        top: 50%;
+        right: 6px;
+        padding: 3px;
+        border: 1px solid #dce7e3;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, .96);
+        box-shadow: 0 6px 16px rgba(56, 86, 82, .12);
+        pointer-events: none;
+        transform: translateY(-50%);
+    }
+
+    .course-outline-card .module-header-wrapper > .action-buttons {
+        right: 38px;
+    }
+
+    .course-outline-card .module-header-wrapper:hover > .action-buttons,
+    .course-outline-card .module-header-wrapper:focus-within > .action-buttons,
+    .course-outline-card .lesson-item-wrapper:hover > .action-buttons,
+    .course-outline-card .lesson-item-wrapper:focus-within > .action-buttons,
+    .course-outline-card .assignment-item-wrapper:hover > .action-buttons,
+    .course-outline-card .assignment-item-wrapper:focus-within > .action-buttons,
+    .course-outline-card .quiz-item-wrapper:hover > .action-buttons,
+    .course-outline-card .quiz-item-wrapper:focus-within > .action-buttons {
+        opacity: 1;
+        pointer-events: auto;
+    }
 }
 
 @media (min-width: 1200px) {
