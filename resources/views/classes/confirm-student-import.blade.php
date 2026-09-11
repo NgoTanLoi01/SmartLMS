@@ -2,24 +2,41 @@
 
 @section('title', 'Xác nhận thay thế sĩ số - '.$classroom->name)
 
+@push('styles')
+    @vite('resources/css/pages/class-students.css')
+@endpush
+
 @section('content')
-    <div class="container py-4 legacy-form-page legacy-form-page--narrow">
-        <div class="card border-danger shadow-sm legacy-confirm-card">
-            <div class="card-body p-4">
-                <h1 class="h4 mb-3">Xác nhận thay thế toàn bộ sĩ số</h1>
-                <p class="mb-3">Lớp <strong>{{ $classroom->name }}</strong> sẽ được đồng bộ chính xác theo file vừa tải lên.</p>
+    <div class="lms-page student-import-confirm-page">
+        <x-ui.page-header title="Xác nhận thay thế sĩ số" :breadcrumbs="[
+            ['label' => 'Lớp học', 'url' => route('classes.index')],
+            ['label' => $classroom->name, 'url' => route('classes.students.index', $classroom)],
+            ['label' => 'Xác nhận import'],
+        ]">
+            <x-slot:meta>
+                <span><i class="fa-solid fa-file-excel" aria-hidden="true"></i>Kiểm tra dữ liệu trước khi cập nhật lớp</span>
+            </x-slot:meta>
+        </x-ui.page-header>
+
+        <section class="student-import-confirm-card">
+            <div class="student-import-confirm-card__body">
+                <h2 class="h4 mb-2">Thay thế toàn bộ danh sách học viên?</h2>
+                <p class="text-muted mb-0">Lớp <strong>{{ $classroom->name }}</strong> sẽ được đồng bộ chính xác theo file vừa tải lên.</p>
 
                 @if (!empty($rosterChanged))
-                    <div class="alert alert-warning">Sĩ số đã thay đổi sau lần xem trước. Danh sách dưới đây đã được tính lại; vui lòng xác nhận lại.</div>
+                    <div class="alert alert-warning mt-3 mb-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>Sĩ số đã thay đổi sau lần xem trước. Danh sách dưới đây đã được tính lại; vui lòng xác nhận lại.</div>
                 @endif
 
-                <div class="alert {{ $preview->detachedCount > 0 ? 'alert-danger' : 'alert-success' }}">
-                    <strong>{{ $preview->detachedCount }} học viên sẽ bị gỡ khỏi lớp.</strong>
-                    Tài khoản và dữ liệu học tập của họ không bị xóa.
+                <div class="student-import-confirm-summary">
+                    <i class="fa-solid fa-user-minus mt-1" aria-hidden="true"></i>
+                    <div>
+                        <strong>{{ $preview->detachedCount }} học viên sẽ bị gỡ khỏi lớp.</strong>
+                        <div>Tài khoản và dữ liệu học tập của họ vẫn được giữ nguyên.</div>
+                    </div>
                 </div>
 
                 @if ($preview->studentsToDetach !== [])
-                    <div class="border rounded mb-4" style="max-height:300px; overflow:auto;">
+                    <div class="student-import-confirm-list">
                         <ul class="list-group list-group-flush">
                             @foreach ($preview->studentsToDetach as $student)
                                 <li class="list-group-item d-flex justify-content-between gap-3">
@@ -36,17 +53,17 @@
                     <input type="hidden" name="mode" value="replace">
                     <input type="hidden" name="preview_token" value="{{ $previewToken }}">
 
-                    <label class="d-flex gap-2 align-items-start mb-4">
-                        <input type="checkbox" name="replace_confirmed" value="1" required class="mt-1">
+                    <label class="student-import-confirm-check">
+                        <input type="checkbox" name="replace_confirmed" value="1" required>
                         <span>Tôi đã kiểm tra danh sách và xác nhận thay thế toàn bộ sĩ số lớp.</span>
                     </label>
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{{ route('classes.students.index', $classroom->id) }}" class="btn btn-outline-secondary">Hủy</a>
-                        <button type="submit" class="btn btn-danger">Xác nhận thay thế</button>
+                    <div class="student-import-confirm-actions">
+                        <a href="{{ route('classes.students.index', $classroom->id) }}" class="lms-btn lms-btn-outline">Hủy bỏ</a>
+                        <button type="submit" class="lms-btn lms-btn-danger"><i class="fa-solid fa-rotate"></i>Xác nhận thay thế</button>
                     </div>
                 </form>
             </div>
-        </div>
+        </section>
     </div>
 @endsection

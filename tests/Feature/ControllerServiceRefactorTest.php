@@ -41,7 +41,37 @@ class ControllerServiceRefactorTest extends TestCase
             $table->string('email')->unique();
             $table->string('password');
             $table->string('role');
+            $table->boolean('is_active')->default(true);
             $table->rememberToken();
+            $table->timestamps();
+        });
+        Schema::create('learning_programs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('teacher_id')->nullable();
+            $table->string('name');
+            $table->string('code')->nullable();
+            $table->text('description')->nullable();
+            $table->string('status')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('classes', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('code')->nullable();
+            $table->unsignedBigInteger('teacher_id')->nullable();
+            $table->string('status')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('smart_notifications', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type');
+            $table->string('title');
+            $table->text('message');
+            $table->string('action_url')->nullable();
+            $table->json('data')->nullable();
+            $table->string('dedupe_key')->nullable();
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
         Schema::create('courses', function (Blueprint $table) {
@@ -206,7 +236,7 @@ class ControllerServiceRefactorTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['options', 'questions', 'quiz_passages', 'course_question_bank', 'question_banks', 'quizzes', 'learning_material_assignments', 'learning_materials', 'assignment_submissions', 'assignments', 'lessons', 'modules', 'courses', 'users'] as $table) {
+            foreach (['options', 'questions', 'quiz_passages', 'course_question_bank', 'question_banks', 'quizzes', 'learning_material_assignments', 'learning_materials', 'assignment_submissions', 'assignments', 'lessons', 'modules', 'courses', 'smart_notifications', 'classes', 'learning_programs', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -282,6 +312,175 @@ class ControllerServiceRefactorTest extends TestCase
         Storage::disk('public')->assertExists($targetLesson->attachment);
         $this->assertSame($targetLesson->id, $targetAssignment->lesson_id);
         $this->assertSame('Quiz 1', $target->quizzes()->firstOrFail()->title);
+    }
+
+    public function test_admin_can_use_an_existing_delivery_course_as_clone_source(): void
+    {
+        $teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $source = Course::create([
+            'title' => 'Khóa đang giảng dạy',
+            'description' => 'Nội dung nguồn',
+            'teacher_id' => $teacher->id,
+            'course_type' => 'delivery',
+            'status' => Course::STATUS_PUBLISHED,
+        ]);
+        $module = Module::create([
+            'course_id' => $source->id,
+            'title' => 'Chương nguồn',
+            'order' => 1,
+            'status' => Module::STATUS_PUBLISHED,
+        ]);
+        Lesson::create([
+            'module_id' => $module->id,
+            'title' => 'Bài học nguồn',
+            'order' => 1,
+            'status' => Lesson::STATUS_PUBLISHED,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('courses.create', ['template_course_id' => $source->id]))
+            ->assertOk()
+            ->assertSee('Khóa đang giảng dạy')
+            ->assertSee('Giáo viên phụ trách')
+            ->assertSee($teacher->email);
+
+        $this->actingAs($admin)
+            ->post(route('courses.store'), [
+                'title' => 'Bản sao từ khóa đang dạy',
+                'description' => 'Sao chép nội dung khóa học hiện có',
+                'teacher_id' => $teacher->id,
+                'course_type' => 'delivery',
+                'template_course_id' => $source->id,
+                'status' => Course::STATUS_DRAFT,
+            ])
+            ->assertRedirect(route('courses.index'));
+
+        $copy = Course::query()->where('title', 'Bản sao từ khóa đang dạy')->firstOrFail();
+        $this->assertSame($teacher->id, $copy->teacher_id);
+        $this->assertNull($copy->source_template_id);
+        $copiedModule = $copy->modules()->firstOrFail();
+        $this->assertSame('Chương nguồn', $copiedModule->title);
+        $this->assertSame('Bài học nguồn', $copiedModule->lessons()->firstOrFail()->title);
+    }
+
+    public function test_admin_must_assign_course_to_a_teacher_and_can_reassign_it(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $firstTeacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $secondTeacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+
+        $this->actingAs($admin)
+            ->post(route('courses.store'), [
+                'title' => 'Khóa thiếu giáo viên',
+                'description' => 'Dữ liệu kiểm thử',
+                'course_type' => 'delivery',
+                'status' => Course::STATUS_DRAFT,
+            ])
+            ->assertSessionHasErrors('teacher_id');
+
+        $this->assertDatabaseMissing('courses', ['title' => 'Khóa thiếu giáo viên']);
+
+        $this->actingAs($admin)
+            ->post(route('courses.store'), [
+                'title' => 'Khóa có giáo viên',
+                'description' => 'Dữ liệu kiểm thử',
+                'teacher_id' => $firstTeacher->id,
+                'course_type' => 'delivery',
+                'status' => Course::STATUS_DRAFT,
+            ])
+            ->assertRedirect(route('courses.index'));
+
+        $course = Course::query()->where('title', 'Khóa có giáo viên')->firstOrFail();
+        $this->assertSame($firstTeacher->id, $course->teacher_id);
+
+        $this->actingAs($admin)
+            ->get(route('courses.edit', $course))
+            ->assertOk()
+            ->assertSee('Giáo viên phụ trách')
+            ->assertSee($secondTeacher->email);
+
+        $this->actingAs($admin)
+            ->put(route('courses.update', $course), [
+                'title' => $course->title,
+                'description' => $course->description,
+                'teacher_id' => $secondTeacher->id,
+                'course_type' => 'delivery',
+                'status' => Course::STATUS_DRAFT,
+            ])
+            ->assertRedirect(route('courses.index'));
+
+        $this->assertSame($secondTeacher->id, $course->fresh()->teacher_id);
+    }
+
+    public function test_teacher_cannot_override_course_owner_with_a_direct_request(): void
+    {
+        $teacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $otherTeacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+
+        $this->actingAs($teacher)
+            ->post(route('courses.store'), [
+                'title' => 'Khóa vượt quyền',
+                'description' => 'Dữ liệu kiểm thử',
+                'teacher_id' => $otherTeacher->id,
+                'course_type' => 'delivery',
+                'status' => Course::STATUS_DRAFT,
+            ])
+            ->assertSessionHasErrors('teacher_id');
+
+        $this->assertDatabaseMissing('courses', ['title' => 'Khóa vượt quyền']);
+
+        $this->actingAs($teacher)
+            ->post(route('courses.store'), [
+                'title' => 'Khóa đúng quyền',
+                'description' => 'Dữ liệu kiểm thử',
+                'course_type' => 'delivery',
+                'status' => Course::STATUS_DRAFT,
+            ])
+            ->assertRedirect(route('courses.index'));
+
+        $this->assertDatabaseHas('courses', [
+            'title' => 'Khóa đúng quyền',
+            'teacher_id' => $teacher->id,
+        ]);
+
+        $course = Course::query()->where('title', 'Khóa đúng quyền')->firstOrFail();
+        $this->actingAs($teacher)
+            ->put(route('courses.update', $course), [
+                'title' => $course->title,
+                'description' => $course->description,
+                'teacher_id' => $otherTeacher->id,
+                'course_type' => 'delivery',
+                'status' => Course::STATUS_DRAFT,
+            ])
+            ->assertSessionHasErrors('teacher_id');
+
+        $this->assertSame($teacher->id, $course->fresh()->teacher_id);
+    }
+
+    public function test_teacher_cannot_use_another_teachers_course_as_clone_source(): void
+    {
+        $owner = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $otherTeacher = User::factory()->create(['role' => User::ROLE_TEACHER]);
+        $source = Course::create([
+            'title' => 'Khóa học của giáo viên khác',
+            'description' => 'Không thuộc phạm vi truy cập',
+            'teacher_id' => $owner->id,
+            'course_type' => 'delivery',
+            'status' => Course::STATUS_PUBLISHED,
+        ]);
+
+        $this->actingAs($otherTeacher)
+            ->post(route('courses.store'), [
+                'title' => 'Bản sao trái phép',
+                'description' => 'Không được phép sao chép',
+                'course_type' => 'delivery',
+                'template_course_id' => $source->id,
+                'status' => Course::STATUS_DRAFT,
+            ])
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('courses', ['title' => 'Bản sao trái phép']);
     }
 
     public function test_template_sync_updates_selected_sections_without_replacing_delivery_records(): void

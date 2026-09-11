@@ -78,4 +78,40 @@ class CatalogIndexExperienceTest extends TestCase
         $this->assertStringContainsString('<x-ui.page-header', $gradeTool);
         $this->assertStringContainsString('grade-workspace-head', $gradeTool);
     }
+
+    public function test_class_student_workflow_uses_responsive_roster_and_profile_patterns(): void
+    {
+        $roster = file_get_contents(resource_path('views/classes/students.blade.php'));
+        $profile = file_get_contents(resource_path('views/classes/student-profile.blade.php'));
+        $confirmation = file_get_contents(resource_path('views/classes/confirm-student-import.blade.php'));
+        $styles = file_get_contents(resource_path('css/pages/class-students.css'));
+
+        foreach ([$roster, $profile, $confirmation] as $view) {
+            $this->assertStringContainsString("@vite('resources/css/pages/class-students.css')", $view);
+        }
+
+        $this->assertStringContainsString('student-roster-hero', $roster);
+        $this->assertStringContainsString('student-roster-table', $roster);
+        $this->assertStringContainsString('data-label="Hành động"', $roster);
+        $this->assertStringContainsString('student-profile-hero', $profile);
+        $this->assertStringContainsString('student-profile-layout', $profile);
+        $this->assertStringContainsString('student-detail-table', $profile);
+        $this->assertStringContainsString('student-import-confirm-card', $confirmation);
+        $this->assertStringContainsString('@media (max-width: 1024px)', $styles);
+        $this->assertStringContainsString('@media (max-width: 768px)', $styles);
+    }
+
+    public function test_class_progress_uses_the_responsive_workspace_pattern(): void
+    {
+        $view = file_get_contents(resource_path('views/classes/progress.blade.php'));
+        $styles = file_get_contents(resource_path('css/pages/class-progress.css'));
+
+        $this->assertStringContainsString('class-progress-hero', $view);
+        $this->assertStringContainsString('class-progress-summary', $view);
+        $this->assertStringContainsString('class-progress-table', $view);
+        $this->assertStringContainsString('data-label="Hành động"', $view);
+        $this->assertStringContainsString('class-progress-modal-grid', $view);
+        $this->assertStringContainsString('@media (max-width: 1024px)', $styles);
+        $this->assertStringContainsString('@media (max-width: 768px)', $styles);
+    }
 }

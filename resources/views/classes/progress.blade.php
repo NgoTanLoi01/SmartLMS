@@ -7,9 +7,10 @@
 @endpush
 
 @section('content')
-    <div class="lms-page">
-
-        <x-ui.page-header title="Tổng quan tiến độ: {{ $classroom->name }}" :breadcrumbs="[
+    <div class="lms-page class-progress-page">
+        <section class="class-progress-hero" aria-label="Tổng quan tiến độ lớp">
+            <div class="class-progress-hero__accent" aria-hidden="true"></div>
+            <x-ui.page-header title="Tổng quan tiến độ: {{ $classroom->name }}" :breadcrumbs="[
             ['label' => 'Lớp học', 'url' => route('classes.index')],
             ['label' => $classroom->code],
         ]">
@@ -30,7 +31,33 @@
                     <i class="fa-solid fa-arrow-left"></i> Quay lại
                 </a>
             </x-slot:actions>
-        </x-ui.page-header>
+            </x-ui.page-header>
+
+            {{-- Class stats --}}
+            <x-ui.stat-grid class="class-progress-summary">
+                <x-ui.stat-card label="Hoàn thành bài học" value="{{ $classReport['lesson_completion_rate'] }}%">
+                    <div class="lms-prog-bar">
+                        <div class="lms-prog-fill" style="width:{{ $classReport['lesson_completion_rate'] }}%;"></div>
+                    </div>
+                    <div class="lms-stat-sub">{{ $classReport['lesson_completed'] }}/{{ $classReport['lesson_total'] }} lượt</div>
+                </x-ui.stat-card>
+                <x-ui.stat-card label="Tỷ lệ nộp bài" value="{{ $classReport['assignment_submission_rate'] }}%"
+                    tone="success">
+                    <div class="lms-prog-bar">
+                        <div class="lms-prog-fill green" style="width:{{ $classReport['assignment_submission_rate'] }}%;"></div>
+                    </div>
+                    <div class="lms-stat-sub">{{ $classReport['assignment_submitted'] }}/{{ $classReport['assignment_total'] }} lượt</div>
+                </x-ui.stat-card>
+                <x-ui.stat-card label="Điểm trung bình" :value="$classReport['score_average'] ?? '—'">
+                    <div class="lms-stat-sub">Bài tập và bài kiểm tra đã có</div>
+                    <div class="lms-stat-sub">Thiếu {{ $classReport['missing_assignment_total'] }} lượt bài</div>
+                </x-ui.stat-card>
+                <x-ui.stat-card label="Cần chú ý" :value="$classReport['needs_attention_count']" tone="danger">
+                    <div class="lms-stat-sub">{{ $classReport['absence_total'] }} lượt vắng toàn lớp</div>
+                    <div class="lms-stat-sub">{{ $classReport['pending_quiz_total'] }} lượt kiểm tra chưa làm</div>
+                </x-ui.stat-card>
+            </x-ui.stat-grid>
+        </section>
 
         {{-- AI Analysis Panel --}}
         <div class="lms-ai-panel d-none" id="aiAnalysisPanel">
@@ -84,62 +111,33 @@
         </div>
 
         {{-- Filter --}}
-        <div class="lms-card" style="margin-bottom:1.5rem;">
+        <div class="lms-card class-progress-filter-card">
             <form action="{{ route('classes.progress', $classroom->id) }}" method="GET" class="lms-filter">
-                <div class="lms-filter-group" style="flex:2; min-width:200px;">
+                <div class="lms-filter-group class-progress-filter-course">
                     <label>Khóa học</label>
-                    <select name="course_id" class="lms-select" style="width:100%;">
+                    <select name="course_id" class="lms-select">
                         <option value="">Tất cả khóa học</option>
                         @foreach ($availableCourses as $course)
                             <option value="{{ $course->id }}" @selected(($filters['course_id'] ?? '') == $course->id)>{{ $course->title }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="lms-filter-group" style="justify-content:flex-end;">
-                    <label style="visibility:hidden;">x</label>
+                <div class="lms-filter-group class-progress-filter-attention">
                     <label class="lms-checkbox-wrap">
                         <input type="checkbox" name="attention_only" value="1" @checked($filters['attention_only'])>
                         Chỉ học viên cần chú ý
                     </label>
                 </div>
-                <div style="display:flex; gap:8px; align-items:flex-end;">
-                    <button type="submit" class="lms-btn lms-btn-primary" style="height:36px; padding:0 14px;">
+                <div class="class-progress-filter-actions">
+                    <button type="submit" class="lms-btn lms-btn-primary class-progress-filter-submit">
                         <i class="fa-solid fa-filter"></i> Lọc
                     </button>
                     <a href="{{ route('classes.progress', $classroom->id) }}" class="lms-btn-reset" title="Xóa bộ lọc">
-                        <i class="fa-solid fa-rotate-left" style="font-size:13px;"></i>
+                        <i class="fa-solid fa-rotate-left"></i>
                     </a>
                 </div>
             </form>
         </div>
-
-        {{-- Class stats --}}
-        <x-ui.stat-grid>
-            <x-ui.stat-card label="Hoàn thành bài học" value="{{ $classReport['lesson_completion_rate'] }}%">
-                <div class="lms-prog-bar">
-                    <div class="lms-prog-fill" style="width:{{ $classReport['lesson_completion_rate'] }}%;"></div>
-                </div>
-                <div class="lms-stat-sub">{{ $classReport['lesson_completed'] }}/{{ $classReport['lesson_total'] }} lượt
-                </div>
-            </x-ui.stat-card>
-            <x-ui.stat-card label="Tỷ lệ nộp bài" value="{{ $classReport['assignment_submission_rate'] }}%"
-                tone="success">
-                <div class="lms-prog-bar">
-                    <div class="lms-prog-fill green" style="width:{{ $classReport['assignment_submission_rate'] }}%;">
-                    </div>
-                </div>
-                <div class="lms-stat-sub">
-                    {{ $classReport['assignment_submitted'] }}/{{ $classReport['assignment_total'] }} lượt</div>
-            </x-ui.stat-card>
-            <x-ui.stat-card label="Điểm trung bình" :value="$classReport['score_average'] ?? '—'">
-                <div class="lms-stat-sub">Bài tập và bài kiểm tra đã có</div>
-                <div class="lms-stat-sub">Thiếu {{ $classReport['missing_assignment_total'] }} lượt bài</div>
-            </x-ui.stat-card>
-            <x-ui.stat-card label="Cần chú ý" :value="$classReport['needs_attention_count']" tone="danger">
-                <div class="lms-stat-sub">{{ $classReport['absence_total'] }} lượt vắng toàn lớp</div>
-                <div class="lms-stat-sub">{{ $classReport['pending_quiz_total'] }} lượt kiểm tra chưa làm</div>
-            </x-ui.stat-card>
-        </x-ui.stat-grid>
 
         {{-- Course cards --}}
         @if (count($courseReports) > 0)
@@ -152,23 +150,22 @@
                         </div>
                         <div class="lms-course-prog-label">Bài học:
                             {{ $courseReport['report']['lesson_completion_rate'] }}%</div>
-                        <div class="lms-prog-bar" style="margin:0 0 8px;">
+                        <div class="lms-prog-bar lms-course-progress-bar">
                             <div class="lms-prog-fill"
                                 style="width:{{ $courseReport['report']['lesson_completion_rate'] }}%;"></div>
                         </div>
                         <div class="lms-course-tags">
-                            <span class="lms-course-tag"><i class="fa-solid fa-paperclip" style="font-size:11px;"></i> Nộp bài
+                            <span class="lms-course-tag"><i class="fa-solid fa-paperclip"></i> Nộp bài
                                 {{ $courseReport['report']['assignment_submission_rate'] }}%</span>
-                            <span class="lms-course-tag"><i class="fa-solid fa-star" style="font-size:11px;"></i> TB
+                            <span class="lms-course-tag"><i class="fa-solid fa-star"></i> TB
                                 {{ $courseReport['report']['score_average'] ?? 'Chưa có' }}</span>
-                            <span class="lms-course-tag"><i class="fa-solid fa-user-clock" style="font-size:11px;"></i>
+                            <span class="lms-course-tag"><i class="fa-solid fa-user-clock"></i>
                                 {{ $courseReport['report']['needs_attention_count'] }} cần chú ý</span>
                         </div>
                     </div>
                 @empty
-                    <div style="grid-column:1/-1;">
-                        <div
-                            style="background:#EEF5F2; border:1px solid #B0DAD2; border-radius:var(--lms-radius); padding:14px 16px; font-size:13.5px; color:#385652;">
+                    <div class="class-progress-course-empty-wrap">
+                        <div class="class-progress-course-empty">
                             Lớp chưa được gán khóa học.
                         </div>
                     </div>
@@ -183,7 +180,7 @@
                 <span class="lms-count">{{ $studentProgress->count() }} kết quả</span>
             </div>
             <div class="lms-table-wrap">
-                <table class="lms-table">
+                <table class="lms-table class-progress-table">
                     <thead>
                         <tr>
                             <th>Học viên</th>
@@ -193,7 +190,7 @@
                             <th>Điểm TB</th>
                             <th>Vắng</th>
                             <th>Trạng thái</th>
-                            <th style="text-align:right;">Hành động</th>
+                            <th class="class-progress-actions-heading">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -203,17 +200,22 @@
                                 $modalId = 'progressStudentModal' . $student->id;
                             @endphp
                             <tr>
-                                <td>
-                                    <div class="lms-student-name">{{ $student->name }}</div>
-                                    @if ($student->username)
-                                        <div class="lms-student-email"><i class="fa-solid fa-id-badge"></i> {{ $student->username }}</div>
-                                    @endif
-                                    @if ($student->student_code)
-                                        <div class="lms-student-email"><i class="fa-solid fa-hashtag"></i> {{ $student->student_code }}</div>
-                                    @endif
-                                    <div class="lms-student-email">{{ $student->email }}</div>
+                                <td data-label="Học viên">
+                                    <div class="class-progress-student">
+                                        <span class="class-progress-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($student->name, 0, 1)) }}</span>
+                                        <div class="class-progress-student__info">
+                                            <div class="lms-student-name">{{ $student->name }}</div>
+                                            @if ($student->username)
+                                                <div class="lms-student-email"><i class="fa-solid fa-id-badge"></i> {{ $student->username }}</div>
+                                            @endif
+                                            @if ($student->student_code)
+                                                <div class="lms-student-email"><i class="fa-solid fa-hashtag"></i> {{ $student->student_code }}</div>
+                                            @endif
+                                            <div class="lms-student-email">{{ $student->email }}</div>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td>
+                                <td data-label="Bài học">
                                     <div class="lms-micro">
                                         <div class="lms-micro-val">
                                             {{ $summary['lesson_completed'] }}/{{ $summary['lesson_total'] }}</div>
@@ -224,7 +226,7 @@
                                         <div class="lms-micro-sub">{{ $summary['lesson_progress'] }}%</div>
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="Bài tập">
                                     <div class="lms-micro">
                                         <div class="lms-micro-val">
                                             {{ $summary['assignment_submitted_count'] }}/{{ $summary['assignment_total'] }}
@@ -237,21 +239,21 @@
                                         <div class="lms-micro-sub">{{ $summary['assignment_missing_count'] }} thiếu</div>
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="Bài kiểm tra">
                                     <div class="lms-micro">
                                         <div class="lms-micro-val">
                                             {{ $summary['quiz_attempted_count'] }}/{{ $summary['quiz_total'] }}</div>
                                         <div class="lms-micro-sub">{{ $summary['quiz_pending_count'] }} chưa làm</div>
                                     </div>
                                 </td>
-                                <td style="font-size:14px; font-weight:700; color:var(--lms-text);">
+                                <td data-label="Điểm TB" class="class-progress-score">
                                     {{ $summary['score_average'] ?? '—' }}
                                 </td>
-                                <td
-                                    style="font-size:13.5px; font-weight:600; {{ $summary['absence_count'] > 0 ? 'color:var(--lms-danger)' : 'color:var(--lms-muted)' }}">
+                                <td data-label="Vắng"
+                                    class="class-progress-absence {{ $summary['absence_count'] > 0 ? 'is-danger' : '' }}">
                                     {{ $summary['absence_count'] }}
                                 </td>
-                                <td>
+                                <td data-label="Trạng thái">
                                     @if ($summary['needs_attention'])
                                         <span class="lms-badge lms-badge-danger">Cần chú ý</span>
                                     @else
@@ -267,14 +269,14 @@
                                         @endforelse
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="Hành động">
                                     <div class="lms-row-actions">
-                                        <button class="lms-btn-ai" data-ai-scope="student"
+                                        <button type="button" class="lms-btn-ai" data-ai-scope="student"
                                             data-student-id="{{ $student->id }}"
                                             data-student-name="{{ $student->name }}">
                                             <i class="fa-solid fa-robot"></i> AI
                                         </button>
-                                        <button class="lms-btn-detail" data-bs-toggle="modal"
+                                        <button type="button" class="lms-btn-detail" data-bs-toggle="modal"
                                             data-bs-target="#{{ $modalId }}">
                                             <i class="fa-solid fa-list-check"></i> Chi tiết
                                         </button>
@@ -287,8 +289,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8"
-                                    style="text-align:center; padding:48px 20px; color:var(--lms-muted); font-size:13.5px;">
+                                <td colspan="8" class="class-progress-empty">
                                     Không có học viên phù hợp với bộ lọc hiện tại.
                                 </td>
                             </tr>
@@ -319,7 +320,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+                        <div class="class-progress-modal-grid">
                             <div class="lms-modal-section">
                                 <div class="lms-modal-section-title"><i class="fa-solid fa-book"
                                         style="color:var(--lms-blue); margin-right:6px; font-size:13px;"></i>Bài học hoàn

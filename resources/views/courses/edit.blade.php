@@ -44,6 +44,29 @@
                                 @enderror
                             </div>
 
+                            @if (auth()->user()->isAdmin())
+                                <div class="mb-4">
+                                    <label for="teacher_id" class="form-label fw-bold">Giáo viên phụ trách <span
+                                            class="text-danger">*</span></label>
+                                    <select name="teacher_id" id="teacher_id"
+                                        class="form-select @error('teacher_id') is-invalid @enderror" required>
+                                        <option value="">-- Chọn giáo viên --</option>
+                                        @foreach ($teachers as $teacher)
+                                            <option value="{{ $teacher->id }}" @selected(old('teacher_id', $course->teacher_id) == $teacher->id)>
+                                                {{ $teacher->name }} · {{ $teacher->email }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('teacher_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-text">Thay đổi giáo viên sẽ chuyển quyền quản lý khóa học cho tài khoản được chọn.</div>
+                                    @if ($teachers->isEmpty())
+                                        <div class="alert alert-warning mt-2 mb-0">Chưa có tài khoản giáo viên để giao phụ trách khóa học.</div>
+                                    @endif
+                                </div>
+                            @endif
+
                             <div class="mb-4">
                                 <label for="learning_program_id" class="form-label fw-bold">Chương trình học</label>
                                 <select name="learning_program_id" id="learning_program_id" class="form-select">

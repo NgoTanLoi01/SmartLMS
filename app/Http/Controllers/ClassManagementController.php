@@ -55,7 +55,7 @@ class ClassManagementController extends Controller
             'name' => $request->name,
             'username' => $username,
             'student_code' => $studentCode,
-            'email' => $request->filled('email') ? $request->email : StudentLoginCode::emailFromUsername($username),
+            'email' => $request->filled('email') ? $request->email : StudentLoginCode::emailFromUsername($username, $studentCode),
             'password' => Hash::make($request->password),
             'role' => 'student',
         ]);

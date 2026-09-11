@@ -81,7 +81,7 @@ class StudentImport implements ToCollection, WithStartRow
                 $this->processedCount++;
                 $studentCode = StudentLoginCode::normalizeStudentCode($maHs);
                 $rowNumber = $index + $this->startRow();
-                $email = $this->importEmail($classroom, $studentCode, $fullName, $rowNumber);
+                $email = $this->importEmail($classroom, $studentCode, $rowNumber);
 
                 $user = $studentCode
                     ? $classroom->students()->where('student_code', $studentCode)->first()
@@ -154,12 +154,17 @@ class StudentImport implements ToCollection, WithStartRow
         }, 3);
     }
 
-    private function importEmail(Classroom $classroom, ?string $studentCode, string $fullName, int $rowNumber): string
+    private function importEmail(Classroom $classroom, ?string $studentCode, int $rowNumber): string
     {
         $classCode = StudentLoginCode::normalizeStudentCode($classroom->code) ?: 'class'.$classroom->id;
-        $studentKey = $studentCode ?: 'row'.$rowNumber.Str::slug($fullName, '');
+        $studentKey = $studentCode ?: 'r'.$rowNumber;
+        $localPart = $classCode.'.'.$studentKey;
 
-        return $classCode.'.'.$studentKey.'@student.smartlms';
+        if (strlen($localPart) > 24) {
+            $localPart = substr($classCode, 0, 10).'.'.substr(hash('sha256', $localPart), 0, 10);
+        }
+
+        return $localPart.'@student.smartlms';
     }
 
     private function isHeaderRow(string $ho, string $ten, string $studentCode): bool

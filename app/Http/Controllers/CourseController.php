@@ -12,6 +12,7 @@ use App\Models\Lesson;
 use App\Models\Question;
 use App\Models\QuizAttempt;
 use App\Models\QuizSession;
+use App\Models\User;
 use App\Services\CourseCloningService;
 use App\Services\PermanentDeletionService;
 use App\Services\QuizQuestionSelectionService;
@@ -310,10 +311,12 @@ class CourseController extends Controller
         $this->authorizeCourseCreation();
 
         $programs = $this->availablePrograms();
-        $templateCourses = $this->availableTemplateCourses(request('template_course_id'));
+        $selectedSourceCourseId = old('template_course_id', request('template_course_id'));
+        $sourceCourses = $this->availableCloneSourceCourses($selectedSourceCourseId);
         $availableClasses = $this->availableClasses();
+        $teachers = $this->availableTeachers();
 
-        return view('courses.create', compact('programs', 'templateCourses', 'availableClasses'));
+        return view('courses.create', compact('programs', 'sourceCourses', 'availableClasses', 'teachers'));
     }
 
     public function store(Request $request)
@@ -330,21 +333,29 @@ class CourseController extends Controller
             'class_ids.*' => 'exists:classes,id',
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
+            'teacher_id' => $this->teacherSelectionRules(),
+        ], [
+            'teacher_id.required' => 'Vui lòng chọn giáo viên phụ trách khóa học.',
+            'teacher_id.exists' => 'Giáo viên đã chọn không tồn tại hoặc đang ngừng hoạt động.',
+            'teacher_id.prohibited' => 'Bạn không có quyền thay đổi giáo viên phụ trách khóa học.',
         ]);
 
         $this->authorizeProgramSelection($request->input('learning_program_id'));
         $this->authorizeClassSelection($request->input('class_ids', []));
-        $templateCourse = $request->filled('template_course_id')
-            ? $this->authorizedTemplateCourse($request->template_course_id)
+        $sourceCourse = $request->filled('template_course_id')
+            ? $this->authorizedCloneSourceCourse($request->template_course_id)
             : null;
 
         $attachedClassCount = 0;
+        $teacherId = auth()->user()->isAdmin()
+            ? (int) $request->input('teacher_id')
+            : (int) auth()->id();
 
-        DB::transaction(function () use ($request, $templateCourse, &$attachedClassCount) {
+        DB::transaction(function () use ($request, $sourceCourse, $teacherId, &$attachedClassCount) {
             $course = Course::create([
                 'title' => $request->title,
                 'description' => $request->description,
-                'teacher_id' => auth()->id(),
+                'teacher_id' => $teacherId,
                 'learning_program_id' => $request->learning_program_id,
                 'course_type' => $request->course_type,
                 'status' => $request->input('status', 'published'),
@@ -352,8 +363,8 @@ class CourseController extends Controller
                 'available_from' => $request->available_from,
             ]);
 
-            if ($templateCourse) {
-                $this->courseCloner->cloneContent($templateCourse, $course);
+            if ($sourceCourse) {
+                $this->courseCloner->cloneContent($sourceCourse, $course);
             }
 
             if ($request->course_type === 'delivery' && $request->filled('class_ids')) {
@@ -362,8 +373,8 @@ class CourseController extends Controller
             }
         });
 
-        $message = $templateCourse
-            ? 'Tạo khóa học từ mẫu thành công!'
+        $message = $sourceCourse
+            ? 'Tạo khóa học từ nội dung nguồn thành công!'
             : 'Tạo khóa học thành công!';
         if ($attachedClassCount > 0) {
             $message .= " Đã gắn {$attachedClassCount} lớp.";
@@ -379,8 +390,9 @@ class CourseController extends Controller
         // Chỉ cho phép giáo viên của khóa học hoặc admin sửa
         $this->authorizeCourseOwner($course);
         $programs = $this->availablePrograms($course);
+        $teachers = $this->availableTeachers();
 
-        return view('courses.edit', compact('course', 'programs'));
+        return view('courses.edit', compact('course', 'programs', 'teachers'));
     }
 
     public function syncTemplate(Request $request, Course $course)
@@ -418,6 +430,11 @@ class CourseController extends Controller
             'course_type' => 'required|in:delivery,template',
             'status' => 'nullable|in:draft,published,hidden,archived',
             'available_from' => 'nullable|date',
+            'teacher_id' => $this->teacherSelectionRules(),
+        ], [
+            'teacher_id.required' => 'Vui lòng chọn giáo viên phụ trách khóa học.',
+            'teacher_id.exists' => 'Giáo viên đã chọn không tồn tại hoặc đang ngừng hoạt động.',
+            'teacher_id.prohibited' => 'Bạn không có quyền thay đổi giáo viên phụ trách khóa học.',
         ]);
 
         if ($course->source_template_id && $request->input('course_type') !== 'delivery') {
@@ -432,10 +449,14 @@ class CourseController extends Controller
         }
 
         $this->authorizeProgramSelection($request->input('learning_program_id'), $course);
+        $teacherId = auth()->user()->isAdmin()
+            ? (int) $request->input('teacher_id')
+            : (int) $course->teacher_id;
 
         $course->update([
             'title' => $request->title,
             'description' => $request->description,
+            'teacher_id' => $teacherId,
             'learning_program_id' => $request->learning_program_id,
             'course_type' => $request->course_type,
             'status' => $request->input('status', $course->status),
@@ -508,7 +529,7 @@ class CourseController extends Controller
         return $programs->filter()->sortBy('name')->values();
     }
 
-    private function availableTemplateCourses($selectedCourseId = null)
+    private function availableCloneSourceCourses($selectedCourseId = null)
     {
         $query = Course::with('learningProgram')
             ->where('course_type', 'template')
@@ -522,21 +543,20 @@ class CourseController extends Controller
         $courses = $query->get();
 
         if ($selectedCourseId && ! $courses->contains('id', (int) $selectedCourseId)) {
-            $courses->push($this->authorizedTemplateCourse($selectedCourseId));
+            $courses->push($this->authorizedCloneSourceCourse($selectedCourseId));
         }
 
         return $courses->sortBy('title')->values();
     }
 
-    private function authorizedTemplateCourse($courseId): Course
+    private function authorizedCloneSourceCourse($courseId): Course
     {
         $query = Course::with([
             'modules.lessons',
             'assignments',
             'quizzes',
             'questionBanks',
-        ]);
-        $query->where('course_type', 'template')->notArchived();
+        ])->notArchived();
 
         if (auth()->user()->role === 'teacher') {
             $query->where('teacher_id', auth()->id());
@@ -555,6 +575,34 @@ class CourseController extends Controller
         }
 
         return $query->get();
+    }
+
+    private function availableTeachers()
+    {
+        if (! auth()->user()->isAdmin()) {
+            return collect();
+        }
+
+        return User::query()
+            ->where('role', User::ROLE_TEACHER)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+    }
+
+    private function teacherSelectionRules(): array
+    {
+        if (! auth()->user()->isAdmin()) {
+            return ['prohibited'];
+        }
+
+        return [
+            'required',
+            'integer',
+            Rule::exists('users', 'id')
+                ->where('role', User::ROLE_TEACHER)
+                ->where('is_active', true),
+        ];
     }
 
     private function authorizeClassSelection(array $classIds): void

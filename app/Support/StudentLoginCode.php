@@ -51,11 +51,24 @@ class StudentLoginCode
         return $code;
     }
 
-    public static function emailFromUsername(string $username): string
+    public static function emailFromUsername(string $username, ?string $studentCode = null): string
     {
-        $localPart = Str::lower(Str::replace('-', '.', $username));
+        $localPart = self::normalizeStudentCode($studentCode)
+            ?: Str::lower(Str::replace('-', '.', $username));
 
-        return $localPart.'@student.smartlms';
+        if (strlen($localPart) > 24) {
+            $localPart = 'hv.'.substr(hash('sha256', $localPart), 0, 10);
+        }
+
+        $email = $localPart.'@student.smartlms';
+        $sequence = 2;
+
+        while (User::where('email', $email)->exists()) {
+            $email = $localPart.'.'.$sequence.'@student.smartlms';
+            $sequence++;
+        }
+
+        return $email;
     }
 
     private static function normalizePrefix(string $prefix): string

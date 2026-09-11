@@ -45,6 +45,29 @@
                                 @enderror
                             </div>
 
+                            @if (auth()->user()->isAdmin())
+                                <div class="mb-4">
+                                    <label for="teacher_id" class="form-label fw-bold">Giáo viên phụ trách <span
+                                            class="text-danger">*</span></label>
+                                    <select name="teacher_id" id="teacher_id"
+                                        class="form-select @error('teacher_id') is-invalid @enderror" required>
+                                        <option value="">-- Chọn giáo viên --</option>
+                                        @foreach ($teachers as $teacher)
+                                            <option value="{{ $teacher->id }}" @selected(old('teacher_id') == $teacher->id)>
+                                                {{ $teacher->name }} · {{ $teacher->email }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('teacher_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-text">Khóa học sẽ thuộc quyền quản lý chuyên môn của giáo viên được chọn.</div>
+                                    @if ($teachers->isEmpty())
+                                        <div class="alert alert-warning mt-2 mb-0">Chưa có tài khoản giáo viên để giao phụ trách khóa học.</div>
+                                    @endif
+                                </div>
+                            @endif
+
                             <div class="mb-4">
                                 <label for="learning_program_id" class="form-label fw-bold">Chương trình học</label>
                                 <select name="learning_program_id" id="learning_program_id" class="form-select">
@@ -68,19 +91,20 @@
                             </div>
 
                             <div class="mb-4">
-                                <label for="template_course_id" class="form-label fw-bold">Khóa học mẫu</label>
+                                <label for="template_course_id" class="form-label fw-bold">Khóa học nguồn</label>
                                 <select name="template_course_id" id="template_course_id" class="form-select">
                                     <option value="">Tạo khóa học trống</option>
-                                    @foreach ($templateCourses as $templateCourse)
-                                        <option value="{{ $templateCourse->id }}" @selected(old('template_course_id', request('template_course_id')) == $templateCourse->id)>
-                                            {{ $templateCourse->title }}
-                                            @if ($templateCourse->learningProgram)
-                                                - {{ $templateCourse->learningProgram->name }}
+                                    @foreach ($sourceCourses as $sourceCourse)
+                                        <option value="{{ $sourceCourse->id }}" @selected(old('template_course_id', request('template_course_id')) == $sourceCourse->id)>
+                                            {{ $sourceCourse->isTemplate() ? '[Khóa mẫu]' : '[Khóa hiện có]' }}
+                                            {{ $sourceCourse->title }}
+                                            @if ($sourceCourse->learningProgram)
+                                                - {{ $sourceCourse->learningProgram->name }}
                                             @endif
                                         </option>
                                     @endforeach
                                 </select>
-                                <div class="form-text">Sao chép chương, bài học, bài tập, bài kiểm tra và liên kết ngân hàng câu hỏi. Không sao chép học viên, tiến độ, bài nộp hoặc điểm danh.</div>
+                                <div class="form-text">Có thể dùng khóa mẫu hoặc khóa học hiện có làm nguồn. Hệ thống sao chép chương, bài học, bài tập, bài kiểm tra và liên kết ngân hàng câu hỏi; không sao chép học viên, tiến độ, bài nộp hoặc điểm danh.</div>
                             </div>
 
                             <div class="mb-4" id="classSelectionGroup">

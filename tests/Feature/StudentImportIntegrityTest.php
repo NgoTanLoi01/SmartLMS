@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Imports\StudentImport;
 use App\Models\Classroom;
 use App\Models\User;
+use App\Support\StudentLoginCode;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
@@ -86,6 +87,36 @@ class StudentImportIntegrityTest extends TestCase
         $this->assertTrue($this->classroom->students()->where('student_code', 'hs002')->exists());
         $this->assertSame(0, $import->detachedCount);
         $this->assertDatabaseCount('class_user', 2);
+    }
+
+    public function test_import_generates_compact_internal_email_addresses(): void
+    {
+        $import = new StudentImport($this->classroom->id, StudentImport::MODE_APPEND);
+        $import->collection($this->rows([
+            ['', 'Thạch Hoàng', 'Gia'],
+            ['HS002', 'Nguyễn', 'Mới'],
+        ]));
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'Thạch Hoàng Gia',
+            'email' => 'test01.r2@student.smartlms',
+        ]);
+        $this->assertDatabaseHas('users', [
+            'student_code' => 'hs002',
+            'email' => 'test01.hs002@student.smartlms',
+        ]);
+    }
+
+    public function test_manual_internal_email_prefers_student_code_and_shortens_long_fallback(): void
+    {
+        $this->assertSame(
+            'hv001@student.smartlms',
+            StudentLoginCode::emailFromUsername('ten-dang-nhap-rat-dai', 'HV-001')
+        );
+
+        $email = StudentLoginCode::emailFromUsername('mot-ten-dang-nhap-hoc-vien-qua-dai-de-hien-thi');
+
+        $this->assertMatchesRegularExpression('/^hv\.[a-f0-9]{10}@student\.smartlms$/', $email);
     }
 
     public function test_replace_preview_lists_exact_students_without_writing(): void
