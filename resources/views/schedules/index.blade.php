@@ -338,6 +338,78 @@
             color: #54726E;
         }
 
+        .sch-calendar-filters {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(120px, 1fr)) auto;
+            align-items: end;
+            gap: 9px;
+            margin-bottom: 12px;
+            padding: 12px;
+            border: 1px solid #D9DDD3;
+            border-radius: 11px;
+            background: #FAFAF7;
+        }
+
+        .sch-calendar-filters .sch-field {
+            min-width: 0;
+        }
+
+        .sch-calendar-filters .sch-ctrl {
+            width: 100%;
+        }
+
+        .sch-calendar-legend {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin: -2px 0 12px;
+            color: #61736F;
+            font-size: 11px;
+        }
+
+        .sch-calendar-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .sch-calendar-legend i {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #54726E;
+        }
+
+        .sch-calendar-legend .is-exam i {
+            background: #dc2626;
+        }
+
+        .sch-alert--undo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .sch-undo-button {
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 11px;
+            border: 1px solid rgba(56, 86, 82, .28);
+            border-radius: 8px;
+            color: #385652;
+            background: #fff;
+            font: inherit;
+            font-weight: 700;
+        }
+
+        .sch-undo-button:hover {
+            border-color: #385652;
+            background: #EFEDDE;
+        }
+
         /* ── Modal ── */
         #scheduleModal .modal-dialog {
             max-width: 720px;
@@ -1039,6 +1111,16 @@
                 display: none;
             }
 
+            .sch-calendar-filters {
+                grid-template-columns: 1fr;
+            }
+
+            .sch-calendar-legend {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 5px;
+            }
+
             .sch-fields {
                 flex-direction: column;
                 align-items: stretch;
@@ -1312,12 +1394,67 @@
         {{-- Calendar --}}
         <div id="scheduleFeedback" class="sch-alert d-none" role="alert"></div>
         <div class="sch-cal-card">
+            <form class="sch-calendar-filters" id="calendarFilters" aria-label="Bộ lọc lịch giảng dạy">
+                <div class="sch-field">
+                    <label for="calendar_class_id">Lớp học</label>
+                    <select class="sch-ctrl" id="calendar_class_id">
+                        <option value="">Tất cả lớp</option>
+                        @foreach ($classes as $cls)
+                            <option value="{{ $cls->id }}">{{ $cls->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="sch-field">
+                    <label for="calendar_course_id">Khóa học</label>
+                    <select class="sch-ctrl" id="calendar_course_id">
+                        <option value="">Tất cả khóa học</option>
+                        @foreach ($bulkCourses as $course)
+                            <option value="{{ $course->id }}">{{ $course->title }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @if (auth()->user()->isAdmin())
+                    <div class="sch-field">
+                        <label for="calendar_teacher_id">Giáo viên</label>
+                        <select class="sch-ctrl" id="calendar_teacher_id">
+                            <option value="">Tất cả giáo viên</option>
+                            @foreach ($calendarTeachers as $teacher)
+                                <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                <div class="sch-field">
+                    <label for="calendar_room">Phòng học</label>
+                    <select class="sch-ctrl" id="calendar_room">
+                        <option value="">Tất cả phòng</option>
+                        @foreach ($calendarRooms as $room)
+                            <option value="{{ $room }}">{{ $room }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="sch-field">
+                    <label for="calendar_kind">Loại lịch</label>
+                    <select class="sch-ctrl" id="calendar_kind">
+                        <option value="">Tất cả</option>
+                        <option value="regular">Lịch học thường</option>
+                        <option value="exam">Lịch thi/ghi chú</option>
+                    </select>
+                </div>
+                <button class="sch-btn sch-btn-ghost" type="button" id="resetCalendarFilters">
+                    <i class="fa-solid fa-rotate-left"></i> Đặt lại
+                </button>
+            </form>
             <div class="sch-calendar-guide">
                 <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
                 <span>
                     Nhấp vào lịch để xem chi tiết.
                     <span class="sch-calendar-guide__desktop">Kéo sang vị trí khác để đổi ngày/giờ; kéo cạnh trên hoặc dưới để đổi thời lượng.</span>
                 </span>
+            </div>
+            <div class="sch-calendar-legend" aria-label="Chú giải màu lịch">
+                <span><i aria-hidden="true"></i>Mỗi cặp lớp–khóa học có một màu ổn định</span>
+                <span class="is-exam"><i aria-hidden="true"></i>Đỏ: lịch thi hoặc có ghi chú</span>
             </div>
             <div id="sch-calendar"
                 data-events-url="{{ route('schedules.index') }}"
@@ -1480,6 +1617,11 @@
                                     <input class="form-check-input" type="radio" name="series_scope"
                                         id="series_scope_all" value="series">
                                     Cả chuỗi
+                                </label>
+                                <label for="series_scope_future">
+                                    <input class="form-check-input" type="radio" name="series_scope"
+                                        id="series_scope_future" value="future">
+                                    Buổi này và các buổi sau
                                 </label>
                             </div>
                         </div>
@@ -1644,13 +1786,16 @@
                         </div>
                     </div>
                     <p class="sch-drag-warning">
-                        Hệ thống sẽ kiểm tra lại trùng lớp, giáo viên và phòng trước khi lưu. Chọn “Cả chuỗi” sẽ áp dụng cùng độ dịch chuyển cho mọi buổi trong chuỗi.
+                        Hệ thống sẽ kiểm tra lại trùng lớp, giáo viên và phòng trước khi lưu. Có thể áp dụng độ dịch chuyển cho riêng buổi này, từ buổi này trở đi hoặc toàn bộ chuỗi.
                     </p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="sch-btn sch-btn-ghost" data-bs-dismiss="modal">Hủy thay đổi</button>
                     <button type="button" class="sch-btn sch-btn-ghost js-save-drag-scope" data-scope="occurrence">
                         Chỉ buổi này
+                    </button>
+                    <button type="button" class="sch-btn sch-btn-ghost js-save-drag-scope" data-scope="future">
+                        Buổi này và các buổi sau
                     </button>
                     <button type="button" class="sch-btn sch-btn-primary js-save-drag-scope" data-scope="series">
                         <i class="fa-solid fa-link"></i> Cả chuỗi

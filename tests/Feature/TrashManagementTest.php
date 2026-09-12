@@ -48,7 +48,7 @@ class TrashManagementTest extends TestCase
         if ($this->usesIsolatedSqliteDatabase()) {
             foreach ([
                 'audit_logs', 'smart_notifications', 'learning_material_assignments', 'learning_materials',
-                'assignment_submissions', 'schedules', 'assignments',
+                'assignment_submissions', 'schedule_resource_locks', 'schedules', 'assignments',
                 'lessons', 'modules', 'class_course', 'classes', 'courses', 'users',
             ] as $table) {
                 Schema::dropIfExists($table);
@@ -398,6 +398,11 @@ class TrashManagementTest extends TestCase
             $table->string('room')->nullable();
             $table->string('note')->nullable();
             $table->string('status');
+            $table->timestamps();
+        });
+        Schema::create('schedule_resource_locks', function (Blueprint $table): void {
+            $table->id();
+            $table->string('resource_key', 191)->unique();
             $table->timestamps();
         });
         Schema::create('audit_logs', function (Blueprint $table): void {

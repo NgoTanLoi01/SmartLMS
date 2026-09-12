@@ -5,8 +5,10 @@ namespace App\Imports;
 use App\Models\Classroom;
 use App\Models\Schedule;
 use App\Services\ScheduleConflictService;
+use App\Services\ScheduleWriteLockService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
@@ -37,6 +39,7 @@ class ScheduleImport implements ToCollection, WithChunkReading
         private readonly ?int $defaultCourseId = null,
         private readonly ?array $allowedClassIds = null,
         private readonly ScheduleConflictService $scheduleConflicts = new ScheduleConflictService,
+        private readonly ScheduleWriteLockService $scheduleWriteLocks = new ScheduleWriteLockService,
     ) {
         $query = Classroom::with(['courses' => fn ($query) => $query->notArchived()])
             ->notArchived();
@@ -100,29 +103,6 @@ class ScheduleImport implements ToCollection, WithChunkReading
                     continue;
                 }
 
-                $existingSchedule = Schedule::query()
-                    ->notArchived()
-                    ->where('class_id', $classroom->id)
-                    ->where('course_id', $courseId)
-                    ->where('schedule_date', $scheduleDate)
-                    ->where('start_time', $timeRange['start'])
-                    ->where('end_time', $timeRange['end'])
-                    ->where(function ($query) use ($room) {
-                        $room === null ? $query->whereNull('room') : $query->where('room', $room);
-                    })
-                    ->first();
-
-                if ($existingSchedule) {
-                    if ($note && $existingSchedule->note !== $note) {
-                        $this->clearCourseExamNote($classroom->id, $courseId, $existingSchedule->id);
-                        $existingSchedule->update(['note' => $note]);
-                    }
-
-                    $this->duplicateCount++;
-
-                    continue;
-                }
-
                 $scheduleData = [
                     'class_id' => $classroom->id,
                     'course_id' => $courseId,
@@ -133,21 +113,51 @@ class ScheduleImport implements ToCollection, WithChunkReading
                     'note' => $note,
                     'status' => Schedule::STATUS_ACTIVE,
                 ];
+                $result = DB::transaction(function () use ($scheduleData, $classroom, $courseId, $note, $room): string {
+                    $this->scheduleWriteLocks->acquire([$scheduleData]);
+                    $existingSchedule = Schedule::query()
+                        ->notArchived()
+                        ->where('class_id', $classroom->id)
+                        ->where('course_id', $courseId)
+                        ->where('schedule_date', $scheduleData['schedule_date'])
+                        ->where('start_time', $scheduleData['start_time'])
+                        ->where('end_time', $scheduleData['end_time'])
+                        ->where(function ($query) use ($room) {
+                            $room === null ? $query->whereNull('room') : $query->where('room', $room);
+                        })
+                        ->lockForUpdate()
+                        ->first();
 
-                if ($this->scheduleConflicts->conflicts($scheduleData, null, $classroom) !== []) {
+                    if ($existingSchedule) {
+                        if ($note && $existingSchedule->note !== $note) {
+                            $this->clearCourseExamNote($classroom->id, $courseId, $existingSchedule->id);
+                            $existingSchedule->update(['note' => $note]);
+                        }
+
+                        return 'duplicate';
+                    }
+
+                    if ($this->scheduleConflicts->conflicts($scheduleData, null, $classroom) !== []) {
+                        return 'conflict';
+                    }
+
+                    if ($note) {
+                        $this->clearCourseExamNote($classroom->id, $courseId);
+                    }
+
+                    Schedule::create($scheduleData);
+
+                    return 'imported';
+                });
+
+                if ($result === 'duplicate') {
+                    $this->duplicateCount++;
+                } elseif ($result === 'conflict') {
                     $this->conflictCount++;
-
-                    continue;
+                } else {
+                    $this->importedCount++;
+                    $this->importedByClass[$classroom->id] = ($this->importedByClass[$classroom->id] ?? 0) + 1;
                 }
-
-                if ($note) {
-                    $this->clearCourseExamNote($classroom->id, $courseId);
-                }
-
-                Schedule::create($scheduleData);
-
-                $this->importedCount++;
-                $this->importedByClass[$classroom->id] = ($this->importedByClass[$classroom->id] ?? 0) + 1;
             }
         }
     }

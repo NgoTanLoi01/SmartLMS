@@ -49,6 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const dragOldTime = document.getElementById('scheduleDragOldTime');
     const dragNewTime = document.getElementById('scheduleDragNewTime');
     const dragScopeButtons = Array.from(document.querySelectorAll('.js-save-drag-scope'));
+    const calendarFilterForm = document.getElementById('calendarFilters');
+    const resetCalendarFilters = document.getElementById('resetCalendarFilters');
+    const calendarFilterIds = [
+        'calendar_class_id',
+        'calendar_course_id',
+        'calendar_teacher_id',
+        'calendar_room',
+        'calendar_kind',
+    ];
     let modalCoursesRequest;
     let importCoursesRequest;
     let previewRequest;
@@ -57,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEventIsSeries = false;
     let pendingCalendarMutation = null;
     let calendarMutationSaving = false;
+    let quickUndoTimer = null;
 
     const routeFromTemplate = (template, value) => template.replace('__ID__', encodeURIComponent(value));
 
@@ -92,10 +102,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const showPageFeedback = (message, type = 'danger') => {
         if (!pageFeedback) return;
+        window.clearTimeout(quickUndoTimer);
+        delete pageFeedback.dataset.undoUrl;
         pageFeedback.textContent = message;
         pageFeedback.className = `sch-alert sch-alert--${type}`;
         pageFeedback.classList.remove('d-none');
     };
+
+    const calendarFilterData = () => ({
+        class_id: document.getElementById('calendar_class_id')?.value || '',
+        course_id: document.getElementById('calendar_course_id')?.value || '',
+        teacher_id: document.getElementById('calendar_teacher_id')?.value || '',
+        room: document.getElementById('calendar_room')?.value || '',
+        kind: document.getElementById('calendar_kind')?.value || '',
+    });
+
+    const syncCalendarFilterUrl = () => {
+        const url = new URL(window.location.href);
+        Object.entries(calendarFilterData()).forEach(([key, value]) => {
+            if (value) url.searchParams.set(key, value);
+            else url.searchParams.delete(key);
+        });
+        window.history.replaceState({}, '', url);
+    };
+
+    const restoreCalendarFiltersFromUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        calendarFilterIds.forEach((id) => {
+            const input = document.getElementById(id);
+            const key = id.replace('calendar_', '');
+            if (input && params.has(key)) input.value = params.get(key);
+        });
+    };
+
+    const scheduleColor = (classId, courseId) => {
+        const palette = ['#54726E', '#385652', '#6E7F68', '#536B78', '#765B69', '#7A6646', '#526F61'];
+        const resourceKey = `${classId || ''}:${courseId || ''}`;
+        const index = resourceKey
+            .split('')
+            .reduce((sum, character) => ((sum * 31) + character.charCodeAt(0)) >>> 0, 0) % palette.length;
+
+        return palette[index];
+    };
+
+    restoreCalendarFiltersFromUrl();
 
     try {
         const pendingFeedback = sessionStorage.getItem('scheduleFeedback');
@@ -118,6 +168,45 @@ document.addEventListener('DOMContentLoaded', () => {
             button.disabled = false;
             button.innerHTML = button.dataset.originalHtml || button.innerHTML;
         }
+    };
+
+    const showQuickUndoFeedback = (result) => {
+        if (!pageFeedback || !result.undo_url) {
+            showPageFeedback(result.message || 'Đã cập nhật lịch học.', 'success');
+            return;
+        }
+
+        window.clearTimeout(quickUndoTimer);
+        pageFeedback.replaceChildren();
+        pageFeedback.className = 'sch-alert sch-alert--success sch-alert--undo';
+        pageFeedback.dataset.undoUrl = result.undo_url;
+
+        const message = document.createElement('span');
+        message.textContent = result.message || 'Đã cập nhật lịch học.';
+        const undoButton = document.createElement('button');
+        undoButton.type = 'button';
+        undoButton.className = 'sch-undo-button';
+        undoButton.innerHTML = '<i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Hoàn tác';
+        undoButton.addEventListener('click', async () => {
+            setBusy(undoButton, true, 'Đang hoàn tác...');
+            try {
+                const undoResult = await requestJson(result.undo_url, { method: 'POST' });
+                calendar.refetchEvents();
+                showPageFeedback(undoResult.message || 'Đã hoàn tác thay đổi lịch.', 'success');
+            } catch (error) {
+                showPageFeedback(error.message);
+            }
+        }, { once: true });
+
+        pageFeedback.append(message, undoButton);
+        pageFeedback.classList.remove('d-none');
+        const expiresAt = result.undo_expires_at ? new Date(result.undo_expires_at).getTime() : Date.now() + 30000;
+        quickUndoTimer = window.setTimeout(() => {
+            if (pageFeedback.dataset.undoUrl === result.undo_url) {
+                pageFeedback.classList.add('d-none');
+                delete pageFeedback.dataset.undoUrl;
+            }
+        }, Math.max(1000, expiresAt - Date.now()));
     };
 
     const dateInputValue = (date) => {
@@ -149,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         room: event.extendedProps.room || '',
         note: event.extendedProps.note || '',
         update_scope: updateScope,
+        mutation_source: 'calendar_drag',
     });
 
     const mutationDescription = (mutationInfo) => {
@@ -321,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pendingCalendarMutation = null;
             dragScopeModal?.hide();
             calendar.refetchEvents();
-            showPageFeedback(result.message || 'Đã cập nhật lịch học.', 'success');
+            showQuickUndoFeedback(result);
         } catch (error) {
             mutationInfo.revert();
             pendingCalendarMutation = null;
@@ -364,11 +454,14 @@ document.addEventListener('DOMContentLoaded', () => {
         allDaySlot: false,
         events: {
             url: calendarEl.dataset.eventsUrl,
+            extraParams: calendarFilterData,
             failure: () => showPageFeedback('Không tải được dữ liệu lịch. Vui lòng thử lại.'),
         },
         eventDataTransform(event) {
             const hasImportantNote = Boolean(String(event.extendedProps?.note || '').trim());
-            const eventColor = hasImportantNote ? '#dc2626' : '#54726E';
+            const eventColor = hasImportantNote
+                ? '#dc2626'
+                : scheduleColor(event.extendedProps?.class_id, event.extendedProps?.course_id);
 
             return {
                 ...event,
@@ -423,6 +516,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     calendar.render();
+
+    calendarFilterForm?.addEventListener('change', () => {
+        syncCalendarFilterUrl();
+        calendar.refetchEvents();
+    });
+
+    resetCalendarFilters?.addEventListener('click', () => {
+        calendarFilterIds.forEach((id) => {
+            const input = document.getElementById(id);
+            if (input) input.value = '';
+        });
+        syncCalendarFilterUrl();
+        calendar.refetchEvents();
+    });
 
     dragScopeButtons.forEach((button) => {
         button.addEventListener('click', () => {
@@ -743,7 +850,9 @@ document.addEventListener('DOMContentLoaded', () => {
             : 'occurrence';
         const confirmation = deleteScope === 'series'
             ? 'Lưu trữ toàn bộ chuỗi lịch? Tất cả các buổi trong chuỗi sẽ không còn hiển thị.'
-            : 'Lưu trữ lịch học này? Lịch sẽ không còn hiển thị nhưng dữ liệu vẫn được giữ lại.';
+            : (deleteScope === 'future'
+                ? 'Lưu trữ buổi này và tất cả các buổi sau trong chuỗi? Dữ liệu vẫn được giữ lại trong thùng rác.'
+                : 'Lưu trữ lịch học này? Lịch sẽ không còn hiển thị nhưng dữ liệu vẫn được giữ lại.');
         if (!confirm(confirmation)) return;
 
         showModalError();

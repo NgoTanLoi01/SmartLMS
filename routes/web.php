@@ -368,6 +368,9 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::post('/schedules/bulk-adjustments/{adjustment}/undo', [ScheduleAdjustmentController::class, 'undo'])
             ->middleware('throttle:10,1')
             ->name('schedules.bulk-adjustments.undo');
+        Route::post('/schedules/changes/{change}/undo', [ScheduleController::class, 'undoQuickChange'])
+            ->middleware('throttle:20,1')
+            ->name('schedules.changes.undo');
         Route::post('/schedules/copy-day', [ScheduleController::class, 'copyDay'])->name('schedules.copyDay');
         Route::post('/schedules/import', [ScheduleController::class, 'importExcel'])->name('schedules.import');
         Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');

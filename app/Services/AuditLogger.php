@@ -41,6 +41,8 @@ class AuditLogger
 
     public const SCHEDULE_BULK_ADJUSTMENT_UNDONE = 'schedule_bulk_adjustment_undone';
 
+    public const SCHEDULE_QUICK_UNDONE = 'schedule_quick_undone';
+
     public const CONTRACT_CREATED = 'contract_created';
 
     public const CONTRACT_UPDATED = 'contract_updated';

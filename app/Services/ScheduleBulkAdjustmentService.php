@@ -18,7 +18,10 @@ class ScheduleBulkAdjustmentService
 {
     public const MAX_SCHEDULES = 500;
 
-    public function __construct(private ScheduleConflictService $conflicts) {}
+    public function __construct(
+        private ScheduleConflictService $conflicts,
+        private ScheduleWriteLockService $writeLocks,
+    ) {}
 
     public function preview(User $user, array $filters): array
     {
@@ -36,6 +39,10 @@ class ScheduleBulkAdjustmentService
         $batch = DB::transaction(function () use ($user, $filters): ScheduleAdjustmentBatch {
             $schedules = $this->selectedSchedules($user, $filters, true)->get();
             $this->ensureSelectionIsValid($user, $schedules);
+            $this->writeLocks->acquire($schedules->map(fn (Schedule $schedule) => $this->candidate(
+                $schedule,
+                $schedule->schedule_date->copy()->addDays($this->shiftDays($filters))->format('Y-m-d')
+            ))->all());
             $preview = $this->buildPreview($schedules, $this->shiftDays($filters), true);
 
             if ($preview['summary']['conflicts'] > 0) {
@@ -126,6 +133,7 @@ class ScheduleBulkAdjustmentService
             $undoCandidates = $schedules->map(function (Schedule $schedule) use ($beforeById): array {
                 return $this->candidate($schedule, $beforeById[$schedule->id]['schedule_date']);
             })->values()->all();
+            $this->writeLocks->acquire($undoCandidates);
             $conflicts = $this->conflicts->conflictsForCandidates($undoCandidates, $scheduleIds, true);
             $conflictCount = collect($conflicts)->filter()->count();
 

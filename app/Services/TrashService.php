@@ -31,6 +31,7 @@ class TrashService
 
     public function __construct(
         private ScheduleConflictService $scheduleConflicts,
+        private ScheduleWriteLockService $scheduleWriteLocks,
         private PermanentDeletionService $permanentDeletion,
     ) {}
 
@@ -214,6 +215,7 @@ class TrashService
             'schedule_date' => $schedule->schedule_date->toDateString(),
             'status' => Schedule::STATUS_ACTIVE,
         ]);
+        $this->scheduleWriteLocks->acquire([$attributes]);
         $this->scheduleConflicts->ensureNoConflicts($attributes, $schedule->id, $schedule->classroom);
         $schedule->update(['status' => Schedule::STATUS_ACTIVE]);
     }

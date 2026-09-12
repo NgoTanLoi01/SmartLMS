@@ -30,7 +30,7 @@ class MigrationRollbackIntegrityTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['audit_log_chain_states', 'audit_logs', 'schedule_adjustment_batches', 'grading_feedback_templates', 'assignment_submissions', 'question_versions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
+            foreach (['audit_log_chain_states', 'audit_logs', 'schedule_change_batches', 'schedule_resource_locks', 'schedule_adjustment_batches', 'grading_feedback_templates', 'assignment_submissions', 'question_versions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -336,6 +336,28 @@ class MigrationRollbackIntegrityTest extends TestCase
 
         $migration->down();
         $this->assertFalse(Schema::hasTable('schedule_adjustment_batches'));
+    }
+
+    public function test_schedule_write_guard_and_quick_undo_migration_is_reversible(): void
+    {
+        $migration = require database_path('migrations/2026_09_12_000001_create_schedule_write_guards_and_change_batches.php');
+        $migration->up();
+
+        $this->assertTrue(Schema::hasTable('schedule_resource_locks'));
+        $this->assertTrue(Schema::hasColumns('schedule_change_batches', [
+            'public_id',
+            'created_by',
+            'scope',
+            'before_values',
+            'after_values',
+            'expires_at',
+            'undone_by',
+            'undone_at',
+        ]));
+
+        $migration->down();
+        $this->assertFalse(Schema::hasTable('schedule_change_batches'));
+        $this->assertFalse(Schema::hasTable('schedule_resource_locks'));
     }
 
     public function test_question_version_migration_backfills_and_is_reversible(): void

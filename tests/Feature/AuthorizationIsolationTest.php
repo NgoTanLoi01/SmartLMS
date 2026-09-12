@@ -73,7 +73,7 @@ class AuthorizationIsolationTest extends TestCase
                 'smart_notifications', 'audit_log_chain_states', 'audit_logs',
                 'grading_feedback_templates',
                 'quiz_attempts', 'quiz_sessions', 'assignment_submissions', 'question_versions', 'options', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
-                'schedule_adjustment_batches',
+                'schedule_change_batches', 'schedule_resource_locks', 'schedule_adjustment_batches',
                 'quizzes', 'assignments', 'lessons', 'modules', 'class_course', 'class_user', 'classes', 'courses', 'users',
             ] as $table) {
                 Schema::dropIfExists($table);
@@ -370,6 +370,7 @@ class AuthorizationIsolationTest extends TestCase
             ->assertSee('id="scheduleDragScopeModal"', false)
             ->assertSeeText('Kéo sang vị trí khác để đổi ngày/giờ')
             ->assertSeeText('Chỉ buổi này')
+            ->assertSeeText('Buổi này và các buổi sau')
             ->assertSeeText('Cả chuỗi');
 
         $calendarScript = file_get_contents(resource_path('js/pages/schedules.js'));
@@ -404,6 +405,73 @@ class AuthorizationIsolationTest extends TestCase
         ]));
 
         $response->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $inside->id);
+    }
+
+    public function test_admin_schedule_event_api_filters_by_class_course_teacher_room_and_kind(): void
+    {
+        $exam = Schedule::create([
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->addDays(10)->toDateString(),
+            'start_time' => '13:00:00',
+            'end_time' => '15:00:00',
+            'room' => ' Lab A ',
+            'note' => 'Thi kết thúc môn',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+        $otherCourse = Course::create([
+            'title' => 'Khóa lọc khác',
+            'teacher_id' => $this->otherTeacher->id,
+            'status' => Course::STATUS_PUBLISHED,
+        ]);
+        $otherClass = Classroom::create([
+            'name' => 'Lớp lọc khác',
+            'code' => 'FILTER-02',
+            'teacher_id' => $this->otherTeacher->id,
+            'status' => Classroom::STATUS_ACTIVE,
+        ]);
+        $otherClass->courses()->attach($otherCourse);
+        Schedule::create([
+            'class_id' => $otherClass->id,
+            'course_id' => $otherCourse->id,
+            'schedule_date' => now()->addDays(10)->toDateString(),
+            'start_time' => '16:00:00',
+            'end_time' => '17:00:00',
+            'room' => 'Lab B',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->admin)->getJson(route('schedules.index', [
+            'start' => now()->addDays(9)->toIso8601String(),
+            'end' => now()->addDays(12)->toIso8601String(),
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'teacher_id' => $this->owner->id,
+            'room' => 'lab a',
+            'kind' => 'exam',
+        ]))->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $exam->id);
+    }
+
+    public function test_schedule_writes_create_stable_resource_guards(): void
+    {
+        $this->actingAs($this->owner)->postJson(route('schedules.store'), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => now()->addDays(4)->toDateString(),
+            'start_time' => '14:00',
+            'end_time' => '15:00',
+            'room' => ' Lab Race ',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('schedule_resource_locks', [
+            'resource_key' => 'class:'.$this->classroom->id,
+        ]);
+        $this->assertDatabaseHas('schedule_resource_locks', [
+            'resource_key' => 'teacher:'.$this->owner->id,
+        ]);
+        $this->assertDatabaseHas('schedule_resource_locks', [
+            'resource_key' => 'room:'.hash('sha256', 'lab race'),
+        ]);
     }
 
     public function test_recurring_schedule_preview_lists_conflicting_occurrences(): void
@@ -552,6 +620,103 @@ class AuthorizationIsolationTest extends TestCase
                 'room' => 'P303',
             ]);
         }
+    }
+
+    public function test_updating_from_selected_occurrence_only_changes_this_and_following_schedules(): void
+    {
+        $series = $this->createScheduleSeries();
+        $selected = $series[1];
+        $newDate = $selected->schedule_date->copy()->addDays(2);
+
+        $this->actingAs($this->owner)->putJson(route('schedules.update', $selected), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $newDate->toDateString(),
+            'start_time' => '14:00',
+            'end_time' => '15:00',
+            'update_scope' => 'future',
+        ])->assertOk()->assertJsonPath('updated_count', 2);
+
+        $this->assertDatabaseHas('schedules', [
+            'id' => $series[0]->id,
+            'series_id' => $series[0]->series_id,
+            'series_position' => 1,
+            'schedule_date' => $series[0]->schedule_date->toDateString(),
+            'start_time' => '12:00:00',
+        ]);
+        $selected->refresh();
+        $last = $series[2]->fresh();
+        $this->assertNotSame($series[0]->series_id, $selected->series_id);
+        $this->assertSame($selected->series_id, $last->series_id);
+        $this->assertSame(1, $selected->series_position);
+        $this->assertSame(2, $last->series_position);
+        $this->assertSame($newDate->toDateString(), $selected->schedule_date->toDateString());
+        $this->assertSame($series[2]->schedule_date->copy()->addDays(2)->toDateString(), $last->schedule_date->toDateString());
+    }
+
+    public function test_archiving_from_selected_occurrence_only_archives_this_and_following_schedules(): void
+    {
+        $series = $this->createScheduleSeries();
+
+        $this->actingAs($this->owner)
+            ->deleteJson(route('schedules.destroy', $series[1]), ['delete_scope' => 'future'])
+            ->assertOk()
+            ->assertJsonPath('archived_count', 2);
+
+        $this->assertDatabaseHas('schedules', ['id' => $series[0]->id, 'status' => Schedule::STATUS_ACTIVE]);
+        $this->assertDatabaseHas('schedules', ['id' => $series[1]->id, 'status' => Schedule::STATUS_ARCHIVED]);
+        $this->assertDatabaseHas('schedules', ['id' => $series[2]->id, 'status' => Schedule::STATUS_ARCHIVED]);
+    }
+
+    public function test_calendar_drag_can_be_quickly_undone_but_not_replayed(): void
+    {
+        $originalDate = $this->schedule->schedule_date->toDateString();
+        $newDate = $this->schedule->schedule_date->copy()->addDays(2)->toDateString();
+        $response = $this->actingAs($this->owner)->putJson(route('schedules.update', $this->schedule), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $newDate,
+            'start_time' => '13:00',
+            'end_time' => '14:00',
+            'mutation_source' => 'calendar_drag',
+        ])->assertOk()->assertJsonStructure(['undo_url', 'undo_expires_at']);
+
+        $this->assertDatabaseHas('schedules', [
+            'id' => $this->schedule->id,
+            'schedule_date' => $newDate,
+            'start_time' => '13:00',
+        ]);
+        $undoUrl = $response->json('undo_url');
+        $this->actingAs($this->owner)->postJson($undoUrl)->assertOk();
+        $this->assertDatabaseHas('schedules', [
+            'id' => $this->schedule->id,
+            'schedule_date' => $originalDate,
+            'start_time' => '08:00:00',
+        ]);
+        $this->actingAs($this->owner)
+            ->postJson($undoUrl)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('change');
+    }
+
+    public function test_quick_undo_rejects_another_teacher_and_a_later_schedule_change(): void
+    {
+        $response = $this->actingAs($this->owner)->putJson(route('schedules.update', $this->schedule), [
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $this->schedule->schedule_date->copy()->addDay()->toDateString(),
+            'start_time' => '13:00',
+            'end_time' => '14:00',
+            'mutation_source' => 'calendar_drag',
+        ])->assertOk();
+        $undoUrl = $response->json('undo_url');
+
+        $this->actingAs($this->otherTeacher)->postJson($undoUrl)->assertForbidden();
+        $this->schedule->refresh()->update(['room' => 'Đã sửa tiếp']);
+        $this->actingAs($this->owner)
+            ->postJson($undoUrl)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('change');
     }
 
     public function test_conflict_in_one_occurrence_rolls_back_the_entire_series_update(): void
@@ -1894,6 +2059,25 @@ class AuthorizationIsolationTest extends TestCase
             $table->json('before_values');
             $table->json('after_values');
             $table->string('status', 20)->default(ScheduleAdjustmentBatch::STATUS_APPLIED);
+            $table->unsignedBigInteger('undone_by')->nullable();
+            $table->timestamp('undone_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('schedule_resource_locks', function (Blueprint $table) {
+            $table->id();
+            $table->string('resource_key', 191)->unique();
+            $table->timestamps();
+        });
+        Schema::create('schedule_change_batches', function (Blueprint $table) {
+            $table->id();
+            $table->uuid('public_id')->unique();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->string('scope', 20);
+            $table->unsignedSmallInteger('schedule_count');
+            $table->json('before_values');
+            $table->json('after_values');
+            $table->string('status', 20)->default('applied');
+            $table->timestamp('expires_at');
             $table->unsignedBigInteger('undone_by')->nullable();
             $table->timestamp('undone_at')->nullable();
             $table->timestamps();

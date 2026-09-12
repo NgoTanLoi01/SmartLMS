@@ -7,11 +7,15 @@ use App\Models\Classroom;
 use App\Models\Course;
 use App\Models\Schedule;
 use App\Models\ScheduleAdjustmentBatch;
+use App\Models\ScheduleChangeBatch;
+use App\Models\User;
 use App\Rules\SafeSpreadsheet;
 use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
 use App\Services\ScheduleConflictService;
+use App\Services\ScheduleQuickUndoService;
 use App\Services\ScheduleRecurrenceService;
+use App\Services\ScheduleWriteLockService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +28,9 @@ class ScheduleController extends Controller
 {
     public function __construct(
         private ScheduleConflictService $scheduleConflicts,
-        private ScheduleRecurrenceService $scheduleRecurrence
+        private ScheduleRecurrenceService $scheduleRecurrence,
+        private ScheduleWriteLockService $scheduleWriteLocks,
+        private ScheduleQuickUndoService $scheduleQuickUndo,
     ) {}
 
     public function index(Request $request)
@@ -37,6 +43,7 @@ class ScheduleController extends Controller
 
         if ($request->ajax() || $request->wantsJson() || $request->has('start')) {
             [$rangeStart, $rangeEnd] = $this->calendarRange($request);
+            $filters = $this->calendarFilters($request);
 
             // SỬ DỤNG DB JOIN ĐỂ TRÁNH LỖI MODEL RELATIONSHIP
             $query = DB::table('schedules')
@@ -47,6 +54,17 @@ class ScheduleController extends Controller
                 ->where('courses.status', '!=', 'archived')
                 ->where('schedules.schedule_date', '>=', $rangeStart)
                 ->where('schedules.schedule_date', '<', $rangeEnd)
+                ->when($filters['class_id'] ?? null, fn ($query, $classId) => $query->where('schedules.class_id', $classId))
+                ->when($filters['course_id'] ?? null, fn ($query, $courseId) => $query->where('schedules.course_id', $courseId))
+                ->when($filters['teacher_id'] ?? null, fn ($query, $teacherId) => $query->where('classes.teacher_id', $teacherId))
+                ->when($filters['room'] ?? null, fn ($query, $room) => $query->whereRaw(
+                    'LOWER(TRIM(schedules.room)) = ?',
+                    [mb_strtolower(trim($room))]
+                ))
+                ->when(($filters['kind'] ?? null) === 'exam', fn ($query) => $query->whereNotNull('schedules.note')->where('schedules.note', '!=', ''))
+                ->when(($filters['kind'] ?? null) === 'regular', fn ($query) => $query->where(fn ($noteQuery) => $noteQuery
+                    ->whereNull('schedules.note')
+                    ->orWhere('schedules.note', '')))
                 ->select('schedules.*', 'courses.title as course_title', 'classes.name as class_name');
 
             // Nếu là giáo viên, chỉ lấy lịch của họ
@@ -107,8 +125,28 @@ class ScheduleController extends Controller
             ->latest()
             ->limit(8)
             ->get();
+        $calendarTeachers = $user->isAdmin()
+            ? User::query()->where('role', User::ROLE_TEACHER)->orderBy('name')->get(['id', 'name'])
+            : collect([$user]);
+        $calendarRooms = Schedule::query()
+            ->where('status', Schedule::STATUS_ACTIVE)
+            ->whereNotNull('room')
+            ->when($user->isTeacher(), fn ($query) => $query->whereHas(
+                'classroom',
+                fn ($classQuery) => $classQuery->where('teacher_id', $user->id)
+            ))
+            ->select('room')
+            ->distinct()
+            ->orderBy('room')
+            ->pluck('room');
 
-        return view('schedules.index', compact('classes', 'bulkCourses', 'recentAdjustments'));
+        return view('schedules.index', compact(
+            'classes',
+            'bulkCourses',
+            'recentAdjustments',
+            'calendarTeachers',
+            'calendarRooms'
+        ));
     }
 
     // HÀM MỚI: Lấy danh sách khóa học thuộc về 1 lớp cụ thể
@@ -149,6 +187,7 @@ class ScheduleController extends Controller
         ]);
 
         $schedule = DB::transaction(function () use ($scheduleData, $classroom) {
+            $this->scheduleWriteLocks->acquire([$scheduleData]);
             $this->scheduleConflicts->ensureNoConflicts($scheduleData, null, $classroom);
             $this->clearCourseExamNoteIfNeeded($scheduleData);
 
@@ -203,6 +242,10 @@ class ScheduleController extends Controller
             &$skipped
         ) {
             $created = collect();
+            $candidates = collect($dates)->map(fn ($date) => array_merge($scheduleData, [
+                'schedule_date' => $date->toDateString(),
+            ]))->all();
+            $this->scheduleWriteLocks->acquire($candidates);
             $conflictsByDate = $this->scheduleConflicts->conflictsForDates(
                 $scheduleData,
                 $dates,
@@ -311,10 +354,10 @@ class ScheduleController extends Controller
         $copiedSchedules = collect();
 
         DB::transaction(function () use ($sourceSchedules, $validated, &$copied, &$skipped, $copiedSchedules) {
-            foreach ($sourceSchedules as $schedule) {
+            $candidates = $sourceSchedules->map(function (Schedule $schedule) use ($validated): array {
                 Gate::authorize('create', [Schedule::class, $schedule->classroom, $schedule->course]);
 
-                $scheduleData = [
+                return [
                     'class_id' => $schedule->class_id,
                     'course_id' => $schedule->course_id,
                     'schedule_date' => $validated['target_date'],
@@ -324,6 +367,11 @@ class ScheduleController extends Controller
                     'note' => null,
                     'status' => Schedule::STATUS_ACTIVE,
                 ];
+            })->values();
+            $this->scheduleWriteLocks->acquire($candidates->all());
+
+            foreach ($sourceSchedules as $index => $schedule) {
+                $scheduleData = $candidates[$index];
 
                 if ($this->scheduleConflicts->conflicts($scheduleData, null, $schedule->classroom) !== []) {
                     $skipped++;
@@ -413,6 +461,7 @@ class ScheduleController extends Controller
                 isset($validated['default_course_id']) ? (int) $validated['default_course_id'] : null,
                 $allowedClassIds,
                 $this->scheduleConflicts,
+                $this->scheduleWriteLocks,
             );
 
             Excel::import($import, $request->file('file'));
@@ -493,36 +542,57 @@ class ScheduleController extends Controller
             'room' => 'nullable|string|max:100',
             'note' => 'nullable|string|max:255',
             'status' => 'nullable|in:active,hidden,archived',
-            'update_scope' => 'nullable|in:occurrence,series',
+            'update_scope' => 'nullable|in:occurrence,future,series',
+            'mutation_source' => 'nullable|in:calendar_drag',
         ]);
 
+        $updateScope = $validated['update_scope'] ?? 'occurrence';
+        $recordQuickUndo = ($validated['mutation_source'] ?? null) === 'calendar_drag';
+        unset($validated['update_scope'], $validated['mutation_source']);
         $schedule = Schedule::with(['classroom', 'course'])->findOrFail($id);
         Gate::authorize('update', $schedule);
         $targetClassroom = Classroom::findOrFail($validated['class_id']);
         $targetCourse = Course::findOrFail($validated['course_id']);
         Gate::authorize('create', [Schedule::class, $targetClassroom, $targetCourse]);
-        $updateScope = $validated['update_scope'] ?? 'occurrence';
-        unset($validated['update_scope']);
 
-        if ($updateScope === 'series') {
-            return $this->updateSeries($schedule, $validated, $targetClassroom);
+        if ($updateScope !== 'occurrence') {
+            return $this->updateSeries(
+                $schedule,
+                $validated,
+                $targetClassroom,
+                $updateScope,
+                $recordQuickUndo,
+                $request->user()
+            );
         }
 
-        $oldValues = AuditLogger::snapshot($schedule);
-        $oldClassId = (int) $schedule->class_id;
-        $scheduleData = array_merge($validated, [
-            'room' => $this->normalizeRoom($validated['room'] ?? null),
-            'status' => $validated['status'] ?? $schedule->status ?? Schedule::STATUS_ACTIVE,
-        ]);
-
-        DB::transaction(function () use ($schedule, $scheduleData, $targetClassroom): void {
+        $result = DB::transaction(function () use ($id, $validated, $targetClassroom, $recordQuickUndo, $request): array {
+            $schedule = Schedule::with(['classroom', 'course'])->lockForUpdate()->findOrFail($id);
+            Gate::authorize('update', $schedule);
+            $oldValues = AuditLogger::snapshot($schedule);
+            $before = $this->scheduleQuickUndo->snapshots([$schedule]);
+            $scheduleData = array_merge($validated, [
+                'room' => $this->normalizeRoom($validated['room'] ?? null),
+                'status' => $validated['status'] ?? $schedule->status ?? Schedule::STATUS_ACTIVE,
+            ]);
+            $this->scheduleWriteLocks->acquire(array_merge($before, [$scheduleData]));
             $this->scheduleConflicts->ensureNoConflicts($scheduleData, $schedule->id, $targetClassroom);
             $this->clearCourseExamNoteIfNeeded($scheduleData, $schedule->id);
             $schedule->update($scheduleData);
-        });
 
-        if ($oldClassId !== (int) $schedule->class_id) {
-            $this->notifyPreviousClassOfMove($oldClassId, $schedule, $oldValues);
+            $after = $this->scheduleQuickUndo->snapshots([$schedule->fresh()]);
+            $change = $recordQuickUndo
+                ? $this->scheduleQuickUndo->record($request->user(), 'occurrence', $before, $after)
+                : null;
+
+            return compact('schedule', 'oldValues', 'change');
+        });
+        /** @var Schedule $schedule */
+        $schedule = $result['schedule'];
+        $oldValues = $result['oldValues'];
+
+        if ((int) $oldValues['class_id'] !== (int) $schedule->class_id) {
+            $this->notifyPreviousClassOfMove((int) $oldValues['class_id'], $schedule, $oldValues);
         }
 
         $this->notifyScheduleChange($schedule, 'Lịch học đã thay đổi', 'Giáo viên vừa cập nhật thời gian hoặc thông tin buổi học.');
@@ -539,23 +609,45 @@ class ScheduleController extends Controller
             'Cập nhật lịch học.'
         );
 
-        return response()->json(['status' => 'success', 'message' => 'Đã cập nhật lịch!']);
+        return response()->json(array_filter([
+            'status' => 'success',
+            'message' => 'Đã cập nhật lịch!',
+            'undo_url' => $result['change'] ? route('schedules.changes.undo', $result['change']) : null,
+            'undo_expires_at' => $result['change']?->expires_at?->toIso8601String(),
+        ]));
+    }
+
+    public function undoQuickChange(Request $request, ScheduleChangeBatch $change)
+    {
+        $batch = $this->scheduleQuickUndo->undo($request->user(), $change);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Đã hoàn tác '.$batch->schedule_count.' buổi học về thời gian trước đó.',
+        ]);
     }
 
     public function destroy(Request $request, $id)
     {
         $validated = $request->validate([
-            'delete_scope' => 'nullable|in:occurrence,series',
+            'delete_scope' => 'nullable|in:occurrence,future,series',
         ]);
         $schedule = Schedule::with(['classroom', 'course'])->findOrFail($id);
         Gate::authorize('delete', $schedule);
 
-        if (($validated['delete_scope'] ?? 'occurrence') === 'series') {
-            return $this->archiveSeries($schedule);
+        $deleteScope = $validated['delete_scope'] ?? 'occurrence';
+        if ($deleteScope !== 'occurrence') {
+            return $this->archiveSeries($schedule, $deleteScope);
         }
 
-        $oldValues = AuditLogger::snapshot($schedule);
-        $schedule->update(['status' => Schedule::STATUS_ARCHIVED]);
+        [$schedule, $oldValues] = DB::transaction(function () use ($id): array {
+            $schedule = Schedule::with(['classroom', 'course'])->lockForUpdate()->findOrFail($id);
+            Gate::authorize('delete', $schedule);
+            $oldValues = AuditLogger::snapshot($schedule);
+            $schedule->update(['status' => Schedule::STATUS_ARCHIVED]);
+
+            return [$schedule, $oldValues];
+        });
 
         $this->notifyScheduleChange($schedule, 'Buổi học đã hủy', 'Một buổi học trong lịch của bạn đã được hủy.');
 
@@ -574,72 +666,118 @@ class ScheduleController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Đã lưu trữ lịch học!']);
     }
 
-    private function updateSeries(Schedule $schedule, array $validated, Classroom $targetClassroom)
-    {
+    private function updateSeries(
+        Schedule $schedule,
+        array $validated,
+        Classroom $targetClassroom,
+        string $updateScope,
+        bool $recordQuickUndo,
+        User $user
+    ) {
         if (! $schedule->series_id) {
             throw ValidationException::withMessages([
                 'update_scope' => 'Buổi học này không thuộc chuỗi lịch.',
             ]);
         }
 
-        $members = Schedule::query()
-            ->with(['classroom', 'course'])
-            ->where('series_id', $schedule->series_id)
-            ->notArchived()
-            ->orderBy('series_position')
-            ->get();
+        $originalSeriesId = $schedule->series_id;
+        $result = DB::transaction(function () use (
+            $schedule,
+            $validated,
+            $targetClassroom,
+            $updateScope,
+            $recordQuickUndo,
+            $user
+        ): array {
+            $selected = Schedule::query()->lockForUpdate()->findOrFail($schedule->id);
+            $members = Schedule::query()
+                ->with(['classroom', 'course'])
+                ->where('series_id', $selected->series_id)
+                ->notArchived()
+                ->when($updateScope === 'future', function ($query) use ($selected): void {
+                    $selected->series_position !== null
+                        ? $query->where('series_position', '>=', $selected->series_position)
+                        : $query->where('schedule_date', '>=', $selected->schedule_date->toDateString());
+                })
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+            $members->each(fn (Schedule $member) => Gate::forUser($user)->authorize('update', $member));
 
-        $members->each(fn (Schedule $member) => Gate::authorize('update', $member));
-
-        if ($members->count() > 1 && ($validated['note'] ?? null) === 'Thi kết thúc môn') {
-            throw ValidationException::withMessages([
-                'note' => 'Không thể đánh dấu toàn bộ chuỗi là lịch thi kết thúc môn.',
-            ]);
-        }
-
-        $dayShift = (int) Carbon::parse($schedule->schedule_date)
-            ->startOfDay()
-            ->diffInDays(Carbon::parse($validated['schedule_date'])->startOfDay(), false);
-        $memberIds = $members->modelKeys();
-        $baseData = array_merge($validated, [
-            'room' => $this->normalizeRoom($validated['room'] ?? null),
-            'status' => $validated['status'] ?? $schedule->status ?? Schedule::STATUS_ACTIVE,
-        ]);
-        $updates = $members->mapWithKeys(function (Schedule $member) use ($baseData, $dayShift): array {
-            return [$member->id => array_merge($baseData, [
-                'schedule_date' => Carbon::parse($member->schedule_date)->addDays($dayShift)->toDateString(),
-            ])];
-        });
-        $conflictsByDate = $this->scheduleConflicts->conflictsForDates(
-            $baseData,
-            $updates->pluck('schedule_date')->all(),
-            $memberIds,
-            $targetClassroom
-        );
-
-        foreach ($members as $member) {
-            $candidateDate = $updates[$member->id]['schedule_date'];
-            $conflicts = $conflictsByDate[$candidateDate] ?? [];
-
-            if ($conflicts !== []) {
+            if ($members->count() > 1 && ($validated['note'] ?? null) === 'Thi kết thúc môn') {
                 throw ValidationException::withMessages([
-                    'schedule' => 'Buổi số '.$member->series_position.' ngày '
-                        .Carbon::parse($updates[$member->id]['schedule_date'])->format('d/m/Y')
-                        .' bị trùng lịch: '.implode(' ', $conflicts),
+                    'note' => 'Không thể đánh dấu nhiều buổi trong chuỗi là lịch thi kết thúc môn.',
                 ]);
             }
-        }
 
-        $oldClassIds = $members->pluck('class_id')->map(fn ($id) => (int) $id)->unique()->values();
-        $oldSnapshot = $members->map(fn (Schedule $member) => AuditLogger::snapshot($member))->all();
+            $dayShift = (int) Carbon::parse($selected->schedule_date)
+                ->startOfDay()
+                ->diffInDays(Carbon::parse($validated['schedule_date'])->startOfDay(), false);
+            $memberIds = $members->modelKeys();
+            $baseData = array_merge($validated, [
+                'room' => $this->normalizeRoom($validated['room'] ?? null),
+                'status' => $validated['status'] ?? $selected->status ?? Schedule::STATUS_ACTIVE,
+            ]);
+            $newSeriesId = $updateScope === 'future' ? (string) Str::uuid() : $selected->series_id;
+            $orderedMembers = $members->sortBy(fn (Schedule $member) => [
+                $member->series_position ?? PHP_INT_MAX,
+                $member->schedule_date->format('Y-m-d'),
+                $member->id,
+            ])->values();
+            $updates = $orderedMembers->mapWithKeys(function (Schedule $member, int $index) use (
+                $baseData,
+                $dayShift,
+                $updateScope,
+                $newSeriesId
+            ): array {
+                return [$member->id => array_merge($baseData, [
+                    'schedule_date' => $member->schedule_date->copy()->addDays($dayShift)->toDateString(),
+                    ...($updateScope === 'future' ? [
+                        'series_id' => $newSeriesId,
+                        'series_position' => $index + 1,
+                    ] : []),
+                ])];
+            });
+            $before = $this->scheduleQuickUndo->snapshots($members);
+            $this->scheduleWriteLocks->acquire(array_merge($before, $updates->values()->all()));
+            $conflictsByDate = $this->scheduleConflicts->conflictsForDates(
+                $baseData,
+                $updates->pluck('schedule_date')->all(),
+                $memberIds,
+                $targetClassroom
+            );
 
-        DB::transaction(function () use ($members, $updates): void {
+            foreach ($members as $member) {
+                $candidateDate = $updates[$member->id]['schedule_date'];
+                $conflicts = $conflictsByDate[$candidateDate] ?? [];
+
+                if ($conflicts !== []) {
+                    throw ValidationException::withMessages([
+                        'schedule' => 'Buổi số '.$member->series_position.' ngày '
+                            .Carbon::parse($candidateDate)->format('d/m/Y')
+                            .' bị trùng lịch: '.implode(' ', $conflicts),
+                    ]);
+                }
+            }
+
+            $oldClassIds = $members->pluck('class_id')->map(fn ($id) => (int) $id)->unique()->values();
+            $oldAuditSnapshot = $members->map(fn (Schedule $member) => AuditLogger::snapshot($member))->all();
             foreach ($members as $member) {
                 $member->update($updates[$member->id]);
             }
+            $freshMembers = Schedule::query()->whereKey($memberIds)->orderBy('id')->get();
+            $after = $this->scheduleQuickUndo->snapshots($freshMembers);
+            $change = $recordQuickUndo
+                ? $this->scheduleQuickUndo->record($user, $updateScope, $before, $after)
+                : null;
+
+            return compact('freshMembers', 'oldClassIds', 'oldAuditSnapshot', 'change', 'newSeriesId');
         });
 
-        $freshFirst = $members->first()->fresh();
+        $members = $result['freshMembers'];
+        $oldClassIds = $result['oldClassIds'];
+        $oldSnapshot = $result['oldAuditSnapshot'];
+        $freshFirst = $members->first();
         $oldClassIds
             ->reject(fn (int $classId) => $classId === (int) $freshFirst->class_id)
             ->each(fn (int $classId) => $this->notifyArchivedOrMovedSeries($classId, $members->count(), false));
@@ -652,21 +790,30 @@ class ScheduleController extends Controller
 
         AuditLogger::log(
             AuditLogger::SCHEDULE_SERIES_UPDATED,
-            $schedule,
+            $freshFirst,
             ['members' => $oldSnapshot],
-            ['members' => $members->map(fn (Schedule $member) => AuditLogger::snapshot($member->fresh()))->all()],
-            ['series_id' => $schedule->series_id, 'updated_count' => $members->count()],
-            'Cập nhật toàn bộ chuỗi lịch học.'
+            ['members' => $members->map(fn (Schedule $member) => AuditLogger::snapshot($member))->all()],
+            [
+                'series_id' => $originalSeriesId,
+                'new_series_id' => $result['newSeriesId'],
+                'scope' => $updateScope,
+                'updated_count' => $members->count(),
+            ],
+            $updateScope === 'future'
+                ? 'Cập nhật buổi đã chọn và các buổi sau trong chuỗi lịch.'
+                : 'Cập nhật toàn bộ chuỗi lịch học.'
         );
 
-        return response()->json([
+        return response()->json(array_filter([
             'status' => 'success',
             'message' => 'Đã cập nhật '.$members->count().' buổi trong chuỗi lịch!',
             'updated_count' => $members->count(),
-        ]);
+            'undo_url' => $result['change'] ? route('schedules.changes.undo', $result['change']) : null,
+            'undo_expires_at' => $result['change']?->expires_at?->toIso8601String(),
+        ]));
     }
 
-    private function archiveSeries(Schedule $schedule)
+    private function archiveSeries(Schedule $schedule, string $deleteScope)
     {
         if (! $schedule->series_id) {
             throw ValidationException::withMessages([
@@ -674,17 +821,26 @@ class ScheduleController extends Controller
             ]);
         }
 
-        $members = Schedule::query()
-            ->with(['classroom', 'course'])
-            ->where('series_id', $schedule->series_id)
-            ->notArchived()
-            ->get();
-        $members->each(fn (Schedule $member) => Gate::authorize('delete', $member));
-        $oldSnapshot = $members->map(fn (Schedule $member) => AuditLogger::snapshot($member))->all();
+        [$members, $oldSnapshot] = DB::transaction(function () use ($schedule, $deleteScope): array {
+            $selected = Schedule::query()->lockForUpdate()->findOrFail($schedule->id);
+            $members = Schedule::query()
+                ->with(['classroom', 'course'])
+                ->where('series_id', $selected->series_id)
+                ->notArchived()
+                ->when($deleteScope === 'future', function ($query) use ($selected): void {
+                    $selected->series_position !== null
+                        ? $query->where('series_position', '>=', $selected->series_position)
+                        : $query->where('schedule_date', '>=', $selected->schedule_date->toDateString());
+                })
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+            $members->each(fn (Schedule $member) => Gate::authorize('delete', $member));
+            $oldSnapshot = $members->map(fn (Schedule $member) => AuditLogger::snapshot($member))->all();
+            Schedule::query()->whereKey($members->modelKeys())->update(['status' => Schedule::STATUS_ARCHIVED]);
 
-        DB::transaction(fn () => Schedule::query()
-            ->whereKey($members->modelKeys())
-            ->update(['status' => Schedule::STATUS_ARCHIVED]));
+            return [$members, $oldSnapshot];
+        });
 
         $members->groupBy('class_id')->each(
             fn ($classMembers, $classId) => $this->notifyArchivedOrMovedSeries((int) $classId, $classMembers->count(), true)
@@ -695,8 +851,14 @@ class ScheduleController extends Controller
             $schedule,
             ['members' => $oldSnapshot],
             ['status' => Schedule::STATUS_ARCHIVED],
-            ['series_id' => $schedule->series_id, 'archived_count' => $members->count()],
-            'Lưu trữ toàn bộ chuỗi lịch học.'
+            [
+                'series_id' => $schedule->series_id,
+                'scope' => $deleteScope,
+                'archived_count' => $members->count(),
+            ],
+            $deleteScope === 'future'
+                ? 'Lưu trữ buổi đã chọn và các buổi sau trong chuỗi lịch.'
+                : 'Lưu trữ toàn bộ chuỗi lịch học.'
         );
 
         return response()->json([
@@ -858,6 +1020,17 @@ class ScheduleController extends Controller
         $room = preg_replace('/\s+/', ' ', trim((string) $room));
 
         return $room !== '' ? $room : null;
+    }
+
+    private function calendarFilters(Request $request): array
+    {
+        return $request->validate([
+            'class_id' => 'nullable|integer|exists:classes,id',
+            'course_id' => 'nullable|integer|exists:courses,id',
+            'teacher_id' => 'nullable|integer|exists:users,id',
+            'room' => 'nullable|string|max:100',
+            'kind' => 'nullable|in:regular,exam',
+        ]);
     }
 
     /**
