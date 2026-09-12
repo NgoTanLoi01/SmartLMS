@@ -254,17 +254,20 @@
 
         .fc .fc-event {
             border-radius: 6px !important;
-            border: none !important;
-            padding: 2px 6px !important;
+            border: 1px solid rgba(255, 255, 255, .2) !important;
+            border-left: 5px solid var(--schedule-class-accent, #FBCE5A) !important;
+            padding: 2px 6px 2px 7px !important;
             font-size: 12px !important;
             font-weight: 500 !important;
             cursor: grab;
-            transition: opacity .15s, filter .15s, transform .15s;
+            box-shadow: 0 1px 2px rgba(38, 58, 55, .14);
+            transition: opacity .15s, filter .15s, transform .15s, box-shadow .15s;
             touch-action: manipulation;
         }
 
         .fc .fc-event:hover {
-            filter: brightness(.95);
+            filter: brightness(1.06) saturate(1.05);
+            box-shadow: 0 3px 9px rgba(38, 58, 55, .22);
         }
 
         .fc .fc-event:active,
@@ -378,6 +381,19 @@
             height: 8px;
             border-radius: 50%;
             background: #54726E;
+        }
+
+        .sch-calendar-legend .is-course-pair i {
+            width: 30px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #3F6F6A 0 25%, #49627F 25% 50%, #774E60 50% 75%, #657044 75%);
+        }
+
+        .sch-calendar-legend .is-class-accent i {
+            width: 5px;
+            height: 13px;
+            border-radius: 3px;
+            background: #FBCE5A;
         }
 
         .sch-calendar-legend .is-exam i {
@@ -1453,7 +1469,8 @@
                 </span>
             </div>
             <div class="sch-calendar-legend" aria-label="Chú giải màu lịch">
-                <span><i aria-hidden="true"></i>Mỗi cặp lớp–khóa học có một màu ổn định</span>
+                <span class="is-course-pair"><i aria-hidden="true"></i>Màu nền: cặp lớp–khóa học</span>
+                <span class="is-class-accent"><i aria-hidden="true"></i>Dải cạnh: lớp học</span>
                 <span class="is-exam"><i aria-hidden="true"></i>Đỏ: lịch thi hoặc có ghi chú</span>
             </div>
             <div id="sch-calendar"

@@ -378,6 +378,8 @@ class AuthorizationIsolationTest extends TestCase
         $this->assertStringContainsString('eventDrop(info)', $calendarScript);
         $this->assertStringContainsString('eventResize(info)', $calendarScript);
         $this->assertStringContainsString('mutationInfo.revert()', $calendarScript);
+        $this->assertStringContainsString('scheduleColor(event.extendedProps?.class_id, event.extendedProps?.course_id)', $calendarScript);
+        $this->assertStringContainsString("'--schedule-class-accent'", $calendarScript);
     }
 
     public function test_schedule_event_api_only_returns_requested_date_range(): void

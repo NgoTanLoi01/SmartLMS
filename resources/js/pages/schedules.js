@@ -135,14 +135,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const scheduleColor = (classId, courseId) => {
-        const palette = ['#54726E', '#385652', '#6E7F68', '#536B78', '#765B69', '#7A6646', '#526F61'];
-        const resourceKey = `${classId || ''}:${courseId || ''}`;
-        const index = resourceKey
+    const stableColorHash = (value) => {
+        let hash = String(value || '')
             .split('')
-            .reduce((sum, character) => ((sum * 31) + character.charCodeAt(0)) >>> 0, 0) % palette.length;
+            .reduce((result, character) => Math.imul(result ^ character.charCodeAt(0), 16777619) >>> 0, 2166136261);
+        hash ^= hash >>> 16;
+        hash = Math.imul(hash, 0x7feb352d);
+        hash ^= hash >>> 15;
+        hash = Math.imul(hash, 0x846ca68b);
+        hash ^= hash >>> 16;
 
-        return palette[index];
+        return hash >>> 0;
+    };
+
+    const stableColorIndex = (value, paletteLength) => stableColorHash(value) % paletteLength;
+
+    const scheduleColor = (classId, courseId) => {
+        const resourceKey = `class:${classId || 0}|course:${courseId || 0}`;
+        const hash = stableColorHash(resourceKey);
+        const hue = hash % 360;
+        const saturation = 36 + ((hash >>> 9) % 3) * 5;
+        const lightness = 30 + ((hash >>> 17) % 3);
+
+        return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    };
+
+    const classAccentColor = (classId) => {
+        const palette = [
+            '#FBCE5A', '#B0DAD2', '#AEC6A6', '#E3A66F', '#DC8874', '#9CC5D9',
+            '#B9ACD5', '#D4A4BC', '#B8C985', '#75B8AD', '#8EAFD0', '#C9A46B',
+        ];
+
+        return palette[stableColorIndex(`class:${classId || 0}`, palette.length)];
     };
 
     restoreCalendarFiltersFromUrl();
@@ -508,9 +532,14 @@ document.addEventListener('DOMContentLoaded', () => {
             handleCalendarMutation(info);
         },
         eventDidMount(info) {
+            info.el.style.setProperty(
+                '--schedule-class-accent',
+                classAccentColor(info.event.extendedProps.class_id),
+            );
+
             if (isMobile) return;
 
-            info.el.title = 'Kéo để đổi ngày/giờ; kéo cạnh trên hoặc dưới để đổi thời lượng. Nhấp để xem chi tiết.';
+            info.el.title = 'Màu nền phân biệt lớp–khóa học; dải màu cạnh trái phân biệt lớp. Kéo để đổi ngày/giờ; kéo cạnh để đổi thời lượng.';
             info.el.setAttribute('aria-label', `${info.event.title}. Có thể kéo để thay đổi lịch.`);
         },
     });
