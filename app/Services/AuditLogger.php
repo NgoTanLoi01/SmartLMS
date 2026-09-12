@@ -37,6 +37,10 @@ class AuditLogger
 
     public const SCHEDULE_SERIES_ARCHIVED = 'schedule_series_archived';
 
+    public const SCHEDULE_BULK_ADJUSTED = 'schedule_bulk_adjusted';
+
+    public const SCHEDULE_BULK_ADJUSTMENT_UNDONE = 'schedule_bulk_adjustment_undone';
+
     public const CONTRACT_CREATED = 'contract_created';
 
     public const CONTRACT_UPDATED = 'contract_updated';

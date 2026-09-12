@@ -30,7 +30,7 @@ class MigrationRollbackIntegrityTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->usesIsolatedSqliteDatabase()) {
-            foreach (['audit_log_chain_states', 'audit_logs', 'grading_feedback_templates', 'assignment_submissions', 'question_versions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
+            foreach (['audit_log_chain_states', 'audit_logs', 'schedule_adjustment_batches', 'grading_feedback_templates', 'assignment_submissions', 'question_versions', 'quiz_attempt_attachments', 'quiz_attempt_answers', 'quiz_attempt_questions', 'quiz_session_user', 'quiz_sessions', 'quiz_attempts', 'options', 'questions', 'quiz_passages', 'quizzes', 'attendance_data', 'attendance_columns', 'schedules', 'class_user', 'classes', 'courses', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }
         }
@@ -316,6 +316,26 @@ class MigrationRollbackIntegrityTest extends TestCase
 
         $this->assertFalse(Schema::hasColumn('schedules', 'series_id'));
         $this->assertFalse(Schema::hasColumn('schedules', 'series_position'));
+    }
+
+    public function test_schedule_adjustment_batch_migration_is_reversible(): void
+    {
+        $migration = require database_path('migrations/2026_09_11_000001_create_schedule_adjustment_batches_table.php');
+        $migration->up();
+
+        $this->assertTrue(Schema::hasTable('schedule_adjustment_batches'));
+        $this->assertTrue(Schema::hasColumns('schedule_adjustment_batches', [
+            'public_id',
+            'created_by',
+            'before_values',
+            'after_values',
+            'status',
+            'undone_by',
+            'undone_at',
+        ]));
+
+        $migration->down();
+        $this->assertFalse(Schema::hasTable('schedule_adjustment_batches'));
     }
 
     public function test_question_version_migration_backfills_and_is_reversible(): void

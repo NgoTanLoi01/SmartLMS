@@ -10,6 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!calendarEl || !modalEl || typeof bootstrap === 'undefined') return;
 
     const scheduleModal = new bootstrap.Modal(modalEl);
+    const bulkModalEl = document.getElementById('bulkScheduleModal');
+    const bulkScheduleModal = bulkModalEl ? new bootstrap.Modal(bulkModalEl) : null;
+    const dragScopeModalEl = document.getElementById('scheduleDragScopeModal');
+    const dragScopeModal = dragScopeModalEl ? new bootstrap.Modal(dragScopeModalEl, {
+        backdrop: 'static',
+        keyboard: true,
+    }) : null;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
     const modalError = document.getElementById('scheduleModalError');
@@ -31,10 +38,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewSummary = document.getElementById('seriesPreviewSummary');
     const previewList = document.getElementById('seriesPreviewList');
     const examCheckbox = document.getElementById('note_exam');
+    const bulkForm = document.getElementById('bulkScheduleForm');
+    const bulkError = document.getElementById('bulkScheduleError');
+    const bulkPreview = document.getElementById('bulkSchedulePreview');
+    const bulkSummary = document.getElementById('bulkScheduleSummary');
+    const bulkPreviewBody = document.getElementById('bulkSchedulePreviewBody');
+    const previewBulkButton = document.getElementById('btnPreviewBulkSchedule');
+    const applyBulkButton = document.getElementById('btnApplyBulkSchedule');
+    const dragEventTitle = document.getElementById('scheduleDragEventTitle');
+    const dragOldTime = document.getElementById('scheduleDragOldTime');
+    const dragNewTime = document.getElementById('scheduleDragNewTime');
+    const dragScopeButtons = Array.from(document.querySelectorAll('.js-save-drag-scope'));
     let modalCoursesRequest;
     let importCoursesRequest;
     let previewRequest;
+    let bulkPreviewRequest;
+    let validBulkPreviewSignature = '';
     let currentEventIsSeries = false;
+    let pendingCalendarMutation = null;
+    let calendarMutationSaving = false;
 
     const routeFromTemplate = (template, value) => template.replace('__ID__', encodeURIComponent(value));
 
@@ -75,6 +97,17 @@ document.addEventListener('DOMContentLoaded', () => {
         pageFeedback.classList.remove('d-none');
     };
 
+    try {
+        const pendingFeedback = sessionStorage.getItem('scheduleFeedback');
+        if (pendingFeedback) {
+            const feedback = JSON.parse(pendingFeedback);
+            showPageFeedback(feedback.message, feedback.type || 'success');
+            sessionStorage.removeItem('scheduleFeedback');
+        }
+    } catch {
+        // Trình duyệt có thể chặn sessionStorage; lịch vẫn hoạt động bình thường.
+    }
+
     const setBusy = (button, busy, busyLabel) => {
         if (!button) return;
         if (busy) {
@@ -95,6 +128,46 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const timeInputValue = (date) => `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+    const dateTimeLabel = (date) => date
+        ? new Intl.DateTimeFormat('vi-VN', {
+            weekday: 'short',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(date)
+        : '—';
+
+    const eventMutationData = (event, updateScope = 'occurrence') => ({
+        class_id: Number(event.extendedProps.class_id),
+        course_id: Number(event.extendedProps.course_id),
+        schedule_date: dateInputValue(event.start),
+        start_time: timeInputValue(event.start),
+        end_time: event.end ? timeInputValue(event.end) : '',
+        room: event.extendedProps.room || '',
+        note: event.extendedProps.note || '',
+        update_scope: updateScope,
+    });
+
+    const mutationDescription = (mutationInfo) => {
+        const oldStart = mutationInfo.oldEvent?.start;
+        const oldEnd = mutationInfo.oldEvent?.end;
+        const newStart = mutationInfo.event.start;
+        const newEnd = mutationInfo.event.end;
+        const oldLabel = `${dateTimeLabel(oldStart)}${oldEnd ? ` – ${timeInputValue(oldEnd)}` : ''}`;
+        const newLabel = `${dateTimeLabel(newStart)}${newEnd ? ` – ${timeInputValue(newEnd)}` : ''}`;
+
+        return { oldLabel, newLabel };
+    };
+
+    const fillDragScopeModal = (mutationInfo) => {
+        const { oldLabel, newLabel } = mutationDescription(mutationInfo);
+        if (dragEventTitle) dragEventTitle.textContent = mutationInfo.event.title || 'Lịch học';
+        if (dragOldTime) dragOldTime.textContent = oldLabel;
+        if (dragNewTime) dragNewTime.textContent = newLabel;
+    };
 
     const setModalMode = (editing, isSeries = false) => {
         currentEventIsSeries = editing && isSeries;
@@ -209,6 +282,72 @@ document.addEventListener('DOMContentLoaded', () => {
         previewContainer.classList.remove('d-none');
     };
 
+    const setCalendarMutationBusy = (busy, activeButton = null) => {
+        calendarMutationSaving = busy;
+        calendarEl.classList.toggle('is-saving-schedule', busy);
+
+        dragScopeButtons.forEach((button) => {
+            if (button === activeButton) {
+                setBusy(button, busy, 'Đang lưu...');
+                return;
+            }
+
+            button.disabled = busy;
+        });
+    };
+
+    const persistCalendarMutation = async (mutationInfo, updateScope = 'occurrence', activeButton = null) => {
+        if (calendarMutationSaving) return;
+
+        const data = eventMutationData(mutationInfo.event, updateScope);
+        if (!hasRequiredScheduleData(data)) {
+            mutationInfo.revert();
+            pendingCalendarMutation = null;
+            dragScopeModal?.hide();
+            showPageFeedback('Không thể thay đổi lịch vì khung giờ mới không hợp lệ.');
+            return;
+        }
+
+        setCalendarMutationBusy(true, activeButton);
+        try {
+            const result = await requestJson(
+                routeFromTemplate(calendarEl.dataset.updateUrlTemplate, mutationInfo.event.id),
+                {
+                    method: 'PUT',
+                    body: JSON.stringify(data),
+                },
+            );
+
+            pendingCalendarMutation = null;
+            dragScopeModal?.hide();
+            calendar.refetchEvents();
+            showPageFeedback(result.message || 'Đã cập nhật lịch học.', 'success');
+        } catch (error) {
+            mutationInfo.revert();
+            pendingCalendarMutation = null;
+            dragScopeModal?.hide();
+            showPageFeedback(`Không thể thay đổi lịch: ${error.message}`);
+        } finally {
+            setCalendarMutationBusy(false, activeButton);
+        }
+    };
+
+    const handleCalendarMutation = (mutationInfo) => {
+        if (calendarMutationSaving) {
+            mutationInfo.revert();
+            return;
+        }
+
+        if (mutationInfo.event.extendedProps.series_id) {
+            pendingCalendarMutation = mutationInfo;
+            fillDragScopeModal(mutationInfo);
+            dragScopeModal?.show();
+            return;
+        }
+
+        persistCalendarMutation(mutationInfo);
+    };
+
     const calendar = new Calendar(calendarEl, {
         plugins: [interactionPlugin, dayGridPlugin, timeGridPlugin],
         locales: [viLocale],
@@ -239,6 +378,13 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         },
         selectable: true,
+        editable: !isMobile,
+        eventStartEditable: !isMobile,
+        eventDurationEditable: !isMobile,
+        eventResizableFromStart: true,
+        eventDragMinDistance: 5,
+        dragScroll: true,
+        snapDuration: '00:15:00',
         eventColor: '#54726E',
         select(info) {
             resetForm();
@@ -262,9 +408,35 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchCourses(event.extendedProps.class_id, event.extendedProps.course_id);
             scheduleModal.show();
         },
+        eventDrop(info) {
+            handleCalendarMutation(info);
+        },
+        eventResize(info) {
+            handleCalendarMutation(info);
+        },
+        eventDidMount(info) {
+            if (isMobile) return;
+
+            info.el.title = 'Kéo để đổi ngày/giờ; kéo cạnh trên hoặc dưới để đổi thời lượng. Nhấp để xem chi tiết.';
+            info.el.setAttribute('aria-label', `${info.event.title}. Có thể kéo để thay đổi lịch.`);
+        },
     });
 
     calendar.render();
+
+    dragScopeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!pendingCalendarMutation || calendarMutationSaving) return;
+            persistCalendarMutation(pendingCalendarMutation, button.dataset.scope || 'occurrence', button);
+        });
+    });
+
+    dragScopeModalEl?.addEventListener('hidden.bs.modal', () => {
+        if (!pendingCalendarMutation || calendarMutationSaving) return;
+
+        pendingCalendarMutation.revert();
+        pendingCalendarMutation = null;
+    });
 
     document.getElementById('class_id')?.addEventListener('change', function () {
         fetchCourses(this.value);
@@ -313,6 +485,167 @@ document.addEventListener('DOMContentLoaded', () => {
     if (importClassSelect?.value) {
         fetchImportCourses(importClassSelect.value, calendarEl.dataset.oldImportCourseId || null);
     }
+
+    const checkedValues = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+        .map((input) => Number(input.value));
+
+    const bulkScheduleData = () => ({
+        class_ids: checkedValues('bulk_class_ids'),
+        course_ids: checkedValues('bulk_course_ids'),
+        date_from: document.getElementById('bulk_date_from')?.value || '',
+        date_to: document.getElementById('bulk_date_to')?.value || '',
+        direction: document.getElementById('bulk_direction')?.value || 'forward',
+        shift_amount: Number(document.getElementById('bulk_shift_amount')?.value || 0),
+        shift_unit: document.getElementById('bulk_shift_unit')?.value || 'day',
+    });
+
+    const showBulkError = (message = '') => {
+        if (!bulkError) return;
+        bulkError.textContent = message;
+        bulkError.classList.toggle('d-none', !message);
+    };
+
+    const invalidateBulkPreview = () => {
+        bulkPreviewRequest?.abort();
+        validBulkPreviewSignature = '';
+        applyBulkButton && (applyBulkButton.disabled = true);
+        bulkPreview?.classList.add('d-none');
+        bulkPreviewBody?.replaceChildren();
+    };
+
+    const validateBulkData = (data) => {
+        if (!data.class_ids.length) return 'Vui lòng chọn ít nhất một lớp học.';
+        if (!data.date_from || !data.date_to) return 'Vui lòng chọn đầy đủ khoảng ngày.';
+        if (data.date_to < data.date_from) return 'Ngày kết thúc phải từ hoặc sau ngày bắt đầu.';
+        if (!Number.isInteger(data.shift_amount) || data.shift_amount < 1) return 'Số ngày hoặc tuần phải từ 1 trở lên.';
+        if (data.shift_unit === 'week' && data.shift_amount > 52) return 'Mỗi đợt chỉ được dời tối đa 52 tuần.';
+        if (data.shift_unit === 'day' && data.shift_amount > 365) return 'Mỗi đợt chỉ được dời tối đa 365 ngày.';
+        return '';
+    };
+
+    const appendCell = (row, value, className = '') => {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        if (className) cell.className = className;
+        row.appendChild(cell);
+    };
+
+    const renderBulkPreview = (payload) => {
+        bulkPreviewBody.replaceChildren();
+        bulkSummary.textContent = `${payload.summary.total} buổi · ${payload.summary.available} hợp lệ · ${payload.summary.conflicts} bị trùng · Dịch ${payload.summary.shift_days > 0 ? '+' : ''}${payload.summary.shift_days} ngày`;
+
+        payload.items.forEach((item) => {
+            const row = document.createElement('tr');
+            row.classList.toggle('is-conflict', item.has_conflict);
+            appendCell(row, `${item.class_name} · ${item.course_title}`);
+            appendCell(row, `${item.start_time}–${item.end_time}`);
+            appendCell(row, item.old_date_label);
+            appendCell(row, item.new_date_label);
+            appendCell(
+                row,
+                item.has_conflict ? item.conflicts.join(' ') : 'Không có xung đột',
+                item.has_conflict ? 'sch-bulk-result-error' : 'sch-bulk-result-ok',
+            );
+            bulkPreviewBody.appendChild(row);
+        });
+
+        bulkPreview.classList.remove('d-none');
+    };
+
+    bulkForm?.addEventListener('change', invalidateBulkPreview);
+    bulkForm?.addEventListener('input', invalidateBulkPreview);
+
+    document.querySelectorAll('.js-toggle-bulk-options').forEach((button) => {
+        button.addEventListener('click', () => {
+            const container = document.getElementById(button.dataset.target);
+            const options = Array.from(container?.querySelectorAll('input[type="checkbox"]') || []);
+            const selectAll = options.some((option) => !option.checked);
+            options.forEach((option) => { option.checked = selectAll; });
+            button.textContent = selectAll ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+            invalidateBulkPreview();
+        });
+    });
+
+    previewBulkButton?.addEventListener('click', async () => {
+        showBulkError();
+        const data = bulkScheduleData();
+        const validationError = validateBulkData(data);
+        if (validationError) {
+            showBulkError(validationError);
+            return;
+        }
+
+        bulkPreviewRequest?.abort();
+        bulkPreviewRequest = new AbortController();
+        setBusy(previewBulkButton, true, 'Đang kiểm tra...');
+        try {
+            const payload = await requestJson(calendarEl.dataset.bulkPreviewUrl, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                signal: bulkPreviewRequest.signal,
+            });
+            renderBulkPreview(payload);
+            validBulkPreviewSignature = JSON.stringify(data);
+            applyBulkButton.disabled = payload.summary.conflicts > 0;
+            if (payload.summary.conflicts > 0) {
+                showBulkError('Chưa thể áp dụng vì vẫn còn lịch trùng. Hãy thay đổi phạm vi hoặc độ dịch chuyển.');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            showBulkError(error.message);
+        } finally {
+            setBusy(previewBulkButton, false);
+        }
+    });
+
+    applyBulkButton?.addEventListener('click', async () => {
+        showBulkError();
+        const data = bulkScheduleData();
+        if (JSON.stringify(data) !== validBulkPreviewSignature) {
+            showBulkError('Dữ liệu đã thay đổi. Vui lòng xem trước xung đột lại trước khi áp dụng.');
+            applyBulkButton.disabled = true;
+            return;
+        }
+
+        setBusy(applyBulkButton, true, 'Đang áp dụng...');
+        try {
+            const result = await requestJson(calendarEl.dataset.bulkStoreUrl, {
+                method: 'POST',
+                body: JSON.stringify(data),
+            });
+            bulkScheduleModal?.hide();
+            try {
+                sessionStorage.setItem('scheduleFeedback', JSON.stringify({ message: result.message, type: 'success' }));
+            } catch {
+                showPageFeedback(result.message, 'success');
+            }
+            window.location.reload();
+        } catch (error) {
+            showBulkError(error.message);
+            invalidateBulkPreview();
+        } finally {
+            setBusy(applyBulkButton, false);
+        }
+    });
+
+    document.querySelectorAll('.js-undo-adjustment').forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (!confirm('Hoàn tác toàn bộ đợt điều chỉnh này? Hệ thống sẽ kiểm tra trùng lịch trước khi khôi phục.')) return;
+            setBusy(button, true, 'Đang hoàn tác...');
+            try {
+                const result = await requestJson(button.dataset.url, { method: 'POST' });
+                try {
+                    sessionStorage.setItem('scheduleFeedback', JSON.stringify({ message: result.message, type: 'success' }));
+                } catch {
+                    showPageFeedback(result.message, 'success');
+                }
+                window.location.reload();
+            } catch (error) {
+                showPageFeedback(error.message);
+                setBusy(button, false);
+            }
+        });
+    });
 
     async function loadCourses(classId, select, selectedCourseId, requestType) {
         if (!classId) {

@@ -125,6 +125,84 @@ class ScheduleConflictService
         return $result;
     }
 
+    /**
+     * Kiểm tra một tập lịch có lớp, giáo viên hoặc phòng bị trùng sau khi thay đổi.
+     * Các lịch trong tập được loại khỏi dữ liệu hiện tại rồi được so sánh lại với
+     * nhau để hỗ trợ những thao tác hàng loạt trong một transaction.
+     *
+     * @param  array<int, array{schedule_id:int,class_id:int,schedule_date:string,start_time:string,end_time:string,room:?string,status:string}>  $candidates
+     * @param  array<int, int>  $excludedScheduleIds
+     * @return array<int, array<int, string>>
+     */
+    public function conflictsForCandidates(
+        array $candidates,
+        array $excludedScheduleIds = [],
+        bool $lockForUpdate = false
+    ): array {
+        $activeCandidates = collect($candidates)
+            ->filter(fn (array $candidate) => ($candidate['status'] ?? Schedule::STATUS_ACTIVE) === Schedule::STATUS_ACTIVE)
+            ->values();
+        $result = collect($candidates)
+            ->mapWithKeys(fn (array $candidate) => [(int) $candidate['schedule_id'] => []])
+            ->all();
+
+        if ($activeCandidates->isEmpty()) {
+            return $result;
+        }
+
+        $teacherIds = Classroom::query()
+            ->whereKey($activeCandidates->pluck('class_id')->unique()->all())
+            ->pluck('teacher_id', 'id');
+        $targetDates = $activeCandidates->pluck('schedule_date')->unique()->values();
+        $externalSchedules = Schedule::query()
+            ->with('classroom:id,teacher_id')
+            ->where('status', Schedule::STATUS_ACTIVE)
+            ->whereIn('schedule_date', $targetDates->all())
+            ->when($excludedScheduleIds !== [], fn ($query) => $query->whereNotIn('id', $excludedScheduleIds))
+            ->when($lockForUpdate, fn ($query) => $query->lockForUpdate())
+            ->get()
+            ->groupBy(fn (Schedule $schedule) => $schedule->schedule_date->format('Y-m-d'));
+        $candidatesByDate = $activeCandidates->groupBy('schedule_date');
+
+        foreach ($activeCandidates as $candidate) {
+            $scheduleId = (int) $candidate['schedule_id'];
+            $candidateTeacherId = $teacherIds[(int) $candidate['class_id']] ?? null;
+            $conflicts = [];
+
+            foreach ($externalSchedules->get($candidate['schedule_date'], collect()) as $other) {
+                if (! $this->timesOverlap($candidate, $other)) {
+                    continue;
+                }
+
+                $conflicts = array_merge($conflicts, $this->resourceConflicts(
+                    $candidate,
+                    $candidateTeacherId,
+                    (int) $other->class_id,
+                    $other->classroom?->teacher_id,
+                    $other->room
+                ));
+            }
+
+            foreach ($candidatesByDate->get($candidate['schedule_date'], collect()) as $otherCandidate) {
+                if ((int) $otherCandidate['schedule_id'] === $scheduleId || ! $this->timesOverlap($candidate, $otherCandidate)) {
+                    continue;
+                }
+
+                $conflicts = array_merge($conflicts, $this->resourceConflicts(
+                    $candidate,
+                    $candidateTeacherId,
+                    (int) $otherCandidate['class_id'],
+                    $teacherIds[(int) $otherCandidate['class_id']] ?? null,
+                    $otherCandidate['room'] ?? null
+                ));
+            }
+
+            $result[$scheduleId] = array_values(array_unique($conflicts));
+        }
+
+        return $result;
+    }
+
     private function overlapQuery(array $attributes, int|array|null $exceptScheduleIds): Builder
     {
         $excludedIds = array_values(array_filter((array) $exceptScheduleIds));
@@ -135,5 +213,45 @@ class ScheduleConflictService
             ->where('schedules.start_time', '<', $attributes['end_time'])
             ->where('schedules.end_time', '>', $attributes['start_time'])
             ->when($excludedIds !== [], fn (Builder $query) => $query->whereNotIn('schedules.id', $excludedIds));
+    }
+
+    private function timesOverlap(array $candidate, Schedule|array $other): bool
+    {
+        $otherStart = $other instanceof Schedule ? $other->start_time : $other['start_time'];
+        $otherEnd = $other instanceof Schedule ? $other->end_time : $other['end_time'];
+
+        return $this->timeValue($candidate['start_time']) < $this->timeValue($otherEnd)
+            && $this->timeValue($candidate['end_time']) > $this->timeValue($otherStart);
+    }
+
+    /** @return array<int, string> */
+    private function resourceConflicts(
+        array $candidate,
+        mixed $candidateTeacherId,
+        int $otherClassId,
+        mixed $otherTeacherId,
+        ?string $otherRoom
+    ): array {
+        $conflicts = [];
+
+        if ((int) $candidate['class_id'] === $otherClassId) {
+            $conflicts[] = 'Lớp học bị trùng giờ.';
+        }
+
+        if ($candidateTeacherId && (int) $candidateTeacherId === (int) $otherTeacherId) {
+            $conflicts[] = 'Giáo viên bị trùng giờ dạy.';
+        }
+
+        $room = mb_strtolower(trim((string) ($candidate['room'] ?? '')));
+        if ($room !== '' && $room === mb_strtolower(trim((string) $otherRoom))) {
+            $conflicts[] = "Phòng {$candidate['room']} bị trùng giờ.";
+        }
+
+        return $conflicts;
+    }
+
+    private function timeValue(mixed $time): string
+    {
+        return Carbon::parse((string) $time)->format('H:i:s');
     }
 }

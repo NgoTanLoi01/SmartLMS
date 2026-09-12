@@ -31,6 +31,7 @@ use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizGradingController;
 use App\Http\Controllers\QuizSessionController;
+use App\Http\Controllers\ScheduleAdjustmentController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SharedDocumentController;
 use App\Http\Controllers\StorageHealthController;
@@ -358,6 +359,15 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::post('/schedules/series', [ScheduleController::class, 'storeSeries'])
             ->middleware('throttle:30,1')
             ->name('schedules.series.store');
+        Route::post('/schedules/bulk-adjustments/preview', [ScheduleAdjustmentController::class, 'preview'])
+            ->middleware('throttle:30,1')
+            ->name('schedules.bulk-adjustments.preview');
+        Route::post('/schedules/bulk-adjustments', [ScheduleAdjustmentController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('schedules.bulk-adjustments.store');
+        Route::post('/schedules/bulk-adjustments/{adjustment}/undo', [ScheduleAdjustmentController::class, 'undo'])
+            ->middleware('throttle:10,1')
+            ->name('schedules.bulk-adjustments.undo');
         Route::post('/schedules/copy-day', [ScheduleController::class, 'copyDay'])->name('schedules.copyDay');
         Route::post('/schedules/import', [ScheduleController::class, 'importExcel'])->name('schedules.import');
         Route::post('/schedules', [ScheduleController::class, 'store'])->name('schedules.store');

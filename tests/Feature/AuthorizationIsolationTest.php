@@ -14,7 +14,9 @@ use App\Models\Question;
 use App\Models\QuestionBank;
 use App\Models\Quiz;
 use App\Models\Schedule;
+use App\Models\ScheduleAdjustmentBatch;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -68,9 +70,10 @@ class AuthorizationIsolationTest extends TestCase
     {
         if ($this->usesIsolatedSqliteDatabase()) {
             foreach ([
-                'smart_notifications',
+                'smart_notifications', 'audit_log_chain_states', 'audit_logs',
                 'grading_feedback_templates',
                 'quiz_attempts', 'quiz_sessions', 'assignment_submissions', 'question_versions', 'options', 'questions', 'course_question_bank', 'question_banks', 'schedules', 'attendance_columns',
+                'schedule_adjustment_batches',
                 'quizzes', 'assignments', 'lessons', 'modules', 'class_course', 'class_user', 'classes', 'courses', 'users',
             ] as $table) {
                 Schema::dropIfExists($table);
@@ -359,6 +362,23 @@ class AuthorizationIsolationTest extends TestCase
         ]);
     }
 
+    public function test_schedule_page_exposes_safe_drag_and_resize_controls(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('schedules.index'))
+            ->assertOk()
+            ->assertSee('id="scheduleDragScopeModal"', false)
+            ->assertSeeText('Kéo sang vị trí khác để đổi ngày/giờ')
+            ->assertSeeText('Chỉ buổi này')
+            ->assertSeeText('Cả chuỗi');
+
+        $calendarScript = file_get_contents(resource_path('js/pages/schedules.js'));
+
+        $this->assertStringContainsString('eventDrop(info)', $calendarScript);
+        $this->assertStringContainsString('eventResize(info)', $calendarScript);
+        $this->assertStringContainsString('mutationInfo.revert()', $calendarScript);
+    }
+
     public function test_schedule_event_api_only_returns_requested_date_range(): void
     {
         $inside = Schedule::create([
@@ -592,6 +612,160 @@ class AuthorizationIsolationTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('occurrence_count');
 
         $this->assertDatabaseCount('schedules', 1);
+    }
+
+    public function test_bulk_schedule_preview_reports_conflicts_before_applying(): void
+    {
+        $series = $this->createScheduleSeries();
+        Schedule::create([
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $series[2]->schedule_date->copy()->addDay()->toDateString(),
+            'start_time' => '12:00:00',
+            'end_time' => '13:00:00',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('schedules.bulk-adjustments.preview'), [
+                'class_ids' => [$this->classroom->id],
+                'course_ids' => [$this->course->id],
+                'date_from' => $series[0]->schedule_date->toDateString(),
+                'date_to' => $series[2]->schedule_date->toDateString(),
+                'direction' => 'forward',
+                'shift_amount' => 1,
+                'shift_unit' => 'day',
+            ])
+            ->assertOk()
+            ->assertJsonPath('summary.total', 3)
+            ->assertJsonPath('summary.conflicts', 1)
+            ->assertJsonPath('items.2.has_conflict', true);
+    }
+
+    public function test_bulk_schedule_adjustment_is_atomic_and_can_be_undone(): void
+    {
+        $series = $this->createScheduleSeries();
+        $secondCourse = Course::create([
+            'title' => 'Khóa thứ hai của A',
+            'teacher_id' => $this->owner->id,
+            'status' => Course::STATUS_PUBLISHED,
+        ]);
+        $secondClass = Classroom::create([
+            'name' => 'Lớp thứ hai của A',
+            'code' => 'A-BULK-02',
+            'teacher_id' => $this->owner->id,
+            'status' => Classroom::STATUS_ACTIVE,
+        ]);
+        $secondClass->courses()->attach($secondCourse);
+        $secondSchedule = Schedule::create([
+            'class_id' => $secondClass->id,
+            'course_id' => $secondCourse->id,
+            'schedule_date' => $series[0]->schedule_date->toDateString(),
+            'start_time' => '15:00:00',
+            'end_time' => '16:00:00',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+        $payload = [
+            'class_ids' => [$this->classroom->id, $secondClass->id],
+            'course_ids' => [$this->course->id, $secondCourse->id],
+            'date_from' => $series[0]->schedule_date->toDateString(),
+            'date_to' => $series[2]->schedule_date->toDateString(),
+            'direction' => 'forward',
+            'shift_amount' => 2,
+            'shift_unit' => 'day',
+        ];
+
+        $response = $this->actingAs($this->owner)
+            ->postJson(route('schedules.bulk-adjustments.store'), $payload)
+            ->assertOk()
+            ->assertJsonPath('schedule_count', 4);
+
+        foreach ($series as $schedule) {
+            $this->assertDatabaseHas('schedules', [
+                'id' => $schedule->id,
+                'schedule_date' => $schedule->schedule_date->copy()->addDays(2)->toDateString(),
+            ]);
+        }
+        $this->assertDatabaseHas('schedules', [
+            'id' => $secondSchedule->id,
+            'schedule_date' => $secondSchedule->schedule_date->copy()->addDays(2)->toDateString(),
+        ]);
+
+        $batch = ScheduleAdjustmentBatch::query()->where('public_id', $response->json('batch_id'))->firstOrFail();
+        $this->actingAs($this->owner)
+            ->postJson(route('schedules.bulk-adjustments.undo', $batch))
+            ->assertOk();
+
+        foreach ($series as $schedule) {
+            $this->assertDatabaseHas('schedules', [
+                'id' => $schedule->id,
+                'schedule_date' => $schedule->schedule_date->toDateString(),
+            ]);
+        }
+        $this->assertDatabaseHas('schedules', [
+            'id' => $secondSchedule->id,
+            'schedule_date' => $secondSchedule->schedule_date->toDateString(),
+        ]);
+        $this->assertDatabaseHas('schedule_adjustment_batches', [
+            'id' => $batch->id,
+            'status' => ScheduleAdjustmentBatch::STATUS_UNDONE,
+            'undone_by' => $this->owner->id,
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => AuditLogger::SCHEDULE_BULK_ADJUSTED,
+            'auditable_id' => $batch->id,
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => AuditLogger::SCHEDULE_BULK_ADJUSTMENT_UNDONE,
+            'auditable_id' => $batch->id,
+        ]);
+    }
+
+    public function test_bulk_schedule_apply_rolls_back_when_any_target_conflicts(): void
+    {
+        $series = $this->createScheduleSeries();
+        Schedule::create([
+            'class_id' => $this->classroom->id,
+            'course_id' => $this->course->id,
+            'schedule_date' => $series[2]->schedule_date->copy()->addDay()->toDateString(),
+            'start_time' => '12:00:00',
+            'end_time' => '13:00:00',
+            'status' => Schedule::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->owner)
+            ->postJson(route('schedules.bulk-adjustments.store'), [
+                'class_ids' => [$this->classroom->id],
+                'date_from' => $series[0]->schedule_date->toDateString(),
+                'date_to' => $series[2]->schedule_date->toDateString(),
+                'direction' => 'forward',
+                'shift_amount' => 1,
+                'shift_unit' => 'day',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('schedules');
+
+        foreach ($series as $schedule) {
+            $this->assertDatabaseHas('schedules', [
+                'id' => $schedule->id,
+                'schedule_date' => $schedule->schedule_date->toDateString(),
+            ]);
+        }
+        $this->assertDatabaseCount('schedule_adjustment_batches', 0);
+    }
+
+    public function test_teacher_cannot_bypass_bulk_schedule_class_scope(): void
+    {
+        $this->actingAs($this->otherTeacher)
+            ->postJson(route('schedules.bulk-adjustments.preview'), [
+                'class_ids' => [$this->classroom->id],
+                'date_from' => now()->toDateString(),
+                'date_to' => now()->addMonth()->toDateString(),
+                'direction' => 'forward',
+                'shift_amount' => 1,
+                'shift_unit' => 'week',
+            ])
+            ->assertForbidden();
     }
 
     public function test_student_schedule_requires_the_exact_class_course_pair(): void
@@ -1528,6 +1702,35 @@ class AuthorizationIsolationTest extends TestCase
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
+        Schema::create('audit_logs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('actor_id')->nullable()->index();
+            $table->string('actor_name')->nullable();
+            $table->string('actor_email')->nullable();
+            $table->string('action', 100)->index();
+            $table->string('auditable_type')->nullable();
+            $table->unsignedBigInteger('auditable_id')->nullable();
+            $table->string('description')->nullable();
+            $table->json('old_values')->nullable();
+            $table->json('new_values')->nullable();
+            $table->json('metadata')->nullable();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->unsignedBigInteger('chain_position')->nullable()->unique();
+            $table->char('previous_hash', 64)->nullable();
+            $table->char('entry_hash', 64)->nullable()->unique();
+            $table->unsignedTinyInteger('integrity_version')->default(1);
+            $table->timestamp('archived_at')->nullable()->index();
+            $table->timestamps();
+        });
+        Schema::create('audit_log_chain_states', function (Blueprint $table) {
+            $table->unsignedTinyInteger('id')->primary();
+            $table->unsignedBigInteger('last_position')->default(0);
+            $table->unsignedBigInteger('last_audit_log_id')->nullable();
+            $table->char('last_hash', 64)->nullable();
+            $table->timestamps();
+        });
         Schema::create('grading_feedback_templates', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
@@ -1674,6 +1877,25 @@ class AuthorizationIsolationTest extends TestCase
             $table->string('room')->nullable();
             $table->string('note')->nullable();
             $table->string('status')->default(Schedule::STATUS_ACTIVE);
+            $table->timestamps();
+        });
+        Schema::create('schedule_adjustment_batches', function (Blueprint $table) {
+            $table->id();
+            $table->uuid('public_id')->unique();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->date('date_from');
+            $table->date('date_to');
+            $table->json('class_ids');
+            $table->json('course_ids')->nullable();
+            $table->string('shift_unit', 10);
+            $table->unsignedSmallInteger('shift_amount');
+            $table->smallInteger('shift_days');
+            $table->unsignedInteger('schedule_count');
+            $table->json('before_values');
+            $table->json('after_values');
+            $table->string('status', 20)->default(ScheduleAdjustmentBatch::STATUS_APPLIED);
+            $table->unsignedBigInteger('undone_by')->nullable();
+            $table->timestamp('undone_at')->nullable();
             $table->timestamps();
         });
         Schema::create('question_banks', function (Blueprint $table) {

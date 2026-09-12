@@ -28,6 +28,8 @@
             'schedule_series_created' => 'Tạo chuỗi lịch học',
             'schedule_series_updated' => 'Cập nhật chuỗi lịch học',
             'schedule_series_archived' => 'Lưu trữ chuỗi lịch học',
+            'schedule_bulk_adjusted' => 'Điều chỉnh lịch hàng loạt',
+            'schedule_bulk_adjustment_undone' => 'Hoàn tác điều chỉnh lịch',
             'contract_created' => 'Tạo hợp đồng',
             'contract_updated' => 'Cập nhật hợp đồng',
             'contract_archived' => 'Lưu trữ hợp đồng',

@@ -6,6 +6,7 @@ use App\Imports\ScheduleImport;
 use App\Models\Classroom;
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\ScheduleAdjustmentBatch;
 use App\Rules\SafeSpreadsheet;
 use App\Services\AuditLogger;
 use App\Services\NotificationCenter;
@@ -91,7 +92,23 @@ class ScheduleController extends Controller
             $classes = DB::table('classes')->where('status', '!=', 'archived')->get();
         }
 
-        return view('schedules.index', compact('classes'));
+        $classIds = $classes->pluck('id');
+        $bulkCourses = DB::table('courses')
+            ->join('class_course', 'courses.id', '=', 'class_course.course_id')
+            ->whereIn('class_course.class_id', $classIds)
+            ->where('courses.status', '!=', Course::STATUS_ARCHIVED)
+            ->select('courses.id', 'courses.title')
+            ->distinct()
+            ->orderBy('courses.title')
+            ->get();
+        $recentAdjustments = ScheduleAdjustmentBatch::query()
+            ->with('creator:id,name')
+            ->when($user->isTeacher(), fn ($query) => $query->where('created_by', $user->id))
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        return view('schedules.index', compact('classes', 'bulkCourses', 'recentAdjustments'));
     }
 
     // HÀM MỚI: Lấy danh sách khóa học thuộc về 1 lớp cụ thể
