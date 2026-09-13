@@ -14,11 +14,14 @@
 @endphp
 
 <article class="catalog-card course-catalog-card {{ $isTemplate ? 'is-template' : '' }}">
-    <div class="catalog-card-visual" aria-hidden="true">
+    <div class="catalog-card-visual course-card-cover">
         <span class="catalog-card-icon">
-            <i class="fa-solid {{ $isTemplate ? 'fa-layer-group' : 'fa-book-open-reader' }}"></i>
+            <i class="fa-solid {{ $isTemplate ? 'fa-layer-group' : 'fa-book-open-reader' }}" aria-hidden="true"></i>
         </span>
-        <span class="catalog-card-type">{{ $isTemplate ? 'Khóa mẫu' : 'Khóa triển khai' }}</span>
+        <span class="course-card-cover__copy">
+            <small>{{ $isTemplate ? 'Nội dung tái sử dụng' : 'Không gian giảng dạy' }}</small>
+            <strong>{{ $isTemplate ? 'Khóa học mẫu' : 'Khóa học triển khai' }}</strong>
+        </span>
     </div>
 
     @if (auth()->id() === $course->teacher_id || auth()->user()->role === 'admin')
@@ -91,9 +94,9 @@
                 <a href="{{ route('courses.show', $course) }}">{{ $course->title }}</a>
             @endif
         </h3>
-        {{-- <p class="catalog-card-description">
+        <p class="catalog-card-description">
             {{ $course->description ?: 'Khóa học chưa có mô tả. Bạn có thể mở khóa học để xem nội dung chi tiết.' }}
-        </p> --}}
+        </p>
 
         <div class="catalog-owner">
             <span class="catalog-avatar" aria-hidden="true">{{ $teacherInitial }}</span>
@@ -103,7 +106,7 @@
             </span>
         </div>
 
-        <dl class="catalog-metrics" aria-label="Thông tin khóa học">
+        <dl class="catalog-metrics {{ $isTemplate ? 'catalog-metrics-two' : '' }}" aria-label="Thông tin khóa học">
             <div>
                 <dt><i class="fa-solid fa-folder-tree" aria-hidden="true"></i>Chương</dt>
                 <dd>{{ $course->modules_count ?? 0 }}</dd>

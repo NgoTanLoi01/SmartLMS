@@ -6,19 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>SmartLMS – Quản lý toàn bộ vòng đời đào tạo trên một hệ thống</title>
+    <title>SmartLMS.io.vn – Hệ thống quản lý toàn bộ vòng đời đào tạo</title>
     <meta name="description"
         content="SmartLMS kết nối tài khoản, chương trình, khóa học, lớp học, lịch, điểm danh, bài tập, bài kiểm tra, thanh toán, báo cáo và trợ lý AI có trích dẫn nguồn.">
     <meta name="keywords"
         content="SmartLMS, phần mềm quản lý đào tạo, LMS Việt Nam, quản lý lớp học, điểm danh, ngân hàng câu hỏi, chatbot RAG giáo dục">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <meta name="author" content="SmartLMS">
+    <meta name="author" content="SmartLMS.io.vn · NgoTanLoi">
     <link rel="canonical" href="{{ url()->current() }}">
 
     <meta property="og:type" content="website">
     <meta property="og:locale" content="vi_VN">
     <meta property="og:url" content="{{ route('home') }}">
-    <meta property="og:site_name" content="SmartLMS">
+    <meta property="og:site_name" content="SmartLMS.io.vn">
     <meta property="og:title" content="SmartLMS – Quản lý toàn bộ vòng đời đào tạo">
     <meta property="og:description"
         content="Từ quản trị tài khoản đến tổ chức đào tạo, đánh giá, vận hành và trợ lý AI có trích dẫn nguồn.">
@@ -43,7 +43,8 @@
         {
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          "name": "SmartLMS",
+          "name": "SmartLMS.io.vn",
+          "alternateName": "SmartLMS",
           "url": "https://smartlms.io.vn",
           "description": "Hệ thống quản lý toàn bộ vòng đời đào tạo tích hợp AI có trích dẫn nguồn",
           "applicationCategory": "EducationalApplication",
@@ -78,11 +79,11 @@
 
             <div class="nav-menu" id="navMenu">
                 <ul class="nav-links">
-                    <li><a href="#capabilities">Chức năng</a></li>
-                    <li><a href="#roles">Theo vai trò</a></li>
-                    <li><a href="#ai">AI & dữ liệu</a></li>
-                    <li><a href="#workflow">Quy trình</a></li>
-                    <li><a href="#operations">Vận hành</a></li>
+                    <li><a href="{{ route('marketing.training-management') }}">Giải pháp</a></li>
+                    <li><a href="{{ route('marketing.class-management') }}">Lớp học</a></li>
+                    <li><a href="{{ route('marketing.schedule-management') }}">Lịch học</a></li>
+                    <li><a href="{{ route('marketing.rag-chatbot') }}">AI & dữ liệu</a></li>
+                    <li><a href="{{ route('marketing.about') }}">Giới thiệu</a></li>
                 </ul>
                 <a class="nav-login" href="{{ route('login') }}">
                     Đăng nhập <x-ui.icon name="arrow-right" />
@@ -102,9 +103,8 @@
                         <span class="eyebrow-dot"></span>
                         LMS vận hành đào tạo · Tích hợp AI theo quyền truy cập
                     </div>
-                    <h1 id="hero-title">Từ tài khoản đến báo cáo, <span>mọi nghiệp vụ đào tạo trong một luồng</span>
-                    </h1>
-                    <p class="hero-lead">SmartLMS kết nối quản trị viên, giáo viên và học viên trên cùng dữ liệu — từ
+                    <h1 id="hero-title"><span>SmartLMS</span> – Hệ thống quản lý toàn bộ vòng đời đào tạo</h1>
+                    <p class="hero-lead">SmartLMS.io.vn kết nối quản trị viên, giáo viên và học viên trên cùng dữ liệu — từ
                         chương trình, khóa học, lớp, lịch, điểm danh đến bài tập, quiz, thanh toán và báo cáo.</p>
 
                     <div class="hero-actions">
@@ -585,22 +585,25 @@
                     <img src="{{ asset('assets/images/branding/smartlms-logo.webp') }}" alt="SmartLMS"
                         width="2172" height="724">
                 </a>
-                <p>Hệ thống quản lý vòng đời đào tạo tích hợp AI dành cho trung tâm, giáo viên và học viên Việt Nam.</p>
+                <p>SmartLMS.io.vn là hệ thống quản lý vòng đời đào tạo tích hợp AI, được phát triển độc lập tại Việt Nam bởi NgoTanLoi.</p>
             </div>
             <div class="footer-links">
-                <div><strong>Sản phẩm</strong><a href="#capabilities">Chức năng</a><a href="#roles">Theo vai
-                        trò</a><a href="#ai">AI & dữ liệu</a></div>
+                <div><strong>Sản phẩm</strong><a href="{{ route('marketing.training-management') }}">Quản lý đào tạo</a><a
+                        href="{{ route('marketing.class-management') }}">Quản lý lớp học</a><a
+                        href="{{ route('marketing.schedule-management') }}">Quản lý lịch học</a><a
+                        href="{{ route('marketing.attendance') }}">Điểm danh học viên</a></div>
                 <div><strong>Tài nguyên</strong><a href="https://github.com/NgoTanLoi01/LMS_System#readme"
                         target="_blank" rel="noopener noreferrer">Hướng dẫn</a><a
-                        href="https://github.com/NgoTanLoi01/LMS_System" target="_blank" rel="noopener noreferrer">Mã
-                        nguồn</a><a href="mailto:ngotanloi2424@gmail.com">Hỗ trợ</a></div>
+                        href="{{ route('marketing.question-bank') }}">Ngân hàng câu hỏi</a><a
+                        href="{{ route('marketing.rag-chatbot') }}">Chatbot RAG</a><a
+                        href="{{ route('marketing.about') }}">Giới thiệu</a></div>
                 <div><strong>Truy cập</strong><a href="{{ route('login') }}">Đăng nhập</a><a
                         href="{{ route('home') }}">Trang chủ</a><a
                         href="https://github.com/NgoTanLoi01/LMS_System/issues" target="_blank"
                         rel="noopener noreferrer">Báo lỗi</a></div>
             </div>
         </div>
-        <div class="footer-bottom"><span>© 2026 SmartLMS v2.2.1. Xây dựng tại Việt Nam.</span><span> Phát triển bởi
+        <div class="footer-bottom"><span>© 2026 SmartLMS.io.vn v2.2.1. Sản phẩm độc lập, không thuộc Viettel.</span><span> Phát triển bởi
                 <a href="mailto:ngotanloi2424@gmail.com">
                     <strong>NgoTanLoi</strong>.
                 </a></span></div>

@@ -106,7 +106,7 @@ class CourseController extends Controller
         }
 
         $courses = $query
-            ->with(['teacher', 'learningProgram'])
+            ->with(['teacher', 'learningProgram', 'classes:id,name'])
             ->withCount([
                 'modules',
                 'lessons' => function ($lessonQuery) use ($user) {

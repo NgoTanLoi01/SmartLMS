@@ -41,4 +41,33 @@ class ExampleTest extends TestCase
             $this->assertGreaterThan(0, filesize(public_path($asset)));
         }
     }
+
+    public function test_public_marketing_pages_are_indexable_and_internally_linked(): void
+    {
+        foreach (config('marketing.pages') as $slug => $page) {
+            $response = $this->get(route($page['route']));
+
+            $response
+                ->assertOk()
+                ->assertSee('<title>'.$page['title'].'</title>', false)
+                ->assertSee('content="index, follow,', false)
+                ->assertSee('rel="canonical"', false)
+                ->assertSee($page['headline'])
+                ->assertSee('SmartLMS.io.vn')
+                ->assertSee(route('marketing.about'), false);
+        }
+    }
+
+    public function test_sitemap_and_robots_expose_all_public_marketing_pages(): void
+    {
+        $sitemap = file_get_contents(public_path('sitemap.xml'));
+        $robots = file_get_contents(public_path('robots.txt'));
+
+        $this->assertStringContainsString('Sitemap: https://smartlms.io.vn/sitemap.xml', $robots);
+        $this->assertStringContainsString('<loc>https://smartlms.io.vn/</loc>', $sitemap);
+
+        foreach (array_keys(config('marketing.pages')) as $slug) {
+            $this->assertStringContainsString("<loc>https://smartlms.io.vn/{$slug}</loc>", $sitemap);
+        }
+    }
 }

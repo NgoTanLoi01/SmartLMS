@@ -23,12 +23,18 @@ class CatalogIndexExperienceTest extends TestCase
 
     public function test_course_catalog_matches_the_review_only_learning_model(): void
     {
+        $index = file_get_contents(resource_path('views/courses/index.blade.php'));
         $card = file_get_contents(resource_path('views/courses/partials/course-card.blade.php'));
         $controller = file_get_contents(app_path('Http/Controllers/CourseController.php'));
 
+        $this->assertStringContainsString('course-filter-shell', $index);
+        $this->assertStringContainsString('course-results-bar', $index);
         $this->assertStringContainsString("route('courses.show', \$course)", $card);
+        $this->assertStringContainsString('catalog-card-description', $card);
+        $this->assertStringContainsString('catalog-metrics-two', $card);
         $this->assertStringNotContainsString('progress-bar', $card);
         $this->assertStringNotContainsString('completedLessons', $controller);
+        $this->assertStringContainsString("'classes:id,name'", $controller);
         $this->assertStringContainsString("'Đã xuất bản'", $card);
         $this->assertStringContainsString("'Bản nháp'", $card);
     }

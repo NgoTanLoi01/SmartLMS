@@ -20,6 +20,7 @@ export default defineConfig({
                 'resources/css/pages/course-show.css',
                 'resources/css/pages/dashboard.css',
                 'resources/css/pages/landing.css',
+                'resources/css/pages/marketing-pages.css',
                 'resources/css/pages/notifications.css',
                 'resources/css/pages/question-bank.css',
                 'resources/css/pages/quiz-sessions.css',

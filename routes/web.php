@@ -25,6 +25,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperationalDashboardController;
 use App\Http\Controllers\OperationalReportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizAttemptAttachmentController;
 use App\Http\Controllers\QuizAttemptController;
@@ -53,6 +54,20 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : view('landing');
 })->name('home');
+
+foreach ([
+    '/phan-mem-quan-ly-dao-tao' => ['phan-mem-quan-ly-dao-tao', 'marketing.training-management'],
+    '/quan-ly-lop-hoc' => ['quan-ly-lop-hoc', 'marketing.class-management'],
+    '/quan-ly-lich-hoc' => ['quan-ly-lich-hoc', 'marketing.schedule-management'],
+    '/diem-danh-hoc-vien' => ['diem-danh-hoc-vien', 'marketing.attendance'],
+    '/ngan-hang-cau-hoi' => ['ngan-hang-cau-hoi', 'marketing.question-bank'],
+    '/chatbot-rag-giao-duc' => ['chatbot-rag-giao-duc', 'marketing.rag-chatbot'],
+    '/gioi-thieu-smartlms' => ['gioi-thieu-smartlms', 'marketing.about'],
+] as $uri => [$slug, $name]) {
+    Route::get($uri, [PublicPageController::class, 'show'])
+        ->defaults('slug', $slug)
+        ->name($name);
+}
 
 // Đăng nhập
 Route::get('/login', function () {
